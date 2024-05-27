@@ -1,0 +1,28 @@
+{
+    // Yet Another PHPUnit Extension
+    "yet-phpunit.docker.enable": true,
+    "yet-phpunit.docker.command": "docker exec ${workspaceFolderBasename}",
+    "yet-phpunit.docker.paths": {
+        "/home/rajandangi/docker-dev/sites/moodle-learn-39": "/var/www/moodle-learn-39"
+    },
+    "yet-phpunit.phpunitBinary": "/var/www/moodle-learn-39/vendor/bin/phpunit",
+    "yet-phpunit.commandSuffix": "--colors=auto",
+
+    // Link Patterns Extension
+    "patternlinks.rules": [
+        {
+            "linkPattern": "MDL-\\d+|CONTRIB-\\d+|MOBILE-\\d+|MDLSITE-d+|MDLQA-\\d+|UX-\\d+|MDLNET-\\d+|WPQA-\\d+",
+            "linkTarget": "https://tracker.moodle.org/browse/$0"
+        },
+        {
+            "linkPattern": "WR(\\d+)",
+            "linkTarget": "https://wrms.catalyst.net.nz/wr.php?request_id=$1"
+        }
+    ],
+
+    // PHP Sniffer Extension
+    "phpSniffer.standard": "moodle",
+    "[php]": {
+        "editor.defaultFormatter": "wongjn.php-sniffer"
+    },
+}

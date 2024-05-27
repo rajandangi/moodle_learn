@@ -1,0 +1,8 @@
+{
+    "recommendations": [
+        "danlevett.pattern-links",
+        "neilbrayfield.php-docblocker",
+        "danilopolani.yet-another-phpunit",
+        "wongjn.php-sniffer"
+    ]
+}

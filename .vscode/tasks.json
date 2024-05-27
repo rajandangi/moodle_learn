@@ -1,0 +1,77 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Start Project",
+            "type": "shell",
+            "command": "control start ${workspaceFolderBasename}",
+            "group": "none",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new",
+                "close": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Stop Project",
+            "type": "shell",
+            "command": "control stop ${workspaceFolderBasename}",
+            "group": "none",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new",
+                "close": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Stop All",
+            "type": "shell",
+            "command": "control stop",
+            "group": "none",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new",
+                "close": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Behat init",
+            "type": "shell",
+            "command": "control initbehat",
+            "group": "none",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new",
+                "close": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "PHPUnit init",
+            "type": "shell",
+            "command": "control initphpunit",
+            "group": "none",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new",
+                "close": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Shell: web",
+            "type": "shell",
+            "command": "control web ${workspaceFolderBasename}",
+            "group": "none",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new",
+                "close": false
+            },
+            "problemMatcher": []
+        }
+    ]
+}
