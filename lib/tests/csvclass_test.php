@@ -14,25 +14,21 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace core;
-
-use csv_export_writer;
-use csv_import_reader;
+/**
+ * Tests csv import and export functions.
+ *
+ * @package    core
+ * @category   phpunit
+ * @copyright  2012 Adrian Greeve
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
 defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
 require_once($CFG->dirroot . '/lib/csvlib.class.php');
 
-/**
- * Tests csv import and export functions.
- *
- * @package    core
- * @category   test
- * @copyright  2012 Adrian Greeve
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-class csvclass_test extends \advanced_testcase {
+class core_csvclass_testcase extends advanced_testcase {
 
     protected $testdata = array();
     protected $teststring = '';
@@ -40,7 +36,7 @@ class csvclass_test extends \advanced_testcase {
     protected $teststring3 = '';
     protected $teststring4 = '';
 
-    protected function setUp(): void {
+    protected function setUp() {
 
         $this->resetAfterTest();
 

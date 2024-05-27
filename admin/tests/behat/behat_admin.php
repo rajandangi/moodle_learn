@@ -75,6 +75,7 @@ class behat_admin extends behat_base {
                 // Multi element settings, interacting only the first one.
                 $fieldxpath = "//*[label[contains(., $label)]|span[contains(., $label)]]" .
                         "/ancestor::div[contains(concat(' ', normalize-space(@class), ' '), ' form-item ')]" .
+                        "/descendant::div[contains(concat(' ', @class, ' '), ' form-group ')]" .
                         "/descendant::*[self::input | self::textarea | self::select]" .
                         "[not(./@type = 'submit' or ./@type = 'image' or ./@type = 'hidden')]";
             }
@@ -85,7 +86,7 @@ class behat_admin extends behat_base {
     }
 
     /**
-     * Sets the specified site settings. A table with | config | value | (optional)plugin | (optional)encrypted | is expected.
+     * Sets the specified site settings. A table with | config | value | (optional)plugin | is expected.
      *
      * @Given /^the following config values are set as admin:$/
      * @param TableNode $table
@@ -99,20 +100,11 @@ class behat_admin extends behat_base {
         foreach ($data as $config => $value) {
             // Default plugin value is null.
             $plugin = null;
-            $encrypted = false;
 
             if (is_array($value)) {
                 $plugin = $value[1];
-                if (array_key_exists(2, $value)) {
-                    $encrypted = $value[2] === 'encrypted';
-                }
                 $value = $value[0];
             }
-
-            if ($encrypted) {
-                $value = \core\encryption::encrypt($value);
-            }
-
             set_config($config, $value, $plugin);
         }
     }

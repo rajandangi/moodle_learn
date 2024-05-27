@@ -29,6 +29,8 @@ $PAGE->set_context($context);
 
 require_login(0, false);
 require_capability('moodle/badges:manageglobalsettings', $context);
+// There should be an admin setting to completely turn off badges.
+$output = $PAGE->get_renderer('core', 'badges');
 
 $id = optional_param('id', 0, PARAM_INT);
 $action = optional_param('action', '', PARAM_ALPHA);
@@ -45,8 +47,6 @@ $PAGE->set_url($url);
 $PAGE->set_title(get_string('managebackpacks', 'badges'));
 $PAGE->set_heading($SITE->fullname);
 
-$output = $PAGE->get_renderer('core', 'badges');
-
 $msg = '';
 $msgtype = 'error';
 if ($action == 'delete' && $confirm && confirm_sesskey()) {
@@ -56,17 +56,6 @@ if ($action == 'delete' && $confirm && confirm_sesskey()) {
     } else {
         $msg = get_string('sitebackpacknotdeleted', 'badges');
     }
-} else if ($action == 'moveup' || $action == 'movedown') {
-    // If no backpack has been selected, there isn't anything to move.
-    if (empty($id)) {
-        redirect($url);
-    }
-
-    $direction = BACKPACK_MOVE_DOWN;
-    if ($action == 'moveup') {
-        $direction = BACKPACK_MOVE_UP;
-    }
-    badges_change_sortorder_backpacks($id, $direction);
 }
 
 if ($action == 'edit') {
@@ -80,11 +69,7 @@ if ($action == 'edit') {
     } else if ($data = $form->get_data()) {
         require_sesskey();
         if (!empty($data->id)) {
-            $id = $data->id;
-            badges_update_site_backpack($id, $data);
-            // Apart from the password, any change here would result in an error in other parts of the badge systems.
-            // In order to negate this, we restart any further mapping from scratch.
-            badges_external_delete_mappings($id);
+            badges_update_site_backpack($data->id, $data);
         } else {
             badges_create_site_backpack($data);
         }

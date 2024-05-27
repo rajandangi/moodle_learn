@@ -24,12 +24,8 @@
 
 namespace core_h5p;
 
+use H5peditorFile;
 use stored_file;
-use Moodle\H5PCore;
-use Moodle\H5peditorFile;
-use Moodle\H5PFileStorage;
-
-// phpcs:disable moodle.NamingConventions.ValidFunctionName.LowercaseMethod
 
 /**
  * Class to handle storage and export of H5P Content.
@@ -38,7 +34,7 @@ use Moodle\H5PFileStorage;
  * @copyright  2019 Victor Deniz <victor@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class file_storage implements H5PFileStorage {
+class file_storage implements \H5PFileStorage {
 
     /** The component for H5P. */
     public const COMPONENT   = 'core_h5p';
@@ -50,12 +46,10 @@ class file_storage implements H5PFileStorage {
     public const CACHED_ASSETS_FILEAREA = 'cachedassets';
     /** The export file area */
     public const EXPORT_FILEAREA = 'export';
-    /** The export css file area */
-    public const CSS_FILEAREA = 'css';
     /** The icon filename */
     public const ICON_FILENAME = 'icon.svg';
-    /** The custom CSS filename */
-    private const CUSTOM_CSS_FILENAME = 'custom_h5p.css';
+    /** The editor file area */
+    public const EDITOR_FILEAREA = 'editor';
 
     /**
      * @var \context $context Currently we use the system context everywhere.
@@ -85,26 +79,14 @@ class file_storage implements H5PFileStorage {
             'contextid' => $this->context->id,
             'component' => self::COMPONENT,
             'filearea' => self::LIBRARY_FILEAREA,
-            'filepath' => '/' . H5PCore::libraryToFolderName($library) . '/',
-            'itemid' => $library['libraryId'],
+            'filepath' => '/' . \H5PCore::libraryToString($library, true) . '/',
+            'itemid' => $library['libraryId']
         ];
 
         // Easiest approach: delete the existing library version and copy the new one.
         $this->delete_library($library);
         $this->copy_directory($library['uploadDirectory'], $options);
     }
-
-    /**
-     * Delete library folder.
-     *
-     * @param array $library
-     */
-    public function deleteLibrary($library) {
-        // Although this class had a method (delete_library()) for removing libraries before this was added to the interface,
-        // it's not safe to call it from here because looking at the place where it's called, it's not clear what are their
-        // expectation. This method will be implemented once more information will be added to the H5P technical doc.
-    }
-
 
     /**
      * Store the content folder.
@@ -173,7 +155,7 @@ class file_storage implements H5PFileStorage {
      * @param string $target Where the library folder will be saved
      */
     public function exportLibrary($library, $target) {
-        $folder = H5PCore::libraryToFolderName($library);
+        $folder = \H5PCore::libraryToString($library, true);
         $this->export_file_tree($target . '/' . $folder, $this->context->id, self::LIBRARY_FILEAREA,
                 '/' . $folder . '/', $library['libraryId']);
     }
@@ -443,7 +425,7 @@ class file_storage implements H5PFileStorage {
 
         // Move all temporary content files to editor.
         $it = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($contentsource, \RecursiveDirectoryIterator::SKIP_DOTS),
+            new \RecursiveDirectoryIterator($contentsource,\RecursiveDirectoryIterator::SKIP_DOTS),
             \RecursiveIteratorIterator::SELF_FIRST
         );
 
@@ -520,7 +502,7 @@ class file_storage implements H5PFileStorage {
      * @return void
      */
     public function removeContentFile($file, $contentid): void {
-        // Although the interface defines $contentid as int, object given in H5peditor::processParameters.
+        // Although the interface defines $contentid as int, object given in \H5peditor::processParameters.
         if (is_object($contentid)) {
             $contentid = $contentid->id;
         }
@@ -591,23 +573,13 @@ class file_storage implements H5PFileStorage {
      * @param  array $library Library details
      */
     public function delete_library(array $library): void {
-        global $DB;
 
         // A library ID of false would result in all library files being deleted, which we don't want. Return instead.
-        if (empty($library['libraryId'])) {
+        if ($library['libraryId'] === false) {
             return;
         }
 
-        $areafiles = $this->fs->get_area_files($this->context->id, self::COMPONENT, self::LIBRARY_FILEAREA, $library['libraryId']);
         $this->delete_directory($this->context->id, self::COMPONENT, self::LIBRARY_FILEAREA, $library['libraryId']);
-        $librarycache = \cache::make('core', 'h5p_library_files');
-        foreach ($areafiles as $file) {
-            if (!$DB->record_exists('files', array('contenthash' => $file->get_contenthash(),
-                                                   'component' => self::COMPONENT,
-                                                   'filearea' => self::LIBRARY_FILEAREA))) {
-                $librarycache->delete($file->get_contenthash());
-            }
-        }
     }
 
     /**
@@ -630,7 +602,6 @@ class file_storage implements H5PFileStorage {
      * @param  array  $options File system information.
      */
     private function copy_directory(string $source, array $options): void {
-        $librarycache = \cache::make('core', 'h5p_library_files');
         $it = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($source, \RecursiveDirectoryIterator::SKIP_DOTS),
                 \RecursiveIteratorIterator::SELF_FIRST);
 
@@ -648,13 +619,7 @@ class file_storage implements H5PFileStorage {
                     $options['filepath'] = $root;
                 }
 
-                $file = $this->fs->create_file_from_pathname($options, $item->getPathName());
-
-                if ($options['filearea'] == self::LIBRARY_FILEAREA) {
-                    if (!$librarycache->has($file->get_contenthash())) {
-                        $librarycache->set($file->get_contenthash(), file_get_contents($item->getPathName()));
-                    }
-                }
+                $this->fs->create_file_from_pathname($options, $item->getPathName());
             }
             $it->next();
         }
@@ -676,24 +641,12 @@ class file_storage implements H5PFileStorage {
         // Read source files.
         $files = $this->fs->get_directory_files($contextid, self::COMPONENT, $filearea, $itemid, $filepath, true);
 
-        $librarycache = \cache::make('core', 'h5p_library_files');
-
         foreach ($files as $file) {
             $path = $target . str_replace($filepath, DIRECTORY_SEPARATOR, $file->get_filepath());
             if ($file->is_directory()) {
                 check_dir_exists(rtrim($path));
             } else {
-                if ($filearea == self::LIBRARY_FILEAREA) {
-                    $cachedfile = $librarycache->get($file->get_contenthash());
-                    if (empty($cachedfile)) {
-                        $file->copy_content_to($path . $file->get_filename());
-                        $librarycache->set($file->get_contenthash(), file_get_contents($path . $file->get_filename()));
-                    } else {
-                        file_put_contents($path . $file->get_filename(), $cachedfile);
-                    }
-                } else {
-                    $file->copy_content_to($path . $file->get_filename());
-                }
+                $file->copy_content_to($path . $file->get_filename());
             }
         }
     }
@@ -880,105 +833,5 @@ class file_storage implements H5PFileStorage {
         }
 
         $this->fs->create_file_from_pathname($record, $sourcefile);
-    }
-
-    /**
-     * Generate H5P custom styles if any.
-     */
-    public static function generate_custom_styles(): void {
-        $record = self::get_custom_styles_file_record();
-        $cssfile = self::get_custom_styles_file($record);
-        if ($cssfile) {
-            // The CSS file needs to be updated, so delete and recreate it
-            // if there is CSS in the 'h5pcustomcss' setting.
-            $cssfile->delete();
-        }
-
-        $css = get_config('core_h5p', 'h5pcustomcss');
-        if (!empty($css)) {
-            $fs = get_file_storage();
-            $fs->create_file_from_string($record, $css);
-        }
-    }
-
-    /**
-     * Get H5P custom styles if any.
-     *
-     * @throws \moodle_exception If the CSS setting is empty but there is a file to serve
-     * or there is no file but the CSS setting is not empty.
-     * @return array|null If there is CSS then an array with the keys 'cssurl'
-     * and 'cssversion' is returned otherwise null.  'cssurl' is a link to the
-     * generated 'custom_h5p.css' file and 'cssversion' the md5 hash of its contents.
-     */
-    public static function get_custom_styles(): ?array {
-        $record = self::get_custom_styles_file_record();
-
-        $css = get_config('core_h5p', 'h5pcustomcss');
-        if (self::get_custom_styles_file($record)) {
-            if (empty($css)) {
-                // The custom CSS file exists and yet the setting 'h5pcustomcss' is empty.
-                // This prevents an invalid content hash.
-                throw new \moodle_exception(
-                    'The H5P \'h5pcustomcss\' setting is empty and yet the custom CSS file \''.
-                    $record['filename'].
-                    '\' exists.',
-                    'core_h5p'
-                );
-            }
-            // File exists, so generate the url and version hash.
-            $cssurl = \moodle_url::make_pluginfile_url(
-                $record['contextid'],
-                $record['component'],
-                $record['filearea'],
-                null,
-                $record['filepath'],
-                $record['filename']
-            );
-            return ['cssurl' => $cssurl, 'cssversion' => md5($css)];
-        } else if (!empty($css)) {
-            // The custom CSS file does not exist and yet should do.
-            throw new \moodle_exception(
-                'The H5P custom CSS file \''.
-                $record['filename'].
-                '\' does not exist and yet there is CSS in the \'h5pcustomcss\' setting.',
-                'core_h5p'
-            );
-        }
-        return null;
-    }
-
-    /**
-     * Get H5P custom styles file record.
-     *
-     * @return array File record for the CSS custom styles.
-     */
-    private static function get_custom_styles_file_record(): array {
-        return [
-            'contextid' => \context_system::instance()->id,
-            'component' => self::COMPONENT,
-            'filearea' => self::CSS_FILEAREA,
-            'itemid' => 0,
-            'filepath' => '/',
-            'filename' => self::CUSTOM_CSS_FILENAME,
-        ];
-    }
-
-    /**
-     * Get H5P custom styles file.
-     *
-     * @param array $record The H5P custom styles file record.
-     *
-     * @return stored_file|bool stored_file instance if exists, false if not.
-     */
-    private static function get_custom_styles_file($record): stored_file|bool {
-        $fs = get_file_storage();
-        return $fs->get_file(
-            $record['contextid'],
-            $record['component'],
-            $record['filearea'],
-            $record['itemid'],
-            $record['filepath'],
-            $record['filename']
-        );
     }
 }

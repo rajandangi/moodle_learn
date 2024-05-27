@@ -1,25 +1,20 @@
 <?php
-/**
- * FileDescription
- *
- * This file is part of ADOdb, a Database Abstraction Layer library for PHP.
- *
- * @package ADOdb
- * @link https://adodb.org Project's web site and documentation
- * @link https://github.com/ADOdb/ADOdb Source code and issue tracker
- *
- * The ADOdb Library is dual-licensed, released under both the BSD 3-Clause
- * and the GNU Lesser General Public Licence (LGPL) v2.1 or, at your option,
- * any later version. This means you can use it in proprietary products.
- * See the LICENSE.md file distributed with this source code for details.
- * @license BSD-3-Clause
- * @license LGPL-2.1-or-later
- *
- * @copyright 2000-2013 John Lim
- * @copyright 2014 Damien Regad, Mark Newnham and the ADOdb community
- * @author John Lim
- * @author George Fourlanos <fou@infomap.gr>
- */
+/*
+
+  @version   v5.20.16  12-Jan-2020
+  @copyright (c) 2000-2013 John Lim. All rights reserved.
+  @copyright (c) 2014      Damien Regad, Mark Newnham and the ADOdb community
+
+  Released under both BSD license and Lesser GPL library license.
+  Whenever there is any discrepancy between the two licenses,
+  the BSD license will take precedence.
+
+  Latest version is available at http://adodb.org/
+
+  Code contributed by George Fourlanos <fou@infomap.gr>
+
+  13 Nov 2000 jlim - removed all ora_* references.
+*/
 
 // security - hide paths
 if (!defined('ADODB_DIR')) die();
@@ -92,8 +87,9 @@ END;
 	var $random = "abs(mod(DBMS_RANDOM.RANDOM,10000001)/10000000)";
 	var $noNullStrings = false;
 	var $connectSID = false;
-	var $_bind = array();
+	var $_bind = false;
 	var $_nestedSQL = true;
+	var $_hasOciFetchStatement = false;
 	var $_getarray = false; // currently not working
 	var $leftOuter = '';  // oracle wierdness, $col = $value (+) for LEFT OUTER, $col (+)= $value for RIGHT OUTER
 	var $session_sharing_force_blob = false; // alter session on updateblob if set to true
@@ -107,20 +103,13 @@ END;
 
 	// var $ansiOuter = true; // if oracle9
 
-	/*
-	 * Legacy compatibility for sequence names for emulated auto-increments
-	 */
-	public $useCompactAutoIncrements = false;
-
-	/*
-	 * Defines the schema name for emulated auto-increment columns
-	 */
-	public $schema = false;
-
-	/*
-	 * Defines the prefix for emulated auto-increment columns
-	 */
-	public $seqPrefix = 'SEQ_';
+	function __construct()
+	{
+		$this->_hasOciFetchStatement = ADODB_PHPVER >= 0x4200;
+		if (defined('ADODB_EXTENSION')) {
+			$this->rsPrefix .= 'ext_';
+		}
+	}
 
 	/*  function MetaColumns($table, $normalize=true) added by smondino@users.sourceforge.net*/
 	function MetaColumns($table, $normalize=true)
@@ -317,38 +306,6 @@ END;
 	function IfNull( $field, $ifNull )
 	{
 		return " NVL($field, $ifNull) "; // if Oracle
-	}
-
-	protected function _insertID($table = '', $column = '')
-	{
-		if ($this->schema)
-		{
-			$t = strpos($table,'.');
-			if ($t !== false)
-				$tab = substr($table,$t+1);
-			else
-				$tab = $table;
-
-			if ($this->useCompactAutoIncrements)
-				$tab = sprintf('%u',crc32(strtolower($tab)));
-
-			$seqname = $this->schema.'.'.$this->seqPrefix.$tab;
-		}
-		else
-		{
-			if ($this->useCompactAutoIncrements)
-				$table = sprintf('%u',crc32(strtolower($table)));
-
-			$seqname = $this->seqPrefix.$table;
-		}
-
-		if (strlen($seqname) > 30)
-			/*
-			* We cannot successfully identify the sequence
-			*/
-			return false;
-
-		return $this->getOne("SELECT $seqname.currval FROM dual");
 	}
 
 	// format and return date string in database date format
@@ -781,18 +738,12 @@ END;
 			$hint = '';
 		}
 
-		// If non-bound statement, $inputarr is false
-		if (!$inputarr) {
-			$inputarr = array();
-		}
-
 		if ($offset == -1 || ($offset < $this->selectOffsetAlg1 && 0 < $nrows && $nrows < 1000)) {
 			if ($nrows > 0) {
 				if ($offset > 0) {
 					$nrows += $offset;
 				}
 				$sql = "select * from (".$sql.") where rownum <= :adodb_offset";
-
 				$inputarr['adodb_offset'] = $nrows;
 				$nrows = -1;
 			}
@@ -810,31 +761,32 @@ END;
 			}
 			$stmt = $stmt_arr[1];
 
-			foreach($inputarr as $k => $v) {
-				$i = 0;
-				if ($this->databaseType == 'oci8po') {
-					$bv_name = ":" . $i++;
-				} else {
-					$bv_name = ":" . $k;
-				}
-				if (is_array($v)) {
-					// suggested by g.giunta@libero.
-					if (sizeof($v) == 2) {
-						oci_bind_by_name($stmt, $bv_name, $inputarr[$k][0], $v[1]);
+			if (is_array($inputarr)) {
+				foreach($inputarr as $k => $v) {
+					$i=0;
+					if ($this->databaseType == 'oci8po') {
+						$bv_name = ":".$i++;
 					} else {
-						oci_bind_by_name($stmt, $bv_name, $inputarr[$k][0], $v[1], $v[2]);
+						$bv_name = ":".$k;
 					}
-				} else {
-					$len = -1;
-					if ($v === ' ') {
-						$len = 1;
-					}
-					if (isset($bindarr)) {
-						// prepared sql, so no need to oci_bind_by_name again
-						$bindarr[$k] = $v;
+					if (is_array($v)) {
+						// suggested by g.giunta@libero.
+						if (sizeof($v) == 2) {
+							oci_bind_by_name($stmt,$bv_name,$inputarr[$k][0],$v[1]);
+						}
+						else {
+							oci_bind_by_name($stmt,$bv_name,$inputarr[$k][0],$v[1],$v[2]);
+						}
 					} else {
-						// dynamic sql, so rebind every time
-						oci_bind_by_name($stmt, $bv_name, $inputarr[$k], $len);
+						$len = -1;
+						if ($v === ' ') {
+							$len = 1;
+						}
+						if (isset($bindarr)) {	// is prepared sql, so no need to oci_bind_by_name again
+							$bindarr[$k] = $v;
+						} else { 				// dynamic sql, so rebind every time
+							oci_bind_by_name($stmt,$bv_name,$inputarr[$k],$len);
+						}
 					}
 				}
 			}
@@ -971,6 +923,13 @@ END;
 		return $rez;
 	}
 
+	/**
+	 * Execute SQL
+	 *
+	 * @param sql		SQL statement to execute, or possibly an array holding prepared statement ($sql[0] will hold sql text)
+	 * @param [inputarr]	holds the input data to bind to. Null elements will be set to null.
+	 * @return 		RecordSet or false
+	 */
 	function Execute($sql,$inputarr=false)
 	{
 		if ($this->fnExecute) {
@@ -988,7 +947,7 @@ END;
 			$element0 = reset($inputarr);
 			$array2d =  $this->bulkBind && is_array($element0) && !is_object(reset($element0));
 
-			# see PHPLens Issue No: 18786
+			# see http://phplens.com/lens/lensforum/msgs.php?id=18786
 			if ($array2d || !$this->_bindInputArray) {
 
 				# is_object check because oci8 descriptors can be passed in
@@ -1088,22 +1047,6 @@ END;
 		return array($sql,$stmt,0,$BINDNUM);
 	}
 
-	function releaseStatement(&$stmt)
-	{
-		if (is_array($stmt)
-			&& isset($stmt[1])
-			&& is_resource($stmt[1])
-			&& oci_free_statement($stmt[1])
-		) {
-			// Clearing the resource to avoid it being of type Unknown
-			$stmt[1] = null;
-			return true;
-		}
-
-		// Not a valid prepared statement
-		return false;
-	}
-
 	/*
 		Call an oracle stored procedure and returns a cursor variable as a recordset.
 		Concept by Robert Tuttle robert@ud.com
@@ -1137,11 +1080,10 @@ END;
 		} else
 			$hasref = false;
 
-		/** @var ADORecordset_oci8 $rs */
 		$rs = $this->Execute($stmt);
 		if ($rs) {
 			if ($rs->databaseType == 'array') {
-				oci_free_statement($stmt[4]);
+				oci_free_cursor($stmt[4]);
 			}
 			elseif ($hasref) {
 				$rs->_refcursor = $stmt[4];
@@ -1252,12 +1194,12 @@ END;
 	 *    $db->Parameter($stmt,$group,'group');
 	 *    $db->Execute($stmt);
 	 *
-	 * @param $stmt Statement returned by {@see Prepare()} or {@see PrepareSP()}.
+	 * @param $stmt Statement returned by Prepare() or PrepareSP().
 	 * @param $var PHP variable to bind to
 	 * @param $name Name of stored procedure variable name to bind to.
-	 * @param bool $isOutput Indicates direction of parameter 0/false=IN  1=OUT  2= IN/OUT. This is ignored in oci8.
-	 * @param int $maxLen Holds an maximum length of the variable.
-	 * @param mixed $type The data type of $var. Legal values depend on driver.
+	 * @param [$isOutput] Indicates direction of parameter 0/false=IN  1=OUT  2= IN/OUT. This is ignored in oci8.
+	 * @param [$maxLen] Holds an maximum length of the variable.
+	 * @param [$type] The data type of $var. Legal values depend on driver.
 	 *
 	 * @link http://php.net/oci_bind_by_name
 	*/
@@ -1272,8 +1214,7 @@ END;
 	}
 
 	/**
-	 * Execute a query.
-	 *
+	 * returns query ID if successful, otherwise false
 	 * this version supports:
 	 *
 	 * 1. $db->execute('select * from table');
@@ -1286,11 +1227,6 @@ END;
 	 * 4. $db->prepare('insert into table (a,b,c) values (:0,:1,:2)');
 	 *    $db->bind($stmt,1); $db->bind($stmt,2); $db->bind($stmt,3);
 	 *    $db->execute($stmt);
-	 *
-	 * @param string|array $sql        Query to execute.
-	 * @param array        $inputarr   An optional array of parameters.
-	 *
-	 * @return mixed|bool Query identifier or true if execution successful, false if failed.
 	 */
 	function _query($sql,$inputarr=false)
 	{
@@ -1501,17 +1437,16 @@ SELECT /*+ RULE */ distinct b.column_name
 	}
 
 	/**
-	 * Returns a list of Foreign Keys associated with a specific table.
+	 * returns assoc array where keys are tables, and values are foreign keys
 	 *
-	 * @param string $table
-	 * @param string $owner
-	 * @param bool   $upper       discarded
-	 * @param bool   $associative discarded
+	 * @param	str		$table
+	 * @param	str		$owner	[optional][default=NULL]
+	 * @param	bool	$upper	[optional][discarded]
+	 * @return	mixed[]			Array of foreign key information
 	 *
-	 * @return string[]|false An array where keys are tables, and values are foreign keys;
-	 *                        false if no foreign keys could be found.
+	 * @link http://gis.mit.edu/classes/11.521/sqlnotes/referential_integrity.html
 	 */
-	public function metaForeignKeys($table, $owner = '', $upper = false, $associative = false)
+	function MetaForeignKeys($table, $owner=false, $upper=false)
 	{
 		global $ADODB_FETCH_MODE;
 
@@ -1562,30 +1497,37 @@ SELECT /*+ RULE */ distinct b.column_name
 	}
 
 	/**
-	 * Correctly quotes a string so that all strings are escaped.
-	 * We prefix and append to the string single-quotes.
-	 * An example is  $db->qstr("Don't bother");
+	 * Quotes a string.
+	 * An example is  $db->qstr("Don't bother",magic_quotes_runtime());
 	 *
-	 * @param string $s            The string to quote
-	 * @param bool   $magic_quotes This param is not used since 5.21.0.
-	 *                             It remains for backwards compatibility.
+	 * @param string $s the string to quote
+	 * @param bool $magic_quotes if $s is GET/POST var, set to get_magic_quotes_gpc().
+	 *             This undoes the stupidity of magic quotes for GPC.
 	 *
-	 * @return string Quoted string to be sent back to database
-	 *
-	 * @noinspection PhpUnusedParameterInspection
+	 * @return string quoted string to be sent back to database
 	 */
-	function qStr($s, $magic_quotes=false)
+	function qstr($s,$magic_quotes=false)
 	{
-		if ($this->noNullStrings && strlen($s) == 0) {
+		//$nofixquotes=false;
+
+		if ($this->noNullStrings && strlen($s)==0) {
 			$s = ' ';
 		}
-		else if (strlen($s) == 0) {
-			return "''";
+		if (!$magic_quotes) {
+			if ($this->replaceQuote[0] == '\\'){
+				$s = str_replace('\\','\\\\',$s);
+			}
+			return  "'".str_replace("'",$this->replaceQuote,$s)."'";
 		}
-		if ($this->replaceQuote[0] == '\\'){
-			$s = str_replace('\\','\\\\',$s);
+
+		// undo magic quotes for " unless sybase is on
+		if (!ini_get('magic_quotes_sybase')) {
+			$s = str_replace('\\"','"',$s);
+			$s = str_replace('\\\\','\\',$s);
+			return "'".str_replace("\\'",$this->replaceQuote,$s)."'";
+		} else {
+			return "'".$s."'";
 		}
-		return  "'" . str_replace("'", $this->replaceQuote, $s) . "'";
 	}
 
 }
@@ -1599,9 +1541,6 @@ class ADORecordset_oci8 extends ADORecordSet {
 	var $databaseType = 'oci8';
 	var $bind=false;
 	var $_fieldobjs;
-
-	/** @var resource Cursor reference */
-	var $_refcursor;
 
 	function __construct($queryID,$mode=false)
 	{
@@ -1626,7 +1565,7 @@ class ADORecordset_oci8 extends ADORecordSet {
 		$this->adodbFetchMode = $mode;
 		$this->_queryID = $queryID;
 	}
-
+	
 	/**
 	* Overrides the core destructor method as that causes problems here
 	*
@@ -1652,7 +1591,7 @@ class ADORecordset_oci8 extends ADORecordSet {
 
 			/*
 			// based on idea by Gaetano Giunta to detect unusual oracle errors
-			// see PHPLens Issue No: 6771
+			// see http://phplens.com/lens/lensforum/msgs.php?id=6771
 			$err = oci_error($this->_queryID);
 			if ($err && $this->connection->debug) {
 				ADOConnection::outp($err);
@@ -1812,8 +1751,7 @@ class ADORecordset_oci8 extends ADORecordSet {
 			oci_free_cursor($this->_refcursor);
 			$this->_refcursor = false;
 		}
-		if (is_resource($this->_queryID))
-		   @oci_free_statement($this->_queryID);
+		@oci_free_statement($this->_queryID);
 		$this->_queryID = false;
 	}
 
@@ -1834,12 +1772,7 @@ class ADORecordset_oci8 extends ADORecordSet {
 			$len = $fieldobj->max_length;
 		}
 
-		$t = strtoupper($t);
-
-		if (array_key_exists($t,$this->connection->customActualTypes))
-			return  $this->connection->customActualTypes[$t];
-
-		switch ($t) {
+		switch (strtoupper($t)) {
 		case 'VARCHAR':
 		case 'VARCHAR2':
 		case 'CHAR':
@@ -1875,12 +1808,16 @@ class ADORecordset_oci8 extends ADORecordSet {
 			return 'I';
 
 		default:
-			return ADODB_DEFAULT_METATYPE;
+			return 'N';
 		}
 	}
 }
 
 class ADORecordSet_ext_oci8 extends ADORecordSet_oci8 {
+	function __construct($queryID,$mode=false)
+	{
+		parent::__construct($queryID, $mode);
+	}
 
 	function MoveNext()
 	{

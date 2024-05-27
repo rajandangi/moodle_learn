@@ -368,7 +368,7 @@ function get_latest_version_available($version, $env_select) {
         return false;
     }
 /// First we look for exact version
-    if (in_array($version, $versions, true)) {
+    if (in_array($version, $versions)) {
         return $version;
     } else {
         $found_version = false;
@@ -416,7 +416,7 @@ function get_environment_for_version($version, $env_select) {
     }
 
 /// If the version requested is available
-    if (!in_array($version, $versions, true)) {
+    if (!in_array($version, $versions)) {
         return false;
     }
 
@@ -808,15 +808,8 @@ function environment_check_moodle($version, $env_select) {
     $release = get_config('', 'release');
     $current_version = normalize_version($release);
     if (strpos($release, 'dev') !== false) {
-        // When final version is required, dev is NOT enough so, at all effects
-        // it's like we are running the previous version.
-        $versionarr = explode('.', $current_version);
-        if (isset($versionarr[1]) and $versionarr[1] > 0) {
-            $versionarr[1]--;
-            $current_version = implode('.', $versionarr);
-        } else {
-            $current_version = $current_version - 0.1;
-        }
+        // when final version is required, dev is NOT enough!
+        $current_version = $current_version - 0.1;
     }
 
 /// And finally compare them, saving results
@@ -895,7 +888,7 @@ function environment_check_php($version, $env_select) {
  * Looks for buggy PCRE implementation, we need unicode support in Moodle...
  * @param string $version xml version we are going to use to test this server
  * @param int|string $env_select one of ENV_SELECT_NEWER | ENV_SELECT_DATAROOT | ENV_SELECT_RELEASE decide xml to use. String means plugin name.
- * @return ?environment_results results encapsulated in one environment_result object, null if irrelevant
+ * @return stdClass results encapsulated in one environment_result object, null if irrelevant
  */
 function environment_check_pcre_unicode($version, $env_select) {
     $result = new environment_results('pcreunicode');
@@ -1102,8 +1095,8 @@ function environment_check_database($version, $env_select) {
  * such bypass functions are able to directly handling the result object
  * although it should be only under exceptional conditions.
  *
- * @param array $xml xml containing the bypass data
- * @param environment_results $result object to be updated
+ * @param string xmldata containing the bypass data
+ * @param object result object to be updated
  * @return void
  */
 function process_environment_bypass($xml, &$result) {
@@ -1143,8 +1136,8 @@ function process_environment_bypass($xml, &$result) {
  * such restrict functions are able to directly handling the result object
  * although it should be only under exceptional conditions.
  *
- * @param array $xml xmldata containing the restrict data
- * @param environment_results $result object to be updated
+ * @param string xmldata containing the restrict data
+ * @param object result object to be updated
  * @return void
  */
 function process_environment_restrict($xml, &$result) {
@@ -1180,8 +1173,8 @@ function process_environment_restrict($xml, &$result) {
  *
  * @uses INCORRECT_FEEDBACK_FOR_REQUIRED
  * @uses INCORRECT_FEEDBACK_FOR_OPTIONAL
- * @param array $xml xmldata containing the feedback data
- * @param environment_results $result object to be updated
+ * @param string xmldata containing the feedback data
+ * @param object reult object to be updated
  */
 function process_environment_messages($xml, &$result) {
 
@@ -1251,7 +1244,7 @@ class environment_results {
      */
     var $error_code;
     /**
-     * @var string required/optional/recommended.
+     * @var string required/optional
      */
     var $level;
     /**
@@ -1548,9 +1541,8 @@ function get_level($element) {
     $level = 'required';
     if (isset($element['@']['level'])) {
         $level = $element['@']['level'];
-        if (!in_array($level, ['required', 'optional', 'recommended'])) {
-            debugging('The level of a check in the environment.xml file must be "required", "optional" or "recommended".',
-                    DEBUG_DEVELOPER);
+        if (!in_array($level, array('required', 'optional'))) {
+            debugging('The level of a check in the environment.xml file must be "required" or "optional".', DEBUG_DEVELOPER);
             $level = 'required';
         }
     } else {
@@ -1686,15 +1678,4 @@ function restrict_php_version_81($result) {
  */
 function restrict_php_version_82($result) {
     return restrict_php_version($result, '8.2');
-}
-
-/**
- * Check if the current PHP version is greater than or equal to
- * PHP version 8.3
- *
- * @param object $result an environment_results instance
- * @return bool result of version check
- */
-function restrict_php_version_83($result) {
-    return restrict_php_version($result, '8.3');
 }

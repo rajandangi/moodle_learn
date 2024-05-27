@@ -66,7 +66,7 @@ class provider implements
      * @param   collection $collection The initialised collection to add items to.
      * @return  collection     A listing of user data stored through this system.
      */
-    public static function get_metadata(collection $collection): collection {
+    public static function get_metadata(collection $collection) : collection {
         $collection->add_database_table(
             'tool_dataprivacy_request',
             [
@@ -77,16 +77,6 @@ class provider implements
                 'timecreated' => 'privacy:metadata:request:timecreated'
             ],
             'privacy:metadata:request'
-        );
-
-        // Regarding this block, we are unable to export or purge this data, as
-        // it would damage the privacy data across the whole site.
-        $collection->add_database_table(
-            'tool_dataprivacy_purposerole',
-            [
-                'usermodified' => 'privacy:metadata:purpose:usermodified',
-            ],
-            'privacy:metadata:purpose'
         );
 
         $collection->add_user_preference(tool_helper::PREF_REQUEST_FILTERS,
@@ -103,7 +93,7 @@ class provider implements
      * @param   int $userid The user to search.
      * @return  contextlist   $contextlist  The contextlist containing the list of contexts used in this plugin.
      */
-    public static function get_contexts_for_userid(int $userid): contextlist {
+    public static function get_contexts_for_userid(int $userid) : contextlist {
         $sql = "SELECT id
                   FROM {context}
                  WHERE instanceid = :userid

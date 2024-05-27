@@ -59,12 +59,6 @@ class main implements renderable, templatable {
      */
     public $limit;
 
-    /** @var int Number of timeline instances displayed. */
-    protected static $timelineinstances = 0;
-
-    /** @var int This timeline instance's ID. */
-    protected $timelineinstanceid = 0;
-
     /**
      * main constructor.
      *
@@ -76,10 +70,6 @@ class main implements renderable, templatable {
         $this->order = $order ? $order : BLOCK_TIMELINE_SORT_BY_DATES;
         $this->filter = $filter ? $filter : BLOCK_TIMELINE_FILTER_BY_7_DAYS;
         $this->limit = $limit ? $limit : BLOCK_TIMELINE_ACTIVITIES_LIMIT_DEFAULT;
-        // Increment the timeline instances count on initialisation.
-        self::$timelineinstances++;
-        // Assign this instance an ID based on the latest timeline instances count.
-        $this->timelineinstanceid = self::$timelineinstances;
     }
 
     /**
@@ -112,11 +102,11 @@ class main implements renderable, templatable {
      */
     private function get_filter_offsets() {
 
-        $limit = '';
+        $limit = false;
         if (in_array($this->filter, [BLOCK_TIMELINE_FILTER_BY_NONE, BLOCK_TIMELINE_FILTER_BY_OVERDUE])) {
             $offset = -14;
             if ($this->filter == BLOCK_TIMELINE_FILTER_BY_OVERDUE) {
-                $limit = 1;
+                $limit = 0;
             }
         } else {
             $offset = 0;
@@ -145,7 +135,7 @@ class main implements renderable, templatable {
      * Export this data so it can be used as the context for a mustache template.
      *
      * @param \renderer_base $output
-     * @return array
+     * @return stdClass
      */
     public function export_for_template(renderer_base $output) {
 
@@ -170,7 +160,6 @@ class main implements renderable, templatable {
         $filters = $this->get_filters_as_booleans();
         $offsets = $this->get_filter_offsets();
         $contextvariables = [
-            'timelineinstanceid' => $this->timelineinstanceid,
             'midnight' => usergetmidnight(time()),
             'coursepages' => [$formattedcourses],
             'urls' => [
@@ -181,10 +170,9 @@ class main implements renderable, templatable {
             'sorttimelinecourses' => $this->order == BLOCK_TIMELINE_SORT_BY_COURSES,
             'selectedfilter' => $this->filter,
             'hasdaysoffset' => true,
-            'hasdayslimit' => $offsets['dayslimit'] !== '' ,
-            'nodayslimit' => $offsets['dayslimit'] === '' ,
-            'limit' => $this->limit,
-            'hascourses' => !empty($formattedcourses),
+            'hasdayslimit' => $offsets['dayslimit'] !== false ,
+            'nodayslimit' => $offsets['dayslimit'] === false ,
+            'limit' => $this->limit
         ];
         return array_merge($contextvariables, $filters, $offsets);
     }

@@ -36,9 +36,18 @@ $tasks = [
         'month' => '*'
     ],
     [
-        'classname' => 'mod_quiz\task\quiz_notify_attempt_manual_grading_completed',
+        'classname' => 'mod_quiz\task\legacy_quiz_reports_cron',
         'blocking' => 0,
-        'minute' => 'R',
+        'minute' => '*',
+        'hour' => '*',
+        'day' => '*',
+        'dayofweek' => '*',
+        'month' => '*'
+    ],
+    [
+        'classname' => 'mod_quiz\task\legacy_quiz_accessrules_cron',
+        'blocking' => 0,
+        'minute' => '*',
         'hour' => '*',
         'day' => '*',
         'dayofweek' => '*',

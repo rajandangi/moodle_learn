@@ -22,9 +22,7 @@ Feature: Users can flag tags and manager can reset flags
       | moodle/site:viewparticipants | allow |
       | moodle/user:viewdetails      | allow |
     And I log in as "user2"
-    And I turn editing mode on
-    And the following config values are set as admin:
-      | unaddableblocks | | theme_boost|
+    And I press "Customise this page"
     # TODO MDL-57120 site "Tags" link not accessible without navigation block.
     And I add the "Navigation" block if not present
     And I click on "Site pages" "list_item" in the "Navigation" "block"
@@ -35,8 +33,6 @@ Feature: Users can flag tags and manager can reset flags
     And I follow "Flag as inappropriate"
     And I should see "The person responsible will be notified"
     And I am on homepage
-    And the following config values are set as admin:
-      | unaddableblocks | | theme_boost|
     # TODO MDL-57120 site "Tags" link not accessible without navigation block.
     And I add the "Navigation" block if not present
     And I click on "Site pages" "list_item" in the "Navigation" "block"
@@ -48,9 +44,7 @@ Feature: Users can flag tags and manager can reset flags
     And I should see "The person responsible will be notified"
     And I log out
     And I log in as "user3"
-    And I turn editing mode on
-    And the following config values are set as admin:
-      | unaddableblocks | | theme_boost|
+    And I press "Customise this page"
     # TODO MDL-57120 site "Tags" link not accessible without navigation block.
     And I add the "Navigation" block if not present
     And I click on "Site pages" "list_item" in the "Navigation" "block"
@@ -69,35 +63,24 @@ Feature: Users can flag tags and manager can reset flags
     And I follow "Default collection"
     Then "Sweartag" "link" should appear before "Badtag" "link"
     And "Badtag" "link" should appear before "Nicetag" "link"
-    And the following should exist in the "reportbuilder-table" table:
-      | Tag name | Flag |
-      | Sweartag | (2)  |
-      | Badtag   | (1)  |
-    And the following should not exist in the "reportbuilder-table" table:
-      | Tag name     | Flag |
-      | Nicetag      | (    |
-      | Neverusertag | (    |
+    And "(2)" "text" should exist in the "//tr[contains(.,'Sweartag')]//td[contains(@class,'col-flag')]" "xpath_element"
+    And "(1)" "text" should exist in the "//tr[contains(.,'Badtag')]//td[contains(@class,'col-flag')]" "xpath_element"
+    And "(" "text" should not exist in the "//tr[contains(.,'Nicetag')]//td[contains(@class,'col-flag')]" "xpath_element"
+    And "(" "text" should not exist in the "//tr[contains(.,'Neverusedtag')]//td[contains(@class,'col-flag')]" "xpath_element"
     And I click on "Reset flag" "link" in the "Sweartag" "table_row"
     And I click on "Reset flag" "link" in the "Badtag" "table_row"
     And I wait until "//tr[contains(.,'Sweartag')]//a[contains(@title,'Flag as inappropriate')]" "xpath_element" exists
     And I click on "Flag as inappropriate" "link" in the "Sweartag" "table_row"
     And I click on "Flag as inappropriate" "link" in the "Nicetag" "table_row"
-    And the following should exist in the "reportbuilder-table" table:
-      | Tag name | Flag |
-      | Sweartag | (1)  |
-      | Nicetag  | (1)  |
-    And the following should not exist in the "reportbuilder-table" table:
-      | Tag name     | Flag |
-      | Badtag       | (    |
-      | Neverusertag | (    |
-    And I reload the page
-    And "Nicetag" "link" should appear before "Neverusedtag" "link"
+    And "(1)" "text" should exist in the "//tr[contains(.,'Sweartag')]//td[contains(@class,'col-flag')]" "xpath_element"
+    And "(1)" "text" should exist in the "//tr[contains(.,'Nicetag')]//td[contains(@class,'col-flag')]" "xpath_element"
+    And "(" "text" should not exist in the "//tr[contains(.,'Badtag')]//td[contains(@class,'col-flag')]" "xpath_element"
+    And "(" "text" should not exist in the "//tr[contains(.,'Neverusedtag')]//td[contains(@class,'col-flag')]" "xpath_element"
+    And I follow "Default collection"
+    And "Nicetag" "link" should appear before "Sweartag" "link"
     And "Sweartag" "link" should appear before "Badtag" "link"
-    And the following should exist in the "reportbuilder-table" table:
-      | Tag name | Flag |
-      | Sweartag | (1)  |
-      | Nicetag  | (1)  |
-    And the following should not exist in the "reportbuilder-table" table:
-      | Tag name     | Flag |
-      | Badtag       | (    |
-      | Neverusertag | (    |
+    And "(1)" "text" should exist in the "//tr[contains(.,'Sweartag')]//td[contains(@class,'col-flag')]" "xpath_element"
+    And "(1)" "text" should exist in the "//tr[contains(.,'Nicetag')]//td[contains(@class,'col-flag')]" "xpath_element"
+    And "(" "text" should not exist in the "//tr[contains(.,'Badtag')]//td[contains(@class,'col-flag')]" "xpath_element"
+    And "(" "text" should not exist in the "//tr[contains(.,'Neverusedtag')]//td[contains(@class,'col-flag')]" "xpath_element"
+    And I log out

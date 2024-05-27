@@ -24,17 +24,9 @@
  * @since      Moodle 3.0
  */
 
-use core_course\external\helper_for_get_mods_by_courses;
-use core_external\external_api;
-use core_external\external_function_parameters;
-use core_external\external_multiple_structure;
-use core_external\external_single_structure;
-use core_external\external_value;
-use core_external\external_warnings;
-use core_external\util;
-
 defined('MOODLE_INTERNAL') || die;
 
+require_once($CFG->libdir . '/externallib.php');
 require_once($CFG->dirroot . '/mod/lti/lib.php');
 require_once($CFG->dirroot . '/mod/lti/locallib.php');
 
@@ -163,7 +155,7 @@ class mod_lti_external extends external_api {
     /**
      * Returns description of method result value.
      *
-     * @return \core_external\external_description
+     * @return external_description
      * @since Moodle 3.1
      */
     public static function get_tool_proxies_returns() {
@@ -234,7 +226,7 @@ class mod_lti_external extends external_api {
     /**
      * Returns description of method result value
      *
-     * @return \core_external\external_description
+     * @return external_description
      * @since Moodle 3.0
      */
     public static function get_tool_launch_data_returns() {
@@ -295,7 +287,7 @@ class mod_lti_external extends external_api {
         // Ensure there are courseids to loop through.
         if (!empty($params['courseids'])) {
 
-            list($courses, $warnings) = util::validate_courses($params['courseids'], $mycourses);
+            list($courses, $warnings) = external_util::validate_courses($params['courseids'], $mycourses);
 
             // Get the ltis in this course, this function checks users visibility permissions.
             // We can avoid then additional validate_context calls.
@@ -306,21 +298,33 @@ class mod_lti_external extends external_api {
                 $context = context_module::instance($lti->coursemodule);
 
                 // Entry to return.
-                $module = helper_for_get_mods_by_courses::standard_coursemodule_element_values(
-                        $lti, 'mod_lti', 'moodle/course:manageactivities', 'mod/lti:view');
+                $module = array();
+
+                // First, we return information that any user can see in (or can deduce from) the web interface.
+                $module['id'] = $lti->id;
+                $module['coursemodule'] = $lti->coursemodule;
+                $module['course'] = $lti->course;
+                $module['name']  = external_format_string($lti->name, $context->id);
 
                 $viewablefields = [];
                 if (has_capability('mod/lti:view', $context)) {
+                    $options = array('noclean' => true);
+                    list($module['intro'], $module['introformat']) =
+                        external_format_text($lti->intro, $lti->introformat, $context->id, 'mod_lti', 'intro', null, $options);
+
+                    $module['introfiles'] = external_util::get_area_files($context->id, 'mod_lti', 'intro', false, false);
                     $viewablefields = array('launchcontainer', 'showtitlelaunch', 'showdescriptionlaunch', 'icon', 'secureicon');
                 }
 
                 // Check additional permissions for returning optional private settings.
                 if (has_capability('moodle/course:manageactivities', $context)) {
+
                     $additionalfields = array('timecreated', 'timemodified', 'typeid', 'toolurl', 'securetoolurl',
                         'instructorchoicesendname', 'instructorchoicesendemailaddr', 'instructorchoiceallowroster',
                         'instructorchoiceallowsetting', 'instructorcustomparameters', 'instructorchoiceacceptgrades', 'grade',
-                        'resourcekey', 'password', 'debuglaunch', 'servicesalt');
+                        'resourcekey', 'password', 'debuglaunch', 'servicesalt', 'visible', 'groupmode', 'groupingid');
                     $viewablefields = array_merge($viewablefields, $additionalfields);
+
                 }
 
                 foreach ($viewablefields as $field) {
@@ -348,9 +352,15 @@ class mod_lti_external extends external_api {
         return new external_single_structure(
             array(
                 'ltis' => new external_multiple_structure(
-                    new external_single_structure(array_merge(
-                        helper_for_get_mods_by_courses::standard_coursemodule_elements_returns(true),
-                        [
+                    new external_single_structure(
+                        array(
+                            'id' => new external_value(PARAM_INT, 'External tool id'),
+                            'coursemodule' => new external_value(PARAM_INT, 'Course module id'),
+                            'course' => new external_value(PARAM_INT, 'Course id'),
+                            'name' => new external_value(PARAM_RAW, 'LTI name'),
+                            'intro' => new external_value(PARAM_RAW, 'The LTI intro', VALUE_OPTIONAL),
+                            'introformat' => new external_format_value('intro', VALUE_OPTIONAL),
+                            'introfiles' => new external_files('Files in the introduction text', VALUE_OPTIONAL),
                             'timecreated' => new external_value(PARAM_INT, 'Time of creation', VALUE_OPTIONAL),
                             'timemodified' => new external_value(PARAM_INT, 'Time of last modification', VALUE_OPTIONAL),
                             'typeid' => new external_value(PARAM_INT, 'Type id', VALUE_OPTIONAL),
@@ -378,8 +388,12 @@ class mod_lti_external extends external_api {
                             'servicesalt' => new external_value(PARAM_RAW, 'Service salt', VALUE_OPTIONAL),
                             'icon' => new external_value(PARAM_URL, 'Alternative icon URL', VALUE_OPTIONAL),
                             'secureicon' => new external_value(PARAM_URL, 'Secure icon URL', VALUE_OPTIONAL),
-                        ]
-                    ), 'Tool')
+                            'section' => new external_value(PARAM_INT, 'course section id', VALUE_OPTIONAL),
+                            'visible' => new external_value(PARAM_INT, 'visible', VALUE_OPTIONAL),
+                            'groupmode' => new external_value(PARAM_INT, 'group mode', VALUE_OPTIONAL),
+                            'groupingid' => new external_value(PARAM_INT, 'group id', VALUE_OPTIONAL),
+                        ), 'Tool'
+                    )
                 ),
                 'warnings' => new external_warnings(),
             )
@@ -437,7 +451,7 @@ class mod_lti_external extends external_api {
     /**
      * Returns description of method result value
      *
-     * @return \core_external\external_description
+     * @return external_description
      * @since Moodle 3.0
      */
     public static function view_lti_returns() {
@@ -535,7 +549,7 @@ class mod_lti_external extends external_api {
     /**
      * Returns description of method result value
      *
-     * @return \core_external\external_description
+     * @return external_description
      * @since Moodle 3.1
      */
     public static function create_tool_proxy_returns() {
@@ -585,7 +599,7 @@ class mod_lti_external extends external_api {
     /**
      * Returns description of method result value
      *
-     * @return \core_external\external_description
+     * @return external_description
      * @since Moodle 3.1
      */
     public static function delete_tool_proxy_returns() {
@@ -632,7 +646,7 @@ class mod_lti_external extends external_api {
     /**
      * Returns description of method result value
      *
-     * @return \core_external\external_description
+     * @return external_description
      * @since Moodle 3.1
      */
     public static function get_tool_proxy_registration_request_returns() {
@@ -697,7 +711,7 @@ class mod_lti_external extends external_api {
     /**
      * Returns description of method result value
      *
-     * @return \core_external\external_description
+     * @return external_description
      * @since Moodle 3.1
      */
     public static function get_tool_types_returns() {
@@ -786,7 +800,7 @@ class mod_lti_external extends external_api {
     /**
      * Returns description of method result value
      *
-     * @return \core_external\external_description
+     * @return external_description
      * @since Moodle 3.1
      */
     public static function create_tool_type_returns() {
@@ -869,7 +883,7 @@ class mod_lti_external extends external_api {
     /**
      * Returns description of method result value
      *
-     * @return \core_external\external_description
+     * @return external_description
      * @since Moodle 3.1
      */
     public static function update_tool_type_returns() {
@@ -928,7 +942,7 @@ class mod_lti_external extends external_api {
     /**
      * Returns description of method result value
      *
-     * @return \core_external\external_description
+     * @return external_description
      * @since Moodle 3.1
      */
     public static function delete_tool_type_returns() {
@@ -980,7 +994,7 @@ class mod_lti_external extends external_api {
     /**
      * Returns description of method result value
      *
-     * @return \core_external\external_description
+     * @return external_description
      * @since Moodle 3.1
      */
     public static function is_cartridge_returns() {

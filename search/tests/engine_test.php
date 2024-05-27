@@ -14,7 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace core_search;
+/**
+ * Search engine base unit tests.
+ *
+ * @package     core_search
+ * @category    phpunit
+ * @copyright   2015 David Monllao {@link http://www.davidmonllao.com}
+ * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -29,14 +36,14 @@ require_once(__DIR__ . '/fixtures/mock_search_area.php');
  * @copyright   2015 David Monllao {@link http://www.davidmonllao.com}
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class engine_test extends \advanced_testcase {
+class search_engine_testcase extends advanced_testcase {
 
-    public function setUp(): void {
+    public function setUp() {
         $this->resetAfterTest();
         set_config('enableglobalsearch', true);
 
         // Set \core_search::instance to the mock_search_engine as we don't require the search engine to be working to test this.
-        $search = \testable_core_search::instance();
+        $search = testable_core_search::instance();
     }
 
     /**
@@ -131,7 +138,7 @@ class engine_test extends \advanced_testcase {
         $generator = self::getDataGenerator()->get_plugin_generator('core_search');
         $generator->setup();
 
-        $area = new \core_mocksearch\search\mock_search_area();
+        $area = new core_mocksearch\search\mock_search_area();
         $engine = new \mock_search\engine();
 
         $record = $generator->create_record();

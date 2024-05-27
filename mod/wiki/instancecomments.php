@@ -49,38 +49,38 @@ if ($newcontent) {
 }
 
 if (!$page = wiki_get_page($pageid)) {
-    throw new \moodle_exception('incorrectpageid', 'wiki');
+    print_error('incorrectpageid', 'wiki');
 }
 
 if (!$subwiki = wiki_get_subwiki($page->subwikiid)) {
-    throw new \moodle_exception('incorrectsubwikiid', 'wiki');
+    print_error('incorrectsubwikiid', 'wiki');
 }
 if (!$cm = get_coursemodule_from_instance("wiki", $subwiki->wikiid)) {
-    throw new \moodle_exception('invalidcoursemodule');
+    print_error('invalidcoursemodule');
 }
 $course = $DB->get_record('course', array('id' => $cm->course), '*', MUST_EXIST);
 if (!$wiki = wiki_get_wiki($subwiki->wikiid)) {
-    throw new \moodle_exception('incorrectwikiid', 'wiki');
+    print_error('incorrectwikiid', 'wiki');
 }
 require_login($course, true, $cm);
 
 if ($action == 'add' || $action == 'edit') {
     //just check sesskey
     if (!confirm_sesskey()) {
-        throw new \moodle_exception(get_string('invalidsesskey', 'wiki'));
+        print_error(get_string('invalidsesskey', 'wiki'));
     }
-    $comm = new page_wiki_handlecomments($wiki, $subwiki, $cm, 'modulepage');
+    $comm = new page_wiki_handlecomments($wiki, $subwiki, $cm);
     $comm->set_page($page);
 } else {
     if(!$confirm) {
-        $comm = new page_wiki_deletecomment($wiki, $subwiki, $cm, 'modulepage');
+        $comm = new page_wiki_deletecomment($wiki, $subwiki, $cm);
         $comm->set_page($page);
         $comm->set_url();
     } else {
-        $comm = new page_wiki_handlecomments($wiki, $subwiki, $cm, 'modulepage');
+        $comm = new page_wiki_handlecomments($wiki, $subwiki, $cm);
         $comm->set_page($page);
         if (!confirm_sesskey()) {
-            throw new \moodle_exception(get_string('invalidsesskey', 'wiki'));
+            print_error(get_string('invalidsesskey', 'wiki'));
         }
     }
 }
@@ -90,9 +90,6 @@ if ($action == 'delete') {
 } else {
     if (empty($newcontent)) {
         $form = new mod_wiki_comments_form();
-        if ($form->is_cancelled()) {
-            redirect(new moodle_url('/mod/wiki/comments.php', ['pageid' => (int)$pageid]));
-        }
         $newcomment = $form->get_data();
         $content = $newcomment->entrycomment_editor['text'];
     } else {

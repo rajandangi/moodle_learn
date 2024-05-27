@@ -43,7 +43,6 @@ Feature: Test category management actions
     And I should see "Category 1 (edited)" in the "#category-listing" "css_element"
     And I should see "Category 1 (edited)" in the "#course-listing h3" "css_element"
 
-  @javascript
   Scenario: Test deleting a categories through the management interface.
     Given the following "categories" exist:
       | name | category | idnumber |
@@ -195,7 +194,7 @@ Feature: Test category management actions
     And "What to do" "select" should not exist
     And "Move into" "select" should exist
     And the "Move into" select box should contain "Cat 2"
-    And the "Move into" select box should contain "Category 1"
+    And the "Move into" select box should contain "Miscellaneous"
     And I press "Cancel"
 
   @javascript
@@ -228,14 +227,13 @@ Feature: Test category management actions
     And I should see "Delete category: Cat 1"
     And I should see "Contents of Cat 1"
     And "What to do" "select" should exist
-    And I expand the "Move into" autocomplete
-    And "Cat 2" "autocomplete_suggestions" should not exist
-    And "Category 1" "autocomplete_selection" should be visible
+    And "Move into" "select" should exist
+    And the "Move into" select box should not contain "Cat 2"
+    And the "Move into" select box should contain "Miscellaneous"
     And I set the field "What to do" to "Delete all - cannot be undone"
     And "Move into" "select" should not be visible
     And I press "Cancel"
 
-  @javascript
   Scenario: Test I can assign roles for a category through the management interface.
     Given the following "categories" exist:
       | name | category | idnumber |
@@ -243,14 +241,18 @@ Feature: Test category management actions
     And the following "courses" exist:
       | category | fullname | shortname | idnumber |
       | CAT1 | Course 1 | Course 1 | C1 |
+
     And I log in as "admin"
     And I go to the courses management page
     And I should see the "Course categories and courses" management page
-    And I click on "permissions" action for "Cat 1" in management category listing
-    And I set the field "Participants tertiary navigation" to "Assign roles"
+    And I click on "assignroles" action for "Cat 1" in management category listing
     # Redirect
     And I should see "Assign roles in Category: Cat 1"
     And I should see "Please choose a role to assign"
+    And I click on "Back to Category: Cat 1" "link"
+    # Redirect
+    And I should see the "Course categories and courses" management page
+    And "Cat 1" "link" should exist in the "#category-listing" "css_element"
 
   Scenario: Test I can set access permissions for a category through the management interface.
     Given the following "categories" exist:
@@ -268,7 +270,8 @@ Feature: Test category management actions
     And I should see "Permissions in Category: Cat 1"
     And I click on "Back to Category: Cat 1" "link"
     # Redirect
-    And I should see "Cat 1" in the "h1" "css_element"
+    And I should see the "Course categories and courses" management page
+    And I should see "Cat 1" in the "#course-listing" "css_element"
 
   Scenario: Test clicking to manage cohorts for a category through the management interface.
     Given the following "categories" exist:
@@ -283,7 +286,7 @@ Feature: Test category management actions
     And I should see the "Course categories and courses" management page
     And I click on "cohorts" action for "Cat 1" in management category listing
     # Redirect
-    And I should see "Cohorts"
+    And I should see "Category: Cat 1: available cohorts"
 
   Scenario: Test configuring filters for a category
     Given the following "categories" exist:

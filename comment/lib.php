@@ -96,8 +96,6 @@ class comment {
     private static $comment_page = null;
     /** @var string comment itemid component in non-javascript UI */
     private static $comment_component = null;
-    /** @var stdClass comment paramaters for callback. */
-    protected $comment_param;
 
     /**
      * Construct function of comment class, initialise
@@ -137,7 +135,7 @@ class comment {
             $this->contextid = $options->contextid;
             $this->context = context::instance_by_id($this->contextid);
         } else {
-            throw new \moodle_exception('invalidcontext');
+            print_error('invalidcontext');
         }
 
         if (!empty($options->component)) {
@@ -506,9 +504,6 @@ class comment {
 
                 $html .= html_writer::start_tag('div', array('class' => 'comment-area'));
                 $html .= html_writer::start_tag('div', array('class' => 'db'));
-                $html .= html_writer::tag('label',
-                        get_string('comment', 'comment'),
-                        ['for' => 'dlg-content-'.$this->cid, 'class' => 'sr-only']);
                 $html .= html_writer::tag('textarea', '', $textareaattrs);
                 $html .= html_writer::end_tag('div'); // .db
 
@@ -543,7 +538,7 @@ class comment {
      *
      * @param  int $page
      * @param  str $sortdirection sort direction, ASC or DESC
-     * @return array|false
+     * @return array
      */
     public function get_comments($page = '', $sortdirection = 'DESC') {
         global $DB, $CFG, $USER, $OUTPUT;
@@ -556,8 +551,7 @@ class comment {
         $params = array();
         $perpage = (!empty($CFG->commentsperpage))?$CFG->commentsperpage:15;
         $start = $page * $perpage;
-        $userfieldsapi = \core_user\fields::for_userpic();
-        $ufields = $userfieldsapi->get_sql('u', false, '', '', false)->selects;
+        $ufields = user_picture::fields('u');
 
         list($componentwhere, $component) = $this->get_component_select_sql('c');
         if ($component) {
@@ -592,7 +586,7 @@ class comment {
             $c->fullname = fullname($u);
             $c->time = userdate($c->timecreated, $c->strftimeformat);
             $c->content = format_text($c->content, $c->format, $formatoptions);
-            $c->avatar = $OUTPUT->user_picture($u, array('size' => 16));
+            $c->avatar = $OUTPUT->user_picture($u, array('size'=>18));
             $c->userid = $u->id;
 
             if ($this->can_delete($c)) {
@@ -933,9 +927,9 @@ class comment {
             $strdelete = get_string('deletecommentbyon', 'moodle', (object)['user' => $cmt->fullname, 'time' => $cmt->time]);
             $deletelink  = html_writer::start_tag('div', array('class'=>'comment-delete'));
             $deletelink .= html_writer::start_tag('a', array('href' => '#', 'id' => 'comment-delete-'.$this->cid.'-'.$cmt->id,
-                'class' => 'icon-no-margin', 'title' => $strdelete));
+                                                             'title' => $strdelete));
 
-            $deletelink .= $OUTPUT->pix_icon('t/delete', $strdelete);
+            $deletelink .= $OUTPUT->pix_icon('t/delete', get_string('delete'));
             $deletelink .= html_writer::end_tag('a');
             $deletelink .= html_writer::end_tag('div');
             $cmt->content = $deletelink . $cmt->content;
@@ -956,7 +950,7 @@ class comment {
     /**
      * Revoke validate callbacks
      *
-     * @param array $params addtionall parameters need to add to callbacks
+     * @param stdClass $params addtionall parameters need to add to callbacks
      */
     protected function validate($params=array()) {
         foreach ($params as $key=>$value) {
@@ -1074,7 +1068,7 @@ class comment {
     /**
      * Returns the comment area associated with the commentarea
      *
-     * @return string
+     * @return stdClass
      */
     public function get_commentarea() {
         return $this->commentarea;

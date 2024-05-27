@@ -38,8 +38,7 @@ $course     = $DB->get_record('course', array('id' => $cm->course), '*', MUST_EX
 $workshop   = $DB->get_record('workshop', array('id' => $cm->instance), '*', MUST_EXIST);
 $workshop   = new workshop($workshop, $cm, $course);
 
-$url = $workshop->allocation_url($method);
-$PAGE->set_url($url);
+$PAGE->set_url($workshop->allocation_url($method));
 
 require_login($course, false, $cm);
 $context = $PAGE->context;
@@ -47,11 +46,7 @@ require_capability('mod/workshop:allocate', $context);
 
 $PAGE->set_title($workshop->name);
 $PAGE->set_heading($course->fullname);
-$PAGE->navbar->add(get_string('allocation', 'workshop'), $workshop->allocation_url($method));
-$PAGE->activityheader->set_attrs([
-    'hidecompletion' => true,
-    'description' => ''
-]);
+$PAGE->navbar->add(get_string('allocation', 'workshop'));
 
 $allocator  = $workshop->allocator_instance($method);
 $initresult = $allocator->init();
@@ -59,11 +54,25 @@ $initresult = $allocator->init();
 //
 // Output starts here
 //
-$actionbar = new \mod_workshop\output\actionbar($url, $workshop);
-
 $output = $PAGE->get_renderer('mod_workshop');
 echo $output->header();
-echo $output->render_allocation_menu($actionbar);
+echo $OUTPUT->heading(format_string($workshop->name));
+
+$allocators = workshop::installed_allocators();
+if (!empty($allocators)) {
+    $tabs       = array();
+    $row        = array();
+    $inactive   = array();
+    $activated  = array();
+    foreach ($allocators as $methodid => $methodname) {
+        $row[] = new tabobject($methodid, $workshop->allocation_url($methodid)->out(), $methodname);
+        if ($methodid == $method) {
+            $currenttab = $methodid;
+        }
+    }
+}
+$tabs[] = $row;
+print_tabs($tabs, $currenttab, $inactive, $activated);
 
 if (is_null($initresult->get_status()) or $initresult->get_status() == workshop_allocation_result::STATUS_VOID) {
     echo $output->container_start('allocator-ui');

@@ -14,7 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace core;
+/**
+ * Unit tests for config only library functions-
+ *
+ * @package    core
+ * @category   phpunit
+ * @copyright  2012 Petr Skoda {@link http://skodak.org}
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -25,11 +32,11 @@ require_once(__DIR__ . '/../configonlylib.php');
  * Unit tests for config only library functions.
  *
  * @package    core
- * @category   test
+ * @category   phpunit
  * @copyright  2012 Petr Skoda {@link http://skodak.org}
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class configonlylib_test extends \advanced_testcase {
+class core_configonlylib_testcase extends advanced_testcase {
 
     /**
      * Test cleaning of invalid utf-8 entities.
@@ -152,9 +159,7 @@ class configonlylib_test extends \advanced_testcase {
     public function test_min_get_minimum_version(): void {
         // This is fairly hard to write a test for, but we can at least check that it returns a number
         // greater than the version when the feature was first introduced.
-        $firstintroduced = 1693612800; // Equivalent to 20230902 00:00:00 GMT.
-        // Deduct our two day tolerance.
-        $firstintroduced = $firstintroduced - (DAYSECS * 2);
+        $firstintroduced = 1592179200; // Equivalent to 20200615 00:00:00 GMT.
         $this->assertGreaterThanOrEqual($firstintroduced, min_get_minimum_revision());
     }
 

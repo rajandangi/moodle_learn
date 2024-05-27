@@ -58,7 +58,7 @@ class helper {
                   FROM {block_recentlyaccesseditems} rai
                   JOIN {course} c ON c.id = rai.courseid
                  WHERE userid = :userid
-              ORDER BY rai.timeaccess DESC, rai.id DESC";
+                 ORDER BY rai.timeaccess DESC";
         $records = $DB->get_records_sql($sql, $paramsql);
         $order = 0;
 

@@ -14,7 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace tool_dataprivacy;
+/**
+ * Unit tests for the filtered_userlist.
+ *
+ * @package    tool_dataprivacy
+ * @copyright  2018 Andrew Nicols <andrew@nicols.co.uk>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
 /**
  * Unit tests for the filtered_userlist.
@@ -23,7 +29,7 @@ namespace tool_dataprivacy;
  * @copyright  2018 Andrew Nicols <andrew@nicols.co.uk>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class filtered_userlist_test extends \advanced_testcase {
+class tool_dataprivacy_filtered_userlist_testcase extends advanced_testcase {
     /**
      * Test the apply_expired_contexts_filters function with arange of options.
      *
@@ -36,11 +42,12 @@ class filtered_userlist_test extends \advanced_testcase {
     public function test_apply_expired_contexts_filters(array $initial, array $expired, array $unexpired, array $expected) {
         $userlist = $this->getMockBuilder(\tool_dataprivacy\filtered_userlist::class)
             ->disableOriginalConstructor()
-            ->onlyMethods([])
+            ->setMethods(null)
             ->getMock();
 
         $rc = new \ReflectionClass(\tool_dataprivacy\filtered_userlist::class);
         $rcm = $rc->getMethod('set_userids');
+        $rcm->setAccessible(true);
         $rcm->invoke($userlist, $initial);
 
 
@@ -57,7 +64,7 @@ class filtered_userlist_test extends \advanced_testcase {
      *
      * @return  array
      */
-    public function apply_expired_contexts_filters_provider(): array {
+    public function apply_expired_contexts_filters_provider() : array {
         return [
             // Entire list should be preserved.
             'No overrides' => [

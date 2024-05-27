@@ -22,6 +22,9 @@
  * @copyright 2010 Rossiani Wijaya
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  **/
+define ('DISPLAY_HORIZONTAL_LAYOUT', 0);
+define ('DISPLAY_VERTICAL_LAYOUT', 1);
+
 class mod_choice_renderer extends plugin_renderer_base {
 
     /**
@@ -47,7 +50,7 @@ class mod_choice_renderer extends plugin_renderer_base {
         $choicecount = 0;
         foreach ($options['options'] as $option) {
             $choicecount++;
-            $html .= html_writer::start_tag('li', array('class' => 'option mr-3'));
+            $html .= html_writer::start_tag('li', array('class'=>'option'));
             if ($multiple) {
                 $option->attributes->name = 'answer[]';
                 $option->attributes->type = 'checkbox';
@@ -62,13 +65,6 @@ class mod_choice_renderer extends plugin_renderer_base {
             if (!empty($option->attributes->disabled)) {
                 $labeltext .= ' ' . get_string('full', 'choice');
                 $availableoption--;
-            }
-
-            if (!empty($options['limitanswers']) && !empty($options['showavailable'])) {
-                $labeltext .= html_writer::empty_tag('br');
-                $labeltext .= get_string("responsesa", "choice", $option->countanswers);
-                $labeltext .= html_writer::empty_tag('br');
-                $labeltext .= get_string("limita", "choice", $option->maxanswers);
             }
 
             $html .= html_writer::empty_tag('input', (array)$option->attributes + $disabled);
@@ -137,6 +133,7 @@ class mod_choice_renderer extends plugin_renderer_base {
      */
     public function display_publish_name_vertical($choices) {
         $html ='';
+        $html .= html_writer::tag('h3',format_string(get_string("responses", "choice")));
 
         $attributes = array('method'=>'POST');
         $attributes['action'] = new moodle_url($this->page->url);
@@ -185,14 +182,6 @@ class mod_choice_renderer extends plugin_renderer_base {
                 $headertitle = get_string('notanswered', 'choice');
             } else if ($optionid > 0) {
                 $headertitle = format_string($choices->options[$optionid]->text);
-                if (!empty($choices->options[$optionid]->user) && count($choices->options[$optionid]->user) > 0) {
-                    if (
-                        $choices->limitanswers &&
-                        (count($choices->options[$optionid]->user) == $choices->options[$optionid]->maxanswer)
-                    ) {
-                        $headertitle .= ' ' . get_string('full', 'choice');
-                    }
-                }
             }
             $celltext = $headertitle;
 
@@ -220,10 +209,7 @@ class mod_choice_renderer extends plugin_renderer_base {
             if (!empty($options->user) && count($options->user) > 0) {
                 $numberofuser = count($options->user);
             }
-            if (($choices->limitanswers) && ($choices->showavailable)) {
-                $numberofuser .= html_writer::empty_tag('br');
-                $numberofuser .= get_string("limita", "choice", $options->maxanswer);
-            }
+
             $celloption->text = html_writer::div($celltext, 'text-center');
             $optionsnames[$optionid] = $celltext;
             $cellusernumber->text = html_writer::div($numberofuser, 'text-center');
@@ -374,7 +360,7 @@ class mod_choice_renderer extends plugin_renderer_base {
      * Can be displayed either in the vertical or horizontal position.
      *
      * @param stdClass $choices Choices responses object.
-     * @param int $displaylayout The constants CHOICE_DISPLAY_HORIZONTAL or CHOICE_DISPLAY_VERTICAL.
+     * @param int $displaylayout The constants DISPLAY_HORIZONTAL_LAYOUT or DISPLAY_VERTICAL_LAYOUT.
      * @return string the rendered chart.
      */
     public function display_publish_anonymous($choices, $displaylayout) {
@@ -397,8 +383,8 @@ class mod_choice_renderer extends plugin_renderer_base {
         }
 
         $chart = new \core\chart_bar();
-        if ($displaylayout == CHOICE_DISPLAY_VERTICAL) {
-            $chart->set_horizontal(true); // Horizontal bars when choices are vertical.
+        if ($displaylayout == DISPLAY_HORIZONTAL_LAYOUT) {
+            $chart->set_horizontal(true);
         }
         $series = new \core\chart_series(format_string(get_string("responses", "choice")), $data['series']);
         $series->set_labels($data['series_labels']);

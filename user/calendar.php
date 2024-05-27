@@ -85,7 +85,7 @@ if ($calendarform->is_cancelled()) {
         $USER->calendartype = $calendartype;
     }
 
-    redirect($redirect, get_string('changessaved'), null, \core\output\notification::NOTIFY_SUCCESS);
+    redirect($redirect);
 }
 
 // Display page header.

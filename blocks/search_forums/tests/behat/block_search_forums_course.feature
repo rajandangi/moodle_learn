@@ -29,8 +29,9 @@ Feature: The search forums block allows users to search for forum posts on cours
 
   Scenario: Use the search forum block in a course without any forum posts
     Given I am on the "Course 1" course page logged in as student1
-    When I set the field "Search" to "Moodle"
-    And I press "Search"
+    When I set the following fields to these values:
+      | searchform_search | Moodle |
+    And I press "Go"
     Then I should see "No posts"
 
   Scenario: Use the search forum block in a course with a hidden forum and search for posts
@@ -40,13 +41,15 @@ Feature: The search forums block allows users to search for forum posts on cours
     And I press "Save and return to course"
     When I am on the "Course 1" course page logged in as student1
     And "Search forums" "block" should exist
-    And I set the field "Search" to "message"
-    And I press "Search"
+    And I set the following fields to these values:
+      | searchform_search | message |
+    And I press "Go"
     Then I should see "No posts"
 
   Scenario: Use the search forum block in a course and search for posts
     Given I am on the "Course 1" course page logged in as student1
     And "Search forums" "block" should exist
-    And I set the field "Search" to "message"
-    And I press "Search"
+    And I set the following fields to these values:
+      | searchform_search | message |
+    And I press "Go"
     Then I should see "My subject"

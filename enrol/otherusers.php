@@ -54,10 +54,9 @@ $userdetails = array (
     'firstname' => get_string('firstname'),
     'lastname' => get_string('lastname'),
 );
-// TODO Does not support custom user profile fields (MDL-70456).
-$extrafields = \core_user\fields::get_identity_fields($context, false);
+$extrafields = get_extra_user_fields($context);
 foreach ($extrafields as $field) {
-    $userdetails[$field] = \core_user\fields::get_display_name($field);
+    $userdetails[$field] = get_user_field_name($field);
 }
 
 $fields = array(
@@ -94,14 +93,5 @@ $PAGE->set_title($course->fullname.': '.get_string('totalotherusers', 'enrol', $
 $PAGE->set_heading($PAGE->title);
 
 echo $OUTPUT->header();
-
-// Check we have a search button to render.
-$searchbuttonrender = null;
-if ($searchbutton = $table->get_user_search_button()) {
-    $searchbutton->type = single_button::BUTTON_PRIMARY;
-    $searchbuttonrender = $OUTPUT->render($searchbutton);
-}
-
-echo $OUTPUT->render_participants_tertiary_nav($course, $searchbuttonrender);
 echo $renderer->render($table);
 echo $OUTPUT->footer();

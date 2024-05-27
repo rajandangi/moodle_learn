@@ -79,22 +79,19 @@ class lesson_page_type_matching extends lesson_page {
             $answers[$getanswer->id] = $getanswer;
         }
 
-        // Calculate the text for the dropdown, keyed by the non formatted version.
         $responses = array();
         foreach ($answers as $answer) {
-            // Get all the response.
+            // get all the response
             if ($answer->response != null) {
-                $responses[trim($answer->response)] = format_text(trim($answer->response));
+                $responses[] = trim($answer->response);
             }
         }
 
-        // Now shuffle the answers to randomise the order of the items in the dropdown.
-        $responseoptions = ['' => get_string('choosedots')];
+        $responseoptions = array(''=>get_string('choosedots'));
         if (!empty($responses)) {
-            $keys = array_keys($responses);
-            shuffle($keys);
-            foreach ($keys as $key) {
-                $responseoptions[$key] = $responses[$key];
+            shuffle($responses);
+            foreach ($responses as  $response) {
+                $responseoptions[htmlspecialchars($response)] = $response;
             }
         }
         if (isset($USER->modattempts[$this->lesson->id]) && !empty($attempt->useranswer)) {
@@ -214,6 +211,7 @@ class lesson_page_type_matching extends lesson_page {
                 $result->noanswer = true;
                 return $result;
             }
+            $value = htmlspecialchars_decode($value);
             $userresponse[] = $value;
             // Make sure the user's answer exists in question's answer
             if (array_key_exists($id, $answers)) {
@@ -391,7 +389,12 @@ class lesson_page_type_matching extends lesson_page {
         return true;
     }
     public function stats(array &$pagestats, $tries) {
-        $temp = $this->lesson->get_last_attempt($tries);
+        if(count($tries) > $this->lesson->maxattempts) { // if there are more tries than the max that is allowed, grab the last "legal" attempt
+            $temp = $tries[$this->lesson->maxattempts - 1];
+        } else {
+            // else, user attempted the question less than the max, so grab the last one
+            $temp = end($tries);
+        }
         if ($temp->correct) {
             if (isset($pagestats[$temp->pageid]["correct"])) {
                 $pagestats[$temp->pageid]["correct"]++;
@@ -579,7 +582,7 @@ class lesson_display_answer_form_matching extends moodleform {
                 $responseid = 'response['.$answer->id.']';
                 if ($hasattempt) {
                     $responseid = 'response_'.$answer->id;
-                    $mform->addElement('hidden', 'response['.$answer->id.']', htmlspecialchars($useranswers[$i], ENT_COMPAT));
+                    $mform->addElement('hidden', 'response['.$answer->id.']', htmlspecialchars($useranswers[$i]));
                     // Temporary fixed until MDL-38885 gets integrated
                     $mform->setType('response', PARAM_TEXT);
                 }
@@ -587,7 +590,7 @@ class lesson_display_answer_form_matching extends moodleform {
                 $mform->addElement('select', $responseid, format_text($answer->answer,$answer->answerformat,$options), $responseoptions, $disabled);
                 $mform->setType($responseid, PARAM_TEXT);
                 if ($hasattempt) {
-                    $mform->setDefault($responseid, htmlspecialchars(trim($useranswers[$i]), ENT_COMPAT));
+                    $mform->setDefault($responseid, htmlspecialchars(trim($useranswers[$i])));
                 } else {
                     $mform->setDefault($responseid, 'answeroption');
                 }

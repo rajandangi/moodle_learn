@@ -22,55 +22,51 @@
  * @copyright  2018 Andrew Nicols <andrew@nicols.co.uk>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+
+defined('MOODLE_INTERNAL') || die();
+
+/**
+ * Coverage information for PHPUnit.
+ *
+ * @copyright  2018 Andrew Nicols <andrew@nicols.co.uk>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 class phpunit_coverage_info {
 
-    /** @var array The list of folders relative to the plugin root to include in coverage generation. */
-    protected $includelistfolders = [];
+    /** @var array The list of folders relative to the plugin root to whitelist in coverage generation. */
+    protected $whitelistfolders = [];
 
-    /** @var array The list of files relative to the plugin root to include in coverage generation. */
-    protected $includelistfiles = [];
+    /** @var array The list of files relative to the plugin root to whitelist in coverage generation. */
+    protected $whitelistfiles = [];
 
-    /** @var array The list of folders relative to the plugin root to exclude from coverage generation. */
+    /** @var array The list of folders relative to the plugin root to excludelist in coverage generation. */
     protected $excludelistfolders = [];
 
-    /** @var array The list of files relative to the plugin root to exclude from coverage generation. */
+    /** @var array The list of files relative to the plugin root to excludelist in coverage generation. */
     protected $excludelistfiles = [];
 
     /**
-     * Get the formatted XML list of files and folders to include.
+     * Get the formatted XML list of files and folders to whitelist.
      *
      * @param   string  $plugindir The root of the plugin, relative to the dataroot.
      * @return  array
      */
-    final public function get_includelists(string $plugindir): array {
-        $coverages = [];
-
-        $includelistfolders = array_merge([
-            'classes',
-            'tests/generator',
-        ], $this->includelistfolders);;
-
-        $includelistfiles = array_merge([
-            'externallib.php',
-            'lib.php',
-            'locallib.php',
-            'renderer.php',
-            'rsslib.php',
-        ], $this->includelistfiles);
+    final public function get_whitelists(string $plugindir) : array {
+        $filters = [];
 
         if (!empty($plugindir)) {
             $plugindir .= "/";
         }
 
-        foreach (array_unique($includelistfolders) as $folder) {
-            $coverages[] = html_writer::tag('directory', "{$plugindir}{$folder}", ['suffix' => '.php']);
+        foreach ($this->whitelistfolders as $folder) {
+            $filters[] = html_writer::tag('directory', "{$plugindir}{$folder}", ['suffix' => '.php']);
         }
 
-        foreach (array_unique($includelistfiles) as $file) {
-            $coverages[] = html_writer::tag('file', "{$plugindir}{$file}");
+        foreach ($this->whitelistfiles as $file) {
+            $filters[] = html_writer::tag('file', "{$plugindir}{$file}");
         }
 
-        return $coverages;
+        return $filters;
     }
 
     /**
@@ -79,21 +75,21 @@ class phpunit_coverage_info {
      * @param   string  $plugindir The root of the plugin, relative to the dataroot.
      * @return  array
      */
-    final public function get_excludelists(string $plugindir): array {
-        $coverages = [];
+    final public function get_excludelists(string $plugindir) : array {
+        $filters = [];
 
         if (!empty($plugindir)) {
             $plugindir .= "/";
         }
 
         foreach ($this->excludelistfolders as $folder) {
-            $coverages[] = html_writer::tag('directory', "{$plugindir}{$folder}", ['suffix' => '.php']);
+            $filters[] = html_writer::tag('directory', "{$plugindir}{$folder}", ['suffix' => '.php']);
         }
 
         foreach ($this->excludelistfiles as $file) {
-            $coverages[] = html_writer::tag('file', "{$plugindir}{$file}");
+            $filters[] = html_writer::tag('file', "{$plugindir}{$file}");
         }
 
-        return $coverages;
+        return $filters;
     }
 }

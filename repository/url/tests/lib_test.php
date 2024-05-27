@@ -21,7 +21,6 @@
  * @copyright 2014 John Okely
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-namespace repository_url;
 
 defined('MOODLE_INTERNAL') || die;
 
@@ -35,7 +34,7 @@ require_once($CFG->dirroot . '/repository/url/lib.php');
  * @copyright 2014 John Okely
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class lib_test extends \advanced_testcase {
+class repository_url_lib_testcase extends advanced_testcase {
 
     /**
      * Check that the url escaper performs as expected
@@ -60,7 +59,7 @@ class lib_test extends \advanced_testcase {
         foreach ($conversions as $input => $expected) {
             // The constructor uses a optional_param, so we need to hack $_GET.
             $_GET['file'] = $input;
-            $repository = new \repository_url($repoid);
+            $repository = new repository_url($repoid);
             $this->assertSame($expected, $repository->file_url);
         }
 
@@ -76,9 +75,9 @@ class lib_test extends \advanced_testcase {
             try {
                 // The constructor uses a optional_param, so we need to hack $_GET.
                 $_GET['file'] = $input;
-                $repository = new \repository_url($repoid);
+                $repository = new repository_url($repoid);
                 $repository->get_listing();
-            } catch (\repository_exception $e) {
+            } catch (repository_exception $e) {
                 if ($e->errorcode == 'validfiletype') {
                     $caughtexception = true;
                 }

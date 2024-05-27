@@ -32,13 +32,13 @@ $overrideid = required_param('id', PARAM_INT);
 $confirm = optional_param('confirm', false, PARAM_BOOL);
 
 if (! $override = $DB->get_record('lesson_overrides', array('id' => $overrideid))) {
-    throw new \moodle_exception('invalidoverrideid', 'lesson');
+    print_error('invalidoverrideid', 'lesson');
 }
 
 $lesson = new lesson($DB->get_record('lesson', array('id' => $override->lessonid), '*', MUST_EXIST));
 
 if (! $cm = get_coursemodule_from_instance("lesson", $lesson->id, $lesson->course)) {
-    throw new \moodle_exception('invalidcoursemodule');
+    print_error('invalidcoursemodule');
 }
 $course = $DB->get_record('course', array('id' => $cm->course), '*', MUST_EXIST);
 
@@ -51,11 +51,11 @@ require_capability('mod/lesson:manageoverrides', $context);
 
 if ($override->groupid) {
     if (!groups_group_visible($override->groupid, $course, $cm)) {
-        throw new \moodle_exception('invalidoverrideid', 'lesson');
+        print_error('invalidoverrideid', 'lesson');
     }
 } else {
     if (!groups_user_groups_visible($course, $override->userid, $cm)) {
-        throw new \moodle_exception('invalidoverrideid', 'lesson');
+        print_error('invalidoverrideid', 'lesson');
     }
 }
 
@@ -82,7 +82,6 @@ $title = get_string('deletecheck', null, $stroverride);
 
 $PAGE->set_url($url);
 $PAGE->set_pagelayout('admin');
-$PAGE->add_body_class('limitedwidth');
 $PAGE->navbar->add($title);
 $PAGE->set_title($title);
 $PAGE->set_heading($course->fullname);
@@ -92,10 +91,9 @@ echo $OUTPUT->heading(format_string($lesson->name, true, array('context' => $con
 
 if ($override->groupid) {
     $group = $DB->get_record('groups', array('id' => $override->groupid), 'id, name');
-    $confirmstr = get_string("overridedeletegroupsure", "lesson", format_string($group->name, true, ['context' => $context]));
+    $confirmstr = get_string("overridedeletegroupsure", "lesson", $group->name);
 } else {
-    $userfieldsapi = \core_user\fields::for_name();
-    $namefields = $userfieldsapi->get_sql('', false, '', '', false)->selects;
+    $namefields = get_all_user_name_fields(true);
     $user = $DB->get_record('user', array('id' => $override->userid),
             'id, ' . $namefields);
     $confirmstr = get_string("overridedeleteusersure", "lesson", fullname($user));

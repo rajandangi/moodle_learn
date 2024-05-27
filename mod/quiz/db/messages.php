@@ -24,43 +24,26 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$messageproviders = [
+$messageproviders = array(
     // Notify teacher that a student has submitted a quiz attempt.
-    'submission' => [
-        'capability' => 'mod/quiz:emailnotifysubmission',
-        'defaults' => [
-            'popup' => MESSAGE_PERMITTED + MESSAGE_DEFAULT_ENABLED,
-            'email' => MESSAGE_PERMITTED + MESSAGE_DEFAULT_ENABLED,
-        ],
-    ],
+    'submission' => array(
+        'capability' => 'mod/quiz:emailnotifysubmission'
+    ),
 
     // Confirm a student's quiz attempt.
-    'confirmation' => [
+    'confirmation' => array(
         'capability' => 'mod/quiz:emailconfirmsubmission',
-        'defaults' => [
-            'popup' => MESSAGE_PERMITTED + MESSAGE_DEFAULT_ENABLED,
-            'email' => MESSAGE_PERMITTED + MESSAGE_DEFAULT_ENABLED,
-            'airnotifier' => MESSAGE_PERMITTED + MESSAGE_DEFAULT_ENABLED,
-        ],
-    ],
+        'defaults' => array(
+            'airnotifier' => MESSAGE_PERMITTED + MESSAGE_DEFAULT_LOGGEDIN + MESSAGE_DEFAULT_LOGGEDOFF,
+        ),
+    ),
 
     // Warning to the student that their quiz attempt is now overdue, if the quiz
     // has a grace period.
-    'attempt_overdue' => [
+    'attempt_overdue' => array(
         'capability' => 'mod/quiz:emailwarnoverdue',
-        'defaults' => [
-            'popup' => MESSAGE_PERMITTED + MESSAGE_DEFAULT_ENABLED,
-            'email' => MESSAGE_PERMITTED + MESSAGE_DEFAULT_ENABLED,
-            'airnotifier' => MESSAGE_PERMITTED + MESSAGE_DEFAULT_ENABLED,
-        ],
-    ],
-
-    'attempt_grading_complete' => [
-        'capability' => 'mod/quiz:emailnotifyattemptgraded',
-        'defaults' => [
-            'popup' => MESSAGE_PERMITTED + MESSAGE_DEFAULT_ENABLED,
-            'email' => MESSAGE_PERMITTED + MESSAGE_DEFAULT_ENABLED,
-            'airnotifier' => MESSAGE_PERMITTED + MESSAGE_DEFAULT_ENABLED,
-        ],
-    ],
-];
+        'defaults' => array(
+            'airnotifier' => MESSAGE_PERMITTED + MESSAGE_DEFAULT_LOGGEDIN + MESSAGE_DEFAULT_LOGGEDOFF,
+        ),
+    ),
+);

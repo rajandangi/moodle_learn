@@ -41,20 +41,20 @@ $customfieldplugins = core_plugin_manager::instance()->get_plugins_of_type('cust
 $sortorder = array_flip(array_keys($customfieldplugins));
 
 if (!isset($customfieldplugins[$customfieldname])) {
-    throw new \moodle_exception('customfieldnotfound', 'error', $return, $customfieldname);
+    print_error('customfieldnotfound', 'error', $return, $customfieldname);
 }
 
 switch ($action) {
     case 'disable':
         if ($customfieldplugins[$customfieldname]->is_enabled()) {
-            $class = \core_plugin_manager::resolve_plugininfo_class('customfield');
-            $class::enable_plugin($customfieldname, false);
+            set_config('disabled', 1, 'customfield_'. $customfieldname);
+            core_plugin_manager::reset_caches();
         }
         break;
     case 'enable':
         if (!$customfieldplugins[$customfieldname]->is_enabled()) {
-            $class = \core_plugin_manager::resolve_plugininfo_class('customfield');
-            $class::enable_plugin($customfieldname, true);
+            unset_config('disabled', 'customfield_'. $customfieldname);
+            core_plugin_manager::reset_caches();
         }
         break;
 }

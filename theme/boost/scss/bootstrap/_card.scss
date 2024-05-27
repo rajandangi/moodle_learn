@@ -33,13 +33,6 @@
       @include border-bottom-radius($card-inner-border-radius);
     }
   }
-
-  // Due to specificity of the above selector (`.card > .list-group`), we must
-  // use a child selector here to prevent double borders.
-  > .card-header + .list-group,
-  > .list-group + .card-footer {
-    border-top: 0;
-  }
 }
 
 .card-body {
@@ -58,7 +51,7 @@
 }
 
 .card-subtitle {
-  margin-top: -$card-spacer-y * .5;
+  margin-top: -$card-spacer-y / 2;
   margin-bottom: 0;
 }
 
@@ -90,6 +83,12 @@
   &:first-child {
     @include border-radius($card-inner-border-radius $card-inner-border-radius 0 0);
   }
+
+  + .list-group {
+    .list-group-item:first-child {
+      border-top: 0;
+    }
+  }
 }
 
 .card-footer {
@@ -109,15 +108,15 @@
 //
 
 .card-header-tabs {
-  margin-right: -$card-spacer-x * .5;
+  margin-right: -$card-spacer-x / 2;
   margin-bottom: -$card-spacer-y;
-  margin-left: -$card-spacer-x * .5;
+  margin-left: -$card-spacer-x / 2;
   border-bottom: 0;
 }
 
 .card-header-pills {
-  margin-right: -$card-spacer-x * .5;
-  margin-left: -$card-spacer-x * .5;
+  margin-right: -$card-spacer-x / 2;
+  margin-left: -$card-spacer-x / 2;
 }
 
 // Card image
@@ -128,7 +127,6 @@
   bottom: 0;
   left: 0;
   padding: $card-img-overlay-padding;
-  @include border-radius($card-inner-border-radius);
 }
 
 .card-img,
@@ -206,12 +204,12 @@
 
           .card-img-top,
           .card-header {
-            // stylelint-disable-next-line property-disallowed-list
+            // stylelint-disable-next-line property-blacklist
             border-top-right-radius: 0;
           }
           .card-img-bottom,
           .card-footer {
-            // stylelint-disable-next-line property-disallowed-list
+            // stylelint-disable-next-line property-blacklist
             border-bottom-right-radius: 0;
           }
         }
@@ -221,12 +219,12 @@
 
           .card-img-top,
           .card-header {
-            // stylelint-disable-next-line property-disallowed-list
+            // stylelint-disable-next-line property-blacklist
             border-top-left-radius: 0;
           }
           .card-img-bottom,
           .card-footer {
-            // stylelint-disable-next-line property-disallowed-list
+            // stylelint-disable-next-line property-blacklist
             border-bottom-left-radius: 0;
           }
         }
@@ -264,8 +262,6 @@
 //
 
 .accordion {
-  overflow-anchor: none;
-
   > .card {
     overflow: hidden;
 

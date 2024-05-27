@@ -30,7 +30,3 @@
 defined('MOODLE_INTERNAL') || die();
 
 $string['language'] = 'Rěč';
-$string['moodlelogo'] = 'Moodle-logo';
-$string['next'] = 'Nadalny';
-$string['previous'] = 'Wróćo';
-$string['reload'] = 'Znowa přeprošuja';

@@ -26,7 +26,7 @@ defined('MOODLE_INTERNAL') || die;
 /**
  * List of features supported in Page module
  * @param string $feature FEATURE_xx constant for requested feature
- * @return mixed True if module supports feature, false if not, null if doesn't know or string for the module purpose.
+ * @return mixed True if module supports feature, false if not, null if doesn't know
  */
 function page_supports($feature) {
     switch($feature) {
@@ -39,7 +39,6 @@ function page_supports($feature) {
         case FEATURE_GRADE_OUTCOMES:          return false;
         case FEATURE_BACKUP_MOODLE2:          return true;
         case FEATURE_SHOW_DESCRIPTION:        return true;
-        case FEATURE_MOD_PURPOSE:             return MOD_PURPOSE_CONTENT;
 
         default: return null;
     }
@@ -104,6 +103,7 @@ function page_add_instance($data, $mform = null) {
         $displayoptions['popupwidth']  = $data->popupwidth;
         $displayoptions['popupheight'] = $data->popupheight;
     }
+    $displayoptions['printheading'] = $data->printheading;
     $displayoptions['printintro']   = $data->printintro;
     $displayoptions['printlastmodified'] = $data->printlastmodified;
     $data->displayoptions = serialize($displayoptions);
@@ -153,6 +153,7 @@ function page_update_instance($data, $mform) {
         $displayoptions['popupwidth']  = $data->popupwidth;
         $displayoptions['popupheight'] = $data->popupheight;
     }
+    $displayoptions['printheading'] = $data->printheading;
     $displayoptions['printintro']   = $data->printintro;
     $displayoptions['printlastmodified'] = $data->printlastmodified;
     $data->displayoptions = serialize($displayoptions);
@@ -201,7 +202,7 @@ function page_delete_instance($id) {
  * "extra" information that may be needed when printing
  * this activity in a course listing.
  *
- * See {@link course_modinfo::get_array_of_activities()}
+ * See {@link get_array_of_activities()} in course/lib.php
  *
  * @param stdClass $coursemodule
  * @return cached_cm_info Info to customise main page display
@@ -259,7 +260,7 @@ function page_get_file_areas($course, $cm, $context) {
  *
  * @package  mod_page
  * @category files
- * @param file_browser $browser file browser instance
+ * @param stdClass $browser file browser instance
  * @param stdClass $areas file areas
  * @param stdClass $course course object
  * @param stdClass $cm course module object
@@ -486,6 +487,7 @@ function page_dndupload_handle($uploadinfo) {
     $data->display = $config->display;
     $data->popupheight = $config->popupheight;
     $data->popupwidth = $config->popupwidth;
+    $data->printheading = $config->printheading;
     $data->printintro = $config->printintro;
     $data->printlastmodified = $config->printlastmodified;
 
@@ -577,7 +579,7 @@ function mod_page_core_calendar_provide_event_action(calendar_event $event,
  * @param  array  $args The path (the part after the filearea and before the filename).
  * @return array The itemid and the filepath inside the $args path, for the defined filearea.
  */
-function mod_page_get_path_from_pluginfile(string $filearea, array $args): array {
+function mod_page_get_path_from_pluginfile(string $filearea, array $args) : array {
     // Page never has an itemid (the number represents the revision but it's not stored in database).
     array_shift($args);
 

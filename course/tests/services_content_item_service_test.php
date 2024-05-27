@@ -22,12 +22,12 @@
  * @copyright  2020 Jake Dallimore <jrhdallimore@gmail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-namespace core_course;
+namespace tests\course;
 
 defined('MOODLE_INTERNAL') || die();
 
-use core_course\local\service\content_item_service;
-use core_course\local\repository\content_item_readonly_repository;
+use \core_course\local\service\content_item_service;
+use \core_course\local\repository\content_item_readonly_repository;
 
 /**
  * The tests for the content_item_service class.
@@ -35,7 +35,7 @@ use core_course\local\repository\content_item_readonly_repository;
  * @copyright  2020 Jake Dallimore <jrhdallimore@gmail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class services_content_item_service_test extends \advanced_testcase {
+class services_content_item_service_testcase extends \advanced_testcase {
 
     /**
      * Test confirming that content items are returned by the service.
@@ -51,14 +51,14 @@ class services_content_item_service_test extends \advanced_testcase {
         $contentitems = $cis->get_content_items_for_user_in_course($user, $course);
 
         foreach ($contentitems as $key => $contentitem) {
-            $this->assertObjectHasProperty('id', $contentitem);
-            $this->assertObjectHasProperty('name', $contentitem);
-            $this->assertObjectHasProperty('title', $contentitem);
-            $this->assertObjectHasProperty('link', $contentitem);
-            $this->assertObjectHasProperty('icon', $contentitem);
-            $this->assertObjectHasProperty('help', $contentitem);
-            $this->assertObjectHasProperty('archetype', $contentitem);
-            $this->assertObjectHasProperty('componentname', $contentitem);
+            $this->assertObjectHasAttribute('id', $contentitem);
+            $this->assertObjectHasAttribute('name', $contentitem);
+            $this->assertObjectHasAttribute('title', $contentitem);
+            $this->assertObjectHasAttribute('link', $contentitem);
+            $this->assertObjectHasAttribute('icon', $contentitem);
+            $this->assertObjectHasAttribute('help', $contentitem);
+            $this->assertObjectHasAttribute('archetype', $contentitem);
+            $this->assertObjectHasAttribute('componentname', $contentitem);
         }
     }
 
@@ -111,37 +111,28 @@ class services_content_item_service_test extends \advanced_testcase {
         $this->resetAfterTest();
         global $DB;
 
-        // Create a user in a course and set up a site-level LTI tool, configured to display in the activity chooser.
+        // Create a user in a course.
         $course = $this->getDataGenerator()->create_course();
         $user = $this->getDataGenerator()->create_and_enrol($course, 'editingteacher');
-        /** @var \mod_lti_generator $ltigenerator */
-        $ltigenerator = $this->getDataGenerator()->get_plugin_generator('mod_lti');
-        $ltigenerator->create_tool_types([
-            'name' => 'site tool',
-            'baseurl' => 'http://example.com',
-            'coursevisible' => LTI_COURSEVISIBLE_ACTIVITYCHOOSER,
-            'state' => LTI_TOOL_STATE_CONFIGURED
-        ]);
+
         $cis = new content_item_service(new content_item_readonly_repository());
-        $this->setUser($user); // This is needed since the underlying lti code needs the global user despite the api accepting user.
+        $allcontentitems = $cis->get_all_content_items($user);
+        $coursecontentitems = $cis->get_content_items_for_user_in_course($user, $course);
 
         // The call to get_all_content_items() should return the same items as for the course,
-        // given the user is an editing teacher and can add preconfigured lti instances.
-        $allcontentitems = $cis->get_all_content_items($user);
-        $coursecontentitems = $cis->get_content_items_for_user_in_course($user, $course);
-        $this->assertContains('site tool', array_column($coursecontentitems, 'title'));
-        $this->assertContains('site tool', array_column($allcontentitems, 'title'));
+        // given the user in an editing teacher and can add manual lti instances.
+        $this->assertContains('lti', array_column($coursecontentitems, 'name'));
+        $this->assertContains('lti', array_column($allcontentitems, 'name'));
 
-        // Now removing the cap 'mod/lti:addpreconfiguredinstance', restricting those items returned by the course-specific method.
+        // Now removing the cap 'mod/lti:addinstance'. This will restrict those items returned by the course-specific method.
         $teacherrole = $DB->get_record('role', array('shortname' => 'editingteacher'));
-        assign_capability('mod/lti:addpreconfiguredinstance', CAP_PROHIBIT, $teacherrole->id,
-            \core\context\course::instance($course->id));
+        assign_capability('mod/lti:addinstance', CAP_PROHIBIT, $teacherrole->id, \context_course::instance($course->id));
 
-        // Verify that all items, including the tool, are still returned by the get_all_content_items() call.
+        // Verify that all items, including lti, are still returned by the get_all_content_items() call.
         $allcontentitems = $cis->get_all_content_items($user);
         $coursecontentitems = $cis->get_content_items_for_user_in_course($user, $course);
-        $this->assertNotContains('site tool', array_column($coursecontentitems, 'title'));
-        $this->assertContains('site tool', array_column($allcontentitems, 'title'));
+        $this->assertNotContains('lti', array_column($coursecontentitems, 'name'));
+        $this->assertContains('lti', array_column($allcontentitems, 'name'));
     }
 
     /**

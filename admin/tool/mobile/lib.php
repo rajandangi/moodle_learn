@@ -25,6 +25,33 @@
 defined('MOODLE_INTERNAL') || die();
 
 /**
+ * Callback to add head elements.
+ *
+ * @return str valid html head content
+ * @since  Moodle 3.3
+ */
+function tool_mobile_before_standard_html_head() {
+    global $CFG, $PAGE;
+    $output = '';
+    // Smart App Banners meta tag is only displayed if mobile services are enabled and configured.
+    if (!empty($CFG->enablemobilewebservice)) {
+        $mobilesettings = get_config('tool_mobile');
+        if (!empty($mobilesettings->enablesmartappbanners)) {
+            if (!empty($mobilesettings->iosappid)) {
+                $output .= '<meta name="apple-itunes-app" content="app-id=' . s($mobilesettings->iosappid) . ', ';
+                $output .= 'app-argument=' . $PAGE->url->out() . '"/>';
+            }
+
+            if (!empty($mobilesettings->androidappid)) {
+                $mobilemanifesturl = "$CFG->wwwroot/$CFG->admin/tool/mobile/mobile.webmanifest.php";
+                $output .= '<link rel="manifest" href="'.$mobilemanifesturl.'" />';
+            }
+        }
+    }
+    return $output;
+}
+
+/**
  * Generate the app download url to promote moodle mobile.
  *
  * @return moodle_url|void App download moodle_url object or return if setuplink is not set.
@@ -56,44 +83,26 @@ function tool_mobile_create_app_download_url() {
         $downloadurl->param('androidappid', $mobilesettings->androidappid);
     }
 
-    // For privacy reasons, add siteurl param only if the site is registered.
-    // This is to implement Google Play Referrer (so the site url is automatically populated in the app after installation).
-    if (\core\hub\registration::is_registered()) {
-        $downloadurl->param('siteurl', $CFG->wwwroot);
-    }
-
     return $downloadurl;
-}
-
-/**
- * Return the user mobile app WebService access token.
- *
- * @param  int $userid the user to return the token from
- * @return stdClass|false the token or false if the token doesn't exists
- * @since  3.10
- */
-function tool_mobile_get_token($userid) {
-    global $DB;
-
-    $sql = "SELECT t.*
-              FROM {external_tokens} t, {external_services} s
-             WHERE t.externalserviceid = s.id
-               AND s.enabled = 1
-               AND s.shortname IN ('moodle_mobile_app', 'local_mobile')
-               AND t.userid = ?";
-
-    return $DB->get_record_sql($sql, [$userid], IGNORE_MULTIPLE);
 }
 
 /**
  * Checks if the given user has a mobile token (has used recently the app).
  *
  * @param  int $userid the user to check
- * @return bool true if the user has a token, false otherwise.
+ * @return bool        true if the user has a token, false otherwise.
  */
 function tool_mobile_user_has_token($userid) {
+    global $DB;
 
-    return !empty(tool_mobile_get_token($userid));
+    $sql = "SELECT 1
+              FROM {external_tokens} t, {external_services} s
+             WHERE t.externalserviceid = s.id
+               AND s.enabled = 1
+               AND s.shortname IN ('moodle_mobile_app', 'local_mobile')
+               AND t.userid = ?";
+
+    return $DB->record_exists_sql($sql, [$userid]);
 }
 
 /**
@@ -113,11 +122,15 @@ function tool_mobile_myprofile_navigation(\core_user\output\myprofile\tree $tree
         return;
     }
 
+    if (!$iscurrentuser) {
+        return;
+    }
+
     $newnodes = [];
     $mobilesettings = get_config('tool_mobile');
 
     // Check if we should display a QR code.
-    if ($iscurrentuser && !empty($mobilesettings->qrcodetype)) {
+    if (!empty($mobilesettings->qrcodetype)) {
         $mobileqr = null;
         $qrcodeforappstr = get_string('qrcodeformobileappaccess', 'tool_mobile');
 
@@ -128,9 +141,8 @@ function tool_mobile_myprofile_navigation(\core_user\output\myprofile\tree $tree
             } else {
                 $qrcodeimg = tool_mobile\api::generate_login_qrcode($mobilesettings);
 
-                $qrkeyttl = !empty($mobilesettings->qrkeyttl) ? $mobilesettings->qrkeyttl : tool_mobile\api::LOGIN_QR_KEY_TTL;
-                $mobileqr = html_writer::tag('p', get_string('qrcodeformobileapploginabout', 'tool_mobile',
-                    format_time($qrkeyttl)));
+                $minutes = tool_mobile\api::LOGIN_QR_KEY_TTL / MINSECS;
+                $mobileqr = html_writer::tag('p', get_string('qrcodeformobileapploginabout', 'tool_mobile', $minutes));
                 $mobileqr .= html_writer::link('#qrcode', get_string('viewqrcode', 'tool_mobile'),
                     ['class' => 'btn btn-primary mt-2', 'data-toggle' => 'collapse',
                     'role' => 'button', 'aria-expanded' => 'false']);
@@ -150,34 +162,17 @@ function tool_mobile_myprofile_navigation(\core_user\output\myprofile\tree $tree
     }
 
     // Check if the user is using the app, encouraging him to use it otherwise.
-    if ($iscurrentuser || is_siteadmin()) {
-        $usertoken = tool_mobile_get_token($user->id);
-        $mobilestrconnected = null;
-        $mobilelastaccess = null;
+    $userhastoken = tool_mobile_user_has_token($user->id);
+    $mobilestrconnected = null;
 
-        if ($usertoken) {
-            $mobilestrconnected = get_string('lastsiteaccess');
-            if ($usertoken->lastaccess) {
-                $mobilelastaccess = userdate($usertoken->lastaccess) . "&nbsp; (" . format_time(time() - $usertoken->lastaccess) . ")";
-                // Logout link.
-                $validtoken = empty($usertoken->validuntil) || time() < $usertoken->validuntil;
-                if ($iscurrentuser && $validtoken) {
-                    $url = new moodle_url('/'.$CFG->admin.'/tool/mobile/logout.php', ['sesskey' => sesskey()]);
-                    $logoutlink = html_writer::link($url, get_string('logout'));
-                    $mobilelastaccess .= "&nbsp; ($logoutlink)";
-                }
-            } else {
-                // We should not reach this point.
-                $mobilelastaccess = get_string("never");
-            }
-        } else if ($url = tool_mobile_create_app_download_url()) {
-             $mobilestrconnected = get_string('mobileappenabled', 'tool_mobile', $url->out());
-        }
+    if ($userhastoken) {
+        $mobilestrconnected = get_string('mobileappconnected', 'tool_mobile');
+    } else if ($url = tool_mobile_create_app_download_url()) {
+         $mobilestrconnected = get_string('mobileappenabled', 'tool_mobile', $url->out());
+    }
 
-        if ($mobilestrconnected) {
-            $newnodes[] = new core_user\output\myprofile\node('mobile', 'mobileappnode', $mobilestrconnected, null, null,
-                $mobilelastaccess);
-        }
+    if ($mobilestrconnected) {
+        $newnodes[] = new core_user\output\myprofile\node('mobile', 'mobileappnode', $mobilestrconnected, null);
     }
 
     // Add nodes, if any.
@@ -189,6 +184,21 @@ function tool_mobile_myprofile_navigation(\core_user\output\myprofile\tree $tree
             $tree->add_node($node);
         }
     }
+}
+
+/**
+ * Callback to add footer elements.
+ *
+ * @return str valid html footer content
+ * @since  Moodle 3.4
+ */
+function tool_mobile_standard_footer_html() {
+    global $CFG;
+    $output = '';
+    if (!empty($CFG->enablemobilewebservice) && $url = tool_mobile_create_app_download_url()) {
+        $output .= html_writer::link($url, get_string('getmoodleonyourmobile', 'tool_mobile'));
+    }
+    return $output;
 }
 
 /**

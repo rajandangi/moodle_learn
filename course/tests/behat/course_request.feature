@@ -1,4 +1,4 @@
-@core @core_course @javascript
+@core @core_course
 Feature: Users can request and approve courses
   As a moodle admin
   In order to improve course creation process
@@ -22,25 +22,21 @@ Feature: Users can request and approve courses
       | moodle/course:request | allow |
     When I log in as "user1"
     And I am on course index
-    And I click on "More actions" "button"
-    And I click on "Request a course" "link"
+    And I press "Request a course"
     And I set the following fields to these values:
       | Course full name  | My new course |
       | Course short name | Mynewcourse   |
       | Supporting information | pretty please |
     And I press "Request a course"
-    And I should see "Course request submitted."
+    And I should see "Your course request has been saved successfully."
     And I press "Continue"
     And I am on course index
     And I should not see "My new course"
     And I log out
     And I log in as "user2"
     And I am on course index
-    And I click on "More actions" "button"
-    And I click on "Courses pending approval" "link"
-    And the following should exist in the "pendingcourserequests" table:
-      | Requested by | Course short name | Course full name | Category   | Reason for course request |
-      | User 1       | Mynewcourse       | My new course    | Category 1 | pretty please             |
+    And I press "Courses pending approval"
+    And I should see "Miscellaneous" in the "My new course" "table_row"
     And I click on "Approve" "button" in the "My new course" "table_row"
     And I press "Save and return"
     And I should see "There are no courses pending approval"
@@ -75,9 +71,8 @@ Feature: Users can request and approve courses
     And I log in as "user1"
     And I am on course index
     And I follow "English category"
-    And I click on "More actions" "button"
-    And I click on "Request a course" "link"
-    And I should see "English category" in the ".form-autocomplete-selection" "css_element"
+    And I press "Request a course"
+    And the field "Course category" matches value "English category"
     And I set the following fields to these values:
       | Course full name  | My new course |
       | Course short name | Mynewcourse   |
@@ -87,23 +82,18 @@ Feature: Users can request and approve courses
     And I log in as "user2"
     And I am on course index
     And I follow "English category"
-    And I should not see "More" in the "region-main" "region"
-    And I should not see "Courses pending approval"
+    And "Courses pending approval" "button" should not exist
     And I am on course index
     And I follow "Science category"
-    And I click on "More actions" "button"
-    And I click on "Courses pending approval" "link"
+    And I press "Courses pending approval"
     And I should not see "Mynewcourse"
     And I press "Back to course listing"
     And I log out
     And I log in as "user3"
     And I am on course index
     And I follow "English category"
-    And I click on "More actions" "button"
-    And I click on "Courses pending approval" "link"
-    And the following should exist in the "pendingcourserequests" table:
-      | Requested by | Course short name | Course full name | Category         | Reason for course request |
-      | User 1       | Mynewcourse       | My new course    | English category | pretty please             |
+    And I press "Courses pending approval"
+    And I should see "English category" in the "Mynewcourse" "table_row"
     And I click on "Approve" "button" in the "Mynewcourse" "table_row"
     And I press "Save and return"
     And I am on course index

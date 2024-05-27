@@ -24,26 +24,26 @@ $attempt = required_param('attempt', PARAM_INT);  // attempt number.
 
 if (!empty($id)) {
     if (! $cm = get_coursemodule_from_id('scorm', $id)) {
-        throw new \moodle_exception('invalidcoursemodule');
+        print_error('invalidcoursemodule');
     }
     if (! $course = $DB->get_record("course", array("id" => $cm->course))) {
-        throw new \moodle_exception('coursemisconf');
+        print_error('coursemisconf');
     }
     if (! $scorm = $DB->get_record("scorm", array("id" => $cm->instance))) {
-        throw new \moodle_exception('invalidcoursemodule');
+        print_error('invalidcoursemodule');
     }
 } else if (!empty($a)) {
     if (! $scorm = $DB->get_record("scorm", array("id" => $a))) {
-        throw new \moodle_exception('invalidcoursemodule');
+        print_error('invalidcoursemodule');
     }
     if (! $course = $DB->get_record("course", array("id" => $scorm->course))) {
-        throw new \moodle_exception('coursemisconf');
+        print_error('coursemisconf');
     }
     if (! $cm = get_coursemodule_from_instance("scorm", $scorm->id, $course->id)) {
-        throw new \moodle_exception('invalidcoursemodule');
+        print_error('invalidcoursemodule');
     }
 } else {
-    throw new \moodle_exception('missingparameter');
+    print_error('missingparameter');
 }
 
 $PAGE->set_url('/mod/scorm/datamodel.php', array('scoid' => $scoid, 'attempt' => $attempt, 'id' => $cm->id));
@@ -55,20 +55,14 @@ if (confirm_sesskey() && (!empty($scoid))) {
     $request = null;
     if (has_capability('mod/scorm:savetrack', context_module::instance($cm->id))) {
         // Preload all current tracking data.
-        $sql = "SELECT e.element, v.value, v.timemodified, v.id as valueid
-                  FROM {scorm_scoes_value} v
-                  JOIN {scorm_attempt} a ON a.id = v.attemptid
-                  JOIN {scorm_element} e on e.id = v.elementid
-                  WHERE a.scormid = :scormid AND a.userid = :userid AND v.scoid = :scoid AND a.attempt = :attempt";
-        $trackdata = $DB->get_records_sql($sql, ['userid' => $USER->id, 'scormid' => $scorm->id,
-                                                 'scoid' => $scoid, 'attempt' => $attempt]);
-        $attemptobject = scorm_get_attempt($USER->id, $scorm->id, $attempt);
+        $trackdata = $DB->get_records('scorm_scoes_track', array('userid' => $USER->id, 'scormid' => $scorm->id, 'scoid' => $scoid,
+                                                                 'attempt' => $attempt), '', 'element, id, value, timemodified');
         foreach (data_submitted() as $element => $value) {
             $element = str_replace('__', '.', $element);
             if (substr($element, 0, 3) == 'cmi') {
                 $netelement = preg_replace('/\.N(\d+)\./', "\.\$1\.", $element);
-                $result = scorm_insert_track($USER->id, $scorm->id, $scoid, $attemptobject, $element, $value,
-                                             $scorm->forcecompleted, $trackdata) && $result;
+                $result = scorm_insert_track($USER->id, $scorm->id, $scoid, $attempt, $element, $value, $scorm->forcecompleted,
+                                             $trackdata) && $result;
             }
             if (substr($element, 0, 15) == 'adl.nav.request') {
                 // SCORM 2004 Sequencing Request.

@@ -31,14 +31,15 @@ Feature: Teacher can enable anonymous submissions for an assignment
     Then "blindmarking" "select" should not exist
     And I press "Cancel"
     And I am on the "Assign 1" "assign activity" page
-    And I click on "View all submissions" "link"
+    And I navigate to "View all submissions" in current page administration
     # Confirm that Participant [n] is displayed instead of Student One - student name is hidden
     And I should not see "Student One" in the "Participant" "table_row"
     And I click on "Grade" "link" in the "Participant" "table_row"
     And I set the field "Grade out of 100" to "70"
     And I press "Save changes"
     And I am on the "Assign 1" "assign activity" page
-    And I follow "Reveal student identities"
+    And I navigate to "View all submissions" in current page administration
+    And I select "Reveal student identities" from the "Grading action" singleselect
     And I should see "Are you sure you want to reveal student identities for this assignment? This operation cannot be undone. Once the student identities have been revealed, the marks will be released to the gradebook."
     And I press "Continue"
     # Confirm that student identity is no longer hidden and grade is retained

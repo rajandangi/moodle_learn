@@ -55,9 +55,8 @@ class mustache_shorten_text_helper {
         $length = trim($length);
         $text = trim($text);
 
-        // Allow mustache tags in the length and text.
+        // Allow mustache tags in the text.
         $text = $helper->render($text);
-        $length = $helper->render($length);
 
         return shorten_text($text, $length);
     }

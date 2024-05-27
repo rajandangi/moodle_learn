@@ -134,19 +134,11 @@ function sendOAuthParamsPOST($method, $endpoint, $oauth_consumer_key, $oauth_con
     $ctx = stream_context_create($params);
     $fp = @fopen($endpoint, 'rb', false, $ctx);
     if (!$fp) {
-        $message = "(No error message provided.)";
-        if ($error = error_get_last()) {
-            $message = $error["message"];
-        }
-        throw new \Exception("Problem with $endpoint, $message");
+        throw new \Exception("Problem with $endpoint, $php_errormsg");
     }
     $response = @stream_get_contents($fp);
     if ($response === false) {
-        $message = "(No error message provided.)";
-        if ($error = error_get_last()) {
-            $message = $error["message"];
-        }
-        throw new \Exception("Problem reading data from $endpoint, $message");
+        throw new \Exception("Problem reading data from $endpoint, $php_errormsg");
     }
     return $response;
 }

@@ -41,11 +41,7 @@ class analyser {
      */
     const MAX_TRY_COUNTED = 5;
 
-    /**
-     * @var int previously, the time after which statistics are automatically recomputed.
-     * @deprecated since Moodle 4.3. Use of pre-computed stats is no longer time-limited.
-     * @todo MDL-78090 Final deprecation in Moodle 4.7
-     */
+    /** @var int Time after which responses are automatically reanalysed. */
     const TIME_TO_CACHE = 900; // 15 minutes.
 
     /** @var object full question data from db. */
@@ -55,11 +51,6 @@ class analyser {
      * @var analysis_for_question|analysis_for_question_all_tries
      */
     public $analysis;
-
-    /**
-     * @var int used during calculations, so all results are stored with the same timestamp.
-     */
-    protected $calculationtime;
 
     /**
      * @var array Two index array first index is unique string for each sub question part, the second string index is the 'class'
@@ -118,7 +109,7 @@ class analyser {
     }
 
     /**
-     * Analyse all the response data for all the specified attempts at this question.
+     * Analyse all the response data for for all the specified attempts at this question.
      *
      * @param \qubaid_condition $qubaids which attempts to consider.
      * @param string $whichtries         which tries to analyse. Will be one of
@@ -126,7 +117,6 @@ class analyser {
      * @return analysis_for_question
      */
     public function calculate($qubaids, $whichtries = \question_attempt::LAST_TRY) {
-        $this->calculationtime = time();
         // Load data.
         $dm = new \question_engine_data_mapper();
         $questionattempts = $dm->load_attempts_at_question($this->questiondata->id, $qubaids);
@@ -141,7 +131,7 @@ class analyser {
             }
 
         }
-        $this->analysis->cache($qubaids, $whichtries, $this->questiondata->id, $this->calculationtime);
+        $this->analysis->cache($qubaids, $whichtries, $this->questiondata->id);
         return $this->analysis;
     }
 
@@ -155,23 +145,23 @@ class analyser {
     public function load_cached($qubaids, $whichtries) {
         global $DB;
 
-        $timemodified = self::get_last_analysed_time($qubaids, $whichtries);
+        $timemodified = time() - self::TIME_TO_CACHE;
         // Variable name 'analyses' is the plural of 'analysis'.
-        $responseanalyses = $DB->get_records('question_response_analysis',
-                ['hashcode' => $qubaids->get_hash_code(), 'whichtries' => $whichtries,
-                        'questionid' => $this->questiondata->id, 'timemodified' => $timemodified]);
+        $responseanalyses = $DB->get_records_select('question_response_analysis',
+                                            'hashcode = ? AND whichtries = ? AND questionid = ? AND timemodified > ?',
+                                            array($qubaids->get_hash_code(), $whichtries, $this->questiondata->id, $timemodified));
         if (!$responseanalyses) {
             return false;
         }
 
-        $analysisids = [];
+        $analysisids = array();
         foreach ($responseanalyses as $responseanalysis) {
             $analysisforsubpart = $this->analysis->get_analysis_for_subpart($responseanalysis->variant, $responseanalysis->subqid);
             $class = $analysisforsubpart->get_response_class($responseanalysis->aid);
             $class->add_response($responseanalysis->response, $responseanalysis->credit);
             $analysisids[] = $responseanalysis->id;
         }
-        [$sql, $params] = $DB->get_in_or_equal($analysisids);
+        list($sql, $params) = $DB->get_in_or_equal($analysisids);
         $counts = $DB->get_records_select('question_response_count', "analysisid {$sql}", $params);
         foreach ($counts as $count) {
             $responseanalysis = $responseanalyses[$count->analysisid];
@@ -193,8 +183,11 @@ class analyser {
      */
     public function get_last_analysed_time($qubaids, $whichtries) {
         global $DB;
-        return $DB->get_field('question_response_analysis', 'MAX(timemodified)',
-                ['hashcode' => $qubaids->get_hash_code(), 'whichtries' => $whichtries,
-                        'questionid' => $this->questiondata->id]);
+
+        $timemodified = time() - self::TIME_TO_CACHE;
+        return $DB->get_field_select('question_response_analysis', 'timemodified',
+                                     'hashcode = ? AND whichtries = ? AND questionid = ? AND timemodified > ?',
+                                     array($qubaids->get_hash_code(), $whichtries, $this->questiondata->id, $timemodified),
+                                     IGNORE_MULTIPLE);
     }
 }

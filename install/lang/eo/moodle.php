@@ -30,7 +30,6 @@
 defined('MOODLE_INTERNAL') || die();
 
 $string['language'] = 'Lingvo';
-$string['moodlelogo'] = 'Moodle emblemo';
 $string['next'] = 'Poste';
 $string['previous'] = 'Antaŭa';
 $string['reload'] = 'Reŝarĝi';

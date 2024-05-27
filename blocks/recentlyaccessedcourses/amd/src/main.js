@@ -16,7 +16,8 @@
 /**
  * Javascript to initialise the Recently accessed courses block.
  *
- * @module     block_recentlyaccessedcourses/main
+ * @module     block_recentlyaccessedcourses/main.js
+ * @package    block_recentlyaccessedcourses
  * @copyright  2018 Victor Deniz <victor@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -31,7 +32,6 @@ define(
         'core/templates',
         'core_course/events',
         'core_course/repository',
-        'core/aria',
     ],
     function(
         $,
@@ -41,8 +41,7 @@ define(
         PagedContentPagingBar,
         Templates,
         CourseEvents,
-        CoursesRepository,
-        Aria
+        CoursesRepository
     ) {
 
         // Constants.
@@ -97,7 +96,7 @@ define(
             var pagingBar = root.find(SELECTORS.PAGING_BAR);
             pagingBar.css('opacity', 1);
             pagingBar.css('visibility', 'visible');
-            Aria.unhide(pagingBar);
+            pagingBar.attr('aria-hidden', 'false');
         };
 
         /**
@@ -109,7 +108,7 @@ define(
             var pagingBar = root.find(SELECTORS.PAGING_BAR);
             pagingBar.css('opacity', 0);
             pagingBar.css('visibility', 'hidden');
-            Aria.hide(pagingBar);
+            pagingBar.attr('aria-hidden', 'true');
         };
 
         /**

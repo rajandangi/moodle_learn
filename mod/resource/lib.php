@@ -26,7 +26,7 @@ defined('MOODLE_INTERNAL') || die;
 /**
  * List of features supported in Resource module
  * @param string $feature FEATURE_xx constant for requested feature
- * @return mixed True if module supports feature, false if not, null if doesn't know or string for the module purpose.
+ * @return mixed True if module supports feature, false if not, null if doesn't know
  */
 function resource_supports($feature) {
     switch($feature) {
@@ -39,7 +39,6 @@ function resource_supports($feature) {
         case FEATURE_GRADE_OUTCOMES:          return false;
         case FEATURE_BACKUP_MOODLE2:          return true;
         case FEATURE_SHOW_DESCRIPTION:        return true;
-        case FEATURE_MOD_PURPOSE:             return MOD_PURPOSE_CONTENT;
 
         default: return null;
     }
@@ -192,7 +191,7 @@ function resource_delete_instance($id) {
  * "extra" information that may be needed when printing
  * this activity in a course listing.
  *
- * See {@link course_modinfo::get_array_of_activities()}
+ * See {@link get_array_of_activities()} in course/lib.php
  *
  * @param stdClass $coursemodule
  * @return cached_cm_info info
@@ -218,6 +217,7 @@ function resource_get_coursemodule_info($coursemodule) {
     }
 
     if ($resource->tobemigrated) {
+        $info->icon ='i/invalid';
         return $info;
     }
 
@@ -226,9 +226,8 @@ function resource_get_coursemodule_info($coursemodule) {
     $files = $fs->get_area_files($context->id, 'mod_resource', 'content', 0, 'sortorder DESC, id ASC', false, 0, 0, 1);
     if (count($files) >= 1) {
         $mainfile = reset($files);
+        $info->icon = file_file_icon($mainfile, 24);
         $resource->mainfile = $mainfile->get_filename();
-        $info->icon = file_file_icon($mainfile);
-        $info->customdata['filtericon'] = true;
     }
 
     $display = resource_get_final_display_type($resource);
@@ -253,11 +252,10 @@ function resource_get_coursemodule_info($coursemodule) {
     if (($filedetails = resource_get_file_details($resource, $coursemodule)) && empty($filedetails['isref'])) {
         $displayoptions = (array) unserialize_array($resource->displayoptions);
         $displayoptions['filedetails'] = $filedetails;
-        $info->customdata['displayoptions'] = serialize($displayoptions);
+        $info->customdata = serialize($displayoptions);
     } else {
-        $info->customdata['displayoptions'] = $resource->displayoptions;
+        $info->customdata = $resource->displayoptions;
     }
-    $info->customdata['display'] = $display;
 
     return $info;
 }
@@ -271,13 +269,12 @@ function resource_get_coursemodule_info($coursemodule) {
 function resource_cm_info_view(cm_info $cm) {
     global $CFG;
     require_once($CFG->dirroot . '/mod/resource/locallib.php');
-    $customdata = $cm->customdata;
-    if (is_array($customdata) && isset($customdata['displayoptions'])) {
-        $resource = (object) ['displayoptions' => $customdata['displayoptions']];
-        $details = resource_get_optional_details($resource, $cm, false);
-        if ($details) {
-            $cm->set_after_link(' ' . html_writer::tag('span', $details, ['class' => 'resourcelinkdetails']));
-        }
+
+    $resource = (object)array('displayoptions' => $cm->customdata);
+    $details = resource_get_optional_details($resource, $cm);
+    if ($details) {
+        $cm->set_after_link(' ' . html_writer::tag('span', $details,
+                array('class' => 'resourcelinkdetails')));
     }
 }
 
@@ -302,7 +299,7 @@ function resource_get_file_areas($course, $cm, $context) {
  *
  * @package  mod_resource
  * @category files
- * @param file_browser $browser file browser instance
+ * @param stdClass $browser file browser instance
  * @param stdClass $areas file areas
  * @param stdClass $course course object
  * @param stdClass $cm course module object
@@ -596,7 +593,7 @@ function mod_resource_core_calendar_provide_event_action(calendar_event $event,
  * @param  array  $args The path (the part after the filearea and before the filename).
  * @return array The itemid and the filepath inside the $args path, for the defined filearea.
  */
-function mod_resource_get_path_from_pluginfile(string $filearea, array $args): array {
+function mod_resource_get_path_from_pluginfile(string $filearea, array $args) : array {
     // Resource never has an itemid (the number represents the revision but it's not stored in database).
     array_shift($args);
 

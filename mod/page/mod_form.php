@@ -88,6 +88,8 @@ class mod_page_mod_form extends moodleform_mod {
             $mform->setDefault('popupheight', $config->popupheight);
         }
 
+        $mform->addElement('advcheckbox', 'printheading', get_string('printheading', 'page'));
+        $mform->setDefault('printheading', $config->printheading);
         $mform->addElement('advcheckbox', 'printintro', get_string('printintro', 'page'));
         $mform->setDefault('printintro', $config->printintro);
         $mform->addElement('advcheckbox', 'printlastmodified', get_string('printlastmodified', 'page'));
@@ -131,6 +133,9 @@ class mod_page_mod_form extends moodleform_mod {
             $displayoptions = (array) unserialize_array($defaultvalues['displayoptions']);
             if (isset($displayoptions['printintro'])) {
                 $defaultvalues['printintro'] = $displayoptions['printintro'];
+            }
+            if (isset($displayoptions['printheading'])) {
+                $defaultvalues['printheading'] = $displayoptions['printheading'];
             }
             if (isset($displayoptions['printlastmodified'])) {
                 $defaultvalues['printlastmodified'] = $displayoptions['printlastmodified'];

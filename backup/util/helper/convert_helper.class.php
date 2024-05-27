@@ -145,11 +145,9 @@ abstract class convert_helper {
         $firstchars = fread($handle, 200);
         $status     = fclose($handle);
 
-        // Look for expected XML elements (case-insensitive to account for encoding attribute).
-        if (stripos($firstchars, '<?xml version="1.0" encoding="UTF-8"?>') !== false &&
-            strpos($firstchars, '<moodle_backup>') !== false &&
-            strpos($firstchars, '<information>') !== false) {
-
+        if (strpos($firstchars,'<?xml version="1.0" encoding="UTF-8"?>') !== false and
+            strpos($firstchars,'<moodle_backup>') !== false and
+            strpos($firstchars,'<information>') !== false) {
                 return true;
         }
 

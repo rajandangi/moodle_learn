@@ -32,7 +32,7 @@ class profile_define_base {
 
     /**
      * Prints out the form snippet for creating or editing a profile field
-     * @param MoodleQuickForm $form instance of the moodleform class
+     * @param moodleform $form instance of the moodleform class
      */
     public function define_form(&$form) {
         $form->addElement('header', '_commonsettings', get_string('profilecommonsettings', 'admin'));
@@ -45,7 +45,7 @@ class profile_define_base {
     /**
      * Prints out the form snippet for the part of creating or editing a profile field common to all data types.
      *
-     * @param MoodleQuickForm $form instance of the moodleform class
+     * @param moodleform $form instance of the moodleform class
      */
     public function define_form_common(&$form) {
 
@@ -75,9 +75,7 @@ class profile_define_base {
         $choices = array();
         $choices[PROFILE_VISIBLE_NONE]    = get_string('profilevisiblenone', 'admin');
         $choices[PROFILE_VISIBLE_PRIVATE] = get_string('profilevisibleprivate', 'admin');
-        $choices[PROFILE_VISIBLE_TEACHERS] = get_string('profilevisibleteachers', 'admin');
         $choices[PROFILE_VISIBLE_ALL]     = get_string('profilevisibleall', 'admin');
-
         $form->addElement('select', 'visible', get_string('profilevisible', 'admin'), $choices);
         $form->addHelpButton('visible', 'profilevisible', 'admin');
         $form->setDefault('visible', PROFILE_VISIBLE_ALL);
@@ -88,7 +86,7 @@ class profile_define_base {
 
     /**
      * Prints out the form snippet for the part of creating or editing a profile field specific to the current data type.
-     * @param MoodleQuickForm $form instance of the moodleform class
+     * @param moodleform $form instance of the moodleform class
      */
     public function define_form_specific($form) {
         // Do nothing - overwrite if necessary.
@@ -138,7 +136,7 @@ class profile_define_base {
                 $err['shortname'] = get_string('profileshortnameinvalid', 'admin');
             } else {
                 // Fetch field-record from DB.
-                $field = profile_get_custom_field_data_by_shortname($data->shortname);
+                $field = $DB->get_record('user_info_field', array('shortname' => $data->shortname));
                 // Check the shortname is unique.
                 if ($field and $field->id <> $data->id) {
                     $err['shortname'] = get_string('profileshortnamenotunique', 'admin');
@@ -166,7 +164,7 @@ class profile_define_base {
 
     /**
      * Alter form based on submitted or existing data
-     * @param MoodleQuickForm $mform
+     * @param moodleform $mform
      */
     public function define_after_data(&$mform) {
         // Do nothing - overwrite if necessary.
@@ -204,7 +202,6 @@ class profile_define_base {
         } else {
             \core\event\user_info_field_created::create_from_field($field)->trigger();
         }
-        profile_purge_user_fields_cache();
     }
 
     /**
@@ -252,7 +249,6 @@ function profile_reorder_fields() {
                 }
             }
         }
-        profile_purge_user_fields_cache();
     }
 }
 
@@ -270,7 +266,6 @@ function profile_reorder_categories() {
             $c->sortorder = $i++;
             $DB->update_record('user_info_category', $c);
         }
-        profile_purge_user_fields_cache();
     }
 }
 
@@ -284,11 +279,11 @@ function profile_delete_category($id) {
 
     // Retrieve the category.
     if (!$category = $DB->get_record('user_info_category', array('id' => $id))) {
-        throw new \moodle_exception('invalidcategoryid');
+        print_error('invalidcategoryid');
     }
 
     if (!$categories = $DB->get_records('user_info_category', null, 'sortorder ASC')) {
-        throw new \moodle_exception('nocate', 'debug');
+        print_error('nocate', 'debug');
     }
 
     unset($categories[$category->id]);
@@ -329,7 +324,6 @@ function profile_delete_category($id) {
     profile_reorder_categories();
 
     \core\event\user_info_category_deleted::create_from_category($category)->trigger();
-    profile_purge_user_fields_cache();
 
     return true;
 }
@@ -343,7 +337,7 @@ function profile_delete_field($id) {
 
     // Remove any user data associated with this field.
     if (!$DB->delete_records('user_info_data', array('fieldid' => $id))) {
-        throw new \moodle_exception('cannotdeletecustomfield');
+        print_error('cannotdeletecustomfield');
     }
 
     // Note: Any availability conditions that depend on this field will remain,
@@ -359,7 +353,6 @@ function profile_delete_field($id) {
     $DB->delete_records('user_info_field', array('id' => $id));
 
     \core\event\user_info_field_deleted::create_from_field($field)->trigger();
-    profile_purge_user_fields_cache();
 
     // Reorder the remaining fields in the same category.
     profile_reorder_fields();
@@ -450,7 +443,6 @@ function profile_move_category($id, $move) {
 
         \core\event\user_info_category_updated::create_from_category($category)->trigger();
         \core\event\user_info_category_updated::create_from_category($swapcategory)->trigger();
-        profile_purge_user_fields_cache();
 
         return true;
     }
@@ -484,77 +476,152 @@ function profile_list_categories() {
     return array_map('format_string', $categories);
 }
 
+
 /**
- * Create or update a profile category
+ * Edit a category
  *
- * @param stdClass $data
+ * @param int $id
+ * @param string $redirect
  */
-function profile_save_category(stdClass $data): void {
-    global $DB;
+function profile_edit_category($id, $redirect) {
+    global $DB, $OUTPUT, $CFG;
 
-    if (empty($data->id)) {
-        unset($data->id);
-        $data->sortorder = $DB->count_records('user_info_category') + 1;
-        $data->id = $DB->insert_record('user_info_category', $data, true);
+    require_once($CFG->dirroot.'/user/profile/index_category_form.php');
+    $categoryform = new category_form();
 
-        $createdcategory = $DB->get_record('user_info_category', array('id' => $data->id));
-        \core\event\user_info_category_created::create_from_category($createdcategory)->trigger();
-    } else {
-        $DB->update_record('user_info_category', $data);
-
-        $updatedcateogry = $DB->get_record('user_info_category', array('id' => $data->id));
-        \core\event\user_info_category_updated::create_from_category($updatedcateogry)->trigger();
+    if ($category = $DB->get_record('user_info_category', array('id' => $id))) {
+        $categoryform->set_data($category);
     }
-    profile_reorder_categories();
-    profile_purge_user_fields_cache();
+
+    if ($categoryform->is_cancelled()) {
+        redirect($redirect);
+    } else {
+        if ($data = $categoryform->get_data()) {
+            if (empty($data->id)) {
+                unset($data->id);
+                $data->sortorder = $DB->count_records('user_info_category') + 1;
+                $data->id = $DB->insert_record('user_info_category', $data, true);
+
+                $createdcategory = $DB->get_record('user_info_category', array('id' => $data->id));
+                \core\event\user_info_category_created::create_from_category($createdcategory)->trigger();
+            } else {
+                $DB->update_record('user_info_category', $data);
+
+                $updatedcateogry = $DB->get_record('user_info_category', array('id' => $data->id));
+                \core\event\user_info_category_updated::create_from_category($updatedcateogry)->trigger();
+            }
+            profile_reorder_categories();
+            redirect($redirect);
+
+        }
+
+        if (empty($id)) {
+            $strheading = get_string('profilecreatenewcategory', 'admin');
+        } else {
+            $strheading = get_string('profileeditcategory', 'admin', format_string($category->name));
+        }
+
+        // Print the page.
+        echo $OUTPUT->header();
+        echo $OUTPUT->heading($strheading);
+        $categoryform->display();
+        echo $OUTPUT->footer();
+        die;
+    }
+
 }
 
 /**
- * Save updated field definition or create a new field
+ * Edit a profile field.
  *
- * @param stdClass $data data from the form profile_field_form
- * @param array $editors editors for this form field type
+ * @param int $id
+ * @param string $datatype
+ * @param string $redirect
  */
-function profile_save_field(stdClass $data, array $editors): void {
-    global $CFG;
+function profile_edit_field($id, $datatype, $redirect) {
+    global $CFG, $DB, $OUTPUT, $PAGE;
 
-    require_once($CFG->dirroot.'/user/profile/field/'.$data->datatype.'/define.class.php');
-    $newfield = 'profile_define_'.$data->datatype;
-    /** @var profile_define_base $formfield */
-    $formfield = new $newfield();
-
-    // Collect the description and format back into the proper data structure from the editor.
-    // Note: This field will ALWAYS be an editor.
-    $data->descriptionformat = $data->description['format'];
-    $data->description = $data->description['text'];
-
-    // Check whether the default data is an editor, this is (currently) only the textarea field type.
-    if (is_array($data->defaultdata) && array_key_exists('text', $data->defaultdata)) {
-        // Collect the default data and format back into the proper data structure from the editor.
-        $data->defaultdataformat = $data->defaultdata['format'];
-        $data->defaultdata = $data->defaultdata['text'];
+    if (!$field = $DB->get_record('user_info_field', array('id' => $id))) {
+        $field = new stdClass();
+        $field->datatype = $datatype;
+        $field->description = '';
+        $field->descriptionformat = FORMAT_HTML;
+        $field->defaultdata = '';
+        $field->defaultdataformat = FORMAT_HTML;
     }
 
+    // Clean and prepare description for the editor.
+    $field->description = clean_text($field->description, $field->descriptionformat);
+    $field->description = array('text' => $field->description, 'format' => $field->descriptionformat, 'itemid' => 0);
+
+    require_once($CFG->dirroot.'/user/profile/index_field_form.php');
+    $fieldform = new field_form(null, $field->datatype);
+
     // Convert the data format for.
-    if (is_array($editors)) {
-        foreach ($editors as $editor) {
+    if (is_array($fieldform->editors())) {
+        foreach ($fieldform->editors() as $editor) {
             if (isset($field->$editor)) {
-                $field->{$editor.'format'} = $field->{$editor}['format'];
-                $field->$editor = $field->{$editor}['text'];
+                $field->$editor = clean_text($field->$editor, $field->{$editor.'format'});
+                $field->$editor = array('text' => $field->$editor, 'format' => $field->{$editor.'format'}, 'itemid' => 0);
             }
         }
     }
 
-    $formfield->define_save($data);
-    profile_reorder_fields();
-    profile_reorder_categories();
+    $fieldform->set_data($field);
+
+    if ($fieldform->is_cancelled()) {
+        redirect($redirect);
+
+    } else {
+        if ($data = $fieldform->get_data()) {
+            require_once($CFG->dirroot.'/user/profile/field/'.$datatype.'/define.class.php');
+            $newfield = 'profile_define_'.$datatype;
+            $formfield = new $newfield();
+
+            // Collect the description and format back into the proper data structure from the editor.
+            // Note: This field will ALWAYS be an editor.
+            $data->descriptionformat = $data->description['format'];
+            $data->description = $data->description['text'];
+
+            // Check whether the default data is an editor, this is (currently) only the textarea field type.
+            if (is_array($data->defaultdata) && array_key_exists('text', $data->defaultdata)) {
+                // Collect the default data and format back into the proper data structure from the editor.
+                $data->defaultdataformat = $data->defaultdata['format'];
+                $data->defaultdata = $data->defaultdata['text'];
+            }
+
+            // Convert the data format for.
+            if (is_array($fieldform->editors())) {
+                foreach ($fieldform->editors() as $editor) {
+                    if (isset($field->$editor)) {
+                        $field->{$editor.'format'} = $field->{$editor}['format'];
+                        $field->$editor = $field->{$editor}['text'];
+                    }
+                }
+            }
+
+            $formfield->define_save($data);
+            profile_reorder_fields();
+            profile_reorder_categories();
+            redirect($redirect);
+        }
+
+        $datatypes = profile_list_datatypes();
+
+        if (empty($id)) {
+            $strheading = get_string('profilecreatenewfield', 'admin', $datatypes[$datatype]);
+        } else {
+            $strheading = get_string('profileeditfield', 'admin', format_string($field->name));
+        }
+
+        // Print the page.
+        $PAGE->navbar->add($strheading);
+        echo $OUTPUT->header();
+        echo $OUTPUT->heading($strheading);
+        $fieldform->display();
+        echo $OUTPUT->footer();
+        die;
+    }
 }
 
-/**
- * Purge the cache for the user profile fields
- */
-function profile_purge_user_fields_cache() {
-    $cache = \cache::make_from_params(cache_store::MODE_REQUEST, 'core_profile', 'customfields',
-        [], ['simplekeys' => true, 'simpledata' => true]);
-    $cache->purge();
-}
+

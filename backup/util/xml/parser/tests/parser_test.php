@@ -15,21 +15,11 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Test progressive_parser and progressive_parser_processor tests.
- *
  * @package   core_backup
- * @category  test
+ * @category  phpunit
  * @copyright 2010 onwards Eloy Lafuente (stronk7) {@link http://stronk7.com}
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
-namespace core_backup;
-
-use grouped_parser_processor;
-use progressive_parser;
-use progressive_parser_exception;
-use progressive_parser_processor;
-use simplified_parser_processor;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -40,15 +30,10 @@ require_once($CFG->dirroot . '/backup/util/xml/parser/processors/progressive_par
 require_once($CFG->dirroot . '/backup/util/xml/parser/processors/simplified_parser_processor.class.php');
 require_once($CFG->dirroot . '/backup/util/xml/parser/processors/grouped_parser_processor.class.php');
 
-/**
- * Test progressive_parser and progressive_parser_processor tests.
- *
- * @package   core_backup
- * @category  test
- * @copyright 2010 onwards Eloy Lafuente (stronk7) {@link http://stronk7.com}
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+/*
+ * progressive_parser and progressive_parser_processor tests
  */
-class parser_test extends \advanced_testcase {
+class progressive_parser_test extends advanced_testcase {
 
     /*
      * test progressive_parser public methods
@@ -65,7 +50,7 @@ class parser_test extends \advanced_testcase {
         try {
             $pp->process();
             $this->assertTrue(false);
-        } catch (\Exception $e) {
+        } catch (exception $e) {
             $this->assertTrue($e instanceof progressive_parser_exception);
             $this->assertEquals($e->errorcode, 'undefined_parser_processor');
         }
@@ -77,16 +62,16 @@ class parser_test extends \advanced_testcase {
         try {
             $pp->process();
             $this->assertTrue(false);
-        } catch (\Exception $e) {
+        } catch (exception $e) {
             $this->assertTrue($e instanceof progressive_parser_exception);
             $this->assertEquals($e->errorcode, 'undefined_xml_to_parse');
         }
 
         // Assign *invalid* processor to parser
         try {
-            $pp->set_processor(new \stdClass());
+            $pp->set_processor(new stdClass());
             $this->assertTrue(false);
-        } catch (\Exception $e) {
+        } catch (exception $e) {
             $this->assertTrue($e instanceof progressive_parser_exception);
             $this->assertEquals($e->errorcode, 'invalid_parser_processor');
         }
@@ -102,7 +87,7 @@ class parser_test extends \advanced_testcase {
         try {
             $pp->set_file($CFG->dirroot . '/backup/util/xml/parser/tests/fixtures/test0.xml');
             $this->assertTrue(false);
-        } catch (\Exception $e) {
+        } catch (exception $e) {
             $this->assertTrue($e instanceof progressive_parser_exception);
             $this->assertEquals($e->errorcode, 'invalid_file_to_parse');
         }
@@ -118,7 +103,7 @@ class parser_test extends \advanced_testcase {
         try {
             $pp->set_contents('');
             $this->assertTrue(false);
-        } catch (\Exception $e) {
+        } catch (exception $e) {
             $this->assertTrue($e instanceof progressive_parser_exception);
             $this->assertEquals($e->errorcode, 'invalid_contents_to_parse');
         }
@@ -144,7 +129,7 @@ class parser_test extends \advanced_testcase {
         $pp->set_file($CFG->dirroot . '/backup/util/xml/parser/tests/fixtures/test2.xml');
         try {
             $pp->process();
-        } catch (\Exception $e) {
+        } catch (exception $e) {
             $this->assertTrue($e instanceof progressive_parser_exception);
             $this->assertEquals($e->errorcode, 'xml_parsing_error');
         }
@@ -158,7 +143,7 @@ class parser_test extends \advanced_testcase {
         try { // Second process, will throw exception
             $pp->process();
             $this->assertTrue(false);
-        } catch (\Exception $e) {
+        } catch (exception $e) {
             $this->assertTrue($e instanceof progressive_parser_exception);
             $this->assertEquals($e->errorcode, 'progressive_parser_already_used');
         }

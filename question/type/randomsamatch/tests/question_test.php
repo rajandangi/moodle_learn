@@ -14,10 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace qtype_randomsamatch;
+/**
+ * Unit tests for the radom shortanswer matching question definition classes.
+ *
+ * @package   qtype_randomsamatch
+ * @copyright 2013 Jean-Michel Vedrine
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
-use question_attempt_step;
-use question_state;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -28,14 +32,13 @@ require_once($CFG->dirroot . '/question/engine/tests/helpers.php');
 /**
  * Unit tests for the random shortanswer matching question definition class.
  *
- * @package   qtype_randomsamatch
  * @copyright 2013 Jean-Michel Vedrine
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class question_test extends \advanced_testcase {
+class qtype_randomsamatch_question_test extends advanced_testcase {
 
     public function test_get_expected_data() {
-        $question = \test_question_maker::make_question('randomsamatch');
+        $question = test_question_maker::make_question('randomsamatch');
         $question->start_attempt(new question_attempt_step(), 1);
 
         $this->assertEquals(array('sub0' => PARAM_INT, 'sub1' => PARAM_INT,
@@ -43,7 +46,7 @@ class question_test extends \advanced_testcase {
     }
 
     public function test_is_complete_response() {
-        $question = \test_question_maker::make_question('randomsamatch');
+        $question = test_question_maker::make_question('randomsamatch');
         $question->start_attempt(new question_attempt_step(), 1);
 
         $this->assertFalse($question->is_complete_response(array()));
@@ -55,7 +58,7 @@ class question_test extends \advanced_testcase {
     }
 
     public function test_is_gradable_response() {
-        $question = \test_question_maker::make_question('randomsamatch');
+        $question = test_question_maker::make_question('randomsamatch');
         $question->start_attempt(new question_attempt_step(), 1);
 
         $this->assertFalse($question->is_gradable_response(array()));
@@ -69,7 +72,7 @@ class question_test extends \advanced_testcase {
     }
 
     public function test_is_same_response() {
-        $question = \test_question_maker::make_question('randomsamatch');
+        $question = test_question_maker::make_question('randomsamatch');
         $question->start_attempt(new question_attempt_step(), 1);
 
         $this->assertTrue($question->is_same_response(
@@ -94,7 +97,7 @@ class question_test extends \advanced_testcase {
     }
 
     public function test_grading() {
-        $question = \test_question_maker::make_question('randomsamatch');
+        $question = test_question_maker::make_question('randomsamatch');
         $question->start_attempt(new question_attempt_step(), 1);
 
         $choiceorder = $question->get_choice_order();
@@ -112,7 +115,7 @@ class question_test extends \advanced_testcase {
     }
 
     public function test_get_correct_response() {
-        $question = \test_question_maker::make_question('randomsamatch');
+        $question = test_question_maker::make_question('randomsamatch');
         $question->start_attempt(new question_attempt_step(), 1);
 
         $choiceorder = $question->get_choice_order();
@@ -124,26 +127,26 @@ class question_test extends \advanced_testcase {
     }
 
     public function test_get_question_summary() {
-        $question = \test_question_maker::make_question('randomsamatch');
+        $question = test_question_maker::make_question('randomsamatch');
         $question->start_attempt(new question_attempt_step(), 1);
         $qsummary = $question->get_question_summary();
-        $this->assertMatchesRegularExpression('/' . preg_quote($question->questiontext, '/') . '/', $qsummary);
+        $this->assertRegExp('/' . preg_quote($question->questiontext, '/') . '/', $qsummary);
         foreach ($question->stems as $stem) {
-            $this->assertMatchesRegularExpression('/' . preg_quote($stem, '/') . '/', $qsummary);
+            $this->assertRegExp('/' . preg_quote($stem, '/') . '/', $qsummary);
         }
         foreach ($question->choices as $choice) {
-            $this->assertMatchesRegularExpression('/' . preg_quote($choice, '/') . '/', $qsummary);
+            $this->assertRegExp('/' . preg_quote($choice, '/') . '/', $qsummary);
         }
     }
 
     public function test_summarise_response() {
-        $question = \test_question_maker::make_question('randomsamatch');
+        $question = test_question_maker::make_question('randomsamatch');
         $question->shufflestems = false;
         $question->start_attempt(new question_attempt_step(), 1);
 
         $summary = $question->summarise_response(array('sub0' => 2, 'sub1' => 1));
 
-        $this->assertMatchesRegularExpression('/Dog -> \w+; Frog -> \w+/', $summary);
+        $this->assertRegExp('/Dog -> \w+; Frog -> \w+/', $summary);
     }
 
 

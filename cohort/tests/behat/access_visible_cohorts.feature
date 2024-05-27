@@ -47,7 +47,8 @@ Feature: Access visible and hidden cohorts
   @javascript @skip_chrome_zerosize
   Scenario: Teacher can see visible cohorts defined in the above contexts
     When I log in as "teacher"
-    And I am on the "Course 1" "enrolment methods" page
+    And I am on "Course 1" course homepage
+    And I navigate to "Users > Enrolment methods" in current page administration
     And I select "Cohort sync" from the "Add method" singleselect
     And I open the autocomplete suggestions list
     Then "Cohort in category 1" "autocomplete_suggestions" should exist
@@ -59,9 +60,11 @@ Feature: Access visible and hidden cohorts
     And "System empty cohort" "autocomplete_suggestions" should exist
     And I set the field "Cohort" to "System cohort"
     And I press "Add method"
-    And I am on the "Course 1" "enrolled users" page
+    And I am on "Course 1" course homepage
+    And I navigate to "Users > Enrolled users" in current page administration
     And I should see "student@example.com"
-    And I am on the "Course 1" "groups" page
+    And I am on "Course 1" course homepage
+    And I navigate to "Users > Groups" in current page administration
     And I press "Auto-create groups"
     And the "Select members from cohort" select box should contain "Cohort in category 1"
     And the "Select members from cohort" select box should contain "System cohort"
@@ -74,7 +77,8 @@ Feature: Access visible and hidden cohorts
   @javascript @skip_chrome_zerosize
   Scenario: System manager can see all cohorts defined in the above contexts
     When I log in as "user1"
-    And I am on the "Course 1" "enrolment methods" page
+    And I am on "Course 1" course homepage
+    And I navigate to "Users > Enrolment methods" in current page administration
     And I select "Cohort sync" from the "Add method" singleselect
     And I open the autocomplete suggestions list
     Then "Cohort in category 1" "autocomplete_suggestions" should exist
@@ -86,9 +90,10 @@ Feature: Access visible and hidden cohorts
     And "System empty cohort" "autocomplete_suggestions" should exist
     And I set the field "Cohort" to "System cohort"
     And I press "Add method"
-    And I am on the "Course 1" "enrolled users" page
+    And I am on "Course 1" course homepage
+    And I navigate to "Users > Enrolled users" in current page administration
     And I should see "student@example.com"
-    And I am on the "Course 1" "groups" page
+    And I navigate to "Users > Groups" in current page administration
     And I press "Auto-create groups"
     And the "Select members from cohort" select box should contain "Cohort in category 1"
     And the "Select members from cohort" select box should contain "System cohort"
@@ -101,7 +106,8 @@ Feature: Access visible and hidden cohorts
   @javascript @skip_chrome_zerosize
   Scenario: Category manager can see all cohorts defined in his category and visible cohorts defined above
     When I log in as "user2"
-    And I am on the "Course 1" "enrolment methods" page
+    And I am on "Course 1" course homepage
+    And I navigate to "Users > Enrolment methods" in current page administration
     And I select "Cohort sync" from the "Add method" singleselect
     And I open the autocomplete suggestions list
     Then "Cohort in category 1" "autocomplete_suggestions" should exist
@@ -113,9 +119,10 @@ Feature: Access visible and hidden cohorts
     And "System empty cohort" "autocomplete_suggestions" should exist
     And I set the field "Cohort" to "System cohort"
     And I press "Add method"
-    And I am on the "Course 1" "enrolled users" page
+    And I am on "Course 1" course homepage
+    And I navigate to "Users > Enrolled users" in current page administration
     And I should see "student@example.com"
-    And I am on the "Course 1" "groups" page
+    And I navigate to "Users > Groups" in current page administration
     And I press "Auto-create groups"
     And the "Select members from cohort" select box should contain "Cohort in category 1"
     And the "Select members from cohort" select box should contain "System cohort"

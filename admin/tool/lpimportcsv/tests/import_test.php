@@ -13,9 +13,18 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+/**
+ * External learning plans webservice API tests.
+ *
+ * @package tool_lpimportcsv
+ * @copyright 2015 Damyon Wiese
+ * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
-namespace tool_lpimportcsv;
+defined('MOODLE_INTERNAL') || die();
 
+use tool_lpimportcsv\framework_importer;
+use tool_lpimportcsv\framework_exporter;
 use core_competency\api;
 
 /**
@@ -25,7 +34,7 @@ use core_competency\api;
  * @copyright 2015 Damyon Wiese
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class import_test extends \advanced_testcase {
+class tool_lpimportcsv_import_testcase extends advanced_testcase {
 
     public function test_import_framework() {
         $this->resetAfterTest(true);

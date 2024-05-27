@@ -22,16 +22,17 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-use core_external\external_api;
+defined('MOODLE_INTERNAL') || die();
+
 use tool_usertours\helper;
 
 /**
  * Manage inplace editable saves.
  *
- * @param string $itemtype The type of item.
- * @param int $itemid The ID of the item.
- * @param mixed $newvalue The new value
- * @return \core\output\inplace_editable
+ * @param   string      $itemtype       The type of item.
+ * @param   int         $itemid         The ID of the item.
+ * @param   mixed       $newvalue       The new value
+ * @return  string
  */
 function tool_usertours_inplace_editable($itemtype, $itemid, $newvalue) {
     $context = \context_system::instance();
@@ -68,6 +69,13 @@ function tool_usertours_extend_navigation_user() {
 }
 
 /**
+ * Add JS to bootstrap tours. Only in Moodle 3.3+
+ */
+function tool_usertours_before_footer() {
+    \tool_usertours\helper::bootstrap();
+}
+
+/**
  * Map icons for font-awesome themes.
  */
 function tool_usertours_get_fontawesome_icon_map() {
@@ -76,31 +84,4 @@ function tool_usertours_get_fontawesome_icon_map() {
         'tool_usertours:i/reload' => 'fa-refresh',
         'tool_usertours:t/filler' => 'fa-spacer',
     ];
-}
-
-
-/**
- * Serves any files associated with the user tour content.
- *
- * @param stdClass $course Course object
- * @param stdClass $cm Course module object
- * @param context $context Context
- * @param string $filearea File area for data privacy
- * @param array $args Arguments
- * @param bool $forcedownload If we are forcing the download
- * @param array $options More options
- * @return bool Returns false if we don't find a file.
- */
-function tool_usertours_pluginfile($course, $cm, $context, $filearea, $args, $forcedownload, array $options = []): bool {
-    if ($context->contextlevel != CONTEXT_SYSTEM) {
-        return false;
-    }
-
-    $fs = get_file_storage();
-    $file = $fs->get_file($context->id, 'tool_usertours', $filearea, $args[0], '/', $args[1]);
-    if (!$file) {
-        return false; // No such file.
-    }
-    send_stored_file($file, null, 0, $forcedownload, $options);
-    return true;
 }

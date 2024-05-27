@@ -21,12 +21,8 @@
 
     Example context (json):
     {
-        "actiontext": "Example link text",
+        "text": "Example link text",
         "title": "Example link title",
-        "triggerrole": "button",
-        "triggerattributes": [
-            {"name": "data-boundary", "value": "window" }
-        ],
         "url": "http://example.com/link",
         "classes": "icon menu-action",
         "instance": "1",
@@ -37,7 +33,6 @@
         ],
         "secondary": {
             "classes": "menu  align-tr-br",
-            "dropdownalignment": "dropdown-menu-right",
             "attributes": [
                 {"name": "id", "value": "action-menu-0-menu"},
                 {"name": "data-rel", "value": "menu-content"},
@@ -56,7 +51,7 @@
                         "component": null,
                         "title": "Dashboard"
                         },
-                    "classes": "menu-action",
+                    "classes": "icon menu-action",
                     "attributes": [
                         {"name": "role", "value": "menuitem"},
                         {"name": "data-title", "value": "mymoodle,admin"}
@@ -83,21 +78,7 @@
     }
 }}
 <div class="dropdown{{^secondary.items}} hidden{{/secondary.items}}">
-    <a
-        href="#"
-        tabindex="0"
-        class="{{triggerextraclasses}} dropdown-toggle icon-no-margin"
-        id="action-menu-toggle-{{instance}}"
-        aria-label="{{title}}"
-        data-toggle="dropdown"
-        role="{{triggerrole}}"
-        aria-haspopup="true"
-        aria-expanded="false"
-        aria-controls="action-menu-{{instance}}-menu"
-    {{#triggerattributes}}
-        {{name}}="{{value}}"
-    {{/triggerattributes}}
-    >
+    <a href="#" tabindex="0" class="d-inline-block {{triggerextraclasses}} dropdown-toggle icon-no-margin" id="action-menu-toggle-{{instance}}" aria-label="{{title}}" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" aria-controls="action-menu-{{instance}}-menu">
         {{{actiontext}}}
         {{{menutrigger}}}
             {{#icon}}
@@ -111,7 +92,7 @@
         {{/menutrigger}}
     </a>
     {{#secondary}}
-        <div class="dropdown-menu {{classes}} {{dropdownalignment}}"{{#attributes}} {{name}}="{{value}}"{{/attributes}}>
+        <div class="dropdown-menu dropdown-menu-right {{classes}}"{{#attributes}} {{name}}="{{value}}"{{/attributes}}>
             {{#items}}
                 {{#actionmenulink}}
                     {{< core/action_menu_link}}
@@ -121,12 +102,11 @@
                 {{#actionmenufiller}}
                     <div class="dropdown-divider" role="presentation"><span class="filler">&nbsp;</span></div>
                 {{/actionmenufiller}}
-                {{#subpanel}}
-                    {{> core/local/action_menu/subpanel}}
-                {{/subpanel}}
-                {{#simpleitem}}
-                    <div class="dropdown-item">{{> core/action_menu_item }}</div>
-                {{/simpleitem}}
+                {{^actionmenulink}}
+                    {{^actionmenufiller}}
+                        <div class="dropdown-item">{{> core/action_menu_item }}</div>
+                    {{/actionmenufiller}}
+                {{/actionmenulink}}
             {{/items}}
         </div>
     {{/secondary}}

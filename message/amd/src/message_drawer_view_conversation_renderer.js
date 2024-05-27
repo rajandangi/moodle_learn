@@ -33,8 +33,7 @@ define(
     'core/str',
     'core/templates',
     'core/user_date',
-    'core_message/message_drawer_view_conversation_constants',
-    'core/aria',
+    'core_message/message_drawer_view_conversation_constants'
 ],
 function(
     $,
@@ -42,8 +41,7 @@ function(
     Str,
     Templates,
     UserDate,
-    Constants,
-    Aria
+    Constants
 ) {
     var SELECTORS = Constants.SELECTORS;
     var TEMPLATES = Constants.TEMPLATES;
@@ -512,7 +510,8 @@ function(
     var showConfirmDialogueContainer = function(root) {
         var container = getConfirmDialogueContainer(root);
         var siblings = container.siblings(':not(.hidden)');
-        Aria.hide(siblings.get());
+        siblings.attr('aria-hidden', true);
+        siblings.attr('tabindex', -1);
         siblings.attr('data-confirm-dialogue-hidden', true);
 
         container.removeClass('hidden');
@@ -526,7 +525,8 @@ function(
     var hideConfirmDialogueContainer = function(root) {
         var container = getConfirmDialogueContainer(root);
         var siblings = container.siblings('[data-confirm-dialogue-hidden="true"]');
-        Aria.unhide(siblings.get());
+        siblings.removeAttr('aria-hidden');
+        siblings.removeAttr('tabindex');
         siblings.removeAttr('data-confirm-dialogue-hidden');
 
         container.addClass('hidden');
@@ -575,10 +575,8 @@ function(
     var renderAddDays = function(header, body, footer, days, datesCache) {
         var messagesContainer = getMessagesContainer(body);
         var daysRenderPromises = days.map(function(data) {
-            var timestampDate = new Date(data.value.timestamp * 1000);
             return Templates.render(TEMPLATES.DAY, {
                 timestamp: data.value.timestamp,
-                currentyear: timestampDate.getFullYear() === (new Date()).getFullYear(),
                 messages: formatMessagesForTemplate(data.value.messages, datesCache)
             });
         });
@@ -671,29 +669,26 @@ function(
                 var retry = element.find(SELECTORS.RETRY_SEND);
 
                 loading.addClass('hidden');
-                Aria.hide(loading.get());
-
+                loading.attr('aria-hidden', 'true');
                 time.addClass('hidden');
-                Aria.hide(time.get());
-
+                time.attr('aria-hidden', 'true');
                 retry.addClass('hidden');
-                Aria.hide(retry.get());
-
+                retry.attr('aria-hidden', 'true');
                 element.removeClass('border border-danger');
 
                 switch (after.sendState) {
                     case 'pending':
                         loading.removeClass('hidden');
-                        Aria.unhide(loading.get());
+                        loading.attr('aria-hidden', 'false');
                         break;
                     case 'error':
                         retry.removeClass('hidden');
-                        Aria.unhide(retry.get());
+                        retry.attr('aria-hidden', 'false');
                         element.addClass('border border-danger');
                         break;
                     case 'sent':
                         time.removeClass('hidden');
-                        Aria.unhide(time.get());
+                        time.attr('aria-hidden', 'false');
                         break;
                 }
             }
@@ -708,11 +703,11 @@ function(
 
                 if (after.errorMessage) {
                     messageContainer.removeClass('hidden');
-                    Aria.unhide(messageContainer.get());
+                    messageContainer.attr('aria-hidden', 'false');
                     message.text(after.errorMessage);
                 } else {
                     messageContainer.addClass('hidden');
-                    Aria.unhide(messageContainer.get());
+                    messageContainer.attr('aria-hidden', 'true');
                     message.text('');
                 }
             }
@@ -1008,11 +1003,11 @@ function(
 
         if (show) {
             container.removeClass('hidden');
-            Aria.unhide(container.get());
+            container.attr('aria-hidden', false);
             container.find(SELECTORS.EMOJI_PICKER_SEARCH_INPUT).focus();
         } else {
             container.addClass('hidden');
-            Aria.hide(container.get());
+            container.attr('aria-hidden', true);
         }
     };
 
@@ -1029,10 +1024,10 @@ function(
 
         if (show) {
             container.removeClass('hidden');
-            Aria.unhide(container.get());
+            container.attr('aria-hidden', false);
         } else {
             container.addClass('hidden');
-            Aria.hide(container.get());
+            container.attr('aria-hidden', true);
         }
     };
 
@@ -1401,7 +1396,7 @@ function(
      * @param {Object} header The header container element.
      * @param {Object} body The body container element.
      * @param {Object} footer The footer container element.
-     * @param {Bool} state is this conversation a favourite.
+     * @param {Bool} isFavourite is this conversation a favourite.
      */
     var renderIsFavourite = function(header, body, footer, state) {
         var favouriteIcon = header.find(SELECTORS.FAVOURITE_ICON_CONTAINER);

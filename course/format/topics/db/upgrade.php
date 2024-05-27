@@ -15,61 +15,37 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Upgrade scripts for Topics course format.
+ * Upgrade scripts for course format "Topics"
  *
  * @package    format_topics
  * @copyright  2017 Marina Glancy
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+defined('MOODLE_INTERNAL') || die();
+
 /**
- * Upgrade script for Topics course format.
+ * Upgrade script for format_topics
  *
- * @param int|float $oldversion the version we are upgrading from
+ * @param int $oldversion the version we are upgrading from
  * @return bool result
  */
 function xmldb_format_topics_upgrade($oldversion) {
-    global $DB;
+    global $CFG, $DB;
 
-    // Automatically generated Moodle v4.1.0 release upgrade line.
+    // Automatically generated Moodle v3.5.0 release upgrade line.
     // Put any upgrade step following this.
 
-    if ($oldversion < 2023030700) {
-        // For sites migrating from 4.0.x or 4.1.x where the indentation was removed,
-        // we are disabling 'indentation' value by default.
-        if ($oldversion >= 2022041900) {
-            set_config('indentation', 0, 'format_topics');
-        } else {
-            set_config('indentation', 1, 'format_topics');
-        }
-        upgrade_plugin_savepoint(true, 2023030700, 'format', 'topics');
-    }
-
-    // Automatically generated Moodle v4.2.0 release upgrade line.
+    // Automatically generated Moodle v3.6.0 release upgrade line.
     // Put any upgrade step following this.
 
-    // Automatically generated Moodle v4.3.0 release upgrade line.
+    // Automatically generated Moodle v3.7.0 release upgrade line.
     // Put any upgrade step following this.
 
-    if ($oldversion < 2023100901) {
-        // During the migration to version 4.4, ensure that sections with null names are renamed to their corresponding
-        // previous 'Topic X' for continuity.
-        $newsectionname = $DB->sql_concat("'Topic '", 'section');
-        $sql = <<<EOF
-                    UPDATE {course_sections}
-                       SET name = $newsectionname
-                     WHERE section > 0 AND (name IS NULL OR name = '')
-                           AND course IN (SELECT id FROM {course} WHERE format = 'topics')
-        EOF;
-        $DB->execute(
-            sql: $sql,
-        );
+    // Automatically generated Moodle v3.8.0 release upgrade line.
+    // Put any upgrade step following this.
 
-        // Main savepoint reached.
-        upgrade_plugin_savepoint(true, 2023100901, 'format', 'topics');
-    }
-
-    // Automatically generated Moodle v4.4.0 release upgrade line.
+    // Automatically generated Moodle v3.9.0 release upgrade line.
     // Put any upgrade step following this.
 
     return true;

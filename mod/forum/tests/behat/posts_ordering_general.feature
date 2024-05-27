@@ -41,7 +41,7 @@ Feature: New discussions and discussions with recently added replies are display
     #
     # Edit one of the forum posts.
     #
-    And I follow "Forum post 2"
+    When I follow "Forum post 2"
     And I click on "Edit" "link" in the "//div[contains(concat(' ', normalize-space(@class), ' '), ' forumpost ')][contains(., 'Forum post 2')]" "xpath_element"
     And I set the following fields to these values:
       | Subject | Edited forum post 2     |

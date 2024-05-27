@@ -28,25 +28,24 @@
         "sitename": "Moodle Site"
     }
 }}
-<nav class="navbar fixed-top navbar-light bg-white navbar-expand" aria-label="{{#str}}sitemenubar, admin{{/str}}">
-    <div class="container-fluid">
-        <div class="navbar-brand d-flex align-items-center m-0 p-0 aabtn">
-            {{# output.should_display_navbar_logo }}
-                <img src="{{output.get_compact_logo_url}}" class="logo mr-1" alt="{{sitename}}">
-            {{/ output.should_display_navbar_logo }}
-            {{{ sitename }}}
-        </div>
+<nav class="fixed-top navbar navbar-light bg-white navbar-expand moodle-has-zindex" aria-label="{{#str}}navigation{{/str}}">
+
+        {{# output.should_display_navbar_logo }}
+            <span class="logo d-none d-sm-inline">
+                <img src="{{output.get_compact_logo_url}}" alt="{{sitename}}">
+            </span>
+        {{/ output.should_display_navbar_logo }}
+        <span class="site-name d-none d-md-inline">{{{ sitename }}}</span>
 
         {{# output.secure_layout_language_menu }}
-        <ul class="nav navbar-nav language-menu my-1">
+        <ul class="navbar-nav d-none d-md-flex">
+            <!-- language_menu -->
             {{{ . }}}
         </ul>
         {{/ output.secure_layout_language_menu }}
-
         {{# output.secure_layout_login_info }}
-        <div class="ml-auto nav-link">
+        <div class="ml-auto">
             {{{ . }}}
         </div>
         {{/ output.secure_layout_login_info }}
-    </div>
 </nav>

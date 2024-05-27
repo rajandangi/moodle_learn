@@ -104,7 +104,7 @@ function min_fix_utf8($value) {
     if ($buggyiconv) {
         if (function_exists('mb_convert_encoding')) {
             $subst = mb_substitute_character();
-            mb_substitute_character('none');
+            mb_substitute_character('');
             $result = mb_convert_encoding($value, 'utf-8', 'utf-8');
             mb_substitute_character($subst);
 
@@ -215,9 +215,6 @@ function min_get_slash_argument($clean = true) {
  */
 function min_get_minimum_revision(): int {
     static $timestamp = null;
-    // Days that will be deducted.
-    // Avoids errors when date comparisons are made at time of packaging for next release.
-    $tolerancedays = 2;
 
     if ($timestamp === null) {
         global $CFG;
@@ -227,7 +224,7 @@ function min_get_minimum_revision(): int {
         // Parse the date components.
         $year = intval(substr($datestring, 0, 4));
         $month = intval(substr($datestring, 4, 2));
-        $day = intval(substr($datestring, 6, 2)) - $tolerancedays;
+        $day = intval(substr($datestring, 6, 2));
         // Return converted GMT Unix timestamp.
         $timestamp = gmmktime(0, 0, 0, $month, $day, $year);
     }

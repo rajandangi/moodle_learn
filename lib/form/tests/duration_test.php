@@ -15,20 +15,15 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Unit tests for MoodleQuickForm_duration
+ * Unit tests for forms lib.
  *
- * Contains test cases for testing MoodleQuickForm_duration
+ * This file contains all unit test related to forms library.
  *
  * @package    core_form
- * @category   test
+ * @category   phpunit
  * @copyright  2009 Tim Hunt
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
-namespace core_form;
-
-use moodleform;
-use MoodleQuickForm;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -41,11 +36,11 @@ require_once($CFG->libdir . '/form/duration.php');
  * Contains test cases for testing MoodleQuickForm_duration
  *
  * @package    core_form
- * @category   test
+ * @category   phpunit
  * @copyright  2009 Tim Hunt
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class duration_test extends \basic_testcase {
+class core_form_duration_testcase extends basic_testcase {
 
     /**
      * Get a form that can be used for testing.
@@ -74,7 +69,7 @@ class duration_test extends \basic_testcase {
     public function test_constructor_rejects_invalid_unit(): void {
         // Test trying to create with an invalid unit.
         $mform = $this->get_test_form();
-        $this->expectException(\coding_exception::class);
+        $this->expectException('coding_exception');
         $mform->addElement('duration', 'testel', null, ['defaultunit' => 123, 'optional' => false]);
     }
 
@@ -86,9 +81,9 @@ class duration_test extends \basic_testcase {
         $mform->addElement('duration', 'testel', null, ['units' => [MINSECS, 1], 'optional' => false]);
         $html = $mform->toHtml();
         $html = preg_replace('~ +>~', '>', $html); // Clean HTML to avoid spurious errors.
-        $this->assertStringContainsString('<option value="60" selected>minutes</option>', $html);
-        $this->assertStringContainsString('<option value="1">seconds</option>', $html);
-        $this->assertStringNotContainsString('value="3600"', $html);
+        $this->assertContains('<option value="60" selected>minutes</option>', $html);
+        $this->assertContains('<option value="1">seconds</option>', $html);
+        $this->assertNotContains('value="3600"', $html);
     }
 
     /**

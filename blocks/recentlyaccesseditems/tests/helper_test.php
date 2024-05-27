@@ -14,7 +14,18 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace block_recentlyaccesseditems;
+/**
+ * Block recentlyaccesseditems helper tests.
+ *
+ * @package    block_recentlyaccesseditems
+ * @copyright  2019 University of Nottingham
+ * @author     Neill Magill <neill.magill@nottingham.ac.uk>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+use block_recentlyaccesseditems\helper;
+
+defined('MOODLE_INTERNAL') || die();
 
 /**
  * Block Recently accessed helper class tests.
@@ -24,7 +35,7 @@ namespace block_recentlyaccesseditems;
  * @author     Neill Magill <neill.magill@nottingham.ac.uk>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class helper_test extends \advanced_testcase {
+class block_recentlyaccesseditems_helper_testcase extends advanced_testcase {
     /**
      * Tests that the get recent items method can handle getting records when courses have been deleted.
      */
@@ -41,10 +52,10 @@ class helper_test extends \advanced_testcase {
         self::setUser($user);
 
         // Get the user to visit the activities.
-        $event1params = ['context' => \context_module::instance($forum->cmid), 'objectid' => $forum->id];
+        $event1params = ['context' => context_module::instance($forum->cmid), 'objectid' => $forum->id];
         $event1 = \mod_forum\event\course_module_viewed::create($event1params);
         $event1->trigger();
-        $event2params = ['context' => \context_module::instance($glossary->cmid), 'objectid' => $glossary->id];
+        $event2params = ['context' => context_module::instance($glossary->cmid), 'objectid' => $glossary->id];
         $event2 = \mod_glossary\event\course_module_viewed::create($event2params);
         $event2->trigger();
         $recent1 = helper::get_recent_items();

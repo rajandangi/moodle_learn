@@ -17,7 +17,8 @@
  * This module updates the UI during an asynchronous
  * backup or restore process.
  *
- * @module     core_backup/async_backup
+ * @module     backup/util/async_backup
+ * @package    core
  * @copyright  2018 Matt Porritt <mattp@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @since      3.7
@@ -100,8 +101,7 @@ define(['jquery', 'core/ajax', 'core/str', 'core/notification', 'core/templates'
             methodname: 'core_backup_get_async_backup_links_backup',
             args: {
                 'filename': filename,
-                'contextid': contextid,
-                'backupid': backupid
+                'contextid': contextid
             },
         }])[0].done(function(response) {
             // We have the data now update the UI.

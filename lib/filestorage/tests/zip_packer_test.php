@@ -14,26 +14,21 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace core;
-
-use file_archive;
-use file_progress;
-use zip_archive;
+/**
+ * Unit tests for /lib/filestorage/zip_packer.php and zip_archive.php
+ *
+ * @package   core_files
+ * @category  phpunit
+ * @copyright 2012 Petr Skoda
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
 defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
 require_once($CFG->libdir . '/filestorage/file_progress.php');
 
-/**
- * Unit tests for /lib/filestorage/zip_packer.php and zip_archive.php
- *
- * @package   core
- * @category  test
- * @copyright 2012 Petr Skoda
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-class zip_packer_test extends \advanced_testcase implements file_progress {
+class core_files_zip_packer_testcase extends advanced_testcase implements file_progress {
     protected $testfile;
     protected $files;
 
@@ -42,13 +37,13 @@ class zip_packer_test extends \advanced_testcase implements file_progress {
      */
     protected $progress;
 
-    protected function setUp(): void {
+    protected function setUp() {
         parent::setUp();
 
         $this->testfile = __DIR__.'/fixtures/test.txt';
 
         $fs = get_file_storage();
-        $context = \context_system::instance();
+        $context = context_system::instance();
         if (!$file = $fs->get_file($context->id, 'phpunit', 'data', 0, '/', 'test.txt')) {
             $file = $fs->create_file_from_pathname(
                 array('contextid'=>$context->id, 'component'=>'phpunit', 'filearea'=>'data', 'itemid'=>0, 'filepath'=>'/', 'filename'=>'test.txt'),
@@ -148,7 +143,7 @@ class zip_packer_test extends \advanced_testcase implements file_progress {
         $packer = get_file_packer('application/zip');
         $archive = "$CFG->tempdir/archive.zip";
 
-        $this->assertFileDoesNotExist($archive);
+        $this->assertFileNotExists($archive);
         $result = $packer->archive_to_pathname($this->files, $archive);
         $this->assertTrue($result);
         $this->assertFileExists($archive);
@@ -162,15 +157,15 @@ class zip_packer_test extends \advanced_testcase implements file_progress {
 
         // Test invalid files parameter.
         $archive = "$CFG->tempdir/archive2.zip";
-        $this->assertFileDoesNotExist($archive);
+        $this->assertFileNotExists($archive);
 
-        $this->assertFileDoesNotExist(__DIR__.'/xx/yy/ee.txt');
+        $this->assertFileNotExists(__DIR__.'/xx/yy/ee.txt');
         $files = array('xtest.txt'=>__DIR__.'/xx/yy/ee.txt');
 
         $result = $packer->archive_to_pathname($files, $archive, false);
         $this->assertFalse($result);
         $this->assertDebuggingCalled();
-        $this->assertFileDoesNotExist($archive);
+        $this->assertFileNotExists($archive);
 
         $result = $packer->archive_to_pathname($files, $archive);
         $this->assertTrue($result);
@@ -180,7 +175,7 @@ class zip_packer_test extends \advanced_testcase implements file_progress {
         $this->assertSame(array(), $archivefiles);
         unlink($archive);
 
-        $this->assertFileDoesNotExist(__DIR__.'/xx/yy/ee.txt');
+        $this->assertFileNotExists(__DIR__.'/xx/yy/ee.txt');
         $this->assertFileExists(__DIR__.'/fixtures/test.txt');
         $files = array('xtest.txt'=>__DIR__.'/xx/yy/ee.txt', 'test.txt'=>__DIR__.'/fixtures/test.txt', 'ytest.txt'=>__DIR__.'/xx/yy/yy.txt');
         $result = $packer->archive_to_pathname($files, $archive);
@@ -203,7 +198,7 @@ class zip_packer_test extends \advanced_testcase implements file_progress {
 
         $packer = get_file_packer('application/zip');
         $fs = get_file_storage();
-        $context = \context_system::instance();
+        $context = context_system::instance();
 
         $this->assertFalse($fs->file_exists($context->id, 'phpunit', 'test', 0, '/', 'archive.zip'));
         $result = $packer->archive_to_storage($this->files, $context->id, 'phpunit', 'test', 0, '/', 'archive.zip');
@@ -228,7 +223,7 @@ class zip_packer_test extends \advanced_testcase implements file_progress {
 
         $packer = get_file_packer('application/zip');
         $fs = get_file_storage();
-        $context = \context_system::instance();
+        $context = context_system::instance();
 
         $target = "$CFG->tempdir/test/";
         $testcontent = file_get_contents($this->testfile);
@@ -342,7 +337,7 @@ class zip_packer_test extends \advanced_testcase implements file_progress {
 
         $packer = get_file_packer('application/zip');
         $fs = get_file_storage();
-        $context = \context_system::instance();
+        $context = context_system::instance();
 
         $target = "$CFG->tempdir/onlyfiles/";
         $testcontent = file_get_contents($this->testfile);
@@ -367,7 +362,7 @@ class zip_packer_test extends \advanced_testcase implements file_progress {
         }
         foreach ($donotextract as $file) {
             $this->assertFalse(isset($result[$file]));
-            $this->assertFileDoesNotExist($target.$file);
+            $this->assertFileNotExists($target.$file);
         }
 
     }
@@ -417,7 +412,7 @@ class zip_packer_test extends \advanced_testcase implements file_progress {
 
         $packer = get_file_packer('application/zip');
         $fs = get_file_storage();
-        $context = \context_system::instance();
+        $context = context_system::instance();
 
         $testcontent = file_get_contents($this->testfile);
 
@@ -458,7 +453,7 @@ class zip_packer_test extends \advanced_testcase implements file_progress {
         $packer = get_file_packer('application/zip');
         $archive = "$CFG->tempdir/archive.zip";
 
-        $this->assertFileDoesNotExist($archive);
+        $this->assertFileNotExists($archive);
         $packer->archive_to_pathname(array(), $archive);
         $this->assertFileExists($archive);
 
@@ -498,7 +493,7 @@ class zip_packer_test extends \advanced_testcase implements file_progress {
         $textfile = "$CFG->tempdir/textfile.txt";
         touch($textfile);
 
-        $this->assertFileDoesNotExist($archive);
+        $this->assertFileNotExists($archive);
         $this->assertFileExists($textfile);
 
         // Create archive and close it without files.
@@ -539,21 +534,21 @@ class zip_packer_test extends \advanced_testcase implements file_progress {
         try {
             // Old PHP versions were not printing any warning.
             $result = $zip_archive->close();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // New PHP versions print PHP Warning.
             $this->assertInstanceOf('PHPUnit\Framework\Error\Warning', $e);
-            $this->assertStringContainsString('ZipArchive::close', $e->getMessage());
+            $this->assertContains('ZipArchive::close', $e->getMessage());
         }
         // This is crazy, but it shows how some PHP versions do return true.
         try {
             // And some PHP versions do return correctly false (5.4.25, 5.6.14...)
             $this->assertFalse($result);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // But others do insist into returning true (5.6.13...). Only can accept them.
             $this->assertInstanceOf('PHPUnit\Framework\ExpectationFailedException', $e);
             $this->assertTrue($result);
         }
-        $this->assertFileDoesNotExist($archive);
+        $this->assertFileNotExists($archive);
     }
 
     /**
@@ -566,7 +561,7 @@ class zip_packer_test extends \advanced_testcase implements file_progress {
 
         $archive = "$CFG->tempdir/archive.zip";
 
-        $this->assertFileDoesNotExist($archive);
+        $this->assertFileNotExists($archive);
 
         $zip_archive = new zip_archive();
         $result = $zip_archive->open($archive, file_archive::OPEN);
@@ -612,7 +607,7 @@ class zip_packer_test extends \advanced_testcase implements file_progress {
         // The archive contains a single encrypted "hello.txt" file.
         $archive = __DIR__ . '/fixtures/passwordis1.zip';
 
-        /** @var \zip_packer $packer */
+        /** @var zip_packer $packer */
         $packer = get_file_packer('application/zip');
         $result = $packer->extract_to_pathname($archive, make_temp_directory('zip'));
 
@@ -631,7 +626,7 @@ class zip_packer_test extends \advanced_testcase implements file_progress {
         $this->resetAfterTest(true);
         $packer = get_file_packer('application/zip');
         $archive = "$CFG->tempdir/archive.zip";
-        $context = \context_system::instance();
+        $context = context_system::instance();
 
         // Archive to pathname.
         $this->progress = array();

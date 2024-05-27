@@ -38,21 +38,24 @@ use core\check\result;
 class cronrunning extends check {
 
     /**
-     * A link the running tasks report
-     *
-     * @return action_link|null
+     * Constructor
      */
-    public function get_action_link(): ?\action_link {
-        return new \action_link(
-            new \moodle_url('/admin/tool/task/runningtasks.php'),
-            get_string('runningtasks', 'tool_task'));
+    public function __construct() {
+        global $CFG;
+        $this->id = 'cronrunning';
+        $this->name = get_string('checkcronrunning', 'tool_task');
+        if (empty($CFG->cronclionly)) {
+            $this->actionlink = new \action_link(
+                new \moodle_url('/admin/cron.php'),
+                get_string('cron', 'admin'));
+        }
     }
 
     /**
      * Return result
      * @return result
      */
-    public function get_result(): result {
+    public function get_result() : result {
         global $CFG;
 
         // Eventually this should replace cron_overdue_warning and
@@ -68,8 +71,7 @@ class cronrunning extends check {
         $formatexpected = format_time($expectedfrequency);
         $formatinterval = format_time($lastcroninterval);
 
-        // Inform user the time since last cron start.
-        $details = get_string('lastcronstart', 'tool_task', $formatdelta);
+        $details = format_time($delta);
 
         if ($delta > $expectedfrequency + MINSECS) {
             $status = result::WARNING;
@@ -106,8 +108,7 @@ class cronrunning extends check {
             return new result($status, $summary, $details);
         }
 
-        // Add MINSECS to avoid spurious warning if cron is only a few seconds overdue.
-        if ($lastcroninterval > $expectedfrequency + MINSECS) {
+        if ($lastcroninterval > $expectedfrequency) {
             $status = result::WARNING;
             $summary = get_string('croninfrequent', 'admin', [
                 'actual'   => $formatinterval,

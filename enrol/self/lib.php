@@ -159,8 +159,8 @@ class enrol_self_plugin extends enrol_plugin {
 
         \core\notification::success(get_string('youenrolledincourse', 'enrol'));
 
-        // Test whether the password is also used as a group key.
-        if ($instance->password && $instance->customint1) {
+        if ($instance->password and $instance->customint1 and $data->enrolpassword !== $instance->password) {
+            // It must be a group enrolment, let's assign group too.
             $groups = $DB->get_records('groups', array('courseid'=>$instance->courseid), 'id', 'id, enrolmentkey');
             foreach ($groups as $group) {
                 if (empty($group->enrolmentkey)) {
@@ -173,6 +173,10 @@ class enrol_self_plugin extends enrol_plugin {
                     break;
                 }
             }
+        }
+        // Send welcome message.
+        if ($instance->customint4 != ENROL_DO_NOT_SEND_EMAIL) {
+            $this->email_welcome_message($instance, $USER);
         }
     }
 
@@ -227,7 +231,7 @@ class enrol_self_plugin extends enrol_plugin {
      * @return bool|string true if successful, else error message or false.
      */
     public function can_self_enrol(stdClass $instance, $checkuserenrolment = true) {
-        global $DB, $OUTPUT, $USER;
+        global $CFG, $DB, $OUTPUT, $USER;
 
         if ($checkuserenrolment) {
             if (isguestuser()) {
@@ -239,30 +243,6 @@ class enrol_self_plugin extends enrol_plugin {
                 return get_string('canntenrol', 'enrol_self');
             }
         }
-
-        // Check if self enrolment is available right now for users.
-        $result = $this->is_self_enrol_available($instance);
-        if ($result !== true) {
-            return $result;
-        }
-
-        // Check if user has the capability to enrol in this context.
-        if (!has_capability('enrol/self:enrolself', context_course::instance($instance->courseid))) {
-            return get_string('canntenrol', 'enrol_self');
-        }
-
-        return true;
-    }
-
-    /**
-     * Does this plugin support some way to self enrol?
-     * This function doesn't check user capabilities. Use can_self_enrol to check capabilities.
-     *
-     * @param stdClass $instance enrolment instance
-     * @return bool - true means "Enrol me in this course" link could be available
-     */
-    public function is_self_enrol_available(stdClass $instance) {
-        global $CFG, $DB, $USER;
 
         if ($instance->status != ENROL_INSTANCE_ENABLED) {
             return get_string('canntenrol', 'enrol_self');
@@ -388,19 +368,43 @@ class enrol_self_plugin extends enrol_plugin {
      * @param stdClass $instance
      * @param stdClass $user user record
      * @return void
-     * @deprecated since Moodle 4.4
-     * @see \enrol_plugin::send_course_welcome_message_to_user()
-     * @todo MDL-81185 Final deprecation in Moodle 4.8.
      */
-    #[\core\attribute\deprecated('enrol_plugin::send_course_welcome_message_to_user', since: '4.4', mdl: 'MDL-4188')]
     protected function email_welcome_message($instance, $user) {
-        \core\deprecation::emit_deprecation_if_present(__FUNCTION__);
-        $this->send_course_welcome_message_to_user(
-            instance: $instance,
-            userid: $user->id,
-            sendoption: $instance->customint4,
-            message: $instance->customtext1,
-        );
+        global $CFG, $DB;
+
+        $course = $DB->get_record('course', array('id'=>$instance->courseid), '*', MUST_EXIST);
+        $context = context_course::instance($course->id);
+
+        $a = new stdClass();
+        $a->coursename = format_string($course->fullname, true, array('context'=>$context));
+        $a->profileurl = "$CFG->wwwroot/user/view.php?id=$user->id&course=$course->id";
+
+        if (trim($instance->customtext1) !== '') {
+            $message = $instance->customtext1;
+            $key = array('{$a->coursename}', '{$a->profileurl}', '{$a->fullname}', '{$a->email}');
+            $value = array($a->coursename, $a->profileurl, fullname($user), $user->email);
+            $message = str_replace($key, $value, $message);
+            if (strpos($message, '<') === false) {
+                // Plain text only.
+                $messagetext = $message;
+                $messagehtml = text_to_html($messagetext, null, false, true);
+            } else {
+                // This is most probably the tag/newline soup known as FORMAT_MOODLE.
+                $messagehtml = format_text($message, FORMAT_MOODLE, array('context'=>$context, 'para'=>false, 'newlines'=>true, 'filter'=>true));
+                $messagetext = html_to_text($messagehtml);
+            }
+        } else {
+            $messagetext = get_string('welcometocoursetext', 'enrol_self', $a);
+            $messagehtml = text_to_html($messagetext, null, false, true);
+        }
+
+        $subject = get_string('welcometocourse', 'enrol_self', format_string($course->fullname, true, array('context'=>$context)));
+
+        $sendoption = $instance->customint4;
+        $contact = $this->get_welcome_email_contact($sendoption, $context);
+
+        // Directly emailing welcome message rather than using messaging.
+        email_to_user($user, $contact, $subject, $messagetext, $messagehtml);
     }
 
     /**
@@ -479,100 +483,6 @@ class enrol_self_plugin extends enrol_plugin {
     }
 
     /**
-     * Notify users about enrolment expiration.
-     *
-     * Users may be notified by the expiration time of enrollment or unenrollment due to inactivity. The latter is checked in
-     * the last condition of the where clause:
-     * days of inactivity + number of days in advance to send the notification > days of inactivity allowed before unenrollment
-     *
-     * @param int $timenow Current time.
-     * @param string $name Name of this enrol plugin.
-     * @param progress_trace $trace (accepts bool for backwards compatibility only)
-     * @return void
-     */
-    protected function fetch_users_and_notify_expiry(int $timenow, string $name, progress_trace $trace): void {
-        global $DB, $CFG;
-
-        $sql = "SELECT ue.*, e.expirynotify, e.notifyall, e.expirythreshold, e.courseid, c.fullname, e.customint2,
-                       COALESCE(ul.timeaccess, 0) AS timeaccess, ue.timestart
-                  FROM {user_enrolments} ue
-                  JOIN {enrol} e ON (e.id = ue.enrolid AND e.enrol = :name AND e.expirynotify > 0  AND e.status = :enabled)
-                  JOIN {course} c ON (c.id = e.courseid)
-                  JOIN {user} u ON (u.id = ue.userid AND u.deleted = 0 AND u.suspended = 0)
-                  LEFT JOIN {user_lastaccess} ul ON (ul.userid = u.id AND ul.courseid = c.id)
-                 WHERE ue.status = :active
-                       AND ((ue.timeend > 0 AND ue.timeend > :now1 AND ue.timeend < (e.expirythreshold + :now2))
-                            OR (e.customint2 > 0 AND (:now3 - COALESCE(ul.timeaccess, 0) + e.expirythreshold > e.customint2)))
-              ORDER BY ue.enrolid ASC, u.lastname ASC, u.firstname ASC, u.id ASC";
-        $params = [
-            'name' => $name,
-            'enabled' => ENROL_INSTANCE_ENABLED,
-            'active' => ENROL_USER_ACTIVE,
-            'now1' => $timenow,
-            'now2' => $timenow,
-            'now3' => $timenow,
-        ];
-
-        $rs = $DB->get_recordset_sql($sql, $params);
-
-        $lastenrollid = 0;
-        $users = [];
-
-        foreach ($rs as $ue) {
-            $expirycond = ($ue->timeend > 0) && ($ue->timeend > $timenow) && ($ue->timeend < ($ue->expirythreshold + $timenow));
-            $inactivitycond = ($ue->customint2 > 0) && (($timenow - $ue->timeaccess + $ue->expirythreshold) > $ue->customint2);
-
-            $user = $DB->get_record('user', ['id' => $ue->userid]);
-
-            if ($expirycond) {
-                if ($lastenrollid && $lastenrollid != $ue->enrolid) {
-                    $this->notify_expiry_enroller($lastenrollid, $users, $trace);
-                    $users = [];
-                }
-                $lastenrollid = $ue->enrolid;
-
-                $enroller = $this->get_enroller($ue->enrolid);
-                $context = context_course::instance($ue->courseid);
-
-                $users[] = [
-                    'fullname' => fullname($user, has_capability('moodle/site:viewfullnames', $context, $enroller)),
-                    'timeend' => $ue->timeend,
-                ];
-            }
-            // Notifications to inactive users only if inactive time limit is set.
-            if ($inactivitycond && $ue->notifyall) {
-                $ue->message = 'expiryinactivemessageenrolledbody';
-                $lastaccess = $ue->timeaccess;
-                if (!$lastaccess) {
-                    $lastaccess = $ue->timestart;
-                }
-                $ue->inactivetime = floor(($timenow - $lastaccess) / DAYSECS);
-                $this->notify_expiry_enrolled($user, $ue, $trace);
-            }
-
-            if ($expirycond) {
-                if (!$ue->notifyall) {
-                    continue;
-                }
-
-                if ($ue->timeend - $ue->expirythreshold + 86400 < $timenow) {
-                    // Notify enrolled users only once at the start of the threshold.
-                    $trace->output("user $ue->userid was already notified that enrolment in course $ue->courseid expires on " .
-                        userdate($ue->timeend, '', $CFG->timezone), 1);
-                    continue;
-                }
-
-                $this->notify_expiry_enrolled($user, $ue, $trace);
-            }
-        }
-        $rs->close();
-
-        if ($lastenrollid && $users) {
-            $this->notify_expiry_enroller($lastenrollid, $users, $trace);
-        }
-    }
-
-    /**
      * Returns the user who is responsible for self enrolments in given instance.
      *
      * Usually it is the first editing teacher - the person with "highest authority"
@@ -603,26 +513,6 @@ class enrol_self_plugin extends enrol_plugin {
         $this->lasternollerinstanceid = $instanceid;
 
         return $this->lasternoller;
-    }
-
-    protected function get_expiry_message_body(stdClass $user, stdClass $ue, string $name,
-            stdClass $enroller, context $context): string {
-        $a = new stdClass();
-        $a->course = format_string($ue->fullname, true, ['context' => $context]);
-        $a->user = fullname($user, true);
-        // If the enrolment duration is disabled, replace timeend with other data.
-        if ($ue->timeend == 0) {
-            $timenow = time();
-            $lastaccess = $ue->timeaccess > 0 ? $ue->timeaccess : $ue->timestart;
-            $ue->timeend = $timenow + ($ue->customint2 - ($timenow - $lastaccess));
-        }
-        $a->timeend  = userdate($ue->timeend, '', $user->timezone);
-        $a->enroller = fullname($enroller, has_capability('moodle/site:viewfullnames', $context, $user));
-        if (isset($ue->inactivetime)) {
-            $a->inactivetime = $ue->inactivetime;
-        }
-        $a->url = new moodle_url('/course/view.php', ['id' => $ue->courseid]);
-        return get_string($ue->message ?? 'expirymessageenrolledbody', 'enrol_' . $name, $a);
     }
 
     /**
@@ -932,33 +822,8 @@ class enrol_self_plugin extends enrol_plugin {
         $mform->addHelpButton('customint4', 'sendcoursewelcomemessage', 'enrol_self');
 
         $options = array('cols' => '60', 'rows' => '8');
-        $mform->addElement('textarea', 'customtext1', get_string('customwelcomemessage', 'core_enrol'), $options);
-        $mform->setDefault('customtext1', get_string('customwelcomemessageplaceholder', 'core_enrol'));
-        $mform->hideIf(
-            elementname: 'customtext1',
-            dependenton: 'customint4',
-            condition: 'eq',
-            value: ENROL_DO_NOT_SEND_EMAIL,
-        );
-
-        // Static form elements cannot be hidden by hideIf() so we need to add a dummy group.
-        // See: https://tracker.moodle.org/browse/MDL-66251.
-        $group[] = $mform->createElement(
-            'static',
-            'customwelcomemessage_extra_help',
-            null,
-            get_string(
-                identifier: 'customwelcomemessage_help',
-                component: 'core_enrol',
-            ),
-        );
-        $mform->addGroup($group, 'group_customwelcomemessage_extra_help', '', ' ', false);
-        $mform->hideIf(
-            elementname: 'group_customwelcomemessage_extra_help',
-            dependenton: 'customint4',
-            condition: 'eq',
-            value: ENROL_DO_NOT_SEND_EMAIL,
-        );
+        $mform->addElement('textarea', 'customtext1', get_string('customwelcomemessage', 'enrol_self'), $options);
+        $mform->addHelpButton('customtext1', 'customwelcomemessage', 'enrol_self');
 
         if (enrol_accessing_via_instance($instance)) {
             $warntext = get_string('instanceeditselfwarningtext', 'core_enrol');
@@ -987,9 +852,6 @@ class enrol_self_plugin extends enrol_plugin {
      * @return void
      */
     public function edit_instance_validation($data, $files, $instance, $context) {
-        global $CFG;
-        require_once("{$CFG->dirroot}/enrol/self/locallib.php");
-
         $errors = array();
 
         $checkpassword = false;
@@ -1002,11 +864,6 @@ class enrol_self_plugin extends enrol_plugin {
 
             // Check the password if the instance is enabled and the password has changed.
             if (($data['status'] == ENROL_INSTANCE_ENABLED) && ($instance->password !== $data['password'])) {
-                $checkpassword = true;
-            }
-
-            // Check the password if we are enabling group enrolment keys.
-            if (!$instance->customint1 && $data['customint1']) {
                 $checkpassword = true;
             }
         } else {
@@ -1023,10 +880,6 @@ class enrol_self_plugin extends enrol_plugin {
                 if (!check_password_policy($data['password'], $errmsg)) {
                     $errors['password'] = $errmsg;
                 }
-            } else if (!empty($data['password']) && $data['customint1'] &&
-                    enrol_self_check_group_enrolment_key($data['courseid'], $data['password'])) {
-
-                $errors['password'] = get_string('passwordmatchesgroupkey', 'enrol_self');
             }
         }
 
@@ -1036,14 +889,12 @@ class enrol_self_plugin extends enrol_plugin {
             }
         }
 
-        if (array_key_exists('expirynotify', $data)
-                && ($data['expirynotify'] > 0 || $data['customint2'])
-                && $data['expirythreshold'] < 86400) {
+        if ($data['expirynotify'] > 0 and $data['expirythreshold'] < 86400) {
             $errors['expirythreshold'] = get_string('errorthresholdlow', 'core_enrol');
         }
 
         // Now these ones are checked by quickforms, but we may be called by the upload enrolments tool, or a webservive.
-        if (array_key_exists('name', $data) && core_text::strlen($data['name']) > 255) {
+        if (core_text::strlen($data['name']) > 255) {
             $errors['name'] = get_string('err_maxlength', 'form', 255);
         }
         $validstatus = array_keys($this->get_status_options());
@@ -1071,7 +922,7 @@ class enrol_self_plugin extends enrol_plugin {
             'expirynotify' => $validexpirynotify,
             'roleid' => $validroles
         );
-        if (array_key_exists('expirynotify', $data) && $data['expirynotify'] != 0) {
+        if ($data['expirynotify'] != 0) {
             $tovalidate['expirythreshold'] = PARAM_INT;
         }
         $typeerrors = $this->validate_param_types($data, $tovalidate);
@@ -1151,58 +1002,45 @@ class enrol_self_plugin extends enrol_plugin {
      * @param int $sendoption send email from constant ENROL_SEND_EMAIL_FROM_*
      * @param $context context where the user will be fetched
      * @return mixed|stdClass the contact user object.
-     * @deprecated since Moodle 4.4
-     * @see \enrol_plugin::get_welcome_message_contact()
-     * @todo MDL-81185 Final deprecation in Moodle 4.8.
      */
-    #[\core\attribute\deprecated('enrol_plugin::get_welcome_message_contact', since: '4.4', mdl: 'MDL-4188')]
     public function get_welcome_email_contact($sendoption, $context) {
-        \core\deprecation::emit_deprecation_if_present(__FUNCTION__);
-        return $this->get_welcome_message_contact(
-            sendoption: $sendoption,
-            context: $context,
-        );
-    }
+        global $CFG;
 
-    /**
-     * Check if enrolment plugin is supported in csv course upload.
-     *
-     * @return bool
-     */
-    public function is_csv_upload_supported(): bool {
-        return true;
-    }
-
-    /**
-     * Finds matching instances for a given course.
-     *
-     * @param array $enrolmentdata enrolment data.
-     * @param int $courseid Course ID.
-     * @return stdClass|null Matching instance
-     */
-    public function find_instance(array $enrolmentdata, int $courseid): ?stdClass {
-
-        $instances = enrol_get_instances($courseid, false);
-        $instance = null;
-        foreach ($instances as $i) {
-            if ($i->enrol == 'self') {
-                // This is bad - we can not really distinguish between self instances. So grab first available.
-                $instance = $i;
-                break;
+        $contact = null;
+        // Send as the first user assigned as the course contact.
+        if ($sendoption == ENROL_SEND_EMAIL_FROM_COURSE_CONTACT) {
+            $rusers = array();
+            if (!empty($CFG->coursecontact)) {
+                $croles = explode(',', $CFG->coursecontact);
+                list($sort, $sortparams) = users_order_by_sql('u');
+                // We only use the first user.
+                $i = 0;
+                do {
+                    $allnames = get_all_user_name_fields(true, 'u');
+                    $rusers = get_role_users($croles[$i], $context, true, 'u.id,  u.confirmed, u.username, '. $allnames . ',
+                    u.email, r.sortorder, ra.id', 'r.sortorder, ra.id ASC, ' . $sort, null, '', '', '', '', $sortparams);
+                    $i++;
+                } while (empty($rusers) && !empty($croles[$i]));
+            }
+            if ($rusers) {
+                $contact = array_values($rusers)[0];
+            }
+        } else if ($sendoption == ENROL_SEND_EMAIL_FROM_KEY_HOLDER) {
+            // Send as the first user with enrol/self:holdkey capability assigned in the course.
+            list($sort) = users_order_by_sql('u');
+            $keyholders = get_users_by_capability($context, 'enrol/self:holdkey', 'u.*', $sort);
+            if (!empty($keyholders)) {
+                $contact = array_values($keyholders)[0];
             }
         }
-        return $instance;
-    }
 
-    /**
-     * Fill custom fields data for a given enrolment plugin.
-     *
-     * @param array $enrolmentdata enrolment data.
-     * @param int $courseid Course ID.
-     * @return array Updated enrolment data with custom fields info.
-     */
-    public function fill_enrol_custom_fields(array $enrolmentdata, int $courseid): array {
-        return $enrolmentdata + ['password' => ''];
+        // If send welcome email option is set to no reply or if none of the previous options have
+        // returned a contact send welcome message as noreplyuser.
+        if ($sendoption == ENROL_SEND_EMAIL_FROM_NOREPLY || empty($contact)) {
+            $contact = core_user::get_noreply_user();
+        }
+
+        return $contact;
     }
 }
 

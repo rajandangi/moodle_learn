@@ -23,21 +23,47 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+defined('MOODLE_INTERNAL') || die();
+
 /**
  * Upgrade code for the multiple choice question type.
  * @param int $oldversion the version we are upgrading from.
  */
 function xmldb_qtype_multichoice_upgrade($oldversion) {
-    // Automatically generated Moodle v4.1.0 release upgrade line.
+    global $CFG, $DB;
+
+    // Automatically generated Moodle v3.5.0 release upgrade line.
     // Put any upgrade step following this.
 
-    // Automatically generated Moodle v4.2.0 release upgrade line.
+    // Automatically generated Moodle v3.6.0 release upgrade line.
     // Put any upgrade step following this.
 
-    // Automatically generated Moodle v4.3.0 release upgrade line.
+    // Automatically generated Moodle v3.7.0 release upgrade line.
     // Put any upgrade step following this.
 
-    // Automatically generated Moodle v4.4.0 release upgrade line.
+    // Automatically generated Moodle v3.8.0 release upgrade line.
+    // Put any upgrade step following this.
+
+    // Add a new checkbox for the question author to decide
+    // Whether standard instruction ('Select one:' or 'Select one or more:') is displayed.
+    $dbman = $DB->get_manager();
+    $newversion = 2020041600;
+    if ($oldversion < $newversion) {
+
+        // Define field showstandardinstruction to be added to qtype_multichoice_options.
+        $table = new xmldb_table('qtype_multichoice_options');
+        $field = new xmldb_field('showstandardinstruction', XMLDB_TYPE_INTEGER, '2',
+            null, XMLDB_NOTNULL, null, '1', 'shownumcorrect');
+
+        // Conditionally launch add field showstandardinstruction.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Multichoice savepoint reached.
+        upgrade_plugin_savepoint(true, $newversion, 'qtype', 'multichoice');
+    }
+    // Automatically generated Moodle v3.9.0 release upgrade line.
     // Put any upgrade step following this.
 
     return true;

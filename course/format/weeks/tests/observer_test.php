@@ -14,7 +14,15 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace format_weeks;
+/**
+ * Unit tests for the event observers used by the weeks course format.
+ *
+ * @package format_weeks
+ * @copyright 2017 Mark Nelson <markn@moodle.com>
+ * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+defined('MOODLE_INTERNAL') || die();
 
 /**
  * Unit tests for the event observers used by the weeks course format.
@@ -23,12 +31,12 @@ namespace format_weeks;
  * @copyright 2017 Mark Nelson <markn@moodle.com>
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class observer_test extends \advanced_testcase {
+class format_weeks_observer_testcase extends advanced_testcase {
 
     /**
      * Test setup.
      */
-    public function setUp(): void {
+    public function setUp() {
         $this->resetAfterTest();
     }
 

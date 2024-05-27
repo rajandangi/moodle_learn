@@ -15,7 +15,7 @@
     along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 }}
 {{!
-    @template core_calendar/header
+    @template calendar/header
 
     Calendar header.
 
@@ -32,12 +32,9 @@
     }
 }}
 <div class="header d-flex flex-wrap p-1">
-    {{#showviewselector}}
-        {{> core_calendar/view_selector}}
-    {{/showviewselector}}
+    {{> core_calendar/view_selector}}
     {{#filter_selector}}
         {{{filter_selector}}}
     {{/filter_selector}}
     {{> core_calendar/add_event_button}}
 </div>
-<div aria-live="polite" class="sr-only calendar-announcements"></div>

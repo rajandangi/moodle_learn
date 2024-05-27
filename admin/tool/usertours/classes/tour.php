@@ -14,8 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace tool_usertours;
-
 /**
  * Tour class.
  *
@@ -23,7 +21,19 @@ namespace tool_usertours;
  * @copyright  2016 Andrew Nicols <andrew@nicols.co.uk>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+
+namespace tool_usertours;
+
+defined('MOODLE_INTERNAL') || die();
+
+/**
+ * Tour class.
+ *
+ * @copyright  2016 Andrew Nicols <andrew@nicols.co.uk>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 class tour {
+
     /**
      * The tour is currently disabled
      *
@@ -52,12 +62,6 @@ class tour {
      */
     const TOUR_REQUESTED_BY_USER        = 'tool_usertours_tour_reset_time_';
 
-    /** @var int Whether to show the tour only until it has been marked complete */
-    const SHOW_TOUR_UNTIL_COMPLETE = 1;
-
-    /** @var int Whether to show the tour every time a page matches */
-    const SHOW_TOUR_ON_EACH_PAGE_VISIT = 2;
-
     /**
      * @var $id The tour ID.
      */
@@ -84,11 +88,6 @@ class tour {
     protected $enabled;
 
     /**
-     * @var $endtourlabel The end tour label.
-     */
-    protected $endtourlabel;
-
-    /**
      * @var $sortorder The sort order.
      */
     protected $sortorder;
@@ -112,11 +111,6 @@ class tour {
      * @var $steps  The steps in this tour.
      */
     protected $steps = [];
-
-    /**
-     * @var bool $displaystepnumbers Display the step numbers in this tour.
-     */
-    protected $displaystepnumbers = true;
 
     /**
      * Create an instance of the specified tour.
@@ -151,7 +145,7 @@ class tour {
         global $DB;
 
         return $this->reload_from_record(
-            $DB->get_record('tool_usertours_tours', ['id' => $id], '*', MUST_EXIST)
+            $DB->get_record('tool_usertours_tours', array('id' => $id), '*', MUST_EXIST)
         );
     }
 
@@ -191,11 +185,9 @@ class tour {
         if (isset($record->sortorder)) {
             $this->sortorder = $record->sortorder;
         }
-        $this->endtourlabel = $record->endtourlabel ?? null;
         $this->config       = json_decode($record->configdata);
         $this->dirty        = false;
         $this->steps        = [];
-        $this->displaystepnumbers = !empty($record->displaystepnumbers);
 
         return $this;
     }
@@ -203,7 +195,7 @@ class tour {
     /**
      * Fetch all steps in the tour.
      *
-     * @return  step[]
+     * @return  stdClass[]
      */
     public function get_steps() {
         if (empty($this->steps)) {
@@ -329,39 +321,9 @@ class tour {
     }
 
     /**
-     * The end tour label for the tour.
-     *
-     * @return string
-     */
-    public function get_endtourlabel(): string {
-        if ($this->endtourlabel) {
-            $label = helper::get_string_from_input($this->endtourlabel);
-        } else if ($this->count_steps() == 1) {
-            $label = get_string('endonesteptour', 'tool_usertours');
-        } else {
-            $label = get_string('endtour', 'tool_usertours');
-        }
-
-        return $label;
-    }
-
-    /**
-     * Set the endtourlabel of the tour to the specified value.
-     *
-     * @param string $value
-     * @return $this
-     */
-    public function set_endtourlabel(string $value): tour {
-        $this->endtourlabel = $value;
-        $this->dirty = true;
-
-        return $this;
-    }
-
-    /**
      * The link to view this tour.
      *
-     * @return  \moodle_url
+     * @return  moodle_url
      */
     public function get_view_link() {
         return helper::get_view_tour_link($this->id);
@@ -370,7 +332,7 @@ class tour {
     /**
      * The link to edit this tour.
      *
-     * @return  \moodle_url
+     * @return  moodle_url
      */
     public function get_edit_link() {
         return helper::get_edit_tour_link($this->id);
@@ -418,17 +380,15 @@ class tour {
      * @return  object
      */
     public function to_record() {
-        return (object) [
+        return (object) array(
             'id'            => $this->id,
             'name'          => $this->name,
             'description'   => $this->description,
             'pathmatch'     => $this->pathmatch,
             'enabled'       => $this->enabled,
             'sortorder'     => $this->sortorder,
-            'endtourlabel'  => $this->endtourlabel,
             'configdata'    => json_encode($this->config),
-            'displaystepnumbers' => $this->displaystepnumbers,
-        ];
+        );
     }
 
     /**
@@ -513,7 +473,7 @@ class tour {
      */
     public function get_config($key = null, $default = null) {
         if ($this->config === null) {
-            $this->config = (object) [];
+            $this->config = (object) array();
         }
         if ($key === null) {
             return $this->config;
@@ -539,7 +499,7 @@ class tour {
      */
     public function set_config($key, $value) {
         if ($this->config === null) {
-            $this->config = (object) [];
+            $this->config = (object) array();
         }
         $this->config->$key = $value;
         $this->dirty = true;
@@ -596,7 +556,7 @@ class tour {
         }
 
         // Remove the configuration for the tour.
-        $DB->delete_records('tool_usertours_tours', ['id' => $this->id]);
+        $DB->delete_records('tool_usertours_tours', array('id' => $this->id));
         helper::reset_tour_sortorder();
 
         $this->remove_user_preferences();
@@ -611,11 +571,11 @@ class tour {
      */
     public function reset_step_sortorder() {
         global $DB;
-        $steps = $DB->get_records('tool_usertours_steps', ['tourid' => $this->id], 'sortorder ASC', 'id');
+        $steps = $DB->get_records('tool_usertours_steps', array('tourid' => $this->id), 'sortorder ASC', 'id');
 
         $index = 0;
         foreach ($steps as $step) {
-            $DB->set_field('tool_usertours_steps', 'sortorder', $index, ['id' => $step->id]);
+            $DB->set_field('tool_usertours_steps', 'sortorder', $index, array('id' => $step->id));
             $index++;
         }
 
@@ -645,11 +605,6 @@ class tour {
         if (!$this->is_enabled()) {
             // The tour is disabled - it should not be shown.
             return false;
-        }
-
-        if ($this->get_showtourwhen() === self::SHOW_TOUR_ON_EACH_PAGE_VISIT) {
-            // The tour should be shown on every page visit.
-            return true;
         }
 
         if ($tourcompletiondate = get_user_preferences(self::TOUR_LAST_COMPLETED_BY_USER . $this->get_id(), null)) {
@@ -774,7 +729,6 @@ class tour {
      */
     public function prepare_data_for_form() {
         $data = $this->to_record();
-        $data->showtourwhen = $this->get_showtourwhen();
         foreach (configuration::get_defaultable_keys() as $key) {
             $data->$key = $this->get_config($key, configuration::get_default_value($key));
         }
@@ -815,14 +769,11 @@ class tour {
     /**
      * Check whether this tour matches all filters.
      *
-     * @param   \context     $context    The context to check.
-     * @param   array|null   $filters    Optional array of filters.
+     * @param   context     $context    The context to check
      * @return  bool
      */
-    public function matches_all_filters(\context $context, array $filters = null): bool {
-        if (!$filters) {
-            $filters = helper::get_all_filters();
-        }
+    public function matches_all_filters(\context $context) {
+        $filters = helper::get_all_filters();
 
         // All filters must match.
         // If any one filter fails to match, we return false.
@@ -833,68 +784,5 @@ class tour {
         }
 
         return true;
-    }
-
-    /**
-     * Gets all filter values for use in client side filters.
-     *
-     * @param   array     $filters    Array of clientside filters.
-     * @return  array
-     */
-    public function get_client_filter_values(array $filters): array {
-        $results = [];
-
-        foreach ($filters as $filter) {
-            $results[$filter::get_filter_name()] = $filter::get_client_side_values($this);
-        }
-
-        return $results;
-    }
-
-    /**
-     * Set the value for the display step numbers setting.
-     *
-     * @param bool $value True for enable.
-     * @return $this
-     */
-    public function set_display_step_numbers(bool $value): tour {
-        $this->displaystepnumbers = $value;
-        $this->dirty = true;
-
-        return $this;
-    }
-
-    /**
-     * Get the value of the display step numbers setting.
-     *
-     * @return bool
-     */
-    public function get_display_step_numbers(): bool {
-        return $this->displaystepnumbers;
-    }
-
-    /**
-     * Set the value for the when to show the tour.
-     *
-     * @see self::SHOW_TOUR_UNTIL_COMPLETE
-     * @see self::SHOW_TOUR_ON_EACH_PAGE_VISIT
-     *
-     * @param int $value
-     * @return self
-     */
-    public function set_showtourwhen(int $value): tour {
-        return $this->set_config('showtourwhen', $value);
-    }
-
-    /**
-     * When to show the tour.
-     *
-     * @see self::SHOW_TOUR_UNTIL_COMPLETE
-     * @see self::SHOW_TOUR_ON_EACH_PAGE_VISIT
-     *
-     * @return int
-     */
-    public function get_showtourwhen(): int {
-        return $this->get_config('showtourwhen', self::SHOW_TOUR_UNTIL_COMPLETE);
     }
 }

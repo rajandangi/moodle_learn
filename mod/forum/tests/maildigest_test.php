@@ -15,25 +15,21 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace mod_forum;
-
-use mod_forum_tests_cron_trait;
-use mod_forum_tests_generator_trait;
-
-defined('MOODLE_INTERNAL') || die;
-
-require_once(__DIR__ . '/cron_trait.php');
-require_once(__DIR__ . '/generator_trait.php');
-
 /**
  * The module forums external functions unit tests
  *
  * @package    mod_forum
- * @category   test
+ * @category   external
  * @copyright  2013 Andrew Nicols
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class maildigest_test extends \advanced_testcase {
+
+defined('MOODLE_INTERNAL') || die();
+
+require_once(__DIR__ . '/cron_trait.php');
+require_once(__DIR__ . '/generator_trait.php');
+
+class mod_forum_maildigest_testcase extends advanced_testcase {
 
     // Make use of the cron tester trait.
     use mod_forum_tests_cron_trait;
@@ -41,17 +37,11 @@ class maildigest_test extends \advanced_testcase {
     // Make use of the test generator trait.
     use mod_forum_tests_generator_trait;
 
-    /** @var \phpunit_message_sink */
-    protected $messagesink;
-
-    /** @var \phpunit_message_sink */
-    protected $mailsink;
-
     /**
      * Set up message and mail sinks, and set up other requirements for the
      * cron to be tested here.
      */
-    public function setUp(): void {
+    public function setUp() {
         global $CFG;
 
         // Messaging is not compatible with transactions...
@@ -62,7 +52,7 @@ class maildigest_test extends \advanced_testcase {
         $this->mailsink = $this->redirectEmails();
 
         // Confirm that we have an empty message sink so far.
-        $messages = $this->messagesink->get_messages_by_component('mod_forum');
+        $messages = $this->messagesink->get_messages();
         $this->assertEquals(0, count($messages));
 
         $messages = $this->mailsink->get_messages();
@@ -88,7 +78,7 @@ class maildigest_test extends \advanced_testcase {
     /**
      * Clear the message sinks set up in this test.
      */
-    public function tearDown(): void {
+    public function tearDown() {
         $this->messagesink->clear();
         $this->messagesink->close();
 
@@ -105,9 +95,9 @@ class maildigest_test extends \advanced_testcase {
     protected function helper_setup_user_in_course() {
         global $DB;
 
-        $return = new \stdClass();
-        $return->courses = new \stdClass();
-        $return->forums = new \stdClass();
+        $return = new stdClass();
+        $return->courses = new stdClass();
+        $return->forums = new stdClass();
         $return->forumids = array();
 
         // Create a user.
@@ -118,7 +108,7 @@ class maildigest_test extends \advanced_testcase {
         $return->courses->course1 = $this->getDataGenerator()->create_course();
 
         // Create forums.
-        $record = new \stdClass();
+        $record = new stdClass();
         $record->course = $return->courses->course1->id;
         $record->forcesubscribe = 1;
 
@@ -405,15 +395,13 @@ class maildigest_test extends \advanced_testcase {
         $this->send_digests_and_assert($user, $posts);
 
         // The user does not, by default, have permission to view the fullname.
-        $messages = $this->messagesink->get_messages_by_component('mod_forum');
-        $messages = reset($messages);
-        $messagecontent = $messages->fullmessage;
+        $messagecontent = $this->messagesink->get_messages()[0]->fullmessage;
 
         // Assert that the expected name is present (lastname only).
-        $this->assertStringContainsString(fullname($user, false), $messagecontent);
+        $this->assertContains(fullname($user, false), $messagecontent);
 
         // Assert that the full name is not present (firstname lastname only).
-        $this->assertStringNotContainsString(fullname($user, true), $messagecontent);
+        $this->assertNotContains(fullname($user, true), $messagecontent);
     }
 
     /**
@@ -458,15 +446,13 @@ class maildigest_test extends \advanced_testcase {
 
         // The user does not, by default, have permission to view the fullname.
         // However we have given the user that capability so we expect to see both firstname and lastname.
-        $messages = $this->messagesink->get_messages_by_component('mod_forum');
-        $messages = reset($messages);
-        $messagecontent = $messages->fullmessage;
+        $messagecontent = $this->messagesink->get_messages()[0]->fullmessage;
 
         // Assert that the expected name is present (lastname only).
-        $this->assertStringContainsString(fullname($user, false), $messagecontent);
+        $this->assertContains(fullname($user, false), $messagecontent);
 
         // Assert that the full name is also present (firstname lastname only).
-        $this->assertStringContainsString(fullname($user, true), $messagecontent);
+        $this->assertContains(fullname($user, true), $messagecontent);
     }
 
     /**
@@ -669,7 +655,7 @@ class maildigest_test extends \advanced_testcase {
     }
 
     /**
-     * The digest being in the future is queued for today.
+     * The digest being in the past is queued til the next day.
      */
     public function test_cron_digest_same_day() {
         global $DB, $CFG;
@@ -707,73 +693,6 @@ class maildigest_test extends \advanced_testcase {
         $task = reset($tasks);
         $digesttime = usergetmidnight(time(), \core_date::get_server_timezone()) + ($CFG->digestmailtime * 3600);
         $this->assertLessThanOrEqual($digesttime, $task->nextruntime);
-    }
-
-    /**
-     * Tests that if a new message is posted after the days digest time,
-     * but before that days digests are sent a new task is created.
-     */
-    public function test_cron_digest_queue_next_before_current_processed() {
-        global $DB, $CFG;
-
-        $this->resetAfterTest(true);
-
-        // Set up a basic user enrolled in a course.
-        $userhelper = $this->helper_setup_user_in_course();
-        $user = $userhelper->user;
-        $forum1 = $userhelper->forums->forum1;
-
-        // Add 1 discussions to forum 1.
-        $this->helper_post_to_forum($forum1, $user, ['mailnow' => 1]);
-
-        // Set the tested user's default maildigest setting.
-        $DB->set_field('user', 'maildigest', 1, ['id' => $user->id]);
-
-        // Set the digest time to the future (magic, shouldn't work).
-        $CFG->digestmailtime = 25;
-        // One digest e-mail should be sent, and no individual notifications.
-        $expect = [
-            (object) [
-                'userid' => $user->id,
-                'digests' => 1,
-            ],
-        ];
-        $this->queue_tasks_and_assert($expect);
-
-        // Set the digest time to midnight.
-        $CFG->digestmailtime = 0;
-
-        // Add another discussions to forum 1.
-        $this->helper_post_to_forum($forum1, $user, ['mailnow' => 1]);
-
-        // One digest e-mail should be sent, and no individual notifications.
-        $expect = [
-            (object) [
-                'userid' => $user->id,
-                'digests' => 1,
-            ],
-        ];
-        $this->queue_tasks_and_assert($expect);
-
-        // There should now be two tasks queued.
-        $tasks = $DB->get_records('task_adhoc', ['component' => 'mod_forum']);
-        $this->assertCount(2, $tasks);
-
-        // Add yet another another discussions to forum 1.
-        $this->helper_post_to_forum($forum1, $user, ['mailnow' => 1]);
-
-        // One digest e-mail should be sent, and no individual notifications.
-        $expect = [
-            (object) [
-                'userid' => $user->id,
-                'digests' => 1,
-            ],
-        ];
-        $this->queue_tasks_and_assert($expect);
-
-        // There should still be two tasks queued.
-        $tasks = $DB->get_records('task_adhoc', ['component' => 'mod_forum']);
-        $this->assertCount(2, $tasks);
     }
 
     /**

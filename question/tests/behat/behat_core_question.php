@@ -23,11 +23,11 @@ use Behat\Mink\Exception\ExpectationException as ExpectationException;
 use Behat\Mink\Exception\ElementNotFoundException as ElementNotFoundException;
 
 /**
- * Steps definitions related with the question bank management.
+ * Behat navigation hooks for core_question.
  *
  * @package    core_question
  * @category   test
- * @copyright  2013 David Monllaó
+ * @copyright  2022 The Open University
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class behat_core_question extends behat_question_base {
@@ -72,25 +72,25 @@ class behat_core_question extends behat_question_base {
                         ['courseid' => $this->get_course_id($identifier)]);
 
             case 'course question categories':
-                return new moodle_url('/question/bank/managecategories/category.php',
+                return new moodle_url('/question/category.php',
                         ['courseid' => $this->get_course_id($identifier)]);
 
             case 'course question import':
-                return new moodle_url('/question/bank/importquestions/import.php',
+                return new moodle_url('/question/import.php',
                         ['courseid' => $this->get_course_id($identifier)]);
 
             case 'course question export':
-                return new moodle_url('/question/bank/exportquestions/export.php',
+                return new moodle_url('/question/export.php',
                         ['courseid' => $this->get_course_id($identifier)]);
 
             case 'preview':
                 [$questionid, $otheridtype, $otherid] = $this->find_question_by_name($identifier);
-                return new moodle_url('/question/bank/previewquestion/preview.php',
+                return new moodle_url('/question/preview.php',
                         ['id' => $questionid, $otheridtype => $otherid]);
 
             case 'edit':
                 [$questionid, $otheridtype, $otherid] = $this->find_question_by_name($identifier);
-                return new moodle_url('/question/bank/editquestion/question.php',
+                return new moodle_url('/question/question.php',
                         ['id' => $questionid, $otheridtype => $otherid]);
 
             default:
@@ -120,146 +120,6 @@ class behat_core_question extends behat_question_base {
         } else {
             throw new coding_exception('Unsupported context level ' . $context->contextlevel);
         }
-    }
-
-    /**
-     * Creates a question in the current course questions bank with the provided data.
-     * This step can only be used when creating question types composed by a single form.
-     *
-     * @Given /^I add a "(?P<question_type_name_string>(?:[^"]|\\")*)" question filling the form with:$/
-     * @param string $questiontypename The question type name
-     * @param TableNode $questiondata The data to fill the question type form.
-     */
-    public function i_add_a_question_filling_the_form_with($questiontypename, TableNode $questiondata) {
-        // Click on create question.
-        $this->execute('behat_forms::press_button', get_string('createnewquestion', 'question'));
-
-        // Add question.
-        $this->finish_adding_question($questiontypename, $questiondata);
-    }
-
-    /**
-     * Checks the state of the specified question.
-     *
-     * @Then /^the state of "(?P<question_description_string>(?:[^"]|\\")*)" question is shown as "(?P<state_string>(?:[^"]|\\")*)"$/
-     * @throws ExpectationException
-     * @throws ElementNotFoundException
-     * @param string $questiondescription
-     * @param string $state
-     */
-    public function the_state_of_question_is_shown_as($questiondescription, $state) {
-
-        // Using xpath literal to avoid quotes problems.
-        $questiondescriptionliteral = behat_context_helper::escape($questiondescription);
-        $stateliteral = behat_context_helper::escape($state);
-
-        // Split in two checkings to give more feedback in case of exception.
-        $exception = new ElementNotFoundException($this->getSession(), 'Question "' . $questiondescription . '" ');
-        $questionxpath = "//div[contains(concat(' ', normalize-space(@class), ' '), ' que ')]" .
-                "[contains(div[@class='content']/div[contains(concat(' ', normalize-space(@class), ' '), ' formulation ')]," .
-                "{$questiondescriptionliteral})]";
-        $this->find('xpath', $questionxpath, $exception);
-
-        $exception = new ExpectationException('Question "' . $questiondescription .
-                '" state is not "' . $state . '"', $this->getSession());
-        $xpath = $questionxpath . "/div[@class='info']/div[@class='state' and contains(., {$stateliteral})]";
-        $this->find('xpath', $xpath, $exception);
-    }
-
-    /**
-     * Activates a particular action on a particular question in the question bank UI.
-     *
-     * @When I choose :action action for :questionname in the question bank
-     * @param string $action the label for the action you want to activate.
-     * @param string $questionname the question name.
-     */
-    public function i_action_the_question($action, $questionname) {
-        if ($this->running_javascript()) {
-            // This method isn't allowed unless Javascript is running.
-            $this->execute('behat_action_menu::i_open_the_action_menu_in', [
-                $questionname,
-                'table_row',
-            ]);
-            $this->execute('behat_action_menu::i_choose_in_the_open_action_menu', [
-                $action
-            ]);
-        } else {
-            // This method doesn't open the menu correctly when Javascript is running.
-            $this->execute('behat_action_menu::i_choose_in_the_named_menu_in_container', [
-                $action,
-                get_string('edit', 'core'),
-                $questionname,
-                'table_row',
-            ]);
-        }
-    }
-
-    /**
-     * Checks that action does exist for a question.
-     *
-     * @Then the :action action should exist for the :questionname question in the question bank
-     * @param string $action the label for the action you want to activate.
-     * @param string $questionname the question name.
-     */
-    public function action_exists($action, $questionname) {
-        $this->execute('behat_action_menu::item_should_exist_in_the', [
-            $action,
-            get_string('edit', 'core'),
-            $questionname,
-            'table_row',
-        ]);
-    }
-
-    /**
-     * Checks that action does not exist for a question.
-     *
-     * @Then the :action action should not exist for the :questionname question in the question bank
-     * @param string $action the label for the action you want to activate.
-     * @param string $questionname the question name.
-     */
-    public function action_not_exists($action, $questionname) {
-        $this->execute('behat_action_menu::item_should_not_exist_in_the', [
-            $action,
-            get_string('edit', 'core'),
-            $questionname,
-            'table_row',
-        ]);
-    }
-
-    /**
-     * A particular bulk action is visible in the question bank UI.
-     *
-     * @When I should see question bulk action :action
-     * @param string $action the value of the input for the action.
-     */
-    public function i_should_see_question_bulk_action($action) {
-        // Check if its visible.
-        $this->execute("behat_general::should_be_visible",
-            ["#bulkactionsui-container input[name='$action']", "css_element"]);
-    }
-
-    /**
-     * A particular bulk action should not be visible in the question bank UI.
-     *
-     * @When I should not see question bulk action :action
-     * @param string $action the value of the input for the action.
-     */
-    public function i_should_not_see_question_bulk_action($action) {
-        // Check if its visible.
-        $this->execute("behat_general::should_not_be_visible",
-            ["#bulkactionsui-container input[name='$action']", "css_element"]);
-    }
-
-    /**
-     * A click on a particular bulk action in the question bank UI.
-     *
-     * @When I click on question bulk action :action
-     * @param string $action the value of the input for the action.
-     */
-    public function i_click_on_question_bulk_action($action) {
-        // Click the bulk action.
-        $this->execute("behat_general::i_click_on",
-            ["#bulkactionsui-container input[name='$action']", "css_element"]);
     }
 
     /**
@@ -310,54 +170,5 @@ class behat_core_question extends behat_question_base {
         [$id] = $this->find_question_by_name($questionname);
         $DB->delete_records('question', ['id' => $id]);
         question_bank::notify_question_edited($id);
-    }
-
-    /**
-     * Add a question bank filter
-     *
-     * This will add the filter if it does not exist, but leave the value empty.
-     *
-     * @When I add question bank filter :filtertype
-     * @param string $filtertype The filter we are adding
-     */
-    public function i_add_question_bank_filter(string $filtertype) {
-        $filter = $this->getSession()->getPage()->find('css',
-                '[data-filterregion=filter] [data-field-title="' . $filtertype . '"]');
-        if ($filter === null) {
-            $this->execute('behat_forms::press_button', [get_string('addcondition')]);
-            $this->execute('behat_forms::i_set_the_field_in_container_to', [
-                    "type",
-                    "[data-filterregion=filter]:last-child fieldset",
-                    "css_element",
-                    $filtertype
-            ]);
-        }
-    }
-
-    /**
-     * Apply question bank filter.
-     *
-     * This will change the existing value of the specified filter, or add the filter and set its value if it doesn't already
-     * exist.
-     *
-     * @When I apply question bank filter :filtertype with value :value
-     * @param string $filtertype The filter to apply. This should match the get_title() return value from the
-     *        filter's condition class.
-     * @param string $value The value to set for the condition.
-     */
-    public function i_apply_question_bank_filter(string $filtertype, string $value) {
-        // Add the filter if needed.
-        $this->execute('behat_core_question::i_add_question_bank_filter', [
-            $filtertype,
-        ]);
-
-        // Set the filter value.
-        $this->execute('behat_forms::i_set_the_field_to', [
-            $filtertype,
-            $value
-        ]);
-
-        // Apply filters.
-        $this->execute("behat_forms::press_button", [get_string('applyfilters')]);
     }
 }

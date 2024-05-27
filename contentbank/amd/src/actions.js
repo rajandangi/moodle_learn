@@ -17,6 +17,7 @@
  * Module to manage content bank actions, such as delete or rename.
  *
  * @module     core_contentbank/actions
+ * @package    core_contentbank
  * @copyright  2020 Sara Arjona <sara@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -27,9 +28,9 @@ define([
     'core/str',
     'core/templates',
     'core/url',
-    'core/modal_save_cancel',
+    'core/modal_factory',
     'core/modal_events'],
-function($, Ajax, Notification, Str, Templates, Url, ModalSaveCancel, ModalEvents) {
+function($, Ajax, Notification, Str, Templates, Url, ModalFactory, ModalEvents) {
 
     /**
      * List of action selectors.
@@ -39,8 +40,6 @@ function($, Ajax, Notification, Str, Templates, Url, ModalSaveCancel, ModalEvent
     var ACTIONS = {
         DELETE_CONTENT: '[data-action="deletecontent"]',
         RENAME_CONTENT: '[data-action="renamecontent"]',
-        SET_CONTENT_VISIBILITY: '[data-action="setcontentvisibility"]',
-        COPY_CONTENT: '[data-action="copycontent"]',
     };
 
     /**
@@ -58,7 +57,6 @@ function($, Ajax, Notification, Str, Templates, Url, ModalSaveCancel, ModalEvent
             e.preventDefault();
 
             var contentname = $(this).data('contentname');
-            var contentuses = $(this).data('uses');
             var contentid = $(this).data('contentid');
             var contextid = $(this).data('contextid');
 
@@ -75,10 +73,6 @@ function($, Ajax, Notification, Str, Templates, Url, ModalSaveCancel, ModalEvent
                     }
                 },
                 {
-                    key: 'deletecontentconfirmlinked',
-                    component: 'core_contentbank',
-                },
-                {
                     key: 'delete',
                     component: 'core'
                 },
@@ -88,26 +82,29 @@ function($, Ajax, Notification, Str, Templates, Url, ModalSaveCancel, ModalEvent
             Str.get_strings(strings).then(function(langStrings) {
                 var modalTitle = langStrings[0];
                 var modalContent = langStrings[1];
-                if (contentuses > 0) {
-                    modalContent += ' ' + langStrings[2];
-                }
-                deleteButtonText = langStrings[3];
+                deleteButtonText = langStrings[2];
 
-                return ModalSaveCancel.create({
+                return ModalFactory.create({
                     title: modalTitle,
                     body: modalContent,
-                    large: true,
-                    removeOnClose: true,
-                    show: true,
-                    buttons: {
-                        save: deleteButtonText,
-                    },
+                    type: ModalFactory.types.SAVE_CANCEL,
+                    large: true
                 });
-            }).then(function(modal) {
+            }).done(function(modal) {
+                modal.setSaveButtonText(deleteButtonText);
                 modal.getRoot().on(ModalEvents.save, function() {
                     // The action is now confirmed, sending an action for it.
                     return deleteContent(contentid, contextid);
                 });
+
+                // Handle hidden event.
+                modal.getRoot().on(ModalEvents.hidden, function() {
+                    // Destroy when hidden.
+                    modal.destroy();
+                });
+
+                // Show the modal.
+                modal.show();
 
                 return;
             }).catch(Notification.exception);
@@ -135,16 +132,13 @@ function($, Ajax, Notification, Str, Templates, Url, ModalSaveCancel, ModalEvent
                 var modalTitle = langStrings[0];
                 saveButtonText = langStrings[1];
 
-                return ModalSaveCancel.create({
+                return ModalFactory.create({
                     title: modalTitle,
                     body: Templates.render('core_contentbank/renamecontent', {'contentid': contentid, 'name': contentname}),
-                    removeOnClose: true,
-                    show: true,
-                    buttons: {
-                        save: saveButtonText,
-                    },
+                    type: ModalFactory.types.SAVE_CANCEL
                 });
             }).then(function(modal) {
+                modal.setSaveButtonText(saveButtonText);
                 modal.getRoot().on(ModalEvents.save, function(e) {
                     // The action is now confirmed, sending an action for it.
                     var newname = $("#newname").val().trim();
@@ -167,64 +161,17 @@ function($, Ajax, Notification, Str, Templates, Url, ModalSaveCancel, ModalEvent
                     }
                 });
 
+                // Handle hidden event.
+                modal.getRoot().on(ModalEvents.hidden, function() {
+                    // Destroy when hidden.
+                    modal.destroy();
+                });
+
+                // Show the modal.
+                modal.show();
+
                 return;
             }).catch(Notification.exception);
-        });
-
-        $(ACTIONS.COPY_CONTENT).click(function(e) {
-            e.preventDefault();
-
-            var contentname = $(this).data('contentname');
-            var contentid = $(this).data('contentid');
-
-            var strings = [
-                {
-                    key: 'copycontent',
-                    component: 'core_contentbank'
-                },
-                {
-                    key: 'error',
-                },
-                {
-                    key: 'emptynamenotallowed',
-                    component: 'core_contentbank',
-                },
-            ];
-
-            let errorTitle, errorMessage;
-            Str.get_strings(strings).then(function(langStrings) {
-                var modalTitle = langStrings[0];
-                errorTitle = langStrings[1];
-                errorMessage = langStrings[2];
-
-                return ModalSaveCancel.create({
-                    title: modalTitle,
-                    body: Templates.render('core_contentbank/copycontent', {'contentid': contentid, 'name': contentname}),
-                    removeOnClose: true,
-                    show: true,
-                });
-            }).then(function(modal) {
-                modal.getRoot().on(ModalEvents.save, function() {
-                    // The action is now confirmed, sending an action for it.
-                    var newname = $("#newname").val().trim();
-                    if (newname) {
-                        copyContent(contentid, newname);
-                    } else {
-                        Notification.alert(errorTitle, errorMessage);
-                        return false;
-                    }
-                });
-                return;
-            }).catch(Notification.exception);
-        });
-
-        $(ACTIONS.SET_CONTENT_VISIBILITY).click(function(e) {
-            e.preventDefault();
-
-            var contentid = $(this).data('contentid');
-            var visibility = $(this).data('visibility');
-
-            setContentVisibility(contentid, visibility);
         });
     };
 
@@ -282,84 +229,6 @@ function($, Ajax, Notification, Str, Templates, Url, ModalSaveCancel, ModalEvent
         Ajax.call([request])[0].then(function(data) {
             if (data.result) {
                 return 'contentrenamed';
-            }
-            requestType = 'error';
-            return data.warnings[0].message;
-
-        }).then(function(message) {
-            var params = null;
-            if (requestType == 'success') {
-                params = {
-                    id: contentid,
-                    statusmsg: message
-                };
-                // Redirect to the content view page and display the message as a notification.
-                window.location.href = Url.relativeUrl('contentbank/view.php', params, false);
-            } else {
-                // Fetch error notifications.
-                Notification.addNotification({
-                    message: message,
-                    type: 'error'
-                });
-                Notification.fetchNotifications();
-            }
-            return;
-        }).catch(Notification.exception);
-    }
-
-    /**
-     * Copy content in the content bank.
-     *
-     * @param {int} contentid The content to copy.
-     * @param {string} name The name for the new content.
-     */
-    function copyContent(contentid, name) {
-        var request = {
-            methodname: 'core_contentbank_copy_content',
-            args: {
-                contentid: contentid,
-                name: name
-            }
-        };
-        Ajax.call([request])[0].then(function(data) {
-            if (data.id == 0) {
-                // Fetch error notifications.
-                Notification.addNotification({
-                    message: data.warnings[0].message,
-                    type: 'error'
-                });
-                Notification.fetchNotifications();
-                return data.warnings[0].message;
-            } else {
-                let params = {
-                    id: data.id,
-                    statusmsg: 'contentcopied'
-                };
-                // Redirect to the content view page and display the message as a notification.
-                window.location.href = Url.relativeUrl('contentbank/view.php', params, false);
-            }
-            return '';
-        }).catch(Notification.exception);
-    }
-
-    /**
-     * Set content visibility in the content bank.
-     *
-     * @param {int} contentid The content to modify
-     * @param {int} visibility The new visibility value
-     */
-    function setContentVisibility(contentid, visibility) {
-        var request = {
-            methodname: 'core_contentbank_set_content_visibility',
-            args: {
-                contentid: contentid,
-                visibility: visibility
-            }
-        };
-        var requestType = 'success';
-        Ajax.call([request])[0].then(function(data) {
-            if (data.result) {
-                return 'contentvisibilitychanged';
             }
             requestType = 'error';
             return data.warnings[0].message;

@@ -22,11 +22,7 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-use core\report_helper;
-
 defined('MOODLE_INTERNAL') || die;
-global $CFG;
-require_once($CFG->libdir . '/tablelib.php');
 
 /**
  * Table log class for displaying logs.
@@ -36,6 +32,7 @@ require_once($CFG->libdir . '/tablelib.php');
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class report_log_table_log extends table_sql {
+
     /** @var array list of user fullnames shown in report */
     private $userfullnames = array();
 
@@ -44,9 +41,6 @@ class report_log_table_log extends table_sql {
 
     /** @var stdClass filters parameters */
     private $filterparams;
-
-    /** @var int[] A list of users to filter by */
-    private ?array $lateuseridfilter = null;
 
     /**
      * Sets up the table_log parameters.
@@ -114,30 +108,29 @@ class report_log_table_log extends table_sql {
      * @return string|false
      */
     protected function get_user_fullname($userid) {
+        global $DB;
+
         if (empty($userid)) {
             return false;
         }
 
-        // Check if we already have this users' fullname.
-        $userfullname = $this->userfullnames[$userid] ?? null;
-        if (!empty($userfullname)) {
-            return $userfullname;
+        if (!empty($this->userfullnames[$userid])) {
+            return $this->userfullnames[$userid];
         }
 
         // We already looked for the user and it does not exist.
-        if ($userfullname === false) {
+        if ($this->userfullnames[$userid] === false) {
             return false;
         }
 
         // If we reach that point new users logs have been generated since the last users db query.
-        $userfieldsapi = \core_user\fields::for_name();
-        $fields = $userfieldsapi->get_sql('', false, '', '', false)->selects;
-        if ($user = \core_user::get_user($userid, $fields)) {
-            $this->userfullnames[$userid] = fullname($user, has_capability('moodle/site:viewfullnames', $this->get_context()));
-        } else {
-            $this->userfullnames[$userid] = false;
+        list($usql, $uparams) = $DB->get_in_or_equal($userid);
+        $sql = "SELECT id," . get_all_user_name_fields(true) . " FROM {user} WHERE id " . $usql;
+        if (!$user = $DB->get_records_sql($sql, $uparams)) {
+            return false;
         }
 
+        $this->userfullnames[$userid] = fullname($user, has_capability('moodle/site:viewfullnames', $this->get_context()));
         return $this->userfullnames[$userid];
     }
 
@@ -150,9 +143,9 @@ class report_log_table_log extends table_sql {
     public function col_time($event) {
 
         if (empty($this->download)) {
-            $dateformat = get_string('strftimedatetimeaccurate', 'core_langconfig');
+            $dateformat = get_string('strftimedatetime', 'core_langconfig');
         } else {
-            $dateformat = get_string('strftimedatetimeshortaccurate', 'core_langconfig');
+            $dateformat = get_string('strftimedatetimeshort', 'core_langconfig');
         }
         return userdate($event->timecreated, $dateformat);
     }
@@ -160,14 +153,12 @@ class report_log_table_log extends table_sql {
     /**
      * Generate the username column.
      *
-     * @param \core\event\base $event event data.
+     * @param stdClass $event event data.
      * @return string HTML for the username column
      */
     public function col_fullnameuser($event) {
         // Get extra event data for origin and realuserid.
         $logextra = $event->get_logextra();
-
-        $eventusername = $event->userid ? $this->get_user_fullname($event->userid) : false;
 
         // Add username who did the action.
         if (!empty($logextra['realuserid'])) {
@@ -175,7 +166,7 @@ class report_log_table_log extends table_sql {
             if (!$a->realusername = $this->get_user_fullname($logextra['realuserid'])) {
                 $a->realusername = '-';
             }
-            if (!$a->asusername = $eventusername) {
+            if (!$a->asusername = $this->get_user_fullname($event->userid)) {
                 $a->asusername = '-';
             }
             if (empty($this->download)) {
@@ -189,15 +180,13 @@ class report_log_table_log extends table_sql {
             }
             $username = get_string('eventloggedas', 'report_log', $a);
 
-        } else if ($eventusername) {
+        } else if (!empty($event->userid) && $username = $this->get_user_fullname($event->userid)) {
             if (empty($this->download)) {
-                $params = ['id' => $event->userid];
+                $params = array('id' => $event->userid);
                 if ($event->courseid) {
                     $params['course'] = $event->courseid;
                 }
-                $username = html_writer::link(new moodle_url('/user/view.php', $params), $eventusername);
-            } else {
-                $username = $eventusername;
+                $username = html_writer::link(new moodle_url('/user/view.php', $params), $username);
             }
         } else {
             $username = '-';
@@ -284,7 +273,12 @@ class report_log_table_log extends table_sql {
      */
     public function col_eventname($event) {
         // Event name.
-        $eventname = $event->get_name();
+        if ($this->filterparams->logreader instanceof logstore_legacy\log\store) {
+            // Hack for support of logstore_legacy.
+            $eventname = $event->eventname;
+        } else {
+            $eventname = $event->get_name();
+        }
         // Only encode as an action link if we're not downloading.
         if (($url = $event->get_url()) && empty($this->download)) {
             $eventname = $this->action_link($url, $eventname, 'action');
@@ -300,7 +294,7 @@ class report_log_table_log extends table_sql {
      */
     public function col_description($event) {
         // Description.
-        return format_text($event->get_description(), FORMAT_PLAIN);
+        return $event->get_description();
     }
 
     /**
@@ -329,7 +323,7 @@ class report_log_table_log extends table_sql {
         $ip = $logextra['ip'];
 
         if (empty($this->download)) {
-            $url = new moodle_url("/iplookup/index.php?popup=1&ip={$ip}&user={$event->userid}");
+            $url = new moodle_url("/iplookup/index.php?ip={$ip}&user={$event->userid}");
             $ip = $this->action_link($url, $ip, 'ip');
         }
         return $ip;
@@ -375,7 +369,17 @@ class report_log_table_log extends table_sql {
         global $DB;
 
         // In new logs we have a field to pick, and in legacy try get this from action.
-        if (!empty($this->filterparams->action)) {
+        if ($this->filterparams->logreader instanceof logstore_legacy\log\store) {
+            $action = $this->get_legacy_crud_action($this->filterparams->action);
+            $firstletter = substr($action, 0, 1);
+            if ($firstletter == '-') {
+                $sql = $DB->sql_like('action', ':action', false, true, true);
+                $params['action'] = '%'.substr($action, 1).'%';
+            } else {
+                $sql = $DB->sql_like('action', ':action', false);
+                $params['action'] = '%'.$action.'%';
+            }
+        } else if (!empty($this->filterparams->action)) {
              list($sql, $params) = $DB->get_in_or_equal(str_split($this->filterparams->action),
                     SQL_PARAMS_NAMED, 'crud');
             $sql = "crud " . $sql;
@@ -397,10 +401,16 @@ class report_log_table_log extends table_sql {
         $joins = array();
         $params = array();
 
-        $joins[] = "contextinstanceid = :contextinstanceid";
-        $joins[] = "contextlevel = :contextmodule";
-        $params['contextinstanceid'] = $this->filterparams->modid;
-        $params['contextmodule'] = CONTEXT_MODULE;
+        if ($this->filterparams->logreader instanceof logstore_legacy\log\store) {
+            // The legacy store doesn't support context level.
+            $joins[] = "cmid = :cmid";
+            $params['cmid'] = $this->filterparams->modid;
+        } else {
+            $joins[] = "contextinstanceid = :contextinstanceid";
+            $joins[] = "contextlevel = :contextmodule";
+            $params['contextinstanceid'] = $this->filterparams->modid;
+            $params['contextmodule'] = CONTEXT_MODULE;
+        }
 
         $sql = implode(' AND ', $joins);
         return array($sql, $params);
@@ -413,15 +423,21 @@ class report_log_table_log extends table_sql {
      * @param bool $useinitialsbar do you want to use the initials bar.
      */
     public function query_db($pagesize, $useinitialsbar = true) {
-        global $DB, $USER;
+        global $DB;
 
         $joins = array();
         $params = array();
 
         // If we filter by userid and module id we also need to filter by crud and edulevel to ensure DB index is engaged.
-        $useextendeddbindex = !empty($this->filterparams->userid) && !empty($this->filterparams->modid);
+        $useextendeddbindex = !($this->filterparams->logreader instanceof logstore_legacy\log\store)
+                && !empty($this->filterparams->userid) && !empty($this->filterparams->modid);
 
+        $groupid = 0;
         if (!empty($this->filterparams->courseid) && $this->filterparams->courseid != SITEID) {
+            if (!empty($this->filterparams->groupid)) {
+                $groupid = $this->filterparams->groupid;
+            }
+
             $joins[] = "courseid = :courseid";
             $params['courseid'] = $this->filterparams->courseid;
         }
@@ -443,14 +459,17 @@ class report_log_table_log extends table_sql {
         }
 
         // Getting all members of a group.
-        [
-            'joins' => $groupjoins,
-            'params' => $groupparams,
-            'useridfilter' => $this->lateuseridfilter,
-        ] = report_helper::get_group_filter($this->filterparams);
-
-        $joins = array_merge($joins, $groupjoins);
-        $params = array_merge($params, $groupparams);
+        if ($groupid and empty($this->filterparams->userid)) {
+            if ($gusers = groups_get_members($groupid)) {
+                $gusers = array_keys($gusers);
+                $joins[] = 'userid IN (' . implode(',', $gusers) . ')';
+            } else {
+                $joins[] = 'userid = 0'; // No users in groups, so we want something that will always be false.
+            }
+        } else if (!empty($this->filterparams->userid)) {
+            $joins[] = "userid = :userid";
+            $params['userid'] = $this->filterparams->userid;
+        }
 
         if (!empty($this->filterparams->date)) {
             $joins[] = "timecreated > :date AND timecreated < :enddate";
@@ -483,14 +502,16 @@ class report_log_table_log extends table_sql {
             }
         }
 
-        // Filter out anonymous actions, this is N/A for legacy log because it never stores them.
-        if ($this->filterparams->modid) {
-            $context = context_module::instance($this->filterparams->modid);
-        } else {
-            $context = context_course::instance($this->filterparams->courseid);
-        }
-        if (!has_capability('moodle/site:viewanonymousevents', $context)) {
-            $joins[] = "anonymous = 0";
+        if (!($this->filterparams->logreader instanceof logstore_legacy\log\store)) {
+            // Filter out anonymous actions, this is N/A for legacy log because it never stores them.
+            if ($this->filterparams->modid) {
+                $context = context_module::instance($this->filterparams->modid);
+            } else {
+                $context = context_course::instance($this->filterparams->courseid);
+            }
+            if (!has_capability('moodle/site:viewanonymousevents', $context)) {
+                $joins[] = "anonymous = 0";
+            }
         }
 
         $selector = implode(' AND ', $joins);
@@ -502,29 +523,24 @@ class report_log_table_log extends table_sql {
             $this->pageable(false);
         }
 
+        // Get the users and course data.
+        $this->rawdata = $this->filterparams->logreader->get_events_select_iterator($selector, $params,
+            $this->filterparams->orderby, $this->get_page_start(), $this->get_page_size());
+
+        // Update list of users which will be displayed on log page.
+        $this->update_users_used();
+
         // Get the events. Same query than before; even if it is not likely, logs from new users
         // may be added since last query so we will need to work around later to prevent problems.
         // In almost most of the cases this will be better than having two opened recordsets.
-        $this->rawdata = new \CallbackFilterIterator(
-            $this->filterparams->logreader->get_events_select_iterator(
-                $selector,
-                $params,
-                $this->filterparams->orderby,
-                $this->get_page_start(),
-                $this->get_page_size(),
-            ),
-            function ($event) {
-                if ($this->lateuseridfilter === null) {
-                    return true;
-                }
-                return isset($this->lateuseridfilter[$event->userid]);
-            },
-        );
+        $this->rawdata = $this->filterparams->logreader->get_events_select_iterator($selector, $params,
+            $this->filterparams->orderby, $this->get_page_start(), $this->get_page_size());
 
         // Set initial bars.
         if ($useinitialsbar && !$this->is_downloading()) {
             $this->initialbars($total > $pagesize);
         }
+
     }
 
     /**
@@ -536,6 +552,55 @@ class report_log_table_log extends table_sql {
      * @deprecated since Moodle 2.9 MDL-48595 - please do not use this function any more.
      */
     public function update_users_and_courses_used() {
-        throw new coding_exception('update_users_and_courses_used() can not be used any more.');
+        throw new coding_exception('update_users_and_courses_used() can not be used any more, please use update_users_used() instead.');
+    }
+
+    /**
+     * Helper function to create list of user fullnames shown in log report.
+     *
+     * This will update $this->userfullnames array with userfullname,
+     * which will be used to render logs in table.
+     *
+     * @since   Moodle 2.9
+     * @return  void
+     */
+    protected function update_users_used() {
+        global $DB;
+
+        $this->userfullnames = array();
+        $userids = array();
+
+        // For each event cache full username.
+        // Get list of userids which will be shown in log report.
+        foreach ($this->rawdata as $event) {
+            $logextra = $event->get_logextra();
+            if (!empty($event->userid) && empty($userids[$event->userid])) {
+                $userids[$event->userid] = $event->userid;
+            }
+            if (!empty($logextra['realuserid']) && empty($userids[$logextra['realuserid']])) {
+                $userids[$logextra['realuserid']] = $logextra['realuserid'];
+            }
+            if (!empty($event->relateduserid) && empty($userids[$event->relateduserid])) {
+                $userids[$event->relateduserid] = $event->relateduserid;
+            }
+        }
+        $this->rawdata->close();
+
+        // Get user fullname and put that in return list.
+        if (!empty($userids)) {
+            list($usql, $uparams) = $DB->get_in_or_equal($userids);
+            $users = $DB->get_records_sql("SELECT id," . get_all_user_name_fields(true) . " FROM {user} WHERE id " . $usql,
+                    $uparams);
+            foreach ($users as $userid => $user) {
+                $this->userfullnames[$userid] = fullname($user, has_capability('moodle/site:viewfullnames', $this->get_context()));
+                unset($userids[$userid]);
+            }
+
+            // We fill the array with false values for the users that don't exist anymore
+            // in the database so we don't need to query the db again later.
+            foreach ($userids as $userid) {
+                $this->userfullnames[$userid] = false;
+            }
+        }
     }
 }

@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace core\plugininfo;
 
@@ -28,7 +28,7 @@ use testable_plugininfo_base;
  * @copyright 2019 Andrew Nicols
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class base_test extends \advanced_testcase {
+class base_testcase extends \advanced_testcase {
 
     /**
      * Setup to ensure that fixtures are loaded.
@@ -43,7 +43,7 @@ class base_test extends \advanced_testcase {
     /**
      * Tear down the testable plugin manager singleton between tests.
      */
-    public function tearDown(): void {
+    public function tearDown() {
         // The caches of the testable singleton must be reset explicitly. It is
         // safer to kill the whole testable singleton at the end of every test.
         testable_core_plugin_manager::reset_caches();
@@ -270,51 +270,6 @@ class base_test extends \advanced_testcase {
                 'incompatible' => null,
                 'version' => 32,
             ],
-        ];
-    }
-
-    /**
-     * Ensure that plugintype_supports_ordering() returns true.
-     * @covers ::plugintype_supports_ordering
-     */
-    public function test_plugintype_supports_ordering(): void {
-        $this->assertFalse(base::plugintype_supports_ordering());
-    }
-
-    /**
-     * Ensure that the base implementation is used for plugins not supporting ordering.
-     *
-     * @dataProvider plugins_not_supporting_ordering
-     * @param string $plugin
-     * @coversNothing
-     *
-     * Note: This test cannot declare coverage because it covers the various plugin implementations.
-     */
-    public function test_get_sorted_plugins(
-        string $plugin,
-    ): void {
-        [$plugintype, $pluginname] = explode('_', $plugin, 2);
-        $classname = \core_plugin_manager::resolve_plugininfo_class($plugintype);
-
-        $this->assertFalse($classname::plugintype_supports_ordering());
-
-        $this->assertNull($classname::get_sorted_plugins());
-        $this->assertNull($classname::get_sorted_plugins(true));
-        $this->assertNull($classname::get_sorted_plugins(false));
-
-        $this->assertFalse($classname::change_plugin_order($pluginname, base::MOVE_UP));
-        $this->assertFalse($classname::change_plugin_order($pluginname, base::MOVE_DOWN));
-    }
-
-    /**
-     * Data provider for plugins_not_supporting_ordering.
-     *
-     * @return string[]
-     */
-    public function plugins_not_supporting_ordering(): array {
-        return [
-            ['mod_assign'],
-            ['block_login'],
         ];
     }
 }

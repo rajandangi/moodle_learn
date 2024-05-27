@@ -126,34 +126,18 @@ class customfield extends \core_search\base {
     /**
      * Whether the user can access the document or not.
      *
-     * @param int $id The custom field data ID
+     * @param int $id The course instance id.
      * @return int
      */
     public function check_access($id) {
         global $DB;
-
-        $coursesql = '
-            SELECT c.*
-              FROM {course} c
-              JOIN {customfield_data} d ON d.instanceid = c.id
-             WHERE d.id = :dataid';
-
-        // Verify both the course and data record still exist.
-        $course = $DB->get_record_sql($coursesql, ['dataid' => $id]);
+        $course = $DB->get_record('course', array('id' => $id));
         if (!$course) {
             return \core_search\manager::ACCESS_DELETED;
         }
-
-        // Check whether user is enrolled and the course is visible, or user can view it while hidden.
-        $context = \context_course::instance($course->id);
-        $userenrolled = is_enrolled($context) &&
-            ($course->visible || has_capability('moodle/course:viewhiddencourses', $context));
-
-        // Grant access if user is considered enrolled, or they can otherwise see the course info.
-        if ($userenrolled || \core_course_category::can_view_course_info($course)) {
+        if (\core_course_category::can_view_course_info($course)) {
             return \core_search\manager::ACCESS_GRANTED;
         }
-
         return \core_search\manager::ACCESS_DENIED;
     }
 
@@ -194,7 +178,7 @@ class customfield extends \core_search\base {
      * @param \core_search\document $doc
      * @return \core_search\document_icon
      */
-    public function get_doc_icon(\core_search\document $doc): \core_search\document_icon {
+    public function get_doc_icon(\core_search\document $doc) : \core_search\document_icon {
         return new \core_search\document_icon('i/customfield');
     }
 

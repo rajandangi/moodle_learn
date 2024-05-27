@@ -17,6 +17,7 @@
  * This module will tie together all of the different calls the gradable module will make.
  *
  * @module     mod_forum/grades/grader
+ * @package    mod_forum
  * @copyright  2019 Andrew Nicols <andrew@nicols.co.uk>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -60,13 +61,12 @@ const getContentForUserIdFunction = (cmid, experimentalDisplayMode) => (userid) 
  * Curried function with CMID set, this is then used in unified grader as a fetch users call.
  * The function curried fetches all users in a course for a given CMID.
  *
- * @param {Number} courseID
+ * @param {Number} cmid
  * @param {Number} groupID
- * @param {Boolean} onlyActive Whether to fetch only the active enrolled users or all enrolled users in the course.
  * @return {Array} Array of users for a given context.
  */
-const getGradableUsersForCourseidFunction = (courseID, groupID, onlyActive) => async() => {
-    const context = await CourseRepository.getGradableUsersFromCourseID(courseID, groupID, onlyActive);
+const getUsersForCmidFunction = (cmid, groupID) => async() => {
+    const context = await CourseRepository.getUsersFromCourseModuleID(cmid, groupID);
 
     return context.users;
 };
@@ -113,8 +113,6 @@ const discussionPostMapper = (discussion) => {
  * Launch the Grader.
  *
  * @param {HTMLElement} rootNode the root HTML element describing what is to be graded
- * @param {object} param
- * @param {bool} [param.focusOnClose=null]
  */
 const launchWholeForumGrading = async(rootNode, {
     focusOnClose = null,
@@ -129,10 +127,9 @@ const launchWholeForumGrading = async(rootNode, {
     );
 
     const groupID = data.group ? data.group : 0;
-    const onlyActive = data.gradeOnlyActiveUsers;
 
     await Grader.launch(
-        getGradableUsersForCourseidFunction(data.courseId, groupID, onlyActive),
+        getUsersForCmidFunction(data.cmid, groupID),
         getContentForUserIdFunction(data.cmid, data.experimentalDisplayMode == "1"),
         gradingPanelFunctions.getter,
         gradingPanelFunctions.setter,
@@ -152,8 +149,6 @@ const launchWholeForumGrading = async(rootNode, {
  * Launch the Grader.
  *
  * @param {HTMLElement} rootNode the root HTML element describing what is to be graded
- * @param {object} param
- * @param {bool} [param.focusOnClose=null]
  */
 const launchViewGrading = async(rootNode, {
     focusOnClose = null,

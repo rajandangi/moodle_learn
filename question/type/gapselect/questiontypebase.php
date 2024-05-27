@@ -44,7 +44,7 @@ abstract class qtype_gapselect_base extends question_type {
      * @param array $choice the form data relating to this choice.
      * @return string ready to store in the database.
      */
-    abstract protected function choice_options_to_feedback($choice);
+    protected abstract function choice_options_to_feedback($choice);
 
     public function save_question_options($question) {
         global $DB;
@@ -147,7 +147,7 @@ abstract class qtype_gapselect_base extends question_type {
      * @param object $choicedata as loaded from the question_answers table.
      * @return object an appropriate object for representing the choice.
      */
-    abstract protected function make_choice($choicedata);
+    protected abstract function make_choice($choicedata);
 
     protected function initialise_question_instance(question_definition $question, $questiondata) {
         parent::initialise_question_instance($question, $questiondata);
@@ -182,7 +182,7 @@ abstract class qtype_gapselect_base extends question_type {
         // Break up the question text, and store the fragments, places and right answers.
 
         $bits = preg_split('/\[\[(\d+)]]/', $question->questiontext,
-                -1, PREG_SPLIT_DELIM_CAPTURE);
+                null, PREG_SPLIT_DELIM_CAPTURE);
         $question->textfragments[0] = array_shift($bits);
         $i = 1;
 
@@ -212,7 +212,7 @@ abstract class qtype_gapselect_base extends question_type {
      * @param string $feedback the data loaded from the database.
      * @return array the choice options.
      */
-    abstract protected function feedback_to_choice_options($feedback);
+    protected abstract function feedback_to_choice_options($feedback);
 
     /**
      * This method gets the choices (answers)
@@ -317,11 +317,6 @@ abstract class qtype_gapselect_base extends question_type {
             shuffle($goupofanswers);
         }
         return $goupofanswers;
-    }
-
-    public function save_defaults_for_new_questions(stdClass $fromform): void {
-        parent::save_defaults_for_new_questions($fromform);
-        $this->set_default_value('shuffleanswers', $fromform->shuffleanswers ?? 0);
     }
 
     public function get_possible_responses($questiondata) {

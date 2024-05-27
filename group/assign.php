@@ -31,11 +31,11 @@ $groupingid = required_param('id', PARAM_INT);
 $PAGE->set_url('/group/assign.php', array('id'=>$groupingid));
 
 if (!$grouping = $DB->get_record('groupings', array('id'=>$groupingid))) {
-    throw new \moodle_exception('invalidgroupid');
+    print_error('invalidgroupid');
 }
 
 if (!$course = $DB->get_record('course', array('id'=>$grouping->courseid))) {
-    throw new \moodle_exception('invalidcourse');
+    print_error('invalidcourse');
 }
 $courseid = $course->id;
 
@@ -132,8 +132,7 @@ navigation_node::override_active_url(new moodle_url('/group/index.php', array('i
 $PAGE->set_pagelayout('admin');
 
 $PAGE->navbar->add($strparticipants, new moodle_url('/user/index.php', array('id'=>$courseid)));
-$PAGE->navbar->add(get_string('groupings', 'group'),
-    new moodle_url('/group/groupings.php', ['id' => $courseid]));
+$PAGE->navbar->add($strgroups, new moodle_url('/group/index.php', array('id'=>$courseid)));
 $PAGE->navbar->add($straddgroupstogroupings);
 
 /// Print header

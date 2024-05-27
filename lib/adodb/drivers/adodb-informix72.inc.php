@@ -1,27 +1,20 @@
 <?php
-/**
- * Informix driver.
- *
- * @deprecated
- *
- * This file is part of ADOdb, a Database Abstraction Layer library for PHP.
- *
- * @package ADOdb
- * @link https://adodb.org Project's web site and documentation
- * @link https://github.com/ADOdb/ADOdb Source code and issue tracker
- *
- * The ADOdb Library is dual-licensed, released under both the BSD 3-Clause
- * and the GNU Lesser General Public Licence (LGPL) v2.1 or, at your option,
- * any later version. This means you can use it in proprietary products.
- * See the LICENSE.md file distributed with this source code for details.
- * @license BSD-3-Clause
- * @license LGPL-2.1-or-later
- *
- * @copyright 2000-2013 John Lim
- * @copyright 2014 Damien Regad, Mark Newnham and the ADOdb community
- * @author Mitchell T. Young <mitch@youngfamily.org>
- * @author Samuel Carriere <samuel_carriere@hotmail.com>
- */
+/*
+@version   v5.20.16  12-Jan-2020
+@copyright (c) 2000-2013 John Lim. All rights reserved.
+@copyright (c) 2014      Damien Regad, Mark Newnham and the ADOdb community
+  Released under both BSD license and Lesser GPL library license.
+  Whenever there is any discrepancy between the two licenses,
+  the BSD license will take precedence.
+  Set tabs to 4 for best viewing.
+
+  Latest version is available at http://adodb.org/
+
+  Informix port by Mitchell T. Young (mitch@youngfamily.org)
+
+  Further mods by "Samuel CARRIERE" <samuel_carriere@hotmail.com>
+
+*/
 
 // security - hide paths
 if (!defined('ADODB_DIR')) die();
@@ -80,14 +73,17 @@ class ADODB_informix72 extends ADOConnection {
 
 	function ServerInfo()
 	{
-		$arr['description'] = $this->GetOne("select DBINFO('version','full') from systables where tabid = 1");
-		$arr['version'] = $this->GetOne("select DBINFO('version','major') || DBINFO('version','minor') from systables where tabid = 1");
-		return $arr;
+	    if (isset($this->version)) return $this->version;
+
+	    $arr['description'] = $this->GetOne("select DBINFO('version','full') from systables where tabid = 1");
+	    $arr['version'] = $this->GetOne("select DBINFO('version','major') || DBINFO('version','minor') from systables where tabid = 1");
+	    $this->version = $arr;
+	    return $arr;
 	}
 
 
 
-	protected function _insertID($table = '', $column = '')
+	function _insertid()
 	{
 		$sqlca =ifx_getsqlca($this->lastQuery);
 		return @$sqlca["sqlerrd1"];
@@ -250,12 +246,12 @@ class ADODB_informix72 extends ADOConnection {
 		return $false;
 	}
 
-	function xMetaColumns($table)
-	{
+   function xMetaColumns($table)
+   {
 		return ADOConnection::MetaColumns($table,false);
-	}
+   }
 
-	public function metaForeignKeys($table, $owner = '', $upper = false, $associative = false)
+	 function MetaForeignKeys($table, $owner=false, $upper=false) //!Eos
 	{
 		$sql = "
 			select tr.tabname,updrule,delrule,
@@ -334,6 +330,7 @@ class ADODB_informix72 extends ADOConnection {
 		else return array($sql,$stmt);
 	}
 */
+	// returns query ID if successful, otherwise false
 	function _query($sql,$inputarr=false)
 	{
 	global $ADODB_COUNTRECS;
@@ -406,7 +403,7 @@ class ADORecordset_informix72 extends ADORecordSet {
 			$mode = $ADODB_FETCH_MODE;
 		}
 		$this->fetchMode = $mode;
-		parent::__construct($id);
+		return parent::__construct($id);
 	}
 
 
@@ -504,7 +501,7 @@ class ADORecordset_informix72 extends ADORecordSet {
 
 }
 /** !Eos
-* Auxiliary function to Parse coltype,collength. Used by Metacolumns
+* Auxiliar function to Parse coltype,collength. Used by Metacolumns
 * return: array ($mtype,$length,$precision,$nullable) (similar to ifx_fieldpropierties)
 */
 function ifx_props($coltype,$collength){

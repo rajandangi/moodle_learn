@@ -38,11 +38,9 @@ $mform = null;
 if ($taskname) {
     $task = \core\task\manager::get_scheduled_task($taskname);
     if (!$task) {
-        throw new \moodle_exception('invaliddata');
+        print_error('invaliddata');
     }
 }
-
-$PAGE->navbar->add(get_string('scheduledtasks', 'tool_task'), $PAGE->url);
 
 if ($action == 'edit') {
     $PAGE->navbar->add(get_string('edittaskschedule', 'tool_task', $task->get_name()));
@@ -53,11 +51,9 @@ if ($task) {
     $nexturl = new moodle_url($PAGE->url, ['lastchanged' => $taskname]);
 }
 
-$PAGE->set_primary_active_tab('siteadminnode');
-
 $renderer = $PAGE->get_renderer('tool_task');
 
-if ($mform && ($mform->is_cancelled() || !empty($CFG->preventscheduledtaskchanges) || $task->is_overridden())) {
+if ($mform && ($mform->is_cancelled() || !empty($CFG->preventscheduledtaskchanges))) {
     redirect($nexturl);
 } else if ($action == 'edit' && empty($CFG->preventscheduledtaskchanges)) {
 
@@ -99,9 +95,6 @@ if ($mform && ($mform->is_cancelled() || !empty($CFG->preventscheduledtaskchange
 
 } else {
     echo $OUTPUT->header();
-    if (!get_config('core', 'cron_enabled')) {
-        echo $renderer->cron_disabled();
-    }
     $tasks = core\task\manager::get_all_scheduled_tasks();
     echo $renderer->scheduled_tasks_table($tasks, $lastchanged);
     echo $OUTPUT->footer();

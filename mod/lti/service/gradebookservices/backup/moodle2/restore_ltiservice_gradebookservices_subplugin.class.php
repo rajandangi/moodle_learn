@@ -93,10 +93,6 @@ class restore_ltiservice_gradebookservices_subplugin extends restore_subplugin {
             $newtoolproxyid = null;
         }
         if ($data->ltilinkid != null) {
-            if ($data->ltilinkid != $this->get_old_parentid('lti')) {
-                // This is a linked item, but not for the current lti link, so skip it.
-                return;
-            }
             $ltilinkid = $this->get_new_parentid('lti');
         } else {
             $ltilinkid = null;
@@ -115,9 +111,7 @@ class restore_ltiservice_gradebookservices_subplugin extends restore_subplugin {
                     'typeid' => $newtypeid,
                     'baseurl' => $data->baseurl,
                     'resourceid' => $resourceid,
-                    'tag' => $data->tag,
-                    'subreviewparams' => $data->subreviewparams ?? '',
-                    'subreviewurl' => $data->subreviewurl ?? ''
+                    'tag' => $data->tag
             ));
             $this->set_mapping('gbsgradeitemoldid', $newgbsid, $data->gradeitemid);
             $this->set_mapping('gbsgradeitemrestored', $data->id, $data->id);

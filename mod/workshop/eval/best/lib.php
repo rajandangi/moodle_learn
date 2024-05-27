@@ -35,6 +35,9 @@ require_once($CFG->libdir . '/gradelib.php');
  */
 class workshop_best_evaluation extends workshop_evaluation {
 
+    /** @var workshop the parent workshop instance */
+    protected $workshop;
+
     /** @var the recently used settings in this workshop */
     protected $settings;
 
@@ -183,7 +186,7 @@ class workshop_best_evaluation extends workshop_evaluation {
         }
 
         // identify the best assessments - that is those with the shortest distance from the best assessment
-        $bestids = moodle_array_keys_filter($distances, min($distances));
+        $bestids = array_keys($distances, min($distances));
 
         // for every assessment, calculate its distance from the nearest best assessment
         $distances = array();

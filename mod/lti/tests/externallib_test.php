@@ -14,11 +14,15 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace mod_lti;
-
-use core_external\external_api;
-use mod_lti_external;
-use mod_lti_testcase;
+/**
+ * External tool module external functions tests
+ *
+ * @package    mod_lti
+ * @category   external
+ * @copyright  2015 Juan Leyva <juan@moodle.com>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @since      Moodle 3.0
+ */
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -26,7 +30,6 @@ global $CFG;
 
 require_once($CFG->dirroot . '/webservice/tests/helpers.php');
 require_once($CFG->dirroot . '/mod/lti/lib.php');
-require_once($CFG->dirroot . '/mod/lti/tests/mod_lti_testcase.php');
 
 /**
  * External tool module external functions tests
@@ -37,12 +40,12 @@ require_once($CFG->dirroot . '/mod/lti/tests/mod_lti_testcase.php');
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @since      Moodle 3.0
  */
-class externallib_test extends mod_lti_testcase {
+class mod_lti_external_testcase extends externallib_advanced_testcase {
 
     /**
      * Set up for every test
      */
-    public function setUp(): void {
+    public function setUp() {
         $this->resetAfterTest();
     }
 
@@ -60,7 +63,7 @@ class externallib_test extends mod_lti_testcase {
             'lti',
             ['course' => $course->id, 'toolurl' => 'http://localhost/not/real/tool.php']
         );
-        $context = \context_module::instance($lti->cmid);
+        $context = context_module::instance($lti->cmid);
         $cm = get_coursemodule_from_instance('lti', $lti->id);
 
         // Create users.
@@ -83,6 +86,39 @@ class externallib_test extends mod_lti_testcase {
             'studentrole' => $studentrole,
             'teacherrole' => $teacherrole
         ];
+    }
+
+    /**
+     * Generate a tool type.
+     *
+     * @param string $uniqueid Each tool type needs a different base url. Provide a unique string for every tool type created.
+     * @param int|null $toolproxyid Optional proxy to associate with tool type.
+     * @return stdClass A tool type.
+     */
+    protected function generate_tool_type(string $uniqueid, int $toolproxyid = null) : stdClass {
+        // Create a tool type.
+        $type = new stdClass();
+        $type->state = LTI_TOOL_STATE_CONFIGURED;
+        $type->name = "Test tool $uniqueid";
+        $type->description = "Example description $uniqueid";
+        $type->toolproxyid = $toolproxyid;
+        $type->baseurl = $this->getExternalTestFileUrl("/test$uniqueid.html");
+        lti_add_type($type, new stdClass());
+        return $type;
+    }
+
+    /**
+     * Generate a tool proxy.
+     *
+     * @param string $uniqueid Each tool proxy needs a different reg url. Provide a unique string for every tool proxy created.
+     * @return stdClass A tool proxy.
+     */
+    protected function generate_tool_proxy(string $uniqueid) : stdClass {
+        // Create a tool proxy.
+        $proxy = mod_lti_external::create_tool_proxy("Test proxy $uniqueid",
+                $this->getExternalTestFileUrl("/proxy$uniqueid.html"), array(), array());
+        $proxy = (object)external_api::clean_returnvalue(mod_lti_external::create_tool_proxy_returns(), $proxy);
+        return $proxy;
     }
 
     /**
@@ -172,7 +208,7 @@ class externallib_test extends mod_lti_testcase {
         $course2 = self::getDataGenerator()->create_course();
 
         // Second lti.
-        $record = new \stdClass();
+        $record = new stdClass();
         $record->course = $course2->id;
         $lti2 = self::getDataGenerator()->create_module('lti', $record);
 
@@ -193,7 +229,7 @@ class externallib_test extends mod_lti_testcase {
 
         // Create what we expect to be returned when querying the two courses.
         // First for the student user.
-        $expectedfields = array('id', 'coursemodule', 'course', 'name', 'intro', 'introformat', 'introfiles', 'lang',
+        $expectedfields = array('id', 'coursemodule', 'course', 'name', 'intro', 'introformat', 'introfiles',
             'launchcontainer', 'showtitlelaunch', 'showdescriptionlaunch', 'icon', 'secureicon');
 
         // Add expected coursemodule and data.
@@ -204,9 +240,7 @@ class externallib_test extends mod_lti_testcase {
         $lti1->visible = true;
         $lti1->groupmode = 0;
         $lti1->groupingid = 0;
-        $lti1->section = 0;
         $lti1->introfiles = [];
-        $lti1->lang = '';
 
         $lti2->coursemodule = $lti2->cmid;
         $lti2->introformat = 1;
@@ -214,9 +248,7 @@ class externallib_test extends mod_lti_testcase {
         $lti2->visible = true;
         $lti2->groupmode = 0;
         $lti2->groupingid = 0;
-        $lti2->section = 0;
         $lti2->introfiles = [];
-        $lti2->lang = '';
 
         foreach ($expectedfields as $field) {
             $expected1[$field] = $lti1->{$field};
@@ -260,7 +292,7 @@ class externallib_test extends mod_lti_testcase {
         $additionalfields = array('timecreated', 'timemodified', 'typeid', 'toolurl', 'securetoolurl',
             'instructorchoicesendname', 'instructorchoicesendemailaddr', 'instructorchoiceallowroster',
             'instructorchoiceallowsetting', 'instructorcustomparameters', 'instructorchoiceacceptgrades', 'grade',
-            'resourcekey', 'password', 'debuglaunch', 'servicesalt', 'visible', 'groupmode', 'groupingid', 'section', 'lang');
+            'resourcekey', 'password', 'debuglaunch', 'servicesalt', 'visible', 'groupmode', 'groupingid');
 
         foreach ($additionalfields as $field) {
             $expectedltis[0][$field] = $lti1->{$field};
@@ -279,12 +311,12 @@ class externallib_test extends mod_lti_testcase {
 
         // Now, prohibit capabilities.
         $this->setUser($student);
-        $contextcourse1 = \context_course::instance($course->id);
+        $contextcourse1 = context_course::instance($course->id);
         // Prohibit capability = mod:lti:view on Course1 for students.
         assign_capability('mod/lti:view', CAP_PROHIBIT, $studentrole->id, $contextcourse1->id);
         // Empty all the caches that may be affected by this change.
         accesslib_clear_all_caches_for_unit_testing();
-        \course_modinfo::clear_instance_cache();
+        course_modinfo::clear_instance_cache();
 
         $ltis = mod_lti_external::get_ltis_by_courses(array($course->id));
         $ltis = external_api::clean_returnvalue(mod_lti_external::get_ltis_by_courses_returns(), $ltis);
@@ -295,7 +327,7 @@ class externallib_test extends mod_lti_testcase {
      * Test view_lti with an invalid instance id.
      */
     public function test_view_lti_invalid_instanceid() {
-        $this->expectException(\moodle_exception::class);
+        $this->expectException(moodle_exception::class);
         mod_lti_external::view_lti(0);
     }
 
@@ -311,7 +343,7 @@ class externallib_test extends mod_lti_testcase {
         $usernotenrolled = self::getDataGenerator()->create_user();
         $this->setUser($usernotenrolled);
 
-        $this->expectException(\moodle_exception::class);
+        $this->expectException(moodle_exception::class);
         mod_lti_external::view_lti($lti->id);
     }
 
@@ -332,9 +364,9 @@ class externallib_test extends mod_lti_testcase {
         assign_capability('mod/lti:view', CAP_PROHIBIT, $studentrole->id, $context->id);
         // Empty all the caches that may be affected by this change.
         accesslib_clear_all_caches_for_unit_testing();
-        \course_modinfo::clear_instance_cache();
+        course_modinfo::clear_instance_cache();
 
-        $this->expectException(\moodle_exception::class);
+        $this->expectException(moodle_exception::class);
         mod_lti_external::view_lti($lti->id);
     }
 
@@ -366,7 +398,7 @@ class externallib_test extends mod_lti_testcase {
         // Checking that the event contains the expected values.
         $this->assertInstanceOf('\mod_lti\event\course_module_viewed', $event);
         $this->assertEquals($context, $event->get_context());
-        $moodlelti = new \moodle_url('/mod/lti/view.php', array('id' => $cm->id));
+        $moodlelti = new moodle_url('/mod/lti/view.php', array('id' => $cm->id));
         $this->assertEquals($moodlelti, $event->get_url());
         $this->assertEventContextNotUsed($event);
         $this->assertNotEmpty($event->get_name());
@@ -394,7 +426,7 @@ class externallib_test extends mod_lti_testcase {
         $this->setAdminUser();
         mod_lti_external::create_tool_proxy('Test proxy 1', $this->getExternalTestFileUrl('/test.html'), array(), array());
 
-        $this->expectException(\moodle_exception::class);
+        $this->expectException(moodle_exception::class);
         mod_lti_external::create_tool_proxy('Test proxy 2', $this->getExternalTestFileUrl('/test.html'), array(), array());
     }
 
@@ -405,7 +437,7 @@ class externallib_test extends mod_lti_testcase {
         $course = $this->getDataGenerator()->create_course();
         $teacher = $this->getDataGenerator()->create_and_enrol($course, 'editingteacher');
         $this->setUser($teacher);
-        $this->expectException(\required_capability_exception::class);
+        $this->expectException(required_capability_exception::class);
         mod_lti_external::create_tool_proxy('Test proxy', $this->getExternalTestFileUrl('/test.html'), array(), array());
     }
 
@@ -447,13 +479,14 @@ class externallib_test extends mod_lti_testcase {
      * Test get_tool_types.
      */
     public function test_mod_lti_get_tool_types() {
+        // Create a tool proxy.
         $this->setAdminUser();
         $proxy = mod_lti_external::create_tool_proxy('Test proxy', $this->getExternalTestFileUrl('/test.html'), array(), array());
         $proxy = (object) external_api::clean_returnvalue(mod_lti_external::create_tool_proxy_returns(), $proxy);
 
         // Create a tool type, associated with that proxy.
-        $type = new \stdClass();
-        $data = new \stdClass();
+        $type = new stdClass();
+        $data = new stdClass();
         $type->state = LTI_TOOL_STATE_CONFIGURED;
         $type->name = "Test tool";
         $type->description = "Example description";
@@ -494,7 +527,7 @@ class externallib_test extends mod_lti_testcase {
      * Test create_tool_type failure from non existent file.
      */
     public function test_mod_lti_create_tool_type_nonexistant_file() {
-        $this->expectException(\moodle_exception::class);
+        $this->expectException(moodle_exception::class);
         mod_lti_external::create_tool_type($this->getExternalTestFileUrl('/doesntexist.xml'), '', '');
     }
 
@@ -502,7 +535,7 @@ class externallib_test extends mod_lti_testcase {
      * Test create_tool_type failure from xml that is not a cartridge.
      */
     public function test_mod_lti_create_tool_type_bad_file() {
-        $this->expectException(\moodle_exception::class);
+        $this->expectException(moodle_exception::class);
         mod_lti_external::create_tool_type($this->getExternalTestFileUrl('/rsstest.xml'), '', '');
     }
 
@@ -513,7 +546,7 @@ class externallib_test extends mod_lti_testcase {
         $course = $this->getDataGenerator()->create_course();
         $teacher = $this->getDataGenerator()->create_and_enrol($course, 'editingteacher');
         $this->setUser($teacher);
-        $this->expectException(\required_capability_exception::class);
+        $this->expectException(required_capability_exception::class);
         mod_lti_external::create_tool_type($this->getExternalTestFileUrl('/ims_cartridge_basic_lti_link.xml'), '', '');
     }
 
@@ -559,7 +592,7 @@ class externallib_test extends mod_lti_testcase {
         $course = $this->getDataGenerator()->create_course();
         $teacher = $this->getDataGenerator()->create_and_enrol($course, 'editingteacher');
         $this->setUser($teacher);
-        $this->expectException(\required_capability_exception::class);
+        $this->expectException(required_capability_exception::class);
         mod_lti_external::delete_tool_type($type['id']);
     }
 

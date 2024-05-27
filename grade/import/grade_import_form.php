@@ -23,7 +23,7 @@ require_once $CFG->libdir.'/formslib.php';
 require_once($CFG->libdir.'/gradelib.php');
 
 class grade_import_form extends moodleform {
-    function definition(){
+    function definition (){
         global $COURSE;
 
         $mform =& $this->_form;
@@ -80,13 +80,13 @@ class grade_import_form extends moodleform {
         $mform->setType('forceimport', PARAM_BOOL);
         $mform->addElement('hidden', 'groupid', groups_get_course_group($COURSE));
         $mform->setType('groupid', PARAM_INT);
-        $this->add_sticky_action_buttons(false, get_string('uploadgrades', 'grades'));
+        $this->add_action_buttons(false, get_string('uploadgrades', 'grades'));
     }
 }
 
 class grade_import_mapping_form extends moodleform {
 
-    function definition() {
+    function definition () {
         global $CFG, $COURSE;
         $mform =& $this->_form;
 
@@ -119,10 +119,11 @@ class grade_import_mapping_form extends moodleform {
         $mform->addHelpButton('general_map', 'mappings', 'grades');
 
         // Add a feedback option.
-        $feedbacks = [];
-        $gradeitems = (array) $this->_customdata['gradeitems'];
-        foreach ($gradeitems as $itemid => $itemname) {
-            $feedbacks['feedback_'.$itemid] = get_string('feedbackforgradeitems', 'grades', $itemname);
+        $feedbacks = array();
+        if ($gradeitems = $this->_customdata['gradeitems']) {
+            foreach ($gradeitems as $itemid => $itemname) {
+                $feedbacks['feedback_'.$itemid] = get_string('feedbackforgradeitems', 'grades', $itemname);
+            }
         }
 
         if ($header) {
@@ -165,7 +166,7 @@ class grade_import_mapping_form extends moodleform {
         $mform->addElement('hidden', 'forceimport', $this->_customdata['forceimport']);
         $mform->setType('forceimport', PARAM_BOOL);
         $mform->setConstant('forceimport', $this->_customdata['forceimport']);
-        $this->add_sticky_action_buttons(false, get_string('uploadgrades', 'grades'));
+        $this->add_action_buttons(false, get_string('uploadgrades', 'grades'));
 
     }
 }

@@ -120,7 +120,7 @@ class MoodleQuickForm_cohort extends MoodleQuickForm_autocomplete {
         $cohortstofetch = array();
 
         foreach ($values as $onevalue) {
-            if ($onevalue && !$this->optionExists($onevalue) &&
+            if ((!$this->optionExists($onevalue)) &&
                     ($onevalue !== '_qf__force_multiselect_submission')) {
                 array_push($cohortstofetch, $onevalue);
             }
@@ -141,7 +141,7 @@ class MoodleQuickForm_cohort extends MoodleQuickForm_autocomplete {
             if (!cohort_can_view_cohort($cohort, $currentcontext)) {
                 continue;
             }
-            $label = format_string($cohort->name, true, ['context' => $currentcontext]);
+            $label = format_string($cohort->name, true, $currentcontext);
             $this->addOption($label, $cohort->id);
         }
 

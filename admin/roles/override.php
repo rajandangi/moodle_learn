@@ -90,11 +90,10 @@ $title = get_string('overridepermissionsforrole', 'core_role', $a);
 $currenttab = 'permissions';
 
 $PAGE->set_title($title);
-$PAGE->activityheader->disable();
 $PAGE->navbar->add($straction);
 switch ($context->contextlevel) {
     case CONTEXT_SYSTEM:
-        throw new \moodle_exception('cannotoverridebaserole', 'error');
+        print_error('cannotoverridebaserole', 'error');
         break;
     case CONTEXT_USER:
         $fullname = fullname($user, has_capability('moodle/site:viewfullnames', $context));
@@ -125,7 +124,7 @@ if (empty($overridableroles[$roleid])) {
     $a = new stdClass;
     $a->roleid = $roleid;
     $a->context = $contextname;
-    throw new \moodle_exception('cannotoverriderolehere', '', $context->get_url(), $a);
+    print_error('cannotoverriderolehere', '', $context->get_url(), $a);
 }
 
 // If we are actually overriding a role, create the table object, and save changes if appropriate.
@@ -164,8 +163,7 @@ if (!empty($capabilities)) {
     echo html_writer::start_tag('div', array('class'=>'submit_buttons'));
     $attrs = array('type'=>'submit', 'name'=>'savechanges', 'value'=>get_string('savechanges'), 'class'=>'btn btn-primary');
     echo html_writer::empty_tag('input', $attrs);
-    $attrs = array('type' => 'submit', 'name' => 'cancel', 'value' => get_string('cancel'),
-        'class' => 'btn btn-secondary ml-1');
+    $attrs = array('type'=>'submit', 'name'=>'cancel', 'value'=>get_string('cancel'), 'class' => 'btn btn-secondary');
     echo html_writer::empty_tag('input', $attrs);
     echo html_writer::end_tag('div');
     echo html_writer::end_tag('div');

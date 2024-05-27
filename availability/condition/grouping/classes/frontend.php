@@ -64,7 +64,7 @@ class frontend extends \core_availability\frontend {
         global $DB;
         if ($courseid != $this->allgroupingscourseid) {
             $this->allgroupings = $DB->get_records('groupings',
-                    ['courseid' => $courseid], 'name');
+                    array('courseid' => $courseid), 'id, name');
             $this->allgroupingscourseid = $courseid;
         }
         return $this->allgroupings;

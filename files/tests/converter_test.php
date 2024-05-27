@@ -36,7 +36,7 @@ use core_files\converter;
  * @copyright  2017 Andrew nicols <andrew@nicols.co.uk>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class converter_test extends advanced_testcase {
+class core_files_converter_testcase extends advanced_testcase {
 
     /**
      * Get a testable mock of the abstract files_converter class.
@@ -47,7 +47,7 @@ class converter_test extends advanced_testcase {
      */
     protected function get_testable_mock($mockedmethods = []) {
         $converter = $this->getMockBuilder(\core_files\converter::class)
-            ->onlyMethods($mockedmethods)
+            ->setMethods($mockedmethods)
             ->getMockForAbstractClass();
 
         return $converter;
@@ -61,7 +61,7 @@ class converter_test extends advanced_testcase {
      */
     protected function get_testable_conversion($mockedmethods = []) {
         $conversion = $this->getMockBuilder(\core_files\conversion::class)
-            ->onlyMethods($mockedmethods)
+            ->setMethods($mockedmethods)
             ->setConstructorArgs([0, (object) []])
             ->getMock();
 
@@ -77,7 +77,7 @@ class converter_test extends advanced_testcase {
      */
     protected function get_mocked_converter($mockedmethods = []) {
         $converter = $this->getMockBuilder(\core_files\converter_interface::class)
-            ->onlyMethods($mockedmethods)
+            ->setMethods($mockedmethods)
             ->getMockForAbstractClass();
 
         return $converter;
@@ -92,7 +92,7 @@ class converter_test extends advanced_testcase {
      *                  If no methods are specified, only abstract functions are mocked.
      * @return  stored_file
      */
-    protected function get_stored_file($filecontent = 'content', $filename = null, $filerecord = [], $mockedmethods = []) {
+    protected function get_stored_file($filecontent = 'content', $filename = null, $filerecord = [], $mockedmethods = null) {
         global $CFG;
 
         $contenthash = sha1($filecontent);
@@ -106,7 +106,7 @@ class converter_test extends advanced_testcase {
         $filerecord['id'] = 42;
 
         $file = $this->getMockBuilder(stored_file::class)
-            ->onlyMethods($mockedmethods)
+            ->setMethods($mockedmethods)
             ->setConstructorArgs([get_file_storage(), (object) $filerecord])
             ->getMock();
 
@@ -145,7 +145,7 @@ class converter_test extends advanced_testcase {
      */
     protected function get_file_storage_mock($mockedmethods = []) {
         $fs = $this->getMockBuilder(\file_storage::class)
-            ->onlyMethods($mockedmethods)
+            ->setMethods($mockedmethods)
             ->disableOriginalConstructor()
             ->getMock();
 
@@ -223,6 +223,7 @@ class converter_test extends advanced_testcase {
         $converter->method('get_enabled_plugins')->willReturn([]);
 
         $method = new ReflectionMethod(\core_files\converter::class, 'get_document_converter_classes');
+        $method->setAccessible(true);
         $result = $method->invokeArgs($converter, ['docx', 'pdf']);
         $this->assertEmpty($result);
     }
@@ -237,6 +238,7 @@ class converter_test extends advanced_testcase {
             ]);
 
         $method = new ReflectionMethod(\core_files\converter::class, 'get_document_converter_classes');
+        $method->setAccessible(true);
         $result = $method->invokeArgs($converter, ['docx', 'pdf']);
         $this->assertEmpty($result);
     }
@@ -245,8 +247,8 @@ class converter_test extends advanced_testcase {
      * Test the get_document_converter_classes function when the returned classes do not meet requirements.
      */
     public function test_get_document_converter_classes_plugin_class_requirements_not_met() {
-        $plugin = $this->getMockBuilder(\core_file_converter_requirements_not_met::class)
-            ->onlyMethods([])
+        $plugin = $this->getMockBuilder(\core_file_converter_requirements_not_met_test::class)
+            ->setMethods()
             ->getMock();
 
         $converter = $this->get_testable_mock(['get_enabled_plugins']);
@@ -255,6 +257,7 @@ class converter_test extends advanced_testcase {
             ]);
 
         $method = new ReflectionMethod(\core_files\converter::class, 'get_document_converter_classes');
+        $method->setAccessible(true);
         $result = $method->invokeArgs($converter, ['docx', 'pdf']);
         $this->assertEmpty($result);
     }
@@ -263,8 +266,8 @@ class converter_test extends advanced_testcase {
      * Test the get_document_converter_classes function when the returned classes do not meet requirements.
      */
     public function test_get_document_converter_classes_plugin_class_met_not_supported() {
-        $plugin = $this->getMockBuilder(\core_file_converter_type_not_supported::class)
-            ->onlyMethods([])
+        $plugin = $this->getMockBuilder(\core_file_converter_type_not_supported_test::class)
+            ->setMethods()
             ->getMock();
 
         $converter = $this->get_testable_mock(['get_enabled_plugins']);
@@ -273,6 +276,7 @@ class converter_test extends advanced_testcase {
             ]);
 
         $method = new ReflectionMethod(\core_files\converter::class, 'get_document_converter_classes');
+        $method->setAccessible(true);
         $result = $method->invokeArgs($converter, ['docx', 'pdf']);
         $this->assertEmpty($result);
     }
@@ -281,8 +285,8 @@ class converter_test extends advanced_testcase {
      * Test the get_document_converter_classes function when the returned classes do not meet requirements.
      */
     public function test_get_document_converter_classes_plugin_class_met_and_supported() {
-        $plugin = $this->getMockBuilder(\core_file_converter_type_supported::class)
-            ->onlyMethods([])
+        $plugin = $this->getMockBuilder(\core_file_converter_type_supported_test::class)
+            ->setMethods()
             ->getMock();
         $classname = get_class($plugin);
 
@@ -292,6 +296,7 @@ class converter_test extends advanced_testcase {
             ]);
 
         $method = new ReflectionMethod(\core_files\converter::class, 'get_document_converter_classes');
+        $method->setAccessible(true);
         $result = $method->invokeArgs($converter, ['docx', 'pdf']);
         $this->assertCount(1, $result);
         $this->assertNotFalse(array_search($classname, $result));
@@ -676,6 +681,7 @@ class converter_test extends advanced_testcase {
      */
     public function test_get_next_converter_no_converters() {
         $rcm = new \ReflectionMethod(converter::class, 'get_next_converter');
+        $rcm->setAccessible(true);
 
         $converter = new \core_files\converter();
         $result = $rcm->invoke($converter, [], null);
@@ -688,6 +694,7 @@ class converter_test extends advanced_testcase {
      */
     public function test_get_next_converter_only_converters() {
         $rcm = new \ReflectionMethod(converter::class, 'get_next_converter');
+        $rcm->setAccessible(true);
 
         $converter = new converter();
         $result = $rcm->invoke($converter, ['example'], 'example');
@@ -700,6 +707,7 @@ class converter_test extends advanced_testcase {
      */
     public function test_get_next_converter_last_converters() {
         $rcm = new \ReflectionMethod(converter::class, 'get_next_converter');
+        $rcm->setAccessible(true);
 
         $converter = new converter();
         $result = $rcm->invoke($converter, ['foo', 'example'], 'example');
@@ -712,6 +720,7 @@ class converter_test extends advanced_testcase {
      */
     public function test_get_next_converter_middle_converters() {
         $rcm = new \ReflectionMethod(converter::class, 'get_next_converter');
+        $rcm->setAccessible(true);
 
         $converter = new converter();
         $result = $rcm->invoke($converter, ['foo', 'bar', 'baz', 'example'], 'bar');
@@ -724,6 +733,7 @@ class converter_test extends advanced_testcase {
      */
     public function test_get_next_converter_first() {
         $rcm = new \ReflectionMethod(converter::class, 'get_next_converter');
+        $rcm->setAccessible(true);
 
         $converter = new converter();
         $result = $rcm->invoke($converter, ['foo', 'bar', 'baz', 'example']);
@@ -731,7 +741,7 @@ class converter_test extends advanced_testcase {
     }
 }
 
-class core_file_converter_requirements_base implements \core_files\converter_interface {
+class core_file_converter_requirements_test_base implements \core_files\converter_interface {
 
     /**
      * Whether the plugin is configured and requirements are met.
@@ -776,7 +786,7 @@ class core_file_converter_requirements_base implements \core_files\converter_int
      *
      * @return  string
      */
-    public function get_supported_conversions() {
+    public function  get_supported_conversions() {
         return [];
     }
 
@@ -789,7 +799,7 @@ class core_file_converter_requirements_base implements \core_files\converter_int
  * @copyright  2017 Andrew nicols <andrew@nicols.co.uk>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class core_file_converter_requirements_not_met extends core_file_converter_requirements_base {
+class core_file_converter_requirements_not_met_test extends core_file_converter_requirements_test_base {
 }
 
 /**
@@ -799,7 +809,7 @@ class core_file_converter_requirements_not_met extends core_file_converter_requi
  * @copyright  2017 Andrew nicols <andrew@nicols.co.uk>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class core_file_converter_type_not_supported extends core_file_converter_requirements_base {
+class core_file_converter_type_not_supported_test extends core_file_converter_requirements_test_base {
 
     /**
      * Whether the plugin is configured and requirements are met.
@@ -818,7 +828,7 @@ class core_file_converter_type_not_supported extends core_file_converter_require
  * @copyright  2017 Andrew nicols <andrew@nicols.co.uk>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class core_file_converter_type_supported extends core_file_converter_requirements_base {
+class core_file_converter_type_supported_test extends core_file_converter_requirements_test_base {
 
     /**
      * Whether the plugin is configured and requirements are met.
@@ -848,7 +858,7 @@ class core_file_converter_type_supported extends core_file_converter_requirement
  * @copyright  2017 Andrew nicols <andrew@nicols.co.uk>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class core_file_converter_type_successful extends core_file_converter_requirements_base {
+class core_file_converter_type_successful extends core_file_converter_requirements_test_base {
 
     /**
      * Convert a document to a new format and return a conversion object relating to the conversion in progress.
@@ -881,7 +891,7 @@ class core_file_converter_type_successful extends core_file_converter_requiremen
  * @copyright  2017 Andrew nicols <andrew@nicols.co.uk>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class core_file_converter_type_failed extends core_file_converter_requirements_base {
+class core_file_converter_type_failed extends core_file_converter_requirements_test_base {
 
     /**
      * Whether the plugin is configured and requirements are met.

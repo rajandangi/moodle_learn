@@ -120,7 +120,8 @@ Feature: Add customised file types
       | Custom description | Froggy file                               |
     And I press "Save changes"
     # Create a resource activity and add it to a course
-    When I add a resource activity to course "Course 1" section "1"
+    And I am on "Course 1" course homepage with editing mode on
+    When I add a "File" to section "1"
     And I set the following fields to these values:
       | Name        | An example of customised file type |
       | Description | File description                   |
@@ -128,4 +129,4 @@ Feature: Add customised file types
     And I expand all fieldsets
     And I set the field "Show type" to "1"
     And I press "Save and return to course"
-    Then I should see "FROG" in the "span.activitybadge" "css_element"
+    Then I should see "Froggy file"

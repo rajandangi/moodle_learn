@@ -16,12 +16,13 @@ Feature: Enable Block blog menu in a course
       | teacher1 | C1 | editingteacher |
 
   Scenario: Add the block to a the course when blogs are disabled
-    Given I log in as "teacher1"
-    And I am on "Course 1" course homepage with editing mode on
-    When I add the "Blog menu" block
+    Given I log in as "admin"
     And the following config values are set as admin:
       | enableblogs | 0 |
-    And I reload the page
+    And I log out
+    And I log in as "teacher1"
+    And I am on "Course 1" course homepage with editing mode on
+    When I add the "Blog menu" block
     Then I should see "Blogging is disabled!" in the "Blog menu" "block"
 
   Scenario: Add the block to a the course when blog associations are disabled

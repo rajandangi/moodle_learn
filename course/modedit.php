@@ -36,23 +36,11 @@ $update = optional_param('update', 0, PARAM_INT);
 $return = optional_param('return', 0, PARAM_BOOL);    //return to course/view.php if false or mod/modname/view.php if true
 $type   = optional_param('type', '', PARAM_ALPHANUM); //TODO: hopefully will be removed in 2.0
 $sectionreturn = optional_param('sr', null, PARAM_INT);
-$beforemod = optional_param('beforemod', 0, PARAM_INT);
-$showonly = optional_param('showonly', '', PARAM_TAGLIST); // Settings group to show expanded and hide the rest.
-
-// Force it to be null if it's not a valid section number.
-if ($sectionreturn < 0) {
-    $sectionreturn = null;
-}
 
 $url = new moodle_url('/course/modedit.php');
-if (!is_null($sectionreturn)) {
-    $url->param('sr', $sectionreturn);
-}
+$url->param('sr', $sectionreturn);
 if (!empty($return)) {
     $url->param('return', $return);
-}
-if (!empty($showonly)) {
-    $url->param('showonly', $showonly);
 }
 
 if (!empty($add)) {
@@ -78,23 +66,28 @@ if (!empty($add)) {
     $courseformat = course_get_format($course);
     $maxsections = $courseformat->get_max_sections();
     if ($section > $maxsections) {
-        throw new \moodle_exception('maxsectionslimit', 'moodle', '', $maxsections);
+        print_error('maxsectionslimit', 'moodle', '', $maxsections);
     }
 
     list($module, $context, $cw, $cm, $data) = prepare_new_moduleinfo_data($course, $add, $section);
     $data->return = 0;
-    if (!is_null($sectionreturn)) {
-        $data->sr = $sectionreturn;
-    }
+    $data->sr = $sectionreturn;
     $data->add = $add;
-    $data->beforemod = $beforemod;
     if (!empty($type)) { //TODO: hopefully will be removed in 2.0
         $data->type = $type;
     }
 
     $sectionname = get_section_name($course, $cw);
     $fullmodulename = get_string('modulename', $module->name);
-    $pageheading = $pagetitle = get_string('addinganew', 'moodle', $fullmodulename);
+
+    if ($data->section && $course->format != 'site') {
+        $heading = new stdClass();
+        $heading->what = $fullmodulename;
+        $heading->to   = $sectionname;
+        $pageheading = get_string('addinganewto', 'moodle', $heading);
+    } else {
+        $pageheading = get_string('addinganew', 'moodle', $fullmodulename);
+    }
     $navbaraddition = $pageheading;
 
 } else if (!empty($update)) {
@@ -116,23 +109,25 @@ if (!empty($add)) {
 
     list($cm, $context, $module, $data, $cw) = get_moduleinfo_data($cm, $course);
     $data->return = $return;
-    if (!is_null($sectionreturn)) {
-        $data->sr = $sectionreturn;
-    }
+    $data->sr = $sectionreturn;
     $data->update = $update;
-    if (!empty($showonly)) {
-        $data->showonly = $showonly;
-    }
 
     $sectionname = get_section_name($course, $cw);
     $fullmodulename = get_string('modulename', $module->name);
-    $pageheading = get_string('editsettings', 'moodle');
-    $pagetitle = get_string('edita', 'moodle', $fullmodulename) . ': ' . $cm->name;
+
+    if ($data->section && $course->format != 'site') {
+        $heading = new stdClass();
+        $heading->what = $fullmodulename;
+        $heading->in   = $sectionname;
+        $pageheading = get_string('updatingain', 'moodle', $heading);
+    } else {
+        $pageheading = get_string('updatinga', 'moodle', $fullmodulename);
+    }
     $navbaraddition = null;
 
 } else {
     require_login();
-    throw new \moodle_exception('invalidaction');
+    print_error('invalidaction');
 }
 
 $pagepath = 'mod-' . $module->name . '-';
@@ -143,22 +138,17 @@ if (!empty($type)) { //TODO: hopefully will be removed in 2.0
 }
 $PAGE->set_pagetype($pagepath);
 $PAGE->set_pagelayout('admin');
-$PAGE->add_body_class('limitedwidth');
-
 
 $modmoodleform = "$CFG->dirroot/mod/$module->name/mod_form.php";
 if (file_exists($modmoodleform)) {
     require_once($modmoodleform);
 } else {
-    throw new \moodle_exception('noformdesc');
+    print_error('noformdesc');
 }
 
 $mformclassname = 'mod_'.$module->name.'_mod_form';
 $mform = new $mformclassname($data, $cw->section, $cm, $course);
 $mform->set_data($data);
-if (!empty($showonly)) {
-    $mform->filter_shown_headers(explode(',', $showonly));
-}
 
 if ($mform->is_cancelled()) {
     if ($return && !empty($cm->id)) {
@@ -169,48 +159,34 @@ if ($mform->is_cancelled()) {
         $activityurl = new moodle_url("/mod/$module->name/view.php", $urlparams);
         redirect($activityurl);
     } else {
-        $options = [];
-        if (!is_null($sectionreturn)) {
-            $options['sr'] = $sectionreturn;
-        }
-        redirect(course_get_url($course, $cw->section, $options));
+        redirect(course_get_url($course, $cw->section, array('sr' => $sectionreturn)));
     }
 } else if ($fromform = $mform->get_data()) {
-    // Mark that this is happening in the front-end UI. This is used to indicate that we are able to
-    // do regrading with a progress bar and redirect, if necessary.
-    $fromform->frontend = true;
     if (!empty($fromform->update)) {
         list($cm, $fromform) = update_moduleinfo($cm, $fromform, $course, $mform);
     } else if (!empty($fromform->add)) {
         $fromform = add_moduleinfo($fromform, $course, $mform);
     } else {
-        throw new \moodle_exception('invaliddata');
+        print_error('invaliddata');
     }
 
     if (isset($fromform->submitbutton)) {
         $url = new moodle_url("/mod/$module->name/view.php", array('id' => $fromform->coursemodule, 'forceview' => 1));
-        if (!empty($fromform->showgradingmanagement)) {
-            $url = $fromform->gradingman->get_management_url($url);
+        if (empty($fromform->showgradingmanagement)) {
+            redirect($url);
+        } else {
+            redirect($fromform->gradingman->get_management_url($url));
         }
     } else {
-        $options = [];
-        if (!is_null($sectionreturn)) {
-            $options['sr'] = $sectionreturn;
-        }
-        $url = course_get_url($course, $cw->section, $options);
+        redirect(course_get_url($course, $cw->section, array('sr' => $sectionreturn)));
     }
-
-    // If we need to regrade the course with a progress bar as a result of updating this module,
-    // redirect first to the page that will do this.
-    if (isset($fromform->needsfrontendregrade)) {
-        $url = new moodle_url('/course/modregrade.php', ['id' => $fromform->coursemodule,
-                'url' => $url->out_as_local_url(false)]);
-    }
-
-    redirect($url);
     exit;
 
 } else {
+
+    $streditinga = get_string('editinga', 'moodle', $fullmodulename);
+    $strmodulenameplural = get_string('modulenameplural', $module->name);
+
     if (!empty($cm->id)) {
         $context = context_module::instance($cm->id);
     } else {
@@ -218,19 +194,20 @@ if ($mform->is_cancelled()) {
     }
 
     $PAGE->set_heading($course->fullname);
-    if ($course->id !== $SITE->id) {
-        $pagetitle = $pagetitle . moodle_page::TITLE_SEPARATOR . $course->shortname;
-    }
-    $PAGE->set_title($pagetitle);
+    $PAGE->set_title($streditinga);
     $PAGE->set_cacheable(false);
 
     if (isset($navbaraddition)) {
         $PAGE->navbar->add($navbaraddition);
     }
-    $PAGE->activityheader->disable();
 
     echo $OUTPUT->header();
-    echo $OUTPUT->heading_with_help($pageheading, '', $module->name);
+
+    if (get_string_manager()->string_exists('modulename_help', $module->name)) {
+        echo $OUTPUT->heading_with_help($pageheading, 'modulename', $module->name, 'icon');
+    } else {
+        echo $OUTPUT->heading_with_help($pageheading, '', $module->name, 'icon');
+    }
 
     $mform->display();
 

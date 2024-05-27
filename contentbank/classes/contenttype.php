@@ -14,12 +14,21 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+/**
+ * Content type manager class
+ *
+ * @package    core_contentbank
+ * @copyright  2020 Amaia Anabitarte <amaia@moodle.com>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
 namespace core_contentbank;
 
 use core\event\contentbank_content_created;
 use core\event\contentbank_content_deleted;
 use core\event\contentbank_content_viewed;
 use stored_file;
+use Exception;
 use moodle_url;
 
 /**
@@ -31,23 +40,11 @@ use moodle_url;
  */
 abstract class contenttype {
 
-    /** @var string Constant representing whether the plugin implements uploading feature */
+    /** Plugin implements uploading feature */
     const CAN_UPLOAD = 'upload';
 
-    /** @var string Constant representing whether the plugin implements edition feature */
+    /** Plugin implements edition feature */
     const CAN_EDIT = 'edit';
-
-    /**
-     * @var string Constant representing whether the plugin implements download feature
-     * @since  Moodle 3.10
-     */
-    const CAN_DOWNLOAD = 'download';
-
-    /**
-     * @var string Constant representing whether the plugin implements copy feature
-     * @since  Moodle 4.3
-     */
-    const CAN_COPY = 'copy';
 
     /** @var \context This contenttype's context. **/
     protected $context = null;
@@ -72,16 +69,9 @@ abstract class contenttype {
      * @return content  Object with content bank information.
      */
     public function create_content(\stdClass $record = null): content {
-        global $USER, $DB, $CFG;
+        global $USER, $DB;
 
         $entry = new \stdClass();
-        if (isset($record->visibility)) {
-            $entry->visibility = $record->visibility;
-        } else {
-            $usercreated = $record->usercreated ?? $USER->id;
-            $entry->visibility = get_user_preferences('core_contentbank_visibility',
-                $CFG->defaultpreference_core_contentbank_visibility, $usercreated);
-        }
         $entry->contenttype = $this->get_contenttype_name();
         $entry->contextid = $this->context->id;
         $entry->name = $record->name ?? '';
@@ -117,26 +107,11 @@ abstract class contenttype {
         $content = $this->create_content($record);
         try {
             $content->import_file($file);
-        } catch (\moodle_exception $e) {
+        } catch (Exception $e) {
             $this->delete_content($content);
-            throw new \moodle_exception($e->errorcode);
+            throw $e;
         }
 
-        return $content;
-    }
-
-    /**
-     * Replace a content using an uploaded file.
-     *
-     * @throws file_exception If file operations fail
-     * @throws dml_exception if the content creation fails
-     * @param stored_file $file the uploaded file
-     * @param content $content the original content record
-     * @return content Object with the updated content bank information.
-     */
-    public function replace_content(stored_file $file, content $content): content {
-        $content->import_file($file);
-        $content->update_content();
         return $content;
     }
 
@@ -246,31 +221,6 @@ abstract class contenttype {
     }
 
     /**
-     * Returns the URL to download the content.
-     *
-     * @since  Moodle 3.10
-     * @param  content $content The content to be downloaded.
-     * @return string           URL with the content to download.
-     */
-    public function get_download_url(content $content): string {
-        $downloadurl = '';
-        $file = $content->get_file();
-        if (!empty($file)) {
-            $url = \moodle_url::make_pluginfile_url(
-                $file->get_contextid(),
-                $file->get_component(),
-                $file->get_filearea(),
-                $file->get_itemid(),
-                $file->get_filepath(),
-                $file->get_filename()
-            );
-            $downloadurl = $url->out(false);
-        }
-
-        return $downloadurl;
-    }
-
-    /**
      * Returns the HTML code to render the icon for content bank contents.
      *
      * @param  content $content The content to be displayed.
@@ -278,7 +228,7 @@ abstract class contenttype {
      */
     public function get_icon(content $content): string {
         global $OUTPUT;
-        return $OUTPUT->image_url('f/unknown')->out(false);
+        return $OUTPUT->image_url('f/unknown-64', 'moodle')->out(false);
     }
 
     /**
@@ -374,7 +324,7 @@ abstract class contenttype {
      * @param  content $content The content to be managed.
      * @return bool     True if content could be managed. False otherwise.
      */
-    final public function can_manage(content $content): bool {
+    public final function can_manage(content $content): bool {
         global $USER;
 
         if ($this->context->id != $content->get_content()->contextid) {
@@ -438,79 +388,6 @@ abstract class contenttype {
      * @return bool     True if plugin allows edition. False otherwise.
      */
     protected function is_edit_allowed(?content $content): bool {
-        // Plugins can overwrite this function to add any check they need.
-        return true;
-    }
-
-    /**
-     * Returns whether or not the user has permission to download the content.
-     *
-     * @since  Moodle 3.10
-     * @param  content $content The content to be downloaded.
-     * @return bool    True if the user can download the content. False otherwise.
-     */
-    final public function can_download(content $content): bool {
-        if (!$this->is_feature_supported(self::CAN_DOWNLOAD)) {
-            return false;
-        }
-
-        if (!$this->can_access()) {
-            return false;
-        }
-
-        $hascapability = has_capability('moodle/contentbank:downloadcontent', $this->context);
-        return $hascapability && $this->is_download_allowed($content);
-    }
-
-    /**
-     * Returns whether or not the user has permission to copy the content.
-     *
-     * @since  Moodle 4.3
-     * @param  content $content The content to be copied.
-     * @return bool    True if the user can copy the content. False otherwise.
-     */
-    final public function can_copy(content $content): bool {
-        global $USER;
-
-        if (!$this->is_feature_supported(self::CAN_COPY)) {
-            return false;
-        }
-
-        if (!$this->can_access()) {
-            return false;
-        }
-
-        if (!$this->is_copy_allowed($content)) {
-            return false;
-        }
-
-        $hascapability = has_capability('moodle/contentbank:copyanycontent', $this->context);
-        if (!$hascapability && ($content->get_content()->usercreated == $USER->id)) {
-            $hascapability = has_capability('moodle/contentbank:copycontent', $this->context);
-        }
-        return $hascapability;
-    }
-
-    /**
-     * Returns plugin allows downloading.
-     *
-     * @since  Moodle 3.10
-     * @param  content $content The content to be downloaed.
-     * @return bool    True if plugin allows downloading. False otherwise.
-     */
-    protected function is_download_allowed(content $content): bool {
-        // Plugins can overwrite this function to add any check they need.
-        return true;
-    }
-
-    /**
-     * Returns plugin allows copying.
-     *
-     * @since  Moodle 4.3
-     * @param  content $content The content to be copied.
-     * @return bool    True if plugin allows copying. False otherwise.
-     */
-    protected function is_copy_allowed(content $content): bool {
         // Plugins can overwrite this function to add any check they need.
         return true;
     }

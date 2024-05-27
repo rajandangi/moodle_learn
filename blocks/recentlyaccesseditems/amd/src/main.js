@@ -18,6 +18,7 @@
  * Javascript to initialise the Recently accessed items block.
  *
  * @module     block_recentlyaccesseditems/main
+ * @package    block_recentlyaccesseditems
  * @copyright  2018 Victor Deniz <victor@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -37,30 +38,10 @@ define(
     ) {
 
         var NUM_ITEMS = 9;
-        // Maximum number of elements to display in the block initially.
-        var NUM_ITEMS_INIT = 3;
 
         var SELECTORS = {
             CARDDECK_CONTAINER: '[data-region="recentlyaccesseditems-view"]',
             CARDDECK: '[data-region="recentlyaccesseditems-view-content"]',
-            SHOWMORE_LINK: '[data-region="recentlyaccesseditems-view"] [data-action="more-items"]',
-        };
-
-        /**
-         * Register event listeners.
-         */
-        const registerEventListeners = () => {
-            const showmoreLink = document.querySelector(SELECTORS.SHOWMORE_LINK);
-
-            // Hide "Show more" link and show additional items.
-            showmoreLink.addEventListener('click', () => {
-                showmoreLink.classList.add('d-none');
-
-                const hiddenItems = document.querySelector('[data-region="items-list"]').children;
-                for (const hiddenItem of hiddenItems) {
-                    hiddenItem.style = "display: block";
-                }
-            });
         };
 
         /**
@@ -84,13 +65,8 @@ define(
          */
         var renderItems = function(root, items) {
             if (items.length > 0) {
-                let hasmoreitems = false;
-                if (items.length > NUM_ITEMS_INIT) {
-                    hasmoreitems = true;
-                }
                 return Templates.render('block_recentlyaccesseditems/view-cards', {
-                    items: items,
-                    hasmoreitems: hasmoreitems
+                    items: items
                 });
             } else {
                 var noitemsimgurl = root.attr('data-noitemsimgurl');
@@ -117,12 +93,9 @@ define(
                 var pageContentPromise = renderItems(itemsContainer, items);
 
                 pageContentPromise.then(function(html, js) {
-                    Templates.replaceNodeContents(itemsContent, html, js);
-                    if (items.length > 3) {
-                        registerEventListeners();
-                    }
-                    return null;
+                    return Templates.replaceNodeContents(itemsContent, html, js);
                 }).catch(Notification.exception);
+                return itemsPromise;
             }).catch(Notification.exception);
         };
 

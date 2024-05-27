@@ -66,7 +66,7 @@ abstract class question_engine {
      * {@link save_questions_usage_by_activity()}.
      *
      * @param string $component the plugin creating this attempt. For example mod_quiz.
-     * @param context $context the context this usage belongs to.
+     * @param object $context the context this usage belongs to.
      * @return question_usage_by_activity the newly created object.
      */
     public static function make_questions_usage_by_activity($component, $context) {
@@ -476,22 +476,19 @@ abstract class question_engine {
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class question_display_options {
-    /**#@+
-     * @var int named constants for the values that most of the options take.
-     */
-    const SHOW_ALL = -1;
+    /**#@+ @var integer named constants for the values that most of the options take. */
     const HIDDEN = 0;
     const VISIBLE = 1;
     const EDITABLE = 2;
     /**#@-*/
 
-    /**#@+ @var int named constants for the {@see $marks} option. */
+    /**#@+ @var integer named constants for the {@link $marks} option. */
     const MAX_ONLY = 1;
     const MARK_AND_MAX = 2;
     /**#@-*/
 
     /**
-     * @var int maximum value for the {@see $markpd} option. This is
+     * @var integer maximum value for the {@link $markpd} option. This is
      * effectively set by the database structure, which uses NUMBER(12,7) columns
      * for question marks/fractions.
      */
@@ -514,40 +511,33 @@ class question_display_options {
      * This includes the green/red hilighting of the bits of their response,
      * whether the one-line summary of the current state of the question says
      * correct/incorrect or just answered.
-     * @var int {@see question_display_options::HIDDEN} or
-     * {@see question_display_options::VISIBLE}
+     * @var integer {@link question_display_options::HIDDEN} or
+     * {@link question_display_options::VISIBLE}
      */
     public $correctness = self::VISIBLE;
 
     /**
      * The the mark and/or the maximum available mark for this question be visible?
-     * @var int {@see question_display_options::HIDDEN},
-     * {@see question_display_options::MAX_ONLY} or {@see question_display_options::MARK_AND_MAX}
+     * @var integer {@link question_display_options::HIDDEN},
+     * {@link question_display_options::MAX_ONLY} or {@link question_display_options::MARK_AND_MAX}
      */
     public $marks = self::MARK_AND_MAX;
 
-    /** @var int of decimal places to use when formatting marks for output. */
+    /** @var number of decimal places to use when formatting marks for output. */
     public $markdp = 2;
 
     /**
      * Should the flag this question UI element be visible, and if so, should the
-     * flag state be changeable?
-     *
-     * @var int {@see question_display_options::HIDDEN},
-     * {@see question_display_options::VISIBLE} or {@see question_display_options::EDITABLE}
+     * flag state be changable?
+     * @var integer {@link question_display_options::HIDDEN},
+     * {@link question_display_options::VISIBLE} or {@link question_display_options::EDITABLE}
      */
     public $flags = self::VISIBLE;
 
     /**
      * Should the specific feedback be visible.
-     *
-     * Specific feedback is typically the part of the feedback that changes based on the
-     * answer that the student gave. For example the feedback shown if a particular choice
-     * has been chosen in a multi-choice question. It also includes the combined feedback
-     * that a lost of question types have (e.g. feedback for any correct/incorrect response.)
-     *
-     * @var int {@see question_display_options::HIDDEN} or
-     * {@see question_display_options::VISIBLE}
+     * @var integer {@link question_display_options::HIDDEN} or
+     * {@link question_display_options::VISIBLE}
      */
     public $feedback = self::VISIBLE;
 
@@ -555,35 +545,31 @@ class question_display_options {
      * For questions with a number of sub-parts (like matching, or
      * multiple-choice, multiple-reponse) display the number of sub-parts that
      * were correct.
-     * @var int {@see question_display_options::HIDDEN} or
-     * {@see question_display_options::VISIBLE}
+     * @var integer {@link question_display_options::HIDDEN} or
+     * {@link question_display_options::VISIBLE}
      */
     public $numpartscorrect = self::VISIBLE;
 
     /**
      * Should the general feedback be visible?
-     *
-     * This is typically feedback shown to all students after the question
-     * is finished, irrespective of which answer they gave.
-     *
-     * @var int {@see question_display_options::HIDDEN} or
-     * {@see question_display_options::VISIBLE}
+     * @var integer {@link question_display_options::HIDDEN} or
+     * {@link question_display_options::VISIBLE}
      */
     public $generalfeedback = self::VISIBLE;
 
     /**
-     * Should the automatically generated display of what the correct answer be visible?
-     *
-     * @var int {@see question_display_options::HIDDEN} or
-     * {@see question_display_options::VISIBLE}
+     * Should the automatically generated display of what the correct answer is
+     * be visible?
+     * @var integer {@link question_display_options::HIDDEN} or
+     * {@link question_display_options::VISIBLE}
      */
     public $rightanswer = self::VISIBLE;
 
     /**
      * Should the manually added marker's comment be visible. Should the link for
      * adding/editing the comment be there.
-     * @var int {@see question_display_options::HIDDEN},
-     * {@see question_display_options::VISIBLE}, or {@see question_display_options::EDITABLE}.
+     * @var integer {@link question_display_options::HIDDEN},
+     * {@link question_display_options::VISIBLE}, or {@link question_display_options::EDITABLE}.
      * Editable means that form fields are displayed inline.
      */
     public $manualcomment = self::VISIBLE;
@@ -604,8 +590,8 @@ class question_display_options {
 
     /**
      * Should the history of previous question states table be visible?
-     * @var int {@see question_display_options::HIDDEN} or
-     * {@see question_display_options::VISIBLE}
+     * @var integer {@link question_display_options::HIDDEN} or
+     * {@link question_display_options::VISIBLE}
      */
     public $history = self::HIDDEN;
 
@@ -641,37 +627,14 @@ class question_display_options {
     public $editquestionparams = array();
 
     /**
-     * @var context the context the attempt being output belongs to.
+     * @var int the context the attempt being output belongs to.
      */
     public $context;
 
     /**
-     * @var int The option to show the action author in the response history.
-     */
-    public $userinfoinhistory = self::HIDDEN;
-
-    /**
-     * This identifier should be added to the labels of all input fields in the question.
-     *
-     * This is so people using assistive technology can easily tell which input belong to
-     * which question. The helper {@see self::add_question_identifier_to_label() makes this easier.
-     *
-     * If not set before the question is rendered, then it defaults to 'Question N'.
-     * (lang string)
-     *
-     * @var string The identifier that the question being rendered is associated with.
-     *              E.g. The question number when it is rendered on a quiz.
-     */
-    public $questionidentifier = null;
-
-    /**
-     * @var ?bool $versioninfo Should we display the version in the question info?
-     */
-    public ?bool $versioninfo = null;
-
-    /**
-     * Set all the feedback-related fields, feedback, numpartscorrect, generalfeedback,
-     * rightanswer, manualcomment} and correctness to {@see question_display_options::HIDDEN}.
+     * Set all the feedback-related fields {@link $feedback}, {@link generalfeedback},
+     * {@link rightanswer} and {@link manualcomment} to
+     * {@link question_display_options::HIDDEN}.
      */
     public function hide_all_feedback() {
         $this->feedback = self::HIDDEN;
@@ -686,10 +649,10 @@ class question_display_options {
      * Returns the valid choices for the number of decimal places for showing
      * question marks. For use in the user interface.
      *
-     * Calling code should probably use {@see question_engine::get_dp_options()}
+     * Calling code should probably use {@link question_engine::get_dp_options()}
      * rather than calling this method directly.
      *
-     * @return array suitable for passing to {@see html_writer::select()} or similar.
+     * @return array suitable for passing to {@link html_writer::select()} or similar.
      */
     public static function get_dp_options() {
         $options = array();
@@ -697,38 +660,6 @@ class question_display_options {
             $options[$i] = $i;
         }
         return $options;
-    }
-
-    /**
-     * Helper to add the question identify (if there is one) to the label of an input field in a question.
-     *
-     * @param string $label The plain field label. E.g. 'Answer 1'
-     * @param bool $sridentifier If true, the question identifier, if added, will be wrapped in a sr-only span. Default false.
-     * @param bool $addbefore If true, the question identifier will be added before the label.
-     * @return string The amended label. For example 'Answer 1, Question 1'.
-     */
-    public function add_question_identifier_to_label(string $label, bool $sridentifier = false, bool $addbefore = false): string {
-        if (!$this->has_question_identifier()) {
-            return $label;
-        }
-        $identifier = $this->questionidentifier;
-        if ($sridentifier) {
-            $identifier = html_writer::span($identifier, 'sr-only');
-        }
-        $fieldlang = 'fieldinquestion';
-        if ($addbefore) {
-            $fieldlang = 'fieldinquestionpre';
-        }
-        return get_string($fieldlang, 'question', (object)['fieldname' => $label, 'questionindentifier' => $identifier]);
-    }
-
-    /**
-     * Whether a question number has been provided for the question that is being displayed.
-     *
-     * @return bool
-     */
-    public function has_question_identifier(): bool {
-        return $this->questionidentifier !== null && trim($this->questionidentifier) !== '';
     }
 }
 
@@ -808,22 +739,26 @@ abstract class question_flags {
             'requires' => array('base', 'dom', 'event-delegate', 'io-base'),
         );
         $actionurl = $CFG->wwwroot . '/question/toggleflag.php';
+        $flagtext = array(
+            0 => get_string('clickflag', 'question'),
+            1 => get_string('clickunflag', 'question')
+        );
         $flagattributes = array(
             0 => array(
                 'src' => $OUTPUT->image_url('i/unflagged') . '',
                 'title' => get_string('clicktoflag', 'question'),
-                'alt' => get_string('flagged', 'question'), // Label on toggle should not change.
-                'text' => get_string('clickflag', 'question'),
+                'alt' => get_string('notflagged', 'question'),
+              //  'text' => get_string('clickflag', 'question'),
             ),
             1 => array(
                 'src' => $OUTPUT->image_url('i/flagged') . '',
                 'title' => get_string('clicktounflag', 'question'),
                 'alt' => get_string('flagged', 'question'),
-                'text' => get_string('clickunflag', 'question'),
+               // 'text' => get_string('clickunflag', 'question'),
             ),
         );
         $PAGE->requires->js_init_call('M.core_question_flags.init',
-                array($actionurl, $flagattributes), false, $module);
+                array($actionurl, $flagattributes, $flagtext), false, $module);
         $done = true;
     }
 }
@@ -978,8 +913,8 @@ abstract class question_utils {
                     'converted to roman numerals.', $number);
         }
 
-        return self::$thousands[floor($number / 1000) % 10] . self::$hundreds[floor($number / 100) % 10] .
-                self::$tens[floor($number / 10) % 10] . self::$units[$number % 10];
+        return self::$thousands[$number / 1000 % 10] . self::$hundreds[$number / 100 % 10] .
+                self::$tens[$number / 10 % 10] . self::$units[$number % 10];
     }
 
     /**
@@ -1076,10 +1011,9 @@ abstract class question_utils {
     /**
      * Get the options required to configure the filepicker for one of the editor
      * toolbar buttons.
-     *
      * @param mixed $acceptedtypes array of types of '*'.
      * @param int $draftitemid the draft area item id.
-     * @param context $context the context.
+     * @param object $context the context.
      * @return object the required options.
      */
     protected static function specific_filepicker_options($acceptedtypes, $draftitemid, $context) {
@@ -1100,8 +1034,7 @@ abstract class question_utils {
 
     /**
      * Get filepicker options for question related text areas.
-     *
-     * @param context $context the context.
+     * @param object $context the context.
      * @param int $draftitemid the draft area item id.
      * @return array An array of options
      */
@@ -1115,8 +1048,7 @@ abstract class question_utils {
 
     /**
      * Get editor options for question related text areas.
-     *
-     * @param context $context the context.
+     * @param object $context the context.
      * @return array An array of options
      */
     public static function get_editor_options($context) {

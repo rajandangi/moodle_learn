@@ -32,26 +32,3 @@ Feature: Import course's contents into another course
     And I should see "Test forum name"
     And I should see "Comments" in the "Comments" "block"
     And I should see "Recent blog entries"
-
-  Scenario: Import process with permission option
-    Given the following "permission overrides" exist:
-      | capability         | permission | role    | contextlevel | reference |
-      | enrol/manual:enrol | Allow      | teacher | Course       | C1        |
-    And I log in as "teacher1"
-    When I import "Course 1" course into "Course 2" course using this options:
-      | Initial | Include permission overrides | 1 |
-    And I am on the "Course 1" "permissions" page
-    Then I should see "Non-editing teacher (1)"
-    And I set the field "Advanced role override" to "Non-editing teacher (1)"
-    And I click on "//div[@class='advancedoverride']/div/form/noscript/input" "xpath_element"
-    And "enrol/manual:enrol" capability has "Allow" permission
-
-  Scenario: Import process without permission option
-    Given the following "permission overrides" exist:
-      | capability         | permission | role    | contextlevel | reference |
-      | enrol/manual:enrol | Allow      | teacher | Course       | C1        |
-    And I log in as "teacher1"
-    When I import "Course 1" course into "Course 2" course using this options:
-      | Initial | Include permission overrides | 0 |
-    And I am on the "Course 2" "permissions" page
-    Then I should see "Non-editing teacher (0)"

@@ -111,6 +111,7 @@ class restore_assign_activity_structure_step extends restore_activity_structure_
         } else {
             $data->teamsubmissiongroupingid = 0;
         }
+
         if (!isset($data->cutoffdate)) {
             $data->cutoffdate = 0;
         }
@@ -124,9 +125,6 @@ class restore_assign_activity_structure_step extends restore_activity_structure_
         }
         if (!isset($data->markingallocation)) {
             $data->markingallocation = 0;
-        }
-        if (!isset($data->markinganonymous)) {
-            $data->markinganonymous = 0;
         }
         if (!isset($data->preventsubmissionnotingroup)) {
             $data->preventsubmissionnotingroup = 0;

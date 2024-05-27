@@ -140,7 +140,7 @@ class filter_manager {
      * @param string $filtername The filter name, for example 'tex'.
      * @param context $context context object.
      * @param array $localconfig array of local configuration variables for this filter.
-     * @return ?moodle_text_filter The filter, or null, if this type of filter is
+     * @return moodle_text_filter The filter, or null, if this type of filter is
      *      not recognised or could not be created.
      */
     protected function make_filter_object($filtername, $context, $localconfig) {
@@ -473,7 +473,7 @@ abstract class moodle_text_filter {
      * @param array $options options passed to the filters
      * @return string the HTML content after the filtering has been applied.
      */
-    abstract public function filter($text, array $options = array());
+    public abstract function filter($text, array $options = array());
 
     /**
      * Filter text before changing format to HTML.
@@ -569,12 +569,6 @@ class filterobject {
 
     /** @var null|string once initialised, holds the mangled HTML to replace the regexp with. */
     public $workreplacementphrase = null;
-
-    /** @var null|callable hold a replacement function to be called. */
-    public $replacementcallback;
-
-    /** @var null|array data to be passed to $replacementcallback. */
-    public $replacementcallbackdata;
 
     /**
      * Constructor.
@@ -744,13 +738,6 @@ function filter_set_global_state($filtername, $state, $move = 0) {
 
     // Move only active.
     if ($move != 0 and isset($on[$filter->filter])) {
-        // Capture the old order for logging.
-        $oldorder = implode(', ', array_map(
-                function($f) {
-                    return $f->filter;
-                }, $on));
-
-        // Work out the new order.
         $i = 1;
         foreach ($on as $f) {
             $f->newsortorder = $i;
@@ -773,13 +760,6 @@ function filter_set_global_state($filtername, $state, $move = 0) {
         }
 
         core_collator::asort_objects_by_property($on, 'newsortorder', core_collator::SORT_NUMERIC);
-
-        // Log in config_log.
-        $neworder = implode(', ', array_map(
-                function($f) {
-                    return $f->filter;
-                }, $on));
-        add_to_config_log('order', $oldorder, $neworder, 'core_filter');
     }
 
     // Inactive are sorted by filter name.
@@ -1314,16 +1294,6 @@ function filter_get_global_states() {
     global $DB;
     $context = context_system::instance();
     return $DB->get_records('filter_active', array('contextid' => $context->id), 'sortorder', 'filter,active,sortorder');
-}
-
-/**
- * Retrieve all the filters and their states (including overridden ones in any context).
- *
- * @return array filters objects containing filter name, context, active state and sort order.
- */
-function filter_get_all_states(): array {
-    global $DB;
-    return $DB->get_records('filter_active');
 }
 
 /**

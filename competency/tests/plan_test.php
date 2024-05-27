@@ -14,7 +14,19 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace core_competency;
+/**
+ * Plan persistent class tests.
+ *
+ * @package    core_competency
+ * @copyright  2015 Frédéric Massart - FMCorz.net
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+defined('MOODLE_INTERNAL') || die();
+global $CFG;
+
+use core_competency\api;
+use core_competency\plan;
 
 /**
  * Plan persistent testcase.
@@ -23,7 +35,7 @@ namespace core_competency;
  * @copyright  2015 Frédéric Massart - FMCorz.net
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class plan_test extends \advanced_testcase {
+class core_competency_plan_testcase extends advanced_testcase {
 
     public function test_can_manage_user() {
         $this->resetAfterTest(true);
@@ -35,10 +47,10 @@ class plan_test extends \advanced_testcase {
         $u2 = $this->getDataGenerator()->create_user();
         $u3 = $this->getDataGenerator()->create_user();
 
-        $syscontext = \context_system::instance();
-        $u1context = \context_user::instance($u1->id);
-        $u2context = \context_user::instance($u2->id);
-        $u3context = \context_user::instance($u3->id);
+        $syscontext = context_system::instance();
+        $u1context = context_user::instance($u1->id);
+        $u2context = context_user::instance($u2->id);
+        $u3context = context_user::instance($u3->id);
 
         assign_capability('moodle/competency:planmanage', CAP_ALLOW, $manage, $syscontext->id);
         assign_capability('moodle/competency:planmanageown', CAP_ALLOW, $manageown, $u2context->id);
@@ -78,12 +90,12 @@ class plan_test extends \advanced_testcase {
         $u4 = $this->getDataGenerator()->create_user();
         $u5 = $this->getDataGenerator()->create_user();
 
-        $syscontext = \context_system::instance();
-        $u1context = \context_user::instance($u1->id);
-        $u2context = \context_user::instance($u2->id);
-        $u3context = \context_user::instance($u3->id);
-        $u4context = \context_user::instance($u4->id);
-        $u5context = \context_user::instance($u5->id);
+        $syscontext = context_system::instance();
+        $u1context = context_user::instance($u1->id);
+        $u2context = context_user::instance($u2->id);
+        $u3context = context_user::instance($u3->id);
+        $u4context = context_user::instance($u4->id);
+        $u5context = context_user::instance($u5->id);
 
         assign_capability('moodle/competency:planmanage', CAP_ALLOW, $manage, $syscontext->id);
         assign_capability('moodle/competency:planmanageown', CAP_ALLOW, $manageown, $syscontext->id);
@@ -143,10 +155,10 @@ class plan_test extends \advanced_testcase {
         $u2 = $this->getDataGenerator()->create_user();
         $u3 = $this->getDataGenerator()->create_user();
 
-        $syscontext = \context_system::instance();
-        $u1context = \context_user::instance($u1->id);
-        $u2context = \context_user::instance($u2->id);
-        $u3context = \context_user::instance($u3->id);
+        $syscontext = context_system::instance();
+        $u1context = context_user::instance($u1->id);
+        $u2context = context_user::instance($u2->id);
+        $u3context = context_user::instance($u3->id);
 
         assign_capability('moodle/competency:planview', CAP_ALLOW, $read, $syscontext->id);
         assign_capability('moodle/competency:planviewown', CAP_ALLOW, $readown, $u2context->id);
@@ -186,12 +198,12 @@ class plan_test extends \advanced_testcase {
         $u4 = $this->getDataGenerator()->create_user();
         $u5 = $this->getDataGenerator()->create_user();
 
-        $syscontext = \context_system::instance();
-        $u1context = \context_user::instance($u1->id);
-        $u2context = \context_user::instance($u2->id);
-        $u3context = \context_user::instance($u3->id);
-        $u4context = \context_user::instance($u4->id);
-        $u5context = \context_user::instance($u5->id);
+        $syscontext = context_system::instance();
+        $u1context = context_user::instance($u1->id);
+        $u2context = context_user::instance($u2->id);
+        $u3context = context_user::instance($u3->id);
+        $u4context = context_user::instance($u4->id);
+        $u5context = context_user::instance($u5->id);
 
         assign_capability('moodle/competency:planview', CAP_ALLOW, $read, $syscontext->id);
         assign_capability('moodle/competency:planviewown', CAP_ALLOW, $readown, $syscontext->id);
@@ -256,28 +268,28 @@ class plan_test extends \advanced_testcase {
 
         // Ignore duedate validation on create/update draft plan.
         $plan = $lpg->create_plan($record);
-        $this->assertInstanceOf(plan::class, $plan);
+        $this->assertInstanceOf('core_competency\plan', $plan);
 
         // Passing from draft to active.
         $plan->set('status', plan::STATUS_ACTIVE);
 
         // Draft to active with duedate in the past.
         $expected = array(
-            'duedate' => new \lang_string('errorcannotsetduedateinthepast', 'core_competency'),
+            'duedate' => new lang_string('errorcannotsetduedateinthepast', 'core_competency'),
         );
         $this->assertEquals($expected, $plan->validate());
 
         // Draft to active: past date => past date(fail).
         $plan->set('duedate', time() - 100);
         $expected = array(
-            'duedate' => new \lang_string('errorcannotsetduedateinthepast', 'core_competency'),
+            'duedate' => new lang_string('errorcannotsetduedateinthepast', 'core_competency'),
         );
         $this->assertEquals($expected, $plan->validate());
 
         // Draft to active: past date => too soon (fail).
         $plan->set('duedate', time() + 100);
         $expected = array(
-            'duedate' => new \lang_string('errorcannotsetduedatetoosoon', 'core_competency'),
+            'duedate' => new lang_string('errorcannotsetduedatetoosoon', 'core_competency'),
         );
         $this->assertEquals($expected, $plan->validate());
 
@@ -312,14 +324,14 @@ class plan_test extends \advanced_testcase {
         // Active to active: unset date => past date(fail).
         $plan->set('duedate', time() - 100);
         $expected = array(
-            'duedate' => new \lang_string('errorcannotsetduedateinthepast', 'core_competency'),
+            'duedate' => new lang_string('errorcannotsetduedateinthepast', 'core_competency'),
         );
         $this->assertEquals($expected, $plan->validate());
 
         // Active to active: unset date => too soon (fail).
         $plan->set('duedate', time() + 100);
         $expected = array(
-            'duedate' => new \lang_string('errorcannotsetduedatetoosoon', 'core_competency'),
+            'duedate' => new lang_string('errorcannotsetduedatetoosoon', 'core_competency'),
         );
         $this->assertEquals($expected, $plan->validate());
 
@@ -341,14 +353,14 @@ class plan_test extends \advanced_testcase {
         // Active to active: future date => past date(fail).
         $plan->set('duedate', time() - 100);
         $expected = array(
-            'duedate' => new \lang_string('errorcannotsetduedateinthepast', 'core_competency'),
+            'duedate' => new lang_string('errorcannotsetduedateinthepast', 'core_competency'),
         );
         $this->assertEquals($expected, $plan->validate());
 
         // Active to active: future date => too soon (fail).
         $plan->set('duedate', time() + 100);
         $expected = array(
-            'duedate' => new \lang_string('errorcannotsetduedatetoosoon', 'core_competency'),
+            'duedate' => new lang_string('errorcannotsetduedatetoosoon', 'core_competency'),
         );
         $this->assertEquals($expected, $plan->validate());
 
@@ -362,7 +374,7 @@ class plan_test extends \advanced_testcase {
         $record->duedate = time() - 200;
         $DB->update_record(plan::TABLE, $record);
 
-        $success = api::complete_plan($plan->get('id'));
+        $success = core_competency\api::complete_plan($plan->get('id'));
         $this->assertTrue($success);
 
         // Completing plan: with due date too soon (pass).
@@ -371,7 +383,7 @@ class plan_test extends \advanced_testcase {
         $record->duedate = time() + 200;
         $DB->update_record(plan::TABLE, $record);
 
-        $success = api::complete_plan($plan->get('id'));
+        $success = core_competency\api::complete_plan($plan->get('id'));
         $this->assertTrue($success);
 
         // Completing plan: with due date in the future (pass).
@@ -380,7 +392,7 @@ class plan_test extends \advanced_testcase {
         $record->duedate = time() + plan::DUEDATE_THRESHOLD + 10;
         $DB->update_record(plan::TABLE, $record);
 
-        $success = api::complete_plan($plan->get('id'));
+        $success = core_competency\api::complete_plan($plan->get('id'));
         $this->assertTrue($success);
 
         // Completing plan: with due date unset (pass).
@@ -389,7 +401,7 @@ class plan_test extends \advanced_testcase {
         $record->duedate = 0;
         $DB->update_record(plan::TABLE, $record);
 
-        $success = api::complete_plan($plan->get('id'));
+        $success = core_competency\api::complete_plan($plan->get('id'));
         $this->assertTrue($success);
 
         // Reopening plan: with due date in the past => duedate unset.
@@ -398,7 +410,7 @@ class plan_test extends \advanced_testcase {
         $record->duedate = time() - 200;
         $DB->update_record(plan::TABLE, $record);
 
-        $success = api::reopen_plan($plan->get('id'));
+        $success = core_competency\api::reopen_plan($plan->get('id'));
         $this->assertTrue($success);
         $plan->read();
         $this->assertEquals(0, $plan->get('duedate'));
@@ -409,7 +421,7 @@ class plan_test extends \advanced_testcase {
         $record->duedate = time() + 100;
         $DB->update_record(plan::TABLE, $record);
 
-        $success = api::reopen_plan($plan->get('id'));
+        $success = core_competency\api::reopen_plan($plan->get('id'));
         $this->assertTrue($success);
         $plan->read();
         $this->assertEquals(0, $plan->get('duedate'));
@@ -421,7 +433,7 @@ class plan_test extends \advanced_testcase {
         $record->duedate = $duedate;
         $DB->update_record(plan::TABLE, $record);
 
-        $success = api::reopen_plan($plan->get('id'));
+        $success = core_competency\api::reopen_plan($plan->get('id'));
         $this->assertTrue($success);
         $plan->read();
 
@@ -514,6 +526,10 @@ class plan_test extends \advanced_testcase {
         $this->assertCount(0, $plans);
     }
 
+    /**
+     * @expectedException        coding_exception
+     * @expectedExceptionMessage The competency does not belong to this template:
+     */
     public function test_get_competency() {
         $this->resetAfterTest();
         $this->setAdminUser();
@@ -555,8 +571,6 @@ class plan_test extends \advanced_testcase {
         $this->assertEquals($c4->to_record(), $p4->get_competency($c4->get('id'))->to_record());
 
         // Getting the competency 4 from the non-completed plan based on a template p4, will throw an exception.
-        $this->expectException('coding_exception');
-        $this->expectExceptionMessage('The competency does not belong to this template:');
         $p3->get_competency($c4->get('id'));
     }
 }

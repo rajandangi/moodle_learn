@@ -14,7 +14,17 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace availability_group;
+/**
+ * Unit tests for the condition.
+ *
+ * @package availability_group
+ * @copyright 2014 The Open University
+ * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+defined('MOODLE_INTERNAL') || die();
+
+use availability_group\condition;
 
 /**
  * Unit tests for the condition.
@@ -23,11 +33,11 @@ namespace availability_group;
  * @copyright 2014 The Open University
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class condition_test extends \advanced_testcase {
+class availability_group_condition_testcase extends advanced_testcase {
     /**
      * Load required classes.
      */
-    public function setUp(): void {
+    public function setUp() {
         // Load the mock info class so that it can be used.
         global $CFG;
         require_once($CFG->dirroot . '/availability/tests/fixtures/mock_info.php');
@@ -49,7 +59,6 @@ class condition_test extends \advanced_testcase {
         $course = $generator->create_course();
         $user = $generator->create_user();
         $generator->enrol_user($user->id, $course->id);
-        $this->setUser($user);
         $info = new \core_availability\mock_info($course, $user->id);
 
         // Make 2 test groups, one in a grouping and one not.
@@ -64,21 +73,19 @@ class condition_test extends \advanced_testcase {
         // Check if available (when not available).
         $this->assertFalse($cond->is_available(false, $info, true, $user->id));
         $information = $cond->get_description(false, false, $info);
-        $information = \core_availability\info::format_info($information, $course);
-        $this->assertMatchesRegularExpression('~You belong to.*G1!~', $information);
+        $this->assertRegExp('~You belong to.*G1!~', $information);
         $this->assertTrue($cond->is_available(true, $info, true, $user->id));
 
         // Add user to groups and refresh cache.
         groups_add_member($group1, $user);
         groups_add_member($group2, $user);
-        $info = new \core_availability\mock_info($course, $user->id);
+        get_fast_modinfo($course->id, 0, true);
 
         // Recheck.
         $this->assertTrue($cond->is_available(false, $info, true, $user->id));
         $this->assertFalse($cond->is_available(true, $info, true, $user->id));
         $information = $cond->get_description(false, true, $info);
-        $information = \core_availability\info::format_info($information, $course);
-        $this->assertMatchesRegularExpression('~do not belong to.*G1!~', $information);
+        $this->assertRegExp('~do not belong to.*G1!~', $information);
 
         // Check group 2 works also.
         $cond = new condition((object)array('id' => (int)$group2->id));
@@ -89,8 +96,7 @@ class condition_test extends \advanced_testcase {
         $this->assertTrue($cond->is_available(false, $info, true, $user->id));
         $this->assertFalse($cond->is_available(true, $info, true, $user->id));
         $information = $cond->get_description(false, true, $info);
-        $information = \core_availability\info::format_info($information, $course);
-        $this->assertMatchesRegularExpression('~do not belong to any~', $information);
+        $this->assertRegExp('~do not belong to any~', $information);
 
         // Admin user doesn't belong to a group, but they can access it
         // either way (positive or NOT).
@@ -102,8 +108,7 @@ class condition_test extends \advanced_testcase {
         $cond = new condition((object)array('id' => $group2->id + 1000));
         $this->assertFalse($cond->is_available(false, $info, true, $user->id));
         $information = $cond->get_description(false, false, $info);
-        $information = \core_availability\info::format_info($information, $course);
-        $this->assertMatchesRegularExpression('~You belong to.*\(Missing group\)~', $information);
+        $this->assertRegExp('~You belong to.*\(Missing group\)~', $information);
     }
 
     /**
@@ -116,8 +121,8 @@ class condition_test extends \advanced_testcase {
         try {
             $cond = new condition($structure);
             $this->fail();
-        } catch (\coding_exception $e) {
-            $this->assertStringContainsString('Invalid ->id', $e->getMessage());
+        } catch (coding_exception $e) {
+            $this->assertContains('Invalid ->id', $e->getMessage());
         }
 
         // Valid (with id).

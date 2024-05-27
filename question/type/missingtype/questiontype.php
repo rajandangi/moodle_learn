@@ -75,7 +75,8 @@ class qtype_missingtype extends question_type {
         $question->length = 1;
         $question->penalty = 0;
         $question->stamp = '';
-        $question->status = \core_question\local\bank\question_version_status::QUESTION_STATUS_READY;
+        $question->version = 0;
+        $question->hidden = 0;
         $question->timecreated = null;
         $question->timemodified = null;
         $question->createdby = null;

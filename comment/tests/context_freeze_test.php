@@ -14,11 +14,16 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace core_comment;
+/**
+ * Tests for comments when the context is frozen.
+ *
+ * @package    core_comment
+ * @copyright  2019 University of Nottingham
+ * @author     Neill Magill <neill.magill@nottingham.ac.uk>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
-use comment;
-use comment_exception;
-use core_comment_external;
+defined('MOODLE_INTERNAL') || die();
 
 /**
  * Tests for comments when the context is frozen.
@@ -28,7 +33,7 @@ use core_comment_external;
  * @author     Neill Magill <neill.magill@nottingham.ac.uk>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class context_freeze_test extends \advanced_testcase {
+class comment_context_freeze_testcase extends advanced_testcase {
     /**
      * Creates a comment by a student.
      *
@@ -37,16 +42,16 @@ class context_freeze_test extends \advanced_testcase {
      * - The sudent that wrote the comment
      * - The arguments used to create the comment
      *
-     * @param \stdClass $course Moodle course from the datagenerator
+     * @param stdClass $course Moodle course from the datagenerator
      * @return array
      */
     protected function create_student_comment_and_freeze_course($course): array {
         set_config('contextlocking', 1);
 
-        $context = \context_course::instance($course->id);
+        $context = context_course::instance($course->id);
         $student = $this->getDataGenerator()->create_and_enrol($course, 'student');
 
-        $args = new \stdClass;
+        $args = new stdClass;
         $args->context = $context;
         $args->course = $course;
         $args->area = 'page_comments';

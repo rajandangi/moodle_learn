@@ -14,6 +14,15 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+/**
+ * Data generator.
+ *
+ * @package    core
+ * @category   test
+ * @copyright  2012 Petr Skoda {@link http://skodak.org}
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
 defined('MOODLE_INTERNAL') || die();
 
 /**
@@ -78,18 +87,10 @@ EOD;
      * @return void
      */
     public function reset() {
-        $this->gradecategorycounter = 0;
-        $this->gradeitemcounter = 0;
-        $this->gradeoutcomecounter = 0;
         $this->usercounter = 0;
         $this->categorycount = 0;
-        $this->cohortcount = 0;
         $this->coursecount = 0;
         $this->scalecount = 0;
-        $this->groupcount = 0;
-        $this->groupingcount = 0;
-        $this->rolecount = 0;
-        $this->tagcount = 0;
 
         foreach ($this->generators as $generator) {
             $generator->reset();
@@ -348,10 +349,9 @@ EOD;
 
     /**
      * Create a test course
-     * @param array|stdClass $record Apart from the course information, the following can be also set:
-     *      'initsections' => bool for section name initialization, renaming them to "Section X". Default value is 0 (false).
+     * @param array|stdClass $record
      * @param array $options with keys:
-     *      'createsections' => bool precreate all sections
+     *      'createsections'=>bool precreate all sections
      * @return stdClass course record
      */
     public function create_course($record=null, array $options=null) {
@@ -419,46 +419,17 @@ EOD;
             }
         }
 
-        $initsections = !empty($record['initsections']);
-        unset($record['initsections']);
-
         $course = create_course((object)$record);
-        if ($initsections) {
-            $this->init_sections($course);
-        }
         context_course::instance($course->id);
 
         return $course;
     }
 
     /**
-     * Initializes sections for a specified course, such as configuring section names for courses using 'Section X'.
-     *
-     * @param stdClass $course The course object.
-     */
-    private function init_sections(stdClass $course): void {
-        global $DB;
-
-        $sections = $DB->get_records('course_sections', ['course' => $course->id], 'section');
-        foreach ($sections as $section) {
-            if ($section->section != 0) {
-                $DB->set_field(
-                    table: 'course_sections',
-                    newfield: 'name',
-                    newvalue: get_string('section', 'core') . ' ' . $section->section,
-                    conditions: [
-                        'id' => $section->id,
-                    ],
-                );
-            }
-        }
-    }
-
-    /**
      * Create course section if does not exist yet
      * @param array|stdClass $record must contain 'course' and 'section' attributes
      * @param array|null $options
-     * @return section_info
+     * @return stdClass
      * @throws coding_exception
      */
     public function create_course_section($record = null, array $options = null) {
@@ -560,14 +531,6 @@ EOD;
 
         if (!isset($record['descriptionformat'])) {
             $record['descriptionformat'] = FORMAT_MOODLE;
-        }
-
-        if (!isset($record['visibility'])) {
-            $record['visibility'] = GROUPS_VISIBILITY_ALL;
-        }
-
-        if (!isset($record['participation'])) {
-            $record['participation'] = true;
         }
 
         $id = groups_create_group((object)$record);
@@ -1057,13 +1020,12 @@ EOD;
     /**
      * Assigns the specified role to a user in the context.
      *
-     * @param int|string $role either an int role id or a string role shortname.
+     * @param int $roleid
      * @param int $userid
-     * @param int|context $contextid Defaults to the system context
+     * @param int $contextid Defaults to the system context
      * @return int new/existing id of the assignment
      */
-    public function role_assign($role, $userid, $contextid = false) {
-        global $DB;
+    public function role_assign($roleid, $userid, $contextid = false) {
 
         // Default to the system context.
         if (!$contextid) {
@@ -1071,18 +1033,15 @@ EOD;
             $contextid = $context->id;
         }
 
-        if (empty($role)) {
+        if (empty($roleid)) {
             throw new coding_exception('roleid must be present in testing_data_generator::role_assign() arguments');
-        }
-        if (!is_number($role)) {
-            $role = $DB->get_field('role', 'id', ['shortname' => $role], MUST_EXIST);
         }
 
         if (empty($userid)) {
             throw new coding_exception('userid must be present in testing_data_generator::role_assign() arguments');
         }
 
-        return role_assign($role, $userid, $contextid);
+        return role_assign($roleid, $userid, $contextid);
     }
 
     /**
@@ -1240,7 +1199,7 @@ EOD;
     /**
      * Helper function used to create an LTI tool.
      *
-     * @param stdClass $data
+     * @param array $data
      * @return stdClass the tool
      */
     public function create_lti_tool($data = array()) {
@@ -1268,15 +1227,10 @@ EOD;
             $data->status = ENROL_INSTANCE_ENABLED;
         }
 
-        // Default to legacy lti version.
-        if (empty($data->ltiversion) || !in_array($data->ltiversion, ['LTI-1p0/LTI-2p0', 'LTI-1p3'])) {
-            $data->ltiversion = 'LTI-1p0/LTI-2p0';
-        }
-
         // Add some extra necessary fields to the data.
-        $data->name = $data->name ?? 'Test LTI';
-        $data->roleinstructor = $teacherrole->id;
-        $data->rolelearner = $studentrole->id;
+        $data->name = 'Test LTI';
+        $data->roleinstructor = $studentrole->id;
+        $data->rolelearner = $teacherrole->id;
 
         // Get the enrol LTI plugin.
         $enrolplugin = enrol_get_plugin('lti');
@@ -1347,7 +1301,7 @@ EOD;
      * @param   array $data Array with data['name'] of category
      * @return  \core_customfield\category_controller   The created category
      */
-    public function create_custom_field_category($data): \core_customfield\category_controller {
+    public function create_custom_field_category($data) : \core_customfield\category_controller {
         return $this->get_plugin_generator('core_customfield')->create_category($data);
     }
 
@@ -1357,13 +1311,79 @@ EOD;
      * @param   array $data Array with 'name', 'shortname' and 'type' of the field
      * @return  \core_customfield\field_controller   The created field
      */
-    public function create_custom_field($data): \core_customfield\field_controller {
+    public function create_custom_field($data) : \core_customfield\field_controller {
         global $DB;
         if (empty($data['categoryid']) && !empty($data['category'])) {
             $data['categoryid'] = $DB->get_field('customfield_category', 'id', ['name' => $data['category']]);
             unset($data['category']);
         }
         return $this->get_plugin_generator('core_customfield')->create_field($data);
+    }
+
+    /**
+     * Create a new user, and enrol them in the specified course as the supplied role.
+     *
+     * @param   \stdClass   $course The course to enrol in
+     * @param   string      $role The role to give within the course
+     * @param   \stdClass   $userparams User parameters
+     * @return  \stdClass   The created user
+     */
+    public function create_and_enrol($course, $role = 'student', $userparams = null, $enrol = 'manual',
+            $timestart = 0, $timeend = 0, $status = null) {
+        global $DB;
+
+        $user = $this->create_user($userparams);
+        $roleid = $DB->get_field('role', 'id', ['shortname' => $role ]);
+
+        $this->enrol_user($user->id, $course->id, $roleid, $enrol, $timestart, $timeend, $status);
+
+        return $user;
+    }
+
+    /**
+     * Create a new last access record for a given user in a course.
+     *
+     * @param   \stdClass   $user The user
+     * @param   \stdClass   $course The course the user accessed
+     * @param   int         $timestamp The timestamp for when the user last accessed the course
+     * @return  \stdClass   The user_lastaccess record
+     */
+    public function create_user_course_lastaccess(\stdClass $user, \stdClass $course, int $timestamp): \stdClass {
+        global $DB;
+
+        $record = [
+            'userid' => $user->id,
+            'courseid' => $course->id,
+            'timeaccess' => $timestamp,
+        ];
+
+        $recordid = $DB->insert_record('user_lastaccess', $record);
+
+        return $DB->get_record('user_lastaccess', ['id' => $recordid], '*', MUST_EXIST);
+    }
+
+    /**
+     * Gets a default generator for a given component.
+     *
+     * @param string $component The component name, e.g. 'mod_forum' or 'core_question'.
+     * @param string $classname The name of the class missing from the generators file.
+     * @return component_generator_base The generator.
+     */
+    protected function get_default_plugin_generator(string $component, ?string $classname = null) {
+        [$type, $plugin] = core_component::normalize_component($component);
+
+        switch ($type) {
+            case 'block':
+                return new default_block_generator($this, $plugin);
+        }
+
+        if (is_null($classname)) {
+            throw new coding_exception("Component {$component} does not support " .
+                "generators yet. Missing tests/generator/lib.php.");
+        }
+
+        throw new coding_exception("Component {$component} does not support " .
+            "data generators yet. Class {$classname} not found.");
     }
 
     /**
@@ -1432,11 +1452,6 @@ EOD;
                     [$data['categoryid']]) + 1;
         }
 
-        if ($data['datatype'] === 'menu' && isset($data['param1'])) {
-            // Convert new lines to the proper character.
-            $data['param1'] = str_replace('\n', "\n", $data['param1']);
-        }
-
         // Defaults for other values.
         $defaults = [
             'description' => '',
@@ -1487,71 +1502,4 @@ EOD;
         $data['id'] = $DB->insert_record('user_info_field', $data);
         return (object)$data;
     }
-
-    /**
-     * Create a new user, and enrol them in the specified course as the supplied role.
-     *
-     * @param   \stdClass   $course The course to enrol in
-     * @param   string      $role The role to give within the course
-     * @param   \stdClass|array   $userparams User parameters
-     * @return  \stdClass   The created user
-     */
-    public function create_and_enrol($course, $role = 'student', $userparams = null, $enrol = 'manual',
-            $timestart = 0, $timeend = 0, $status = null) {
-        global $DB;
-
-        $user = $this->create_user($userparams);
-        $roleid = $DB->get_field('role', 'id', ['shortname' => $role ]);
-
-        $this->enrol_user($user->id, $course->id, $roleid, $enrol, $timestart, $timeend, $status);
-
-        return $user;
-    }
-
-    /**
-     * Create a new last access record for a given user in a course.
-     *
-     * @param   \stdClass   $user The user
-     * @param   \stdClass   $course The course the user accessed
-     * @param   int         $timestamp The timestamp for when the user last accessed the course
-     * @return  \stdClass   The user_lastaccess record
-     */
-    public function create_user_course_lastaccess(\stdClass $user, \stdClass $course, int $timestamp): \stdClass {
-        global $DB;
-
-        $record = [
-            'userid' => $user->id,
-            'courseid' => $course->id,
-            'timeaccess' => $timestamp,
-        ];
-
-        $recordid = $DB->insert_record('user_lastaccess', $record);
-
-        return $DB->get_record('user_lastaccess', ['id' => $recordid], '*', MUST_EXIST);
-    }
-
-    /**
-     * Gets a default generator for a given component.
-     *
-     * @param string $component The component name, e.g. 'mod_forum' or 'core_question'.
-     * @param string $classname The name of the class missing from the generators file.
-     * @return component_generator_base The generator.
-     */
-    protected function get_default_plugin_generator(string $component, ?string $classname = null) {
-        [$type, $plugin] = core_component::normalize_component($component);
-
-        switch ($type) {
-            case 'block':
-                return new default_block_generator($this, $plugin);
-        }
-
-        if (is_null($classname)) {
-            throw new coding_exception("Component {$component} does not support " .
-                "generators yet. Missing tests/generator/lib.php.");
-        }
-
-        throw new coding_exception("Component {$component} does not support " .
-            "data generators yet. Class {$classname} not found.");
-    }
-
 }

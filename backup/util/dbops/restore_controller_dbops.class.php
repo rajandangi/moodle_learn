@@ -146,7 +146,6 @@ abstract class restore_controller_dbops extends restore_dbops {
             'restore_general_users'              => 'users',
             'restore_general_enrolments'         => 'enrolments',
             'restore_general_role_assignments'   => 'role_assignments',
-            'restore_general_permissions'        => 'permissions',
             'restore_general_activities'         => 'activities',
             'restore_general_blocks'             => 'blocks',
             'restore_general_filters'            => 'filters',
@@ -159,9 +158,7 @@ abstract class restore_controller_dbops extends restore_dbops {
             'restore_general_questionbank'       => 'questionbank',
             'restore_general_groups'             => 'groups',
             'restore_general_competencies'       => 'competencies',
-            'restore_general_contentbankcontent' => 'contentbankcontent',
-            'restore_general_xapistate'          => 'xapistate',
-            'restore_general_legacyfiles'        => 'legacyfiles'
+            'restore_general_contentbankcontent' => 'contentbankcontent'
         );
         self::apply_admin_config_defaults($controller, $settings, true);
 

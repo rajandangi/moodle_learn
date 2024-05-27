@@ -68,6 +68,7 @@ require_once($CFG->libdir . '/portfolio/caller.php');
  * $button = new portfolio_add_button(array('callbackclass' => 'name_of_caller_class', 'callbackargs' => array('id' => 6), 'callbackcomponent' => 'yourcomponent')); eg. mod_forum
  * $somehtml .= $button->to_html(PORTFOLIO_ADD_TEXT_LINK);
  * </code>
+ *{@link http://docs.moodle.org/dev/Adding_a_Portfolio_Button_to_a_page} for more information
  *
  * @package core_portfolio
  * @category portfolio
@@ -1008,7 +1009,7 @@ function portfolio_filesize_info() {
     $filesizes = array();
     $sizelist = array(10240, 51200, 102400, 512000, 1048576, 2097152, 5242880, 10485760, 20971520, 52428800);
     foreach ($sizelist as $size) {
-        $filesizes[$size] = display_size($size, 0);
+        $filesizes[$size] = display_size($size);
     }
     return array(
         'options' => $filesizes,
@@ -1027,15 +1028,15 @@ function portfolio_filesize_info() {
 function portfolio_expected_time_db($recordcount) {
     global $CFG;
 
-    if (empty($CFG->portfolio_moderate_db_threshold)) {
-        set_config('portfolio_moderate_db_threshold', 20);
+    if (empty($CFG->portfolio_moderate_dbsize_threshold)) {
+        set_config('portfolio_moderate_dbsize_threshold', 10);
     }
-    if (empty($CFG->portfolio_high_db_threshold)) {
-        set_config('portfolio_high_db_threshold', 50);
+    if (empty($CFG->portfolio_high_dbsize_threshold)) {
+        set_config('portfolio_high_dbsize_threshold', 50);
     }
-    if ($recordcount < $CFG->portfolio_moderate_db_threshold) {
+    if ($recordcount < $CFG->portfolio_moderate_dbsize_threshold) {
         return PORTFOLIO_TIME_LOW;
-    } else if ($recordcount < $CFG->portfolio_high_db_threshold) {
+    } else if ($recordcount < $CFG->portfolio_high_dbsize_threshold) {
         return PORTFOLIO_TIME_MODERATE;
     }
     return PORTFOLIO_TIME_HIGH;
@@ -1045,7 +1046,7 @@ function portfolio_expected_time_db($recordcount) {
  * Function to send portfolio report to admins
  *
  * @param array $insane array of insane plugins
- * @param bool $instances (optional) if reporting instances rather than whole plugins
+ * @param array $instances (optional) if reporting instances rather than whole plugins
  */
 function portfolio_insane_notify_admins($insane, $instances=false) {
 
@@ -1116,10 +1117,7 @@ function portfolio_export_pagesetup($PAGE, $caller) {
 
     // and now we know the course for sure and maybe the cm, call require_login with it
     require_login($PAGE->course, false, $cm);
-    $PAGE->activityheader->set_attrs([
-        'description' => '',
-        'hidecompletion' => true
-    ]);
+
     foreach ($extranav as $navitem) {
         $PAGE->navbar->add($navitem['name']);
     }
@@ -1199,7 +1197,7 @@ function portfolio_format_text_options() {
  * looks through preg_replace matches and replaces content with whatever the active portfolio export format says
  *
  * @param int $contextid module context id
- * @param string $component module name (eg:mod_assign)
+ * @param string $component module name (eg:mod_assignment)
  * @param string $filearea normal file_area arguments
  * @param int $itemid component item id
  * @param portfolio_format $format exporter format type
@@ -1370,3 +1368,4 @@ function portfolio_rewrite_pluginfile_urls($text, $contextid, $component, $filea
     return preg_replace_callback($pattern, $callback, $text);
 }
 // this function has to go last, because the regexp screws up syntax highlighting in some editors
+

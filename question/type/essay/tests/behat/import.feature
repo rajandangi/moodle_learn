@@ -26,5 +26,3 @@ Feature: Test importing Essay questions
     And I should see "Write an essay with 500 words."
     And I press "Continue"
     And I should see "essay-001"
-    And I choose "Edit question" action for "essay-001" in the question bank
-    And the field "id_maxwordlimit" matches value "20"

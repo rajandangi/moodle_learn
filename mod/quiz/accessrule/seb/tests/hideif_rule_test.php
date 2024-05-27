@@ -14,17 +14,26 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace quizaccess_seb;
+/**
+ * PHPUnit tests for hideif_rule.
+ *
+ * @package    quizaccess_seb
+ * @author     Dmitrii Metelkin <dmitriim@catalyst-au.net>
+ * @copyright  2019 Catalyst IT
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+use quizaccess_seb\hideif_rule;
+
+defined('MOODLE_INTERNAL') || die();
 
 /**
  * PHPUnit tests for hideif_rule.
  *
- * @package   quizaccess_seb
- * @author    Dmitrii Metelkin <dmitriim@catalyst-au.net>
- * @copyright 2020 Catalyst IT
+ * @copyright  2020 Catalyst IT
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class hideif_rule_test extends \advanced_testcase {
+class quizaccess_seb_hideif_rule_testcase extends advanced_testcase {
 
     /**
      * Test that can get rule data.

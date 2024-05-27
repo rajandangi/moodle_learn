@@ -58,8 +58,7 @@ $itemids = array(0 => get_string('allgradeitems', 'gradereport_history')) + $ite
 
 $output = $PAGE->get_renderer('gradereport_history');
 $graders = \gradereport_history\helper::get_graders($course->id);
-$params = ['course' => $course, 'itemids' => $itemids, 'graders' => $graders,
-        'userbutton' => null, 'userfullnames' => ''];
+$params = array('course' => $course, 'itemids' => $itemids, 'graders' => $graders, 'userbutton' => null);
 $mform = new \gradereport_history\filter_form(null, $params);
 $filters = array();
 if ($data = $mform->get_data()) {
@@ -86,7 +85,7 @@ $names = array();
 foreach ($table->get_selected_users() as $key => $user) {
     $names[$key] = fullname($user);
 }
-$userfullnames = implode(', ', $names);
+$filters['userfullnames'] = implode(',', $names);
 
 // Set up js.
 \gradereport_history\helper::init_js($course->id, $names);
@@ -95,8 +94,7 @@ $userfullnames = implode(', ', $names);
 $button = new \gradereport_history\output\user_button($PAGE->url, get_string('selectusers', 'gradereport_history'), 'get');
 
 $userbutton = $output->render($button);
-$params = ['course' => $course, 'itemids' => $itemids, 'graders' => $graders,
-        'userbutton' => $userbutton, 'userfullnames' => $userfullnames];
+$params = array('course' => $course, 'itemids' => $itemids, 'graders' => $graders, 'userbutton' => $userbutton);
 $mform = new \gradereport_history\filter_form(null, $params);
 $mform->set_data($filters);
 
@@ -108,10 +106,7 @@ if ($table->is_downloading()) {
 }
 
 // Print header.
-$actionbar = new \core_grades\output\general_action_bar($context,
-    new moodle_url('/grade/report/history/index.php', ['id' => $courseid]), 'report', 'history');
-print_grade_page_head($COURSE->id, 'report', 'history', false, false, false, true, null, null,
-    null, $actionbar);
+print_grade_page_head($COURSE->id, 'report', 'history', get_string('pluginname', 'gradereport_history'), false, '');
 $mform->display();
 
 if ($showreport) {

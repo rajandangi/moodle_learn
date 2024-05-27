@@ -14,12 +14,17 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace core_cache;
-
-use cache_config_testing;
-use cache_config_writer;
-use cache_factory;
-use cache_store;
+/**
+ * PHPunit tests for the cache API and in particular things in locallib.php
+ *
+ * This file is part of Moodle's cache API, affectionately called MUC.
+ * It contains the components that are requried in order to use caching.
+ *
+ * @package    core
+ * @category   cache
+ * @copyright  2012 Sam Hemelryk
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -31,17 +36,15 @@ require_once($CFG->dirroot.'/cache/tests/fixtures/lib.php');
 /**
  * PHPunit tests for the cache API and in particular the cache config writer.
  *
- * @package    core_cache
- * @category   test
  * @copyright  2012 Sam Hemelryk
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class config_writer_test extends \advanced_testcase {
+class core_cache_config_writer_testcase extends advanced_testcase {
 
     /**
      * Set things back to the default before each test.
      */
-    public function setUp(): void {
+    public function setUp() {
         parent::setUp();
         cache_factory::reset();
         cache_config_testing::create_default_configuration();
@@ -50,7 +53,7 @@ class config_writer_test extends \advanced_testcase {
     /**
      * Final task is to reset the cache system
      */
-    public static function tearDownAfterClass(): void {
+    public static function tearDownAfterClass() {
         parent::tearDownAfterClass();
         cache_factory::reset();
     }
@@ -213,14 +216,14 @@ class config_writer_test extends \advanced_testcase {
         try {
             $config->delete_store_instance('default_application');
             $this->fail('Default store deleted. This should not be possible!');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->assertInstanceOf('cache_exception', $e);
         }
 
         try {
             $config->delete_store_instance('some_crazy_store');
             $this->fail('You should not be able to delete a store that does not exist.');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->assertInstanceOf('cache_exception', $e);
         }
 
@@ -228,7 +231,7 @@ class config_writer_test extends \advanced_testcase {
             // Try with a plugin that does not exist.
             $config->add_store_instance('storeconfigtest', 'shallowfail', array('test' => 'a', 'one' => 'two'));
             $this->fail('You should not be able to add an instance of a store that does not exist.');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->assertInstanceOf('cache_exception', $e);
         }
     }
@@ -267,20 +270,20 @@ class config_writer_test extends \advanced_testcase {
 
         $config = cache_config_writer::instance();
         $this->assertTrue($config->add_store_instance('setdefinitiontest', 'file'));
-        $this->assertIsArray($config->get_definition_by_id('phpunit/testdefinition'));
+        $this->assertInternalType('array', $config->get_definition_by_id('phpunit/testdefinition'));
         $config->set_definition_mappings('phpunit/testdefinition', array('setdefinitiontest', 'default_application'));
 
         try {
             $config->set_definition_mappings('phpunit/testdefinition', array('something that does not exist'));
             $this->fail('You should not be able to set a mapping for a store that does not exist.');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->assertInstanceOf('coding_exception', $e);
         }
 
         try {
             $config->set_definition_mappings('something/crazy', array('setdefinitiontest'));
             $this->fail('You should not be able to set a mapping for a definition that does not exist.');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->assertInstanceOf('coding_exception', $e);
         }
     }

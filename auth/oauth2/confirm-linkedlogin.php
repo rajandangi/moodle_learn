@@ -45,7 +45,7 @@ if ($confirmed) {
     // The user has confirmed successfully, let's log them in.
 
     if (!$user = get_complete_user_data('id', $userid)) {
-        throw new \moodle_exception('cannotfinduser', '', '', $userid);
+        print_error('cannotfinduser', '', '', $userid);
     }
 
     if ($user->id == $USER->id) {

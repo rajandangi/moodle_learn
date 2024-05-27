@@ -14,7 +14,15 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace core_auth;
+/**
+ * Unit tests for core_auth\digital_consent.
+ *
+ * @package    core_auth
+ * @copyright  2018 Mihail Geshoski
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+defined('MOODLE_INTERNAL') || die();
 
 /**
  * Digital consent helper testcase.
@@ -23,7 +31,7 @@ namespace core_auth;
  * @copyright  2018 Mihail Geshoski
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class digital_consent_test extends \advanced_testcase {
+class core_auth_digital_consent_testcase extends advanced_testcase {
 
     public function test_is_age_digital_consent_verification_enabled() {
         global $CFG;

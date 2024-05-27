@@ -14,22 +14,29 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace mod_scorm;
+/**
+ * Unit tests for the mod_quiz_display_options class.
+ *
+ * @package    mod_scorm
+ * @category   phpunit
+ * @copyright  2013 Dan Marsden
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
 
 defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
 require_once($CFG->dirroot . '/mod/scorm/locallib.php');
 
+
 /**
  * Unit tests for {@link mod_scorm}.
  *
- * @package    mod_scorm
- * @category   test
  * @copyright  2013 Dan Marsden
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class validatepackage_test extends \advanced_testcase {
+class mod_scorm_validatepackage_testcase extends advanced_testcase {
 
     /**
      * Convenience to take a fixture test file and create a stored_file.
@@ -38,7 +45,7 @@ class validatepackage_test extends \advanced_testcase {
      * @return stored_file
      */
     protected function create_stored_file_from_path($filepath) {
-        $syscontext = \context_system::instance();
+        $syscontext = context_system::instance();
         $filerecord = array(
             'contextid' => $syscontext->id,
             'component' => 'mod_scorm',
@@ -59,17 +66,17 @@ class validatepackage_test extends \advanced_testcase {
         $this->resetAfterTest(true);
 
         $filename = "validscorm.zip";
-        $file = $this->create_stored_file_from_path($CFG->dirroot.'/mod/scorm/tests/packages/'.$filename, \file_archive::OPEN);
+        $file = $this->create_stored_file_from_path($CFG->dirroot.'/mod/scorm/tests/packages/'.$filename, file_archive::OPEN);
         $errors = scorm_validate_package($file);
         $this->assertEmpty($errors);
 
         $filename = "validaicc.zip";
-        $file = $this->create_stored_file_from_path($CFG->dirroot.'/mod/scorm/tests/packages/'.$filename, \file_archive::OPEN);
+        $file = $this->create_stored_file_from_path($CFG->dirroot.'/mod/scorm/tests/packages/'.$filename, file_archive::OPEN);
         $errors = scorm_validate_package($file);
         $this->assertEmpty($errors);
 
         $filename = "invalid.zip";
-        $file = $this->create_stored_file_from_path($CFG->dirroot.'/mod/scorm/tests/packages/'.$filename, \file_archive::OPEN);
+        $file = $this->create_stored_file_from_path($CFG->dirroot.'/mod/scorm/tests/packages/'.$filename, file_archive::OPEN);
         $errors = scorm_validate_package($file);
         $this->assertArrayHasKey('packagefile', $errors);
         if (isset($errors['packagefile'])) {
@@ -77,7 +84,7 @@ class validatepackage_test extends \advanced_testcase {
         }
 
         $filename = "badscorm.zip";
-        $file = $this->create_stored_file_from_path($CFG->dirroot.'/mod/scorm/tests/packages/'.$filename, \file_archive::OPEN);
+        $file = $this->create_stored_file_from_path($CFG->dirroot.'/mod/scorm/tests/packages/'.$filename, file_archive::OPEN);
         $errors = scorm_validate_package($file);
         $this->assertArrayHasKey('packagefile', $errors);
         if (isset($errors['packagefile'])) {

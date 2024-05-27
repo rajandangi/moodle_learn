@@ -23,13 +23,10 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace core;
-
 defined('MOODLE_INTERNAL') || die();
 
 require_once(__DIR__.'/fixtures/read_slave_moodle_database_table_names.php');
 require_once(__DIR__.'/fixtures/read_slave_moodle_database_special.php');
-require_once(__DIR__.'/../../tests/fixtures/event_fixtures.php');
 
 /**
  * DML read/read-write database handle use tests
@@ -38,9 +35,8 @@ require_once(__DIR__.'/../../tests/fixtures/event_fixtures.php');
  * @category   dml
  * @copyright  2018 Catalyst IT
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers     \moodle_read_slave_trait
  */
-class dml_read_slave_test extends \base_testcase {
+class core_dml_read_slave_testcase extends base_testcase {
 
     /** @var float */
     static private $dbreadonlylatency = 0.8;
@@ -61,7 +57,7 @@ class dml_read_slave_test extends \base_testcase {
             ['dbhost' => 'test_ro3', 'dbport' => 3, 'dbuser' => 'test3', 'dbpass' => 'test3'],
         ],
         $dbclass = read_slave_moodle_database::class
-    ): read_slave_moodle_database {
+    ) : read_slave_moodle_database {
         $dbhost = 'test_rw';
         $dbname = 'test';
         $dbuser = 'test';
@@ -84,8 +80,8 @@ class dml_read_slave_test extends \base_testcase {
      * @param string $handle
      * @return void
      */
-    private function assert_readonly_handle($handle): void {
-        $this->assertMatchesRegularExpression('/^test_ro\d:\d:test\d:test\d$/', $handle);
+    private function assert_readonly_handle($handle) : void {
+        $this->assertRegExp('/^test_ro\d:\d:test\d:test\d$/', $handle);
     }
 
     /**
@@ -94,7 +90,7 @@ class dml_read_slave_test extends \base_testcase {
      * @return array
      * @dataProvider table_names_provider
      */
-    public function table_names_provider(): array {
+    public function table_names_provider() : array {
         return [
             [
                 "SELECT *
@@ -140,7 +136,7 @@ class dml_read_slave_test extends \base_testcase {
      * @return void
      * @dataProvider table_names_provider
      */
-    public function test_table_names($sql, $tables): void {
+    public function test_table_names($sql, $tables) : void {
         $db = new read_slave_moodle_database_table_names();
 
         $this->assertEquals($tables, $db->table_names($db->fix_sql_params($sql)[0]));
@@ -152,7 +148,7 @@ class dml_read_slave_test extends \base_testcase {
      *
      * @return void
      */
-    public function test_read_read_write_read(): void {
+    public function test_read_read_write_read() : void {
         $DB = $this->new_db(true);
 
         $this->assertEquals(0, $DB->perf_get_reads_slave());
@@ -192,7 +188,7 @@ class dml_read_slave_test extends \base_testcase {
      *
      * @return void
      */
-    public function test_read_write_write(): void {
+    public function test_read_write_write() : void {
         $DB = $this->new_db();
 
         $this->assertEquals(0, $DB->perf_get_reads_slave());
@@ -217,7 +213,7 @@ class dml_read_slave_test extends \base_testcase {
      *
      * @return void
      */
-    public function test_write_read_read(): void {
+    public function test_write_read_read() : void {
         $DB = $this->new_db();
 
         $this->assertEquals(0, $DB->perf_get_reads_slave());
@@ -227,27 +223,18 @@ class dml_read_slave_test extends \base_testcase {
         $this->assertEquals('test_rw::test:test', $handle);
         $this->assertEquals(0, $DB->perf_get_reads_slave());
 
-        $handle = $DB->get_records('table');
-        $this->assertEquals('test_rw::test:test', $handle);
-        $this->assertEquals(0, $DB->perf_get_reads_slave());
-
-        $handle = $DB->get_records_sql("SELECT * FROM {table2} JOIN {table}");
-        $this->assertEquals('test_rw::test:test', $handle);
-        $this->assertEquals(0, $DB->perf_get_reads_slave());
-
         sleep(1);
-
         $handle = $DB->get_records('table');
-        $this->assert_readonly_handle($handle);
-        $this->assertEquals(1, $DB->perf_get_reads_slave());
+        $this->assertEquals('test_rw::test:test', $handle);
+        $this->assertEquals(0, $DB->perf_get_reads_slave());
 
         $handle = $DB->get_records('table2');
         $this->assert_readonly_handle($handle);
-        $this->assertEquals(2, $DB->perf_get_reads_slave());
+        $this->assertEquals(1, $DB->perf_get_reads_slave());
 
         $handle = $DB->get_records_sql("SELECT * FROM {table2} JOIN {table}");
-        $this->assert_readonly_handle($handle);
-        $this->assertEquals(3, $DB->perf_get_reads_slave());
+        $this->assertEquals('test_rw::test:test', $handle);
+        $this->assertEquals(1, $DB->perf_get_reads_slave());
     }
 
     /**
@@ -255,7 +242,7 @@ class dml_read_slave_test extends \base_testcase {
      *
      * @return void
      */
-    public function test_read_temptable(): void {
+    public function test_read_temptable() : void {
         $DB = $this->new_db();
         $DB->add_temptable('temptable1');
 
@@ -274,7 +261,7 @@ class dml_read_slave_test extends \base_testcase {
      *
      * @return void
      */
-    public function test_read_excluded_tables(): void {
+    public function test_read_excluded_tables() : void {
         $DB = $this->new_db();
 
         $this->assertEquals(0, $DB->perf_get_reads_slave());
@@ -291,15 +278,12 @@ class dml_read_slave_test extends \base_testcase {
      * so the latency parameter is applied properly.
      *
      * @return void
-     * @covers ::can_use_readonly
-     * @covers ::commit_delegated_transaction
      */
-    public function test_transaction(): void {
+    public function test_transaction() : void {
         $DB = $this->new_db(true);
 
         $this->assertNull($DB->get_dbhwrite());
 
-        $skip = false;
         $transaction = $DB->start_delegated_transaction();
         $now = microtime(true);
         $handle = $DB->get_records_sql("SELECT * FROM {table}");
@@ -320,136 +304,11 @@ class dml_read_slave_test extends \base_testcase {
 
             // Make sure enough time passes.
             sleep(1);
-        } else {
-            $skip = true;
         }
 
         // Exceeded latency time, use ro handle.
         $handle = $DB->get_records_sql("SELECT * FROM {table}");
         $this->assert_readonly_handle($handle);
-
-        if ($skip) {
-            $this->markTestSkipped("Delay too long to test write handle immediately after transaction");
-        }
-    }
-
-    /**
-     * Test readonly handle is not used immediately after update
-     * Test last written time is adjusted post-write,
-     * so the latency parameter is applied properly.
-     *
-     * @return void
-     * @covers ::can_use_readonly
-     * @covers ::query_end
-     */
-    public function test_long_update(): void {
-        $DB = $this->new_db(true);
-
-        $this->assertNull($DB->get_dbhwrite());
-
-        $skip = false;
-
-        list($sql, $params, $ptype) = $DB->fix_sql_params("UPDATE {table} SET a = 1 WHERE id = 1");
-        $DB->with_query_start_end($sql, $params, SQL_QUERY_UPDATE, function ($dbh) use (&$now) {
-            sleep(1);
-            $now = microtime(true);
-        });
-
-        // This condition should always evaluate true, however we need to
-        // safeguard from an unaccounted delay that can break this test.
-        if (microtime(true) - $now < self::$dbreadonlylatency) {
-            // Not enough time passed, use rw handle.
-            $handle = $DB->get_records_sql("SELECT * FROM {table}");
-            $this->assertEquals('test_rw::test:test', $handle);
-
-            // Make sure enough time passes.
-            sleep(1);
-        } else {
-            $skip = true;
-        }
-
-        // Exceeded latency time, use ro handle.
-        $handle = $DB->get_records_sql("SELECT * FROM {table}");
-        $this->assert_readonly_handle($handle);
-
-        if ($skip) {
-            $this->markTestSkipped("Delay too long to test write handle immediately after transaction");
-        }
-    }
-
-    /**
-     * Test readonly handle is not used with events
-     * when the latency parameter is applied properly.
-     *
-     * @return void
-     * @covers ::can_use_readonly
-     * @covers ::commit_delegated_transaction
-     */
-    public function test_transaction_with_events(): void {
-        $this->with_global_db(function () {
-            global $DB;
-
-            $DB = $this->new_db(true, ['test_ro'], read_slave_moodle_database_special::class);
-            $DB->set_tables([
-                'config_plugins' => [
-                    'columns' => [
-                        'plugin' => (object)['meta_type' => ''],
-                    ]
-                ]
-            ]);
-
-            $this->assertNull($DB->get_dbhwrite());
-
-            $called = false;
-            $transaction = $DB->start_delegated_transaction();
-            $now = microtime(true);
-
-            $observers = [
-                [
-                    'eventname'   => '\core_tests\event\unittest_executed',
-                    'callback'    => function (\core_tests\event\unittest_executed $event) use ($DB, $now, &$called) {
-                        $called = true;
-                        $this->assertFalse($DB->is_transaction_started());
-
-                        // This condition should always evaluate true, however we need to
-                        // safeguard from an unaccounted delay that can break this test.
-                        if (microtime(true) - $now < 1 + self::$dbreadonlylatency) {
-                            // Not enough time passed, use rw handle.
-                            $handle = $DB->get_records_sql_p("SELECT * FROM {table}");
-                            $this->assertEquals('test_rw::test:test', $handle);
-
-                            // Make sure enough time passes.
-                            sleep(1);
-                        } else {
-                            $this->markTestSkipped("Delay too long to test write handle immediately after transaction");
-                        }
-
-                        // Exceeded latency time, use ro handle.
-                        $handle = $DB->get_records_sql_p("SELECT * FROM {table}");
-                        $this->assertEquals('test_ro::test:test', $handle);
-                    },
-                    'internal'    => 0,
-                ],
-            ];
-            \core\event\manager::phpunit_replace_observers($observers);
-
-            $handle = $DB->get_records_sql_p("SELECT * FROM {table}");
-            // Use rw handle during transaction.
-            $this->assertEquals('test_rw::test:test', $handle);
-
-            $handle = $DB->insert_record_raw('table', array('name' => 'blah'));
-            // Introduce delay so we can check that table write timestamps
-            // are adjusted properly.
-            sleep(1);
-            $event = \core_tests\event\unittest_executed::create([
-                'context' => \context_system::instance(),
-                'other' => ['sample' => 1]
-            ]);
-            $event->trigger();
-            $transaction->allow_commit();
-
-            $this->assertTrue($called);
-        });
     }
 
     /**
@@ -457,7 +316,7 @@ class dml_read_slave_test extends \base_testcase {
      *
      * @return void
      */
-    public function test_read_only_conn_fail(): void {
+    public function test_read_only_conn_fail() : void {
         $DB = $this->new_db(false, 'test_ro_fail');
 
         $this->assertEquals(0, $DB->perf_get_reads_slave());
@@ -475,7 +334,7 @@ class dml_read_slave_test extends \base_testcase {
      *
      * @return void
      */
-    public function test_read_only_conn_first_fail(): void {
+    public function test_read_only_conn_first_fail() : void {
         $DB = $this->new_db(false, ['test_ro_fail', 'test_ro_ok']);
 
         $this->assertEquals(0, $DB->perf_get_reads_slave());
@@ -510,7 +369,7 @@ class dml_read_slave_test extends \base_testcase {
      *
      * @return void
      */
-    public function test_lock_db(): void {
+    public function test_lock_db() : void {
         $this->with_global_db(function () {
             global $DB;
 
@@ -544,7 +403,7 @@ class dml_read_slave_test extends \base_testcase {
      *
      * @return void
      */
-    public function test_sessions(): void {
+    public function test_sessions() : void {
         $this->with_global_db(function () {
             global $DB, $CFG;
 
@@ -562,12 +421,12 @@ class dml_read_slave_test extends \base_testcase {
             $this->assertNull($DB->get_dbhwrite());
 
             $session = new \core\session\database();
-            $session->read('dummy');
+            $session->handler_read('dummy');
 
             $this->assertEquals(0, $DB->perf_get_reads_slave());
             $this->assertTrue($DB->perf_get_reads() > 0);
         });
 
-        \core\session\manager::restart_with_write_lock(false);
+        \core\session\manager::restart_with_write_lock();
     }
 }

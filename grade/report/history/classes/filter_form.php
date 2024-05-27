@@ -50,8 +50,7 @@ class filter_form extends \moodleform {
         $itemids  = $this->_customdata['itemids'];
         $graders  = $this->_customdata['graders'];
         $userbutton = $this->_customdata['userbutton'];
-        $userfullnames = $this->_customdata['userfullnames'];
-        $names = \html_writer::span($userfullnames, 'selectednames');
+        $names = \html_writer::span('', 'selectednames');
 
         $mform->addElement('static', 'userselect', get_string('selectusers', 'gradereport_history'), $userbutton);
         $mform->addElement('static', 'selectednames', get_string('selectedusers', 'gradereport_history'), $names);
@@ -80,4 +79,16 @@ class filter_form extends \moodleform {
         // Add a submit button.
         $mform->addElement('submit', 'submitbutton', get_string('submit'));
     }
+
+    /**
+     * This method implements changes to the form that need to be made once the form data is set.
+     */
+    public function definition_after_data() {
+        $mform = $this->_form;
+
+        if ($userfullnames = $mform->getElementValue('userfullnames')) {
+            $mform->getElement('selectednames')->setValue(\html_writer::span($userfullnames, 'selectednames'));
+        }
+    }
+
 }

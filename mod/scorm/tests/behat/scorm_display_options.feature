@@ -26,7 +26,8 @@ Feature: Scorm display options
       | activity | course | name       | packagefilepath                                          | hidetoc | nav              |
       | scorm    | C1     | C1 Scorm 1 | mod/scorm/tests/packages/RuntimeMinimumCalls_SCORM12.zip | <toc>   | <shownavigation> |
     And I am on the "C1 Scorm 1" "scorm activity" page logged in as teacher1
-    When I press "Preview"
+    When I click on "Preview" "radio"
+    And I press "Enter"
     # Confirm TOC display
     # Used css_element to check > and < button display in TOC since similar buttons also exist in navigation
     Then I <tocdisplay> see "Golf Explained - Minimum Run-time Calls"
@@ -52,7 +53,8 @@ Feature: Scorm display options
     And I press "Enter"
     When I click on "Exit activity" "link"
     # Confirm that student can exit activity
-    Then "Preview" "button" should exist
+    Then "Preview" "radio" should exist
+    And "Normal" "radio" should exist
     And "Enter" "button" should exist
     And "Exit activity" "link" should not exist
     And I should not see "Golf Explained - Minimum Run-time Calls"

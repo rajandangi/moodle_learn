@@ -14,9 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace core_user;
-
-use group_non_members_selector;
+/**
+ * Unit tests for {@link group_non_members_selector} class.
+ *
+ * @package     core_user
+ * @category    test
+ * @copyright   2019 Huong Nguyen <huongnv13@gmail.com>
+ * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -31,10 +36,12 @@ require_once($CFG->dirroot . '/user/selector/lib.php');
  * @copyright   2019 Huong Nguyen <huongnv13@gmail.com>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class group_non_members_selector_test extends \advanced_testcase {
+class core_group_non_members_selector_testcase extends advanced_testcase {
 
     /**
      * Test find_users that only return group non members
+     *
+     * @throws coding_exception
      */
     public function test_find_users_only_return_group_non_member() {
         $this->resetAfterTest();

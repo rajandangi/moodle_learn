@@ -17,6 +17,7 @@
  * This module handles the creation of a Modal that shows the user's post in context of the entire discussion.
  *
  * @module     mod_forum/grades/expandconversation
+ * @package    mod_forum
  * @copyright  2019 Mathew May <mathew.solutions>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -24,7 +25,7 @@ import * as ForumSelectors from './grader/selectors';
 import Repository from 'mod_forum/repository';
 import {exception as showException} from "core/notification";
 import Templates from 'core/templates';
-import Modal from 'core/modal_cancel';
+import * as Modal from 'core/modal_factory';
 import * as ModalEvents from 'core/modal_events';
 
 /**
@@ -39,8 +40,6 @@ const findGradableNode = node => node.closest(ForumSelectors.expandConversation)
  * Show the post in context in a modal.
  *
  * @param {HTMLElement} rootNode The button that has been clicked
- * @param {object} param
- * @param {bool} [param.focusOnClose=null]
  */
 const showPostInContext = async(rootNode, {
     focusOnClose = null,
@@ -58,8 +57,7 @@ const showPostInContext = async(rootNode, {
         Modal.create({
             title: discussionName,
             large: true,
-            removeOnClose: true,
-            returnElement: focusOnClose,
+            type: Modal.types.CANCEL
         }),
     ]);
 
@@ -83,6 +81,17 @@ const showPostInContext = async(rootNode, {
             }
         } else {
             posts.push(post);
+        }
+    });
+
+    // Handle hidden event.
+    modal.getRoot().on(ModalEvents.hidden, function() {
+        // Destroy when hidden.
+        modal.destroy();
+        try {
+            focusOnClose.focus();
+        } catch (e) {
+            // eslint-disable-line
         }
     });
 

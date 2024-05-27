@@ -73,11 +73,6 @@ class feedback_item_multichoicerated extends feedback_item_base {
         $this->item_form = new feedback_multichoicerated_form('edit_item.php', $customdata);
     }
 
-    /**
-     * Saves item
-     *
-     * @return stdClass
-     */
     public function save_item() {
         global $DB;
 
@@ -111,7 +106,7 @@ class feedback_item_multichoicerated extends feedback_item_base {
      * @param stdClass $item the db-object from feedback_item
      * @param int $groupid
      * @param int $courseid
-     * @return array|null
+     * @return array
      */
     protected function get_analysed($item, $groupid = false, $courseid = false) {
         $analysed_item = array();
@@ -185,13 +180,14 @@ class feedback_item_multichoicerated extends feedback_item_base {
         $analysed_item = $this->get_analysed($item, $groupid, $courseid);
         if ($analysed_item) {
             echo "<table class=\"analysis itemtype_{$item->typ}\">";
-            echo '<tr><th class="text-left">';
+            echo '<tr><th colspan="2" align="left">';
             echo $itemnr . ' ';
             if (strval($item->label) !== '') {
                 echo '('. format_string($item->label).') ';
             }
             echo format_string($analysed_item[1]);
             echo '</th></tr>';
+            echo '</table>';
             $analysed_vals = $analysed_item[2];
             $avg = 0.0;
             $count = 0;
@@ -219,12 +215,12 @@ class feedback_item_multichoicerated extends feedback_item_base {
             $series->set_labels($data['series_labels']);
             $chart->add_series($series);
             $chart->set_labels($data['labels']);
-            echo '<tr><td>'. $OUTPUT->render($chart) . '</td></tr>';
+            echo $OUTPUT->render($chart);
+
             $avg = format_float($avg, 2);
-            echo '<tr><td class="text-left"><b>';
+            echo '<tr><td align="left" colspan="2"><b>';
             echo get_string('average', 'feedback').': '.$avg.'</b>';
             echo '</td></tr>';
-            echo '</table>';
         }
     }
 
@@ -233,9 +229,6 @@ class feedback_item_multichoicerated extends feedback_item_base {
                              $groupid, $courseid = false) {
 
         $analysed_item = $this->get_analysed($item, $groupid, $courseid);
-        if (!$analysed_item) {
-            return $row_offset;
-        }
 
         $data = $analysed_item[2];
 
@@ -384,10 +377,7 @@ class feedback_item_multichoicerated extends feedback_item_base {
         $info->horizontal = false;
 
         $parts = explode(FEEDBACK_MULTICHOICERATED_TYPE_SEP, $item->presentation);
-        $info->subtype = $parts[0];
-        if (count($parts) > 1) {
-            $info->presentation = $parts[1];
-        }
+        @list($info->subtype, $info->presentation) = $parts;
 
         if (!isset($info->subtype)) {
             $info->subtype = 'r';
@@ -395,10 +385,7 @@ class feedback_item_multichoicerated extends feedback_item_base {
 
         if ($info->subtype != 'd') {
             $parts = explode(FEEDBACK_MULTICHOICERATED_ADJUST_SEP, $info->presentation);
-            $info->presentation = $parts[0];
-            if (count($parts) > 1) {
-                $info->horizontal = $parts[1];
-            }
+            @list($info->presentation, $info->horizontal) = $parts;
 
             if (isset($info->horizontal) AND $info->horizontal == 1) {
                 $info->horizontal = true;
@@ -499,7 +486,7 @@ class feedback_item_multichoicerated extends feedback_item_base {
         $externaldata = array();
         $data = $this->get_analysed($item, $groupid, $courseid);
 
-        if ($data && !empty($data[2]) && is_array($data[2])) {
+        if (!empty($data[2]) && is_array($data[2])) {
             foreach ($data[2] as $d) {
                 $externaldata[] = json_encode($d);
             }

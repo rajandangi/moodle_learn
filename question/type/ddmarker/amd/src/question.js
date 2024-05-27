@@ -16,24 +16,13 @@
 /**
  * Question class for drag and drop marker question type, used to support the question and preview pages.
  *
- * @module     qtype_ddmarker/question
+ * @package    qtype_ddmarker
+ * @subpackage question
  * @copyright  2018 The Open University
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-define([
-    'jquery',
-    'core/dragdrop',
-    'qtype_ddmarker/shapes',
-    'core/key_codes',
-    'core_form/changechecker'
-], function(
-    $,
-    dragDrop,
-    Shapes,
-    keys,
-    FormChangeChecker
-) {
+define(['jquery', 'core/dragdrop', 'qtype_ddmarker/shapes', 'core/key_codes'], function($, dragDrop, Shapes, keys) {
 
     "use strict";
 
@@ -53,15 +42,12 @@ define([
         this.shapes = [];
         this.shapeSVGs = [];
         this.isPrinting = false;
-        this.questionAnswer = {};
         if (readOnly) {
             this.getRoot().addClass('qtype_ddmarker-readonly');
         }
-        thisQ.allImagesLoaded = false;
-        thisQ.getNotYetLoadedImages().one('load', function() {
-            thisQ.waitForAllImagesToBeLoaded();
-        });
-        thisQ.waitForAllImagesToBeLoaded();
+        thisQ.cloneDrags();
+        thisQ.repositionDrags();
+        thisQ.drawDropzones();
     }
 
     /**
@@ -149,68 +135,19 @@ define([
 
         root.find('input.choices').each(function(key, input) {
             var choiceNo = thisQ.getChoiceNoFromElement(input),
-                imageCoords = thisQ.getImageCoords(input);
-            if (imageCoords.length) {
+                coords = thisQ.getCoords(input);
+            if (coords.length) {
                 var drag = thisQ.getRoot().find('.draghomes' + ' span.marker' + '.choice' + choiceNo).not('.dragplaceholder');
                 drag.remove();
-                for (var i = 0; i < imageCoords.length; i++) {
+                for (var i = 0; i < coords.length; i++) {
                     var dragInDrop = drag.clone();
-                    // Convert image coords to screen coords.
-                    const screenCoords = thisQ.convertToWindowXY(imageCoords[i]);
-                    dragInDrop.data('pagex', screenCoords.x).data('pagey', screenCoords.y);
-                    // Save image coords to the drag item so we can use it later.
-                    dragInDrop.data('imageCoords', imageCoords[i]);
-                    // We always save the coordinates in the 1:1 ratio.
-                    // So we need to set the scale ratio to 1 for the initial load.
-                    dragInDrop.data('scaleRatio', 1);
-                    thisQ.sendDragToDrop(dragInDrop, false, true);
+                    dragInDrop.data('pagex', coords[i].x).data('pagey', coords[i].y);
+                    thisQ.sendDragToDrop(dragInDrop, false);
                 }
                 thisQ.getDragClone(drag).addClass('active');
                 thisQ.cloneDragIfNeeded(drag);
             }
         });
-
-        // Save the question answer.
-        thisQ.questionAnswer = thisQ.getQuestionAnsweredValues();
-    };
-
-    /**
-     * Get the question answered values.
-     *
-     * @return {Object} Contain key-value with key is the input id and value is the input value.
-     */
-    DragDropMarkersQuestion.prototype.getQuestionAnsweredValues = function() {
-        let result = {};
-        this.getRoot().find('input.choices').each((i, inputNode) => {
-            result[inputNode.id] = inputNode.value;
-        });
-
-        return result;
-    };
-
-    /**
-     * Check if the question is being interacted or not.
-     *
-     * @return {boolean} Return true if the user has changed the question-answer.
-     */
-    DragDropMarkersQuestion.prototype.isQuestionInteracted = function() {
-        const oldAnswer = this.questionAnswer;
-        const newAnswer = this.getQuestionAnsweredValues();
-        let isInteracted = false;
-
-        // First, check both answers have the same structure or not.
-        if (JSON.stringify(newAnswer) !== JSON.stringify(oldAnswer)) {
-            isInteracted = true;
-            return isInteracted;
-        }
-        // Check the values.
-        Object.keys(newAnswer).forEach(key => {
-            if (newAnswer[key] !== oldAnswer[key]) {
-                isInteracted = true;
-            }
-        });
-
-        return isInteracted;
     };
 
     /**
@@ -220,18 +157,18 @@ define([
      * drags should be shown.
      *
      * @param {jQuery} inputNode
-     * @returns {Point[]} image coordinates of however many copies of the drag item should be shown.
+     * @returns {Point[]} coordinates of however many copies of the drag item should be shown.
      */
-    DragDropMarkersQuestion.prototype.getImageCoords = function(inputNode) {
-        var imageCoords = [],
+    DragDropMarkersQuestion.prototype.getCoords = function(inputNode) {
+        var coords = [],
             val = $(inputNode).val();
         if (val !== '') {
             var coordsStrings = val.split(';');
             for (var i = 0; i < coordsStrings.length; i++) {
-                imageCoords[i] = Shapes.Point.parse(coordsStrings[i]);
+                coords[i] = this.convertToWindowXY(Shapes.Point.parse(coordsStrings[i]));
             }
         }
-        return imageCoords;
+        return coords;
     };
 
     /**
@@ -334,12 +271,7 @@ define([
         if (this.coordsInBgImg(dragXY)) {
             this.sendDragToDrop(dragged, true);
             placed = true;
-            // Since we already move the drag item to new position.
-            // Remove the image coords if this drag item have it.
-            // We will get the new image coords for this drag item in saveCoordsForChoice.
-            if (dragged.data('imageCoords')) {
-                dragged.data('imageCoords', null);
-            }
+
             // It seems that the dragdrop sometimes leaves the drag
             // one pixel out of position. Put it in exactly the right place.
             var bgImgXY = this.convertToBgImgXY(dragXY);
@@ -362,38 +294,26 @@ define([
      * @param {Number} choiceNo which copy of the choice this was.
      */
     DragDropMarkersQuestion.prototype.saveCoordsForChoice = function(choiceNo) {
-        let imageCoords = [];
-        var items = this.getRoot().find('div.droparea span.marker.choice' + choiceNo),
+        var coords = [],
+            items = this.getRoot().find('div.droparea span.marker.choice' + choiceNo),
             thiQ = this,
             bgRatio = this.bgRatio();
 
         if (items.length) {
             items.each(function() {
                 var drag = $(this);
-                if (!drag.hasClass('beingdragged') && !drag.data('imageCoords')) {
-                    if (drag.data('scaleRatio') !== bgRatio) {
-                        // The scale ratio for the draggable item was changed. We need to update that.
-                        drag.data('pagex', drag.offset().left).data('pagey', drag.offset().top);
-                    }
+                if (!drag.hasClass('beingdragged')) {
                     var dragXY = new Shapes.Point(drag.data('pagex'), drag.data('pagey'));
                     if (thiQ.coordsInBgImg(dragXY)) {
                         var bgImgXY = thiQ.convertToBgImgXY(dragXY);
                         bgImgXY = new Shapes.Point(bgImgXY.x / bgRatio, bgImgXY.y / bgRatio);
-                        imageCoords[imageCoords.length] = bgImgXY;
+                        coords[coords.length] = bgImgXY;
                     }
-                } else if (drag.data('imageCoords')) {
-                    imageCoords[imageCoords.length] = drag.data('imageCoords');
                 }
             });
         }
 
-        this.getRoot().find('input.choice' + choiceNo).val(imageCoords.join(';'));
-        if (this.isQuestionInteracted()) {
-            // The user has interacted with the draggable items. We need to mark the form as dirty.
-            questionManager.handleFormDirty();
-            // Save the new answered value.
-            this.questionAnswer = this.getQuestionAnsweredValues();
-        }
+        this.getRoot().find('input.choice' + choiceNo).val(coords.join(';'));
     };
 
     /**
@@ -630,10 +550,9 @@ define([
      * Animate a drag item into a given place.
      *
      * @param {jQuery} drag the item to place.
-     * @param {boolean} isScaling Scaling or not.
-     * @param {boolean} initialLoad Whether it is the initial load or not.
+     * @param {boolean} isScaling Scaling or not
      */
-    DragDropMarkersQuestion.prototype.sendDragToDrop = function(drag, isScaling, initialLoad = false) {
+    DragDropMarkersQuestion.prototype.sendDragToDrop = function(drag, isScaling) {
         var dropArea = this.dropArea(),
             bgRatio = this.bgRatio();
         drag.removeClass('beingdragged').removeClass('unneeded');
@@ -644,11 +563,6 @@ define([
         } else {
             drag.data('originX', dragXY.x).data('originY', dragXY.y);
             drag.css('left', dragXY.x * bgRatio).css('top', dragXY.y * bgRatio);
-        }
-        // We need to save the original scale ratio for each draggable item.
-        if (!initialLoad) {
-            // Only set the scale ratio for a current being-dragged item, not for the initial loading.
-            drag.data('scaleRatio', bgRatio);
         }
         dropArea.append(drag);
         this.handleElementScale(drag, 'left top');
@@ -751,63 +665,6 @@ define([
     };
 
     /**
-     * Waits until all images are loaded before calling setupQuestion().
-     *
-     * This function is called from the onLoad of each image, and also polls with
-     * a time-out, because image on-loads are allegedly unreliable.
-     */
-    DragDropMarkersQuestion.prototype.waitForAllImagesToBeLoaded = function() {
-
-        // This method may get called multiple times (via image on-loads or timeouts.
-        // If we are already done, don't do it again.
-        if (this.allImagesLoaded) {
-            return;
-        }
-
-        // Clear any current timeout, if set.
-        if (this.imageLoadingTimeoutId !== null) {
-            clearTimeout(this.imageLoadingTimeoutId);
-        }
-
-        // If we have not yet loaded all images, set a timeout to
-        // call ourselves again, since apparently images on-load
-        // events are flakey.
-        if (this.getNotYetLoadedImages().length > 0) {
-            this.imageLoadingTimeoutId = setTimeout(function() {
-                this.waitForAllImagesToBeLoaded();
-            }, 100);
-            return;
-        }
-
-        // We now have all images. Carry on, but only after giving the layout a chance to settle down.
-        this.allImagesLoaded = true;
-        this.cloneDrags();
-        this.repositionDrags();
-        this.drawDropzones();
-    };
-
-    /**
-     * Get any of the images in the drag-drop area that are not yet fully loaded.
-     *
-     * @returns {jQuery} those images.
-     */
-    DragDropMarkersQuestion.prototype.getNotYetLoadedImages = function() {
-        return this.getRoot().find('.ddmarker img.dropbackground').not(function(i, imgNode) {
-            return this.imageIsLoaded(imgNode);
-        });
-    };
-
-    /**
-     * Check if an image has loaded without errors.
-     *
-     * @param {HTMLImageElement} imgElement an image.
-     * @returns {boolean} true if this image has loaded without errors.
-     */
-    DragDropMarkersQuestion.prototype.imageIsLoaded = function(imgElement) {
-        return imgElement.complete && imgElement.naturalHeight !== 0;
-    };
-
-    /**
      * Singleton that tracks all the DragDropToTextQuestions on this page, and deals
      * with event dispatching.
      *
@@ -819,12 +676,6 @@ define([
          * {boolean} ensures that the event handlers are only initialised once per page.
          */
         eventHandlersInitialised: false,
-
-        /**
-         * {Object} ensures that the marker event handlers are only initialised once per question,
-         * indexed by containerId (id on the .que div).
-         */
-        markerEventHandlersInitialised: {},
 
         /**
          * {boolean} is printing or not.
@@ -855,23 +706,15 @@ define([
                 questionManager.setupEventHandlers();
                 questionManager.eventHandlersInitialised = true;
             }
-            if (!questionManager.markerEventHandlersInitialised.hasOwnProperty(containerId)) {
-                questionManager.markerEventHandlersInitialised[containerId] = true;
-                // We do not use the body event here to prevent the other event on Mobile device, such as scroll event.
-                var questionContainer = document.getElementById(containerId);
-                if (questionContainer.classList.contains('ddmarker') &&
-                    !questionContainer.classList.contains('qtype_ddmarker-readonly')) {
-                    // TODO: Convert all the jQuery selectors and events to native Javascript.
-                    questionManager.addEventHandlersToMarker($(questionContainer).find('div.draghomes .marker'));
-                    questionManager.addEventHandlersToMarker($(questionContainer).find('div.droparea .marker'));
-                }
-            }
         },
 
         /**
          * Set up the event handlers that make this question type work. (Done once per page.)
          */
         setupEventHandlers: function() {
+            // We do not use the body event here to prevent the other event on Mobile device, such as scroll event.
+            questionManager.addEventHandlersToMarker($('.que.ddmarker:not(.qtype_ddmarker-readonly) div.draghomes .marker'));
+            questionManager.addEventHandlersToMarker($('.que.ddmarker:not(.qtype_ddmarker-readonly) div.droparea .marker'));
             $(window).on('resize', function() {
                 questionManager.handleWindowResize(false);
             });
@@ -975,14 +818,6 @@ define([
         getQuestionForEvent: function(e) {
             var containerId = $(e.currentTarget).closest('.que.ddmarker').attr('id');
             return questionManager.questions[containerId];
-        },
-
-        /**
-         * Handle when the form is dirty.
-         */
-        handleFormDirty: function() {
-            const responseForm = document.getElementById('responseform');
-            FormChangeChecker.markFormAsDirty(responseForm);
         }
     };
 

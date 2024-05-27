@@ -86,16 +86,18 @@ if (!empty($search)) {
 
 if (empty($searchcriteria)) {
     // no search criteria specified, print page with just search form
-    $PAGE->set_title($strsearch);
+    $PAGE->set_title("$site->fullname : $strsearch");
 } else {
     // this is search results page
-    $PAGE->set_title($strsearchresults);
+    $PAGE->set_title("$site->fullname : $strsearchresults");
     // Link to manage search results should be visible if user have system or category level capability
     if ((can_edit_in_category() || !empty($usercatlist))) {
         $aurl = new moodle_url('/course/management.php', $searchcriteria);
         $searchform = $OUTPUT->single_button($aurl, get_string('managecourses'), 'get');
-        $PAGE->set_button($searchform);
+    } else {
+        $searchform = $courserenderer->course_search_form($search, 'navbar');
     }
+    $PAGE->set_button($searchform);
 
     // Trigger event, courses searched.
     $eventparams = array('context' => $PAGE->context, 'other' => array('query' => $search));

@@ -63,7 +63,7 @@ class MoodleQuickForm_filemanager extends HTML_QuickForm_element implements temp
      * @param string $elementLabel (optional) filemanager label
      * @param array $attributes (optional) Either a typical HTML attribute string
      *              or an associative array
-     * @param array|stdClass $options set of options to initalize filemanager
+     * @param array $options set of options to initalize filemanager
      */
     public function __construct($elementName=null, $elementLabel=null, $attributes=null, $options=null) {
         global $CFG, $PAGE;
@@ -254,7 +254,7 @@ class MoodleQuickForm_filemanager extends HTML_QuickForm_element implements temp
 
         // security - never ever allow guest/not logged in user to upload anything or use this element!
         if (isguestuser() or !isloggedin()) {
-            throw new \moodle_exception('noguest');
+            print_error('noguest');
         }
 
         if ($this->_flagFrozen) {
@@ -328,9 +328,9 @@ class MoodleQuickForm_filemanager extends HTML_QuickForm_element implements temp
         }
 
         $filetypesutil = new \core_form\filetypes_util();
-        $allowlist = $filetypesutil->normalize_file_types($this->_options['accepted_types']);
+        $whitelist = $filetypesutil->normalize_file_types($this->_options['accepted_types']);
 
-        if (empty($allowlist) || $allowlist === ['*']) {
+        if (empty($whitelist) || $whitelist === ['*']) {
             // Any file type is allowed, nothing to check here.
             return;
         }
@@ -344,14 +344,14 @@ class MoodleQuickForm_filemanager extends HTML_QuickForm_element implements temp
         }
 
         foreach ($draftfiles as $file) {
-            if (!$filetypesutil->is_allowed_file_type($file->filename, $allowlist)) {
+            if (!$filetypesutil->is_allowed_file_type($file->filename, $whitelist)) {
                 $wrongfiles[] = $file->filename;
             }
         }
 
         if ($wrongfiles) {
             $a = array(
-                'allowlist' => implode(', ', $allowlist),
+                'whitelist' => implode(', ', $whitelist),
                 'wrongfiles' => implode(', ', $wrongfiles),
             );
             return get_string('err_wrongfileextension', 'core_form', $a);
@@ -453,6 +453,7 @@ class form_filemanager implements renderable {
 
         $this->options->userprefs = array();
         $this->options->userprefs['recentviewmode'] = get_user_preferences('filemanager_recentviewmode', '');
+        user_preference_allow_ajax_update('filemanager_recentviewmode', PARAM_INT);
 
         // building file picker options
         $params = new stdClass();

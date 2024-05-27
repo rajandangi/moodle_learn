@@ -50,7 +50,9 @@ class behat_mod_feedback extends behat_base {
     public function i_add_question_to_the_feedback_with($questiontype, TableNode $questiondata) {
 
         $questiontype = $this->escape($questiontype);
-        $this->execute('behat_forms::i_select_from_the_singleselect', array($questiontype, 'typ'));
+        $additem = $this->escape(get_string('add_item', 'feedback'));
+
+        $this->execute('behat_forms::i_select_from_the_singleselect', array($questiontype, $additem));
 
         // Wait again, for page to reloaded.
         $this->execute('behat_general::i_wait_to_be_redirected');
@@ -67,7 +69,7 @@ class behat_mod_feedback extends behat_base {
 
         $this->execute("behat_forms::i_set_the_following_fields_to_these_values", $newdata);
 
-        $saveitem = $this->escape(get_string('save'));
+        $saveitem = $this->escape(get_string('save_item', 'feedback'));
         $this->execute("behat_forms::press_button", $saveitem);
     }
 
@@ -81,7 +83,9 @@ class behat_mod_feedback extends behat_base {
     public function i_add_a_page_break_to_the_feedback() {
 
         $questiontype = $this->escape(get_string('add_pagebreak', 'feedback'));
-        $this->execute('behat_forms::i_select_from_the_singleselect', array($questiontype, 'typ'));
+        $additem = $this->escape(get_string('add_item', 'feedback'));
+
+        $this->execute('behat_forms::i_select_from_the_singleselect', array($questiontype, $additem));
 
         // Wait again, for page to reloaded.
         $this->execute('behat_general::i_wait_to_be_redirected');
@@ -149,8 +153,8 @@ class behat_mod_feedback extends behat_base {
      */
     public function i_show_chart_data_for_the_feedback($feedbackname) {
 
-        $feedbackxpath = "//th[contains(normalize-space(string(.)), \"" . $feedbackname . "\")]/ancestor::table//" .
-            "div[contains(concat(' ', normalize-space(@class), ' '), ' chart-table ')]" .
+        $feedbackxpath = "//th[contains(normalize-space(string(.)), \"" . $feedbackname . "\")]/ancestor::table/" .
+            "following-sibling::div[contains(concat(' ', normalize-space(@class), ' '), ' chart-area ')][1]" .
             "//p[contains(concat(' ', normalize-space(@class), ' '), ' chart-table-expand ') and ".
             "//a[contains(normalize-space(string(.)), '".get_string('showchartdata')."')]]";
 

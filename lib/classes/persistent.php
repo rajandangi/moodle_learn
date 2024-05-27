@@ -14,24 +14,32 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+/**
+ * Abstract class for objects saved to the DB.
+ *
+ * @package    core
+ * @copyright  2015 Damyon Wiese
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 namespace core;
+defined('MOODLE_INTERNAL') || die();
 
 use coding_exception;
 use invalid_parameter_exception;
 use lang_string;
 use ReflectionMethod;
 use stdClass;
+use renderer_base;
 
 /**
  * Abstract class for core objects saved to the DB.
  *
- * @package    core
  * @copyright  2015 Damyon Wiese
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 abstract class persistent {
 
-    /** @var string The table name. */
+    /** The table name. */
     const TABLE = null;
 
     /** @var array The model data. */
@@ -102,8 +110,6 @@ abstract class persistent {
      *
      * @param  string $property The property name.
      * @return $this
-     *
-     * @throws coding_exception
      */
     final public function set($property, $value) {
         if (!static::has_property($property)) {
@@ -115,21 +121,6 @@ abstract class persistent {
             return $this;
         }
         return $this->raw_set($property, $value);
-    }
-
-    /**
-     * Data setter for multiple properties
-     *
-     * Internally calls {@see set} on each property
-     *
-     * @param array $values Array of property => value elements
-     * @return $this
-     */
-    final public function set_many(array $values): self {
-        foreach ($values as $property => $value) {
-            $this->set($property, $value);
-        }
-        return $this;
     }
 
     /**
@@ -152,18 +143,7 @@ abstract class persistent {
         if (method_exists($this, $methodname)) {
             return $this->$methodname();
         }
-
-        $properties = static::properties_definition();
-        // If property can be NULL and value is NULL it needs to return null.
-        if ($properties[$property]['null'] === NULL_ALLOWED && $this->raw_get($property) === null) {
-            return null;
-        }
-        // Deliberately cast boolean types as such, because clean_param will cast them to integer.
-        if ($properties[$property]['type'] === PARAM_BOOL) {
-            return (bool)$this->raw_get($property);
-        }
-
-        return clean_param($this->raw_get($property), $properties[$property]['type']);
+        return $this->raw_get($property);
     }
 
     /**
@@ -266,13 +246,12 @@ abstract class persistent {
     final public static function properties_definition() {
         global $CFG;
 
-        static $cachedef = [];
-        if (isset($cachedef[static::class])) {
-            return $cachedef[static::class];
+        static $def = null;
+        if ($def !== null) {
+            return $def;
         }
 
-        $cachedef[static::class] = static::define_properties();
-        $def = &$cachedef[static::class];
+        $def = static::define_properties();
         $def['id'] = array(
             'default' => 0,
             'type' => PARAM_INT,
@@ -318,16 +297,6 @@ abstract class persistent {
         }
 
         return $def;
-    }
-
-    /**
-     * For a given record, return an array containing only those properties that are defined by the persistent
-     *
-     * @param stdClass $record
-     * @return array
-     */
-    final public static function properties_filter(stdClass $record): array {
-        return array_intersect_key((array) $record, static::properties_definition());
     }
 
     /**
@@ -423,7 +392,7 @@ abstract class persistent {
      * @return static
      */
     final public function from_record(stdClass $record) {
-        $record = static::properties_filter($record);
+        $record = (array) $record;
         foreach ($record as $property => $value) {
             $this->raw_set($property, $value);
         }
@@ -855,14 +824,12 @@ abstract class persistent {
      * Load a single record.
      *
      * @param array $filters Filters to apply.
-     * @param int $strictness Similar to the internal DB get_record call, indicate whether a missing record should be
-     *      ignored/return false ({@see IGNORE_MISSING}) or should cause an exception to be thrown ({@see MUST_EXIST})
      * @return false|static
      */
-    public static function get_record(array $filters = [], int $strictness = IGNORE_MISSING) {
+    public static function get_record($filters = array()) {
         global $DB;
 
-        $record = $DB->get_record(static::TABLE, $filters, '*', $strictness);
+        $record = $DB->get_record(static::TABLE, $filters);
         return $record ? new static(0, $record) : false;
     }
 

@@ -14,10 +14,15 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace core_question;
+/**
+ * This file contains tests for the autosave code in the question_usage class.
+ *
+ * @package    moodlecore
+ * @subpackage questionengine
+ * @copyright  2013 The Open University
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
-use question_bank;
-use question_state;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -25,15 +30,14 @@ global $CFG;
 require_once(__DIR__ . '/../lib.php');
 require_once(__DIR__ . '/helpers.php');
 
+
 /**
  * Unit tests for the autosave parts of the {@link question_usage} class.
  *
- * @package   core_question
- * @category  test
  * @copyright 2013 The Open University
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class questionusage_autosave_test extends \qbehaviour_walkthrough_test_base {
+class question_usage_autosave_test extends qbehaviour_walkthrough_test_base {
 
     public function test_autosave_then_display() {
         $this->resetAfterTest();
@@ -448,7 +452,7 @@ class questionusage_autosave_test extends \qbehaviour_walkthrough_test_base {
         if (!isset($cfg->dboptions)) {
             $cfg->dboptions = array();
         }
-        $DB2 = \moodle_database::get_driver_instance($cfg->dbtype, $cfg->dblibrary);
+        $DB2 = moodle_database::get_driver_instance($cfg->dbtype, $cfg->dblibrary);
         $DB2->connect($cfg->dbhost, $cfg->dbuser, $cfg->dbpass, $cfg->dbname, $cfg->prefix, $cfg->dboptions);
 
         // Since we need to commit our transactions in a given order, close the
@@ -519,7 +523,7 @@ class questionusage_autosave_test extends \qbehaviour_walkthrough_test_base {
         if (!isset($cfg->dboptions)) {
             $cfg->dboptions = array();
         }
-        $DB2 = \moodle_database::get_driver_instance($cfg->dbtype, $cfg->dblibrary);
+        $DB2 = moodle_database::get_driver_instance($cfg->dbtype, $cfg->dblibrary);
         $DB2->connect($cfg->dbhost, $cfg->dbuser, $cfg->dbpass, $cfg->dbname, $cfg->prefix, $cfg->dboptions);
 
         // Since we need to commit our transactions in a given order, close the
@@ -743,7 +747,7 @@ class questionusage_autosave_test extends \qbehaviour_walkthrough_test_base {
         $this->delete_quba();
     }
 
-    protected function tearDown(): void {
+    protected function tearDown() {
         // This test relies on the destructor for the second DB connection being called before running the next test.
         // Without this change - there will be unit test failures on "some" DBs (MySQL).
         gc_collect_cycles();

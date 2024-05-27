@@ -151,16 +151,6 @@ if ($ADMIN->fulltree) {
     $setting->set_advanced_flag_options(admin_setting_flag::ENABLED, false);
     $settings->add($setting);
 
-    $name = new lang_string('enabletimelimit', 'mod_assign');
-    $description = new lang_string('enabletimelimit_help', 'mod_assign');
-    $setting = new admin_setting_configcheckbox(
-        'assign/enabletimelimit',
-        $name,
-        $description,
-        0
-    );
-    $settings->add($setting);
-
     $name = new lang_string('gradingduedate', 'mod_assign');
     $description = new lang_string('gradingduedate_help', 'mod_assign');
     $setting = new admin_setting_configduration('assign/gradingduedate',
@@ -323,16 +313,6 @@ if ($ADMIN->fulltree) {
     $name = new lang_string('markingallocation', 'mod_assign');
     $description = new lang_string('markingallocation_help', 'mod_assign');
     $setting = new admin_setting_configcheckbox('assign/markingallocation',
-                                                    $name,
-                                                    $description,
-                                                    0);
-    $setting->set_advanced_flag_options(admin_setting_flag::ENABLED, false);
-    $setting->set_locked_flag_options(admin_setting_flag::ENABLED, false);
-    $settings->add($setting);
-
-    $name = new lang_string('markinganonymous', 'mod_assign');
-    $description = new lang_string('markinganonymous_help', 'mod_assign');
-    $setting = new admin_setting_configcheckbox('assign/markinganonymous',
                                                     $name,
                                                     $description,
                                                     0);

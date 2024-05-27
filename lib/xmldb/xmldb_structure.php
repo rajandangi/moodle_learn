@@ -34,7 +34,7 @@ class xmldb_structure extends xmldb_object {
     /** @var string */
     protected $version;
 
-    /** @var xmldb_table[] tables */
+    /** @var array tables */
     protected $tables;
 
     /**
@@ -344,7 +344,7 @@ class xmldb_structure extends xmldb_object {
         $o.= '<XMLDB PATH="' . $this->path . '"';
         $o.= ' VERSION="' . $this->version . '"';
         if ($this->comment) {
-            $o.= ' COMMENT="' . htmlspecialchars($this->comment, ENT_COMPAT) . '"'."\n";
+            $o.= ' COMMENT="' . htmlspecialchars($this->comment) . '"'."\n";
         }
         $rel = array_fill(0, count(explode('/', $this->path)), '..');
         $rel = implode('/', $rel);

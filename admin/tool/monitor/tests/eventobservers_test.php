@@ -14,14 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace tool_monitor;
-
-defined('MOODLE_INTERNAL') || die();
-
-global $CFG;
-require_once($CFG->dirroot . '/blog/locallib.php');
-require_once($CFG->dirroot . '/blog/lib.php');
-
 /**
  * Unit tests for event observers.
  *
@@ -30,11 +22,23 @@ require_once($CFG->dirroot . '/blog/lib.php');
  * @copyright  2014 onwards Ankit Agarwal <ankit.agrr@gmail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class eventobservers_test extends \advanced_testcase {
+
+defined('MOODLE_INTERNAL') || die();
+
+global $CFG;
+require_once($CFG->dirroot . '/blog/locallib.php');
+require_once($CFG->dirroot . '/blog/lib.php');
+
+/**
+ * Class tool_monitor_eventobservers_testcase
+ *
+ * Tests for event observers
+ */
+class tool_monitor_eventobservers_testcase extends advanced_testcase {
     /**
      * Set up method.
      */
-    public function setUp(): void {
+    public function setUp() {
         // Enable monitor.
         set_config('enablemonitor', 1, 'tool_monitor');
     }
@@ -53,12 +57,12 @@ class eventobservers_test extends \advanced_testcase {
         $course2 = $this->getDataGenerator()->create_course();
         $monitorgenerator = $this->getDataGenerator()->get_plugin_generator('tool_monitor');
 
-        $rule = new \stdClass();
+        $rule = new stdClass();
         $rule->userid = $user->id;
         $rule->courseid = $course1->id;
         $rule->plugin = 'test';
 
-        $sub = new \stdClass();
+        $sub = new stdClass();
         $sub->courseid = $course1->id;
         $sub->userid = $user->id;
 
@@ -79,7 +83,7 @@ class eventobservers_test extends \advanced_testcase {
         }
 
         // Add a site rule.
-        $rule = new \stdClass();
+        $rule = new stdClass();
         $rule->userid = $user->id;
         $rule->courseid = 0;
         $rule->plugin = 'core';
@@ -131,7 +135,7 @@ class eventobservers_test extends \advanced_testcase {
         // Fire a bunch of events.
         // Trigger a bunch of other events.
         $eventparams = array(
-            'context' => \context_course::instance($course->id)
+            'context' => context_course::instance($course->id)
         );
         for ($i = 0; $i < 5; $i++) {
             \core\event\course_viewed::create($eventparams)->trigger();
@@ -144,14 +148,14 @@ class eventobservers_test extends \advanced_testcase {
         $this->assertEquals(0, $DB->count_records('tool_monitor_events'));
 
         // Now, let's create a rule so an event can be stored.
-        $rule = new \stdClass();
+        $rule = new stdClass();
         $rule->courseid = $course->id;
         $rule->plugin = 'mod_book';
         $rule->eventname = '\mod_book\event\course_module_instance_list_viewed';
         $rule = $monitorgenerator->create_rule($rule);
 
         // Let's subscribe to this rule.
-        $sub = new \stdClass;
+        $sub = new stdClass;
         $sub->courseid = $course->id;
         $sub->ruleid = $rule->id;
         $sub->userid = $user->id;
@@ -183,14 +187,14 @@ class eventobservers_test extends \advanced_testcase {
         $DB->delete_records('tool_monitor_events');
 
         // Now, let's create a site wide rule.
-        $rule = new \stdClass();
+        $rule = new stdClass();
         $rule->courseid = 0;
         $rule->plugin = 'mod_book';
         $rule->eventname = '\mod_book\event\course_module_instance_list_viewed';
         $rule = $monitorgenerator->create_rule($rule);
 
         // Let's subscribe to this rule.
-        $sub = new \stdClass;
+        $sub = new stdClass;
         $sub->courseid = 0;
         $sub->ruleid = $rule->id;
         $sub->userid = $user->id;
@@ -227,14 +231,14 @@ class eventobservers_test extends \advanced_testcase {
         $course = $this->getDataGenerator()->create_course();
         $toolgenerator = $this->getDataGenerator()->get_plugin_generator('tool_monitor');
 
-        $rulerecord = new \stdClass();
+        $rulerecord = new stdClass();
         $rulerecord->courseid = $course->id;
         $rulerecord->eventname = '\mod_book\event\course_module_instance_list_viewed';
         $rulerecord->frequency = 1;
 
         $rule = $toolgenerator->create_rule($rulerecord);
 
-        $subrecord = new \stdClass();
+        $subrecord = new stdClass();
         $subrecord->courseid = $course->id;
         $subrecord->ruleid = $rule->id;
         $subrecord->userid = $USER->id;
@@ -275,7 +279,7 @@ class eventobservers_test extends \advanced_testcase {
         $DB->delete_records('tool_monitor_events');
 
         // Now let us create a rule specific to a module instance.
-        $cm = new \stdClass();
+        $cm = new stdClass();
         $cm->course = $course->id;
         $book = $this->getDataGenerator()->create_module('book', $cm);
         $rulerecord->eventname = '\mod_book\event\course_module_viewed';
@@ -286,7 +290,7 @@ class eventobservers_test extends \advanced_testcase {
 
         // Let us trigger events.
         $params = array(
-            'context' => \context_module::instance($book->cmid),
+            'context' => context_module::instance($book->cmid),
             'objectid' => $book->id
         );
         for ($i = 0; $i < 5; $i++) {
@@ -333,10 +337,10 @@ class eventobservers_test extends \advanced_testcase {
         $toolgenerator->create_subscription($subrecord);
 
         // Let us trigger events.
-        $blog = new \blog_entry();
+        $blog = new blog_entry();
         $blog->subject = "Subject of blog";
         $blog->userid = $USER->id;
-        $states = \blog_entry::get_applicable_publish_states();
+        $states = blog_entry::get_applicable_publish_states();
         $blog->publishstate = reset($states);
         for ($i = 0; $i < 5; $i++) {
             $newblog = fullclone($blog);
@@ -363,14 +367,14 @@ class eventobservers_test extends \advanced_testcase {
         $course = $this->getDataGenerator()->create_course();
         $toolgenerator = $this->getDataGenerator()->get_plugin_generator('tool_monitor');
 
-        $rulerecord = new \stdClass();
+        $rulerecord = new stdClass();
         $rulerecord->courseid = $course->id;
         $rulerecord->eventname = '\mod_book\event\course_module_instance_list_viewed';
         $rulerecord->frequency = 5;
 
         $rule = $toolgenerator->create_rule($rulerecord);
 
-        $subrecord = new \stdClass();
+        $subrecord = new stdClass();
         $subrecord->courseid = $course->id;
         $subrecord->ruleid = $rule->id;
         $subrecord->userid = $USER->id;
@@ -412,7 +416,7 @@ class eventobservers_test extends \advanced_testcase {
      *
      * @param phpunit_message_sink $msgsink Message sink
      */
-    protected function verify_processed_data(\phpunit_message_sink $msgsink) {
+    protected function verify_processed_data(phpunit_message_sink $msgsink) {
         global $DB, $USER;
 
         $recordexists = $DB->count_records('task_adhoc', array('component' => 'tool_monitor'));
@@ -431,7 +435,7 @@ class eventobservers_test extends \advanced_testcase {
      *
      * @param phpunit_message_sink $msgsink Message sink
      */
-    protected function verify_message_not_sent_yet(\phpunit_message_sink $msgsink) {
+    protected function verify_message_not_sent_yet(phpunit_message_sink $msgsink) {
         $msgs = $msgsink->get_messages();
         $this->assertCount(0, $msgs);
         $msgsink->clear();
@@ -448,18 +452,17 @@ class eventobservers_test extends \advanced_testcase {
         $msgsink = $this->redirectMessages();
 
         // Generate data.
-        $course = $this->getDataGenerator()->create_course(['fullname' => 'Observed course', 'shortname' => 'obscourse']);
+        $course = $this->getDataGenerator()->create_course();
         $toolgenerator = $this->getDataGenerator()->get_plugin_generator('tool_monitor');
         $context = \context_user::instance($USER->id, IGNORE_MISSING);
 
         // Creating book.
-        $cm = new \stdClass();
+        $cm = new stdClass();
         $cm->course = $course->id;
-        $cm->name = 'Observed book';
         $book = $this->getDataGenerator()->create_module('book', $cm);
 
         // Creating rule.
-        $rulerecord = new \stdClass();
+        $rulerecord = new stdClass();
         $rulerecord->courseid = $course->id;
         $rulerecord->eventname = '\mod_book\event\course_module_viewed';
         $rulerecord->cmid = $book->cmid;
@@ -469,16 +472,13 @@ class eventobservers_test extends \advanced_testcase {
 * {modulelink}
 * __{rulename}__
 * {description}
-* {eventname}
-* {modulename}
-* {coursefullname}
-* {courseshortname}';
+* {eventname}';
         $rulerecord->templateformat = FORMAT_MARKDOWN;
 
         $rule = $toolgenerator->create_rule($rulerecord);
 
         // Creating subscription.
-        $subrecord = new \stdClass();
+        $subrecord = new stdClass();
         $subrecord->courseid = $course->id;
         $subrecord->ruleid = $rule->id;
         $subrecord->userid = $USER->id;
@@ -486,7 +486,7 @@ class eventobservers_test extends \advanced_testcase {
 
         // Now let us trigger the event.
         $params = array(
-            'context' => \context_module::instance($book->cmid),
+            'context' => context_module::instance($book->cmid),
             'objectid' => $book->id
         );
 
@@ -496,30 +496,22 @@ class eventobservers_test extends \advanced_testcase {
         $msgs = $msgsink->get_messages();
         $msg = array_pop($msgs);
 
-        $modurl = new \moodle_url('/mod/book/view.php', array('id' => $book->cmid));
+        $modurl = new moodle_url('/mod/book/view.php', array('id' => $book->cmid));
 
-        $this->assertMatchesRegularExpression('~<h2>.*' . preg_quote($event->get_url()->out(), '~') . '.*</h2>~',
-            $msg->fullmessagehtml);
-        $this->assertMatchesRegularExpression('~<li>.*' . preg_quote($modurl->out(), '~') . '.*</li>~', $msg->fullmessagehtml);
-        $this->assertStringContainsString('<li><strong>'.$rule->get_name($context).'</strong></li>', $msg->fullmessagehtml);
-        $this->assertStringContainsString('<li>'.$rule->get_description($context).'</li>', $msg->fullmessagehtml);
-        $this->assertStringContainsString('<li>'.$rule->get_event_name().'</li>', $msg->fullmessagehtml);
-        $this->assertStringContainsString('<li>' . $cm->name . '</li>', $msg->fullmessagehtml);
-        $this->assertStringContainsString('<li>' . $course->fullname . '</li>', $msg->fullmessagehtml);
-        $this->assertStringContainsString('<li>' . $course->shortname . '</li>', $msg->fullmessagehtml);
+        $this->assertRegExp('~<h2>.*' . preg_quote($event->get_url()->out(), '~') . '.*</h2>~', $msg->fullmessagehtml);
+        $this->assertRegExp('~<li>.*' . preg_quote($modurl->out(), '~') . '.*</li>~', $msg->fullmessagehtml);
+        $this->assertContains('<li><strong>'.$rule->get_name($context).'</strong></li>', $msg->fullmessagehtml);
+        $this->assertContains('<li>'.$rule->get_description($context).'</li>', $msg->fullmessagehtml);
+        $this->assertContains('<li>'.$rule->get_event_name().'</li>', $msg->fullmessagehtml);
 
         $this->assertEquals(FORMAT_PLAIN, $msg->fullmessageformat);
-        $this->assertStringNotContainsString('<h2>', $msg->fullmessage);
-        $this->assertStringNotContainsString('##', $msg->fullmessage);
-        $this->assertStringContainsString(strtoupper($event->get_url()->out()), $msg->fullmessage);
-        $this->assertStringContainsString('* '.$modurl->out(), $msg->fullmessage);
-        $this->assertStringContainsString('* '.strtoupper($rule->get_name($context)), $msg->fullmessage);
-        $this->assertStringContainsString('* '.$rule->get_description($context), $msg->fullmessage);
-        $this->assertStringContainsString('* '.$rule->get_event_name(), $msg->fullmessage);
-        $this->assertStringContainsString('* ' . $cm->name, $msg->fullmessage);
-        $this->assertStringContainsString('* ' . $course->fullname, $msg->fullmessage);
-        $this->assertStringContainsString('* ' . $course->shortname, $msg->fullmessage);
-
+        $this->assertNotContains('<h2>', $msg->fullmessage);
+        $this->assertNotContains('##', $msg->fullmessage);
+        $this->assertContains(strtoupper($event->get_url()->out()), $msg->fullmessage);
+        $this->assertContains('* '.$modurl->out(), $msg->fullmessage);
+        $this->assertContains('* '.strtoupper($rule->get_name($context)), $msg->fullmessage);
+        $this->assertContains('* '.$rule->get_description($context), $msg->fullmessage);
+        $this->assertContains('* '.$rule->get_event_name(), $msg->fullmessage);
     }
 
     /**
@@ -536,12 +528,12 @@ class eventobservers_test extends \advanced_testcase {
         $course2 = $this->getDataGenerator()->create_course();
         $monitorgenerator = $this->getDataGenerator()->get_plugin_generator('tool_monitor');
 
-        $rule = new \stdClass();
+        $rule = new stdClass();
         $rule->userid = $user->id;
         $rule->courseid = $course1->id;
         $rule->plugin = 'test';
 
-        $sub = new \stdClass();
+        $sub = new stdClass();
         $sub->courseid = $course1->id;
         $sub->userid = $user->id;
 
@@ -592,16 +584,16 @@ class eventobservers_test extends \advanced_testcase {
         $monitorgenerator = $this->getDataGenerator()->get_plugin_generator('tool_monitor');
 
         // Now let us create a rule specific to a module instance.
-        $cm = new \stdClass();
+        $cm = new stdClass();
         $cm->course = $course1->id;
         $book = $this->getDataGenerator()->create_module('book', $cm);
 
-        $rule = new \stdClass();
+        $rule = new stdClass();
         $rule->userid = $user->id;
         $rule->courseid = $course1->id;
         $rule->plugin = 'test';
 
-        $sub = new \stdClass();
+        $sub = new stdClass();
         $sub->courseid = $course1->id;
         $sub->userid = $user->id;
         $sub->cmid = $book->cmid;

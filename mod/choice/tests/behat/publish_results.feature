@@ -20,20 +20,12 @@ Feature: A teacher can choose one of 4 options for publishing choice results
     And I am on "Course 1" course homepage with editing mode on
 
   Scenario: Do not publish results to students
-    Given the following "activity" exists:
-      | activity | choice               |
-      | course   | C1                   |
-      | idnumber | choice1              |
-      | name     | Choice 1             |
-      | intro    | Choice Description   |
-      | section  | 1                    |
-      | option   | Option 1, Option 2   |
-    And I am on "Course 1" course homepage
-    And I follow "Choice 1"
-    And I navigate to "Settings" in current page administration
-    And I set the following fields to these values:
+    Given I add a "Choice" to section "1" and I fill the form with:
+      | Choice name | Choice 1 |
+      | Description | Choice Description |
       | Publish results | Do not publish results to students |
-    And I press "Save and return to course"
+      | option[0] | Option 1 |
+      | option[1] | Option 2 |
     And I log out
     And I log in as "student1"
     And I am on "Course 1" course homepage
@@ -43,20 +35,12 @@ Feature: A teacher can choose one of 4 options for publishing choice results
     And I should not see "Graph display"
 
   Scenario: Show results to students after they answer
-    Given the following "activity" exists:
-      | activity | choice               |
-      | course   | C1                   |
-      | idnumber | choice1              |
-      | name     | Choice 1             |
-      | intro    | Choice Description   |
-      | section  | 1                    |
-      | option   | Option 1, Option 2   |
-    And I am on "Course 1" course homepage
-    And I follow "Choice 1"
-    And I navigate to "Settings" in current page administration
-    And I set the following fields to these values:
+    Given I add a "Choice" to section "1" and I fill the form with:
+      | Choice name | Choice 1 |
+      | Description | Choice Description |
+      | option[0] | Option 1 |
+      | option[1] | Option 2 |
       | Publish results | Show results to students after they answer |
-    And I press "Save and return to course"
     And I log out
     And I log in as "student1"
     And I am on "Course 1" course homepage
@@ -68,20 +52,12 @@ Feature: A teacher can choose one of 4 options for publishing choice results
     And I should see "Responses"
 
   Scenario: Show results to students only after the choice is closed
-    Given the following "activity" exists:
-      | activity | choice               |
-      | course   | C1                   |
-      | idnumber | choice1              |
-      | name     | Choice 1             |
-      | intro    | Choice Description   |
-      | section  | 1                    |
-      | option   | Option 1, Option 2   |
-    And I am on "Course 1" course homepage
-    And I follow "Choice 1"
-    And I navigate to "Settings" in current page administration
-    And I set the following fields to these values:
+    Given I add a "Choice" to section "1" and I fill the form with:
+      | Choice name | Choice 1 |
+      | Description | Choice Description |
       | Publish results | Show results to students only after the choice is closed |
-    And I press "Save and return to course"
+      | option[0] | Option 1 |
+      | option[1] | Option 2 |
     And I log out
     And I log in as "student1"
     And I am on "Course 1" course homepage
@@ -92,7 +68,7 @@ Feature: A teacher can choose one of 4 options for publishing choice results
     And I log in as "teacher1"
     And I am on "Course 1" course homepage
     And I follow "Choice 1"
-    And I follow "Settings"
+    And I follow "Edit settings"
     And I expand all fieldsets
     And I set the following fields to these values:
       | timeopen[enabled] | 1 |
@@ -111,20 +87,12 @@ Feature: A teacher can choose one of 4 options for publishing choice results
     And I should see "Responses"
 
   Scenario: Always show results to students
-    Given the following "activity" exists:
-      | activity | choice               |
-      | course   | C1                   |
-      | idnumber | choice1              |
-      | name     | Choice 1             |
-      | intro    | Choice Description   |
-      | section  | 1                    |
-      | option   | Option 1, Option 2   |
-    And I am on "Course 1" course homepage
-    And I follow "Choice 1"
-    And I navigate to "Settings" in current page administration
-    And I set the following fields to these values:
+    Given I add a "Choice" to section "1" and I fill the form with:
+      | Choice name | Choice 1 |
+      | Description | Choice Description |
+      | option[0] | Option 1 |
+      | option[1] | Option 2 |
       | Publish results | Always show results to students |
-    And I press "Save and return to course"
     And I log out
     And I log in as "student1"
     And I am on "Course 1" course homepage

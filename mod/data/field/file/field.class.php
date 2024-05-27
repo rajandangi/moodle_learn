@@ -1,51 +1,32 @@
 <?php
-// This file is part of Moodle - http://moodle.org/
-//
-// Moodle is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// Moodle is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+///////////////////////////////////////////////////////////////////////////
+//                                                                       //
+// NOTICE OF COPYRIGHT                                                   //
+//                                                                       //
+// Moodle - Modular Object-Oriented Dynamic Learning Environment         //
+//          http://moodle.org                                            //
+//                                                                       //
+// Copyright (C) 1999-onwards Moodle Pty Ltd  http://moodle.com          //
+//                                                                       //
+// This program is free software; you can redistribute it and/or modify  //
+// it under the terms of the GNU General Public License as published by  //
+// the Free Software Foundation; either version 2 of the License, or     //
+// (at your option) any later version.                                   //
+//                                                                       //
+// This program is distributed in the hope that it will be useful,       //
+// but WITHOUT ANY WARRANTY; without even the implied warranty of        //
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         //
+// GNU General Public License for more details:                          //
+//                                                                       //
+//          http://www.gnu.org/copyleft/gpl.html                         //
+//                                                                       //
+///////////////////////////////////////////////////////////////////////////
 
-/**
- * Class file field for database activity
- *
- * @package    datafield_file
- * @copyright  2005 Martin Dougiamas
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
 class data_field_file extends data_field_base {
     var $type = 'file';
 
-    public function supports_preview(): bool {
-        return true;
-    }
-
-    public function get_data_content_preview(int $recordid): stdClass {
-        return (object)[
-            'id' => 0,
-            'fieldid' => $this->field->id,
-            'recordid' => $recordid,
-            'content' => 'samplefile.csv',
-            'content1' => 'samplefile.csv',
-            'content2' => null,
-            'content3' => null,
-            'content4' => null,
-        ];
-    }
-
     function display_add_field($recordid = 0, $formdata = null) {
-        global $CFG, $DB, $OUTPUT, $PAGE;
-
-        // Necessary for the constants used in args.
-        require_once($CFG->dirroot . '/repository/lib.php');
+        global $DB, $OUTPUT, $PAGE;
 
         $itemid = null;
 
@@ -70,7 +51,7 @@ class data_field_file extends data_field_base {
 
         // database entry label
         $html = '<div title="' . s($this->field->description) . '">';
-        $html .= '<fieldset><legend><span class="accesshide">'.s($this->field->name);
+        $html .= '<fieldset><legend><span class="accesshide">'.$this->field->name;
 
         if ($this->field->required) {
             $html .= '&nbsp;' . get_string('requiredelement', 'form') . '</span></legend>';
@@ -105,7 +86,7 @@ class data_field_file extends data_field_base {
     }
 
     function display_search_field($value = '') {
-        return '<label class="accesshide" for="f_' . $this->field->id . '">' . s($this->field->name) . '</label>' .
+        return '<label class="accesshide" for="f_' . $this->field->id . '">' . $this->field->name . '</label>' .
                '<input type="text" size="16" id="f_'.$this->field->id.'" name="f_'.$this->field->id.'" ' .
                     'value="'.s($value).'" class="form-control"/>';
     }
@@ -130,7 +111,7 @@ class data_field_file extends data_field_base {
     function get_file($recordid, $content=null) {
         global $DB;
         if (empty($content)) {
-            if (!$content = $this->get_data_content($recordid)) {
+            if (!$content = $DB->get_record('data_content', array('fieldid'=>$this->field->id, 'recordid'=>$recordid))) {
                 return null;
             }
         }
@@ -143,48 +124,28 @@ class data_field_file extends data_field_base {
     }
 
     function display_browse_field($recordid, $template) {
-        global $OUTPUT;
+        global $CFG, $DB, $OUTPUT;
 
-        $content = $this->get_data_content($recordid);
-
-        if (!$content || empty($content->content)) {
+        if (!$content = $DB->get_record('data_content', array('fieldid'=>$this->field->id, 'recordid'=>$recordid))) {
             return '';
         }
 
-        $file = null;
-        $url = '';
-        $name = !empty($content->content1) ? $content->content1 : $content->content;
-
-        if ($this->preview) {
-            $file = (object)[
-                'filename' => $content->content,
-                'mimetype' => 'text/csv',
-            ];
-            $name = $content->content;
-        } else {
-            $file = $this->get_file($recordid, $content);
-            if (!$file) {
-                return '';
-            }
-            $fileurl = moodle_url::make_pluginfile_url(
-                $file->get_contextid(),
-                $file->get_component(),
-                $file->get_filearea(),
-                $file->get_itemid(),
-                $file->get_filepath(),
-                $file->get_filename()
-            );
-            $url = $fileurl->out();
+        if (empty($content->content)) {
+            return '';
         }
 
-        $icon = $OUTPUT->pix_icon(
-            file_file_icon($file),
-            get_mimetype_description($file),
-            'moodle',
-            ['width' => 16, 'height' => 16]
-        );
+        if (!$file = $this->get_file($recordid, $content)) {
+            return '';
+        }
 
-        return $icon . '&nbsp;<a class="data-field-link" href="'.$url.'" >' . s($name) . '</a>';
+        $name   = empty($content->content1) ? $file->get_filename() : $content->content1;
+        $src    = file_encode_url($CFG->wwwroot.'/pluginfile.php', '/'.$this->context->id.'/mod_data/content/'.$content->id.'/'.$file->get_filename());
+        $width  = $this->field->param1 ? ' width  = "'.s($this->field->param1).'" ':' ';
+        $height = $this->field->param2 ? ' height = "'.s($this->field->param2).'" ':' ';
+
+        $str = $OUTPUT->pix_icon(file_file_icon($file), get_mimetype_description($file), 'moodle', array('width' => 16, 'height' => 16)). '&nbsp;'.
+               '<a href="'.$src.'" >'.s($name).'</a>';
+        return $str;
     }
 
 
@@ -218,64 +179,8 @@ class data_field_file extends data_field_base {
         $DB->update_record('data_content', $content);
     }
 
-    /**
-     * Here we export the text value of a file field which is the filename of the exported file.
-     *
-     * @param stdClass $record the record which is being exported
-     * @return string the value which will be stored in the exported file for this field
-     */
-    public function export_text_value(stdClass $record): string {
-        return !empty($record->content) ? $record->content : '';
-    }
-
-    /**
-     * Specifies that this field type supports the export of files.
-     *
-     * @return bool true which means that file export is being supported by this field type
-     */
-    public function file_export_supported(): bool {
-        return true;
-    }
-
-    /**
-     * Specifies that this field type supports the import of files.
-     *
-     * @return bool true which means that file import is being supported by this field type
-     */
-    public function file_import_supported(): bool {
-        return true;
-    }
-
-    /**
-     * Provides the necessary code for importing a file when importing the content of a mod_data instance.
-     *
-     * @param int $contentid the id of the mod_data content record
-     * @param string $filecontent the content of the file to import as string
-     * @param string $filename the filename the imported file should get
-     * @return void
-     */
-    public function import_file_value(int $contentid, string $filecontent, string $filename): void {
-        $filerecord = [
-            'contextid' => $this->context->id,
-            'component' => 'mod_data',
-            'filearea' => 'content',
-            'itemid' => $contentid,
-            'filepath' => '/',
-            'filename' => $filename,
-        ];
-        $fs = get_file_storage();
-        $fs->create_file_from_string($filerecord, $filecontent);
-    }
-
-    /**
-     * Exports the file content for file export.
-     *
-     * @param stdClass $record the data content record the file belongs to
-     * @return null|string The file content of the stored file or null if no file should be exported for this record
-     */
-    public function export_file_value(stdClass $record): null|string {
-        $file = $this->get_file($record->id);
-        return $file ? $file->get_content() : null;
+    function text_export_supported() {
+        return false;
     }
 
     function file_ok($path) {
@@ -315,24 +220,5 @@ class data_field_file extends data_field_base {
             $configs["param$i"] = $this->field->{"param$i"};
         }
         return $configs;
-    }
-
-    public function get_field_params(): array {
-        global $DB, $CFG;
-
-        $data = parent::get_field_params();
-
-        $course = $DB->get_record('course', ['id' => $this->data->course]);
-        $filesizes = get_max_upload_sizes($CFG->maxbytes, $course->maxbytes, 0, $this->field->param3);
-
-        foreach ($filesizes as $value => $name) {
-            if (!((isset($this->field->param3) && $value == $this->field->param3))) {
-                $data['filesizes'][] = ['name' => $name, 'value' => $value, 'selected' => 0];
-            } else {
-                $data['filesizes'][] = ['name' => $name, 'value' => $value, 'selected' => 1];
-            }
-        }
-
-        return $data;
     }
 }

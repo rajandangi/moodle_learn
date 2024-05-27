@@ -21,7 +21,6 @@
  * @copyright  2014 onwards Ankit agarwal <ankit.agrr@gmail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later.
  */
-namespace report_outline;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -34,7 +33,7 @@ global $CFG;
  * @copyright  2014 onwards Ankit agarwal <ankit.agrr@gmail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later.
  */
-class lib_test extends \advanced_testcase {
+class report_outline_lib_testcase extends advanced_testcase {
 
     /**
      * @var stdClass The user.
@@ -61,11 +60,12 @@ class lib_test extends \advanced_testcase {
      */
     private $roleid;
 
-    public function setUp(): void {
+    public function setUp() {
         $this->user = $this->getDataGenerator()->create_user();
+        $this->user2 = $this->getDataGenerator()->create_user();
         $this->course = $this->getDataGenerator()->create_course();
         $this->tree = new \core_user\output\myprofile\tree();
-        $this->coursecontext = \context_course::instance($this->course->id);
+        $this->coursecontext = context_course::instance($this->course->id);
         $this->roleid = create_role('Dummy role', 'dummyrole', 'dummy role description');
         $this->resetAfterTest();
     }
@@ -78,6 +78,7 @@ class lib_test extends \advanced_testcase {
         $allstores = \core_component::get_plugin_list_with_class('logstore', 'log\store');
 
         $supportedstores = array(
+            'logstore_legacy' => '\logstore_legacy\log\store',
             'logstore_standard' => '\logstore_standard\log\store'
         );
 
@@ -98,8 +99,9 @@ class lib_test extends \advanced_testcase {
         $iscurrentuser = false;
 
         report_outline_myprofile_navigation($this->tree, $this->user, $iscurrentuser, $this->course);
-        $reflector = new \ReflectionObject($this->tree);
+        $reflector = new ReflectionObject($this->tree);
         $nodes = $reflector->getProperty('nodes');
+        $nodes->setAccessible(true);
         $this->assertArrayHasKey('outline', $nodes->getValue($this->tree));
         $this->assertArrayHasKey('complete', $nodes->getValue($this->tree));
     }
@@ -112,8 +114,9 @@ class lib_test extends \advanced_testcase {
         $iscurrentuser = true;
 
         report_outline_myprofile_navigation($this->tree, $this->user, $iscurrentuser, $this->course);
-        $reflector = new \ReflectionObject($this->tree);
+        $reflector = new ReflectionObject($this->tree);
         $nodes = $reflector->getProperty('nodes');
+        $nodes->setAccessible(true);
         $this->assertArrayNotHasKey('outline', $nodes->getValue($this->tree));
         $this->assertArrayNotHasKey('complete', $nodes->getValue($this->tree));
     }

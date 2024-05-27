@@ -14,10 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace mod_forum;
-
-use mod_forum_tests_cron_trait;
-use mod_forum_tests_generator_trait;
+/**
+ * The forum module mail generation tests for groups.
+ *
+ * @package    mod_forum
+ * @copyright  2013 Andrew Nicols
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -32,7 +35,7 @@ require_once(__DIR__ . '/generator_trait.php');
  * @copyright  2013 Andrew Nicols
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class mail_group_test extends \advanced_testcase {
+class mod_forum_mail_group_testcase extends advanced_testcase {
     // Make use of the cron tester trait.
     use mod_forum_tests_cron_trait;
 
@@ -49,7 +52,7 @@ class mail_group_test extends \advanced_testcase {
      */
     protected $mailsink;
 
-    public function setUp(): void {
+    public function setUp() {
         global $CFG;
 
         // We must clear the subscription caches. This has to be done both before each test, and after in case of other
@@ -69,7 +72,7 @@ class mail_group_test extends \advanced_testcase {
         $CFG->maxeditingtime = -1;
     }
 
-    public function tearDown(): void {
+    public function tearDown() {
         // We must clear the subscription caches. This has to be done both before each test, and after in case of other
         // tests using these functions.
         \mod_forum\subscriptions::reset_forum_cache();

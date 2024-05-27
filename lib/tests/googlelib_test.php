@@ -14,11 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace core;
-
-use Google_Service_Exception;
-use Google_Service_YouTube;
-
 /**
  * Tests for google library
  *
@@ -26,7 +21,7 @@ use Google_Service_YouTube;
  * @copyright  2021 Marina Glancy
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class googlelib_test extends \advanced_testcase {
+class core_googlelib_testcase extends advanced_testcase {
 
     public function test_invalid_google_api_key() {
         global $CFG;
@@ -39,7 +34,7 @@ class googlelib_test extends \advanced_testcase {
             $service->videoCategories->listVideoCategories('snippet', ['regionCode' => 'us']);
             $this->fail('Exception expected');
         } catch (Google_Service_Exception $e) {
-            $this->assertMatchesRegularExpression('/API key not valid/', $e->getMessage());
+            $this->assertEquals(1, preg_match('/API key not valid/', $e->getMessage()));
         }
     }
 }

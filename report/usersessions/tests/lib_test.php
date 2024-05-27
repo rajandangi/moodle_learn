@@ -21,7 +21,6 @@
  * @copyright  2015 onwards Ankit agarwal <ankit.agrr@gmail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later.
  */
-namespace report_usersessions;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -36,7 +35,7 @@ require_once($CFG->dirroot. '/report/usersessions/lib.php');
  * @copyright  2014 onwards Ankit agarwal <ankit.agrr@gmail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later.
  */
-class lib_test extends \advanced_testcase {
+class report_usersessions_lib_testcase extends advanced_testcase {
 
     /**
      * @var stdClass The user.
@@ -53,7 +52,7 @@ class lib_test extends \advanced_testcase {
      */
     private $tree;
 
-    public function setUp(): void {
+    public function setUp() {
         $this->user = $this->getDataGenerator()->create_user();
         $this->course = $this->getDataGenerator()->create_course();
         $this->tree = new \core_user\output\myprofile\tree();
@@ -69,8 +68,9 @@ class lib_test extends \advanced_testcase {
 
         // Not even admins allowed to pick at other user's sessions.
         report_usersessions_myprofile_navigation($this->tree, $this->user, $iscurrentuser, $this->course);
-        $reflector = new \ReflectionObject($this->tree);
+        $reflector = new ReflectionObject($this->tree);
         $nodes = $reflector->getProperty('nodes');
+        $nodes->setAccessible(true);
         $this->assertArrayNotHasKey('usersessions', $nodes->getValue($this->tree));
     }
 
@@ -82,8 +82,9 @@ class lib_test extends \advanced_testcase {
         $iscurrentuser = true;
 
         report_usersessions_myprofile_navigation($this->tree, $this->user, $iscurrentuser, $this->course);
-        $reflector = new \ReflectionObject($this->tree);
+        $reflector = new ReflectionObject($this->tree);
         $nodes = $reflector->getProperty('nodes');
+        $nodes->setAccessible(true);
         $this->assertArrayHasKey('usersessions', $nodes->getValue($this->tree));
     }
 
@@ -95,8 +96,9 @@ class lib_test extends \advanced_testcase {
         $iscurrentuser = true;
 
         report_usersessions_myprofile_navigation($this->tree, $this->user, $iscurrentuser, $this->course);
-        $reflector = new \ReflectionObject($this->tree);
+        $reflector = new ReflectionObject($this->tree);
         $nodes = $reflector->getProperty('nodes');
+        $nodes->setAccessible(true);
         $this->assertArrayNotHasKey('usersessions', $nodes->getValue($this->tree));
     }
 
@@ -110,8 +112,9 @@ class lib_test extends \advanced_testcase {
         $iscurrentuser = false;
 
         report_usersessions_myprofile_navigation($this->tree, $this->user, $iscurrentuser, $this->course);
-        $reflector = new \ReflectionObject($this->tree);
+        $reflector = new ReflectionObject($this->tree);
         $nodes = $reflector->getProperty('nodes');
+        $nodes->setAccessible(true);
         $this->assertArrayNotHasKey('usersessions', $nodes->getValue($this->tree));
 
     }

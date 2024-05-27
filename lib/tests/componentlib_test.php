@@ -18,31 +18,17 @@
  * Unit tests for /lib/componentlib.class.php.
  *
  * @package   core
- * @category  test
+ * @category  phpunit
  * @copyright 2011 Tomasz Muras
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
-namespace core;
-
-use component_installer;
-use lang_installer;
-use lang_installer_exception;
 
 defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
 require_once($CFG->libdir.'/componentlib.class.php');
 
-/**
- * Unit tests for /lib/componentlib.class.php.
- *
- * @package   core
- * @category  test
- * @copyright 2011 Tomasz Muras
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-class componentlib_test extends \advanced_testcase {
+class core_componentlib_testcase extends advanced_testcase {
 
     public function test_component_installer() {
         global $CFG;
@@ -121,7 +107,7 @@ class componentlib_test extends \advanced_testcase {
         try {
             $installer->run();
             $this->fail('lang_installer_exception exception expected');
-        } catch (\moodle_exception $e) {
+        } catch (moodle_exception $e) {
             $this->assertInstanceOf('lang_installer_exception', $e);
         }
     }

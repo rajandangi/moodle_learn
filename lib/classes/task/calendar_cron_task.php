@@ -60,16 +60,7 @@ class calendar_cron_task extends scheduled_task {
             mtrace("Updating calendar subscription {$sub->name} in course {$sub->courseid}");
             try {
                 $log = calendar_update_subscription_events($sub->id);
-                mtrace($log['eventsimported'] . ' events were imported');
-                mtrace($log['eventsskipped'] . ' events were skipped');
-                mtrace($log['eventsupdated'] . ' events were updated');
-                mtrace($log['eventsdeleted'] . ' events were deleted');
-                if ($log['haserror']) {
-                    mtrace('Failed to add event');
-                    foreach ($log['errors'] as $error) {
-                        mtrace(trim(strip_tags($error)));
-                    }
-                }
+                mtrace(trim(strip_tags($log)));
             } catch (\moodle_exception $ex) {
                 mtrace('Error updating calendar subscription: ' . $ex->getMessage());
             }

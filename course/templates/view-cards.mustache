@@ -17,7 +17,7 @@
 {{!
     @template core_course/view-cards
 
-    This template renders the carousel for the starredcourses block.
+    This template renders the carousel for the recentlyaccessedcourses & starredcourses blocks.
 
     Example context (json):
     {
@@ -28,7 +28,7 @@
                 "courseimageurl": "https://moodlesite/pluginfile/123/course/overviewfiles/123.jpg",
                 "fullname": "course 3",
                 "isfavourite": true,
-                "coursecategory": "Category 1"
+                "coursecategory": "Miscellaneous"
             }
         ]
     }
@@ -36,7 +36,7 @@
 
 
 {{< core_course/coursecards }}
-    {{$classes}}flex-nowrap overflow-auto{{/classes}}
+    {{$classes}}one-row{{/classes}}
     {{$coursename}} {{fullname}} {{/coursename}}
     {{$coursecategory}}
         {{#showcoursecategory}}

@@ -15,7 +15,7 @@
     along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 }}
 {{!
-    @template core_course/coursecards
+    @template block_myoverview/view-cards
 
     This template renders the cards view for the myoverview block.
 
@@ -29,16 +29,14 @@
                 "fullname": "course 3",
                 "hasprogress": true,
                 "progress": 10,
-                "coursecategory": "Category 1"
+                "coursecategory": "Miscellaneous"
             }
         ]
     }
 }}
 
-<div class="card-grid mx-0 row row-cols-1 row-cols-sm-2 row-cols-md-3 {{$classes}}{{/classes}}" data-region="card-deck" role="list">
+<div class="card-deck dashboard-card-deck {{$classes}}{{/classes}}" data-region="card-deck" role="list">
 {{#courses}}
-    <div class="col d-flex px-0 mb-2">
-        {{> core_course/coursecard }}
-    </div>
+    {{> core_course/coursecard }}
 {{/courses}}
 </div>

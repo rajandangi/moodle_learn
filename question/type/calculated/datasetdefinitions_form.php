@@ -56,13 +56,16 @@ class question_dataset_dependent_definitions_form extends question_wizard_form {
      * @param MoodleQuickForm $mform the form being built.
      */
     public function __construct($submiturl, $question) {
-        // Validate the question category.
-        if (!isset($question->categoryobject)) {
-            throw new moodle_exception('categorydoesnotexist', 'question');
-        }
-        $question->category = $question->categoryobject->id;
+        global $DB;
         $this->question = $question;
         $this->qtypeobj = question_bank::get_qtype($this->question->qtype);
+        // Validate the question category.
+        if (!$category = $DB->get_record('question_categories',
+                array('id' => $question->category))) {
+            print_error('categorydoesnotexist', 'question', $returnurl);
+        }
+        $this->category = $category;
+        $this->categorycontext = context::instance_by_id($category->contextid);
         parent::__construct($submiturl);
     }
 

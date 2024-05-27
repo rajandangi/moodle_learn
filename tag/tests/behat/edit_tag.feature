@@ -29,9 +29,7 @@ Feature: Users can edit tags to add description or rename
       | moodle/site:viewparticipants | allow     |
       | moodle/user:viewdetails      | allow     |
     When I log in as "editor1"
-    And I turn editing mode on
-    And the following config values are set as admin:
-      | unaddableblocks | | theme_boost|
+    And I press "Customise this page"
     # TODO MDL-57120 site "Tags" link not accessible without navigation block.
     And I add the "Navigation" block if not present
     And I click on "Site pages" "list_item" in the "Navigation" "block"
@@ -56,9 +54,7 @@ Feature: Users can edit tags to add description or rename
   @javascript
   Scenario: Manager can change tag description, related tags and rename the tag from tag view page
     When I log in as "manager1"
-    And I turn editing mode on
-    And the following config values are set as admin:
-      | unaddableblocks | | theme_boost|
+    And I press "Customise this page"
     # TODO MDL-57120 site "Tags" link not accessible without navigation block.
     And I add the "Navigation" block if not present
     And I click on "Site pages" "list_item" in the "Navigation" "block"
@@ -91,9 +87,7 @@ Feature: Users can edit tags to add description or rename
 
   Scenario: Renaming the tag from tag view page
     When I log in as "manager1"
-    And I turn editing mode on
-    And the following config values are set as admin:
-      | unaddableblocks | | theme_boost|
+    And I press "Customise this page"
       # TODO MDL-57120 site "Tags" link not accessible without navigation block.
     And I add the "Navigation" block if not present
     And I click on "Tags" "link" in the "Navigation" "block"
@@ -120,13 +114,14 @@ Feature: Users can edit tags to add description or rename
     When I log in as "manager1"
     And I navigate to "Appearance > Manage tags" in site administration
     And I follow "Default collection"
-    And I press "Edit" action in the "Cat" report row
+    And I click on "Edit this tag" "link" in the "Cat" "table_row"
     And I set the following fields to these values:
       | Tag name | Kitten |
       | Description | Description of tag 1 |
       | Related tags | Dog,  Turtle,Fish |
       | Standard | 0 |
     And I press "Update"
+    Then "Default collection" "link" should exist in the ".breadcrumb" "css_element"
     And I follow "Kitten"
     And "Description of tag 1" "text" should exist in the ".tag-description" "css_element"
     And I should see "Related tags:" in the ".tag_list" "css_element"
@@ -138,7 +133,7 @@ Feature: Users can edit tags to add description or rename
     When I log in as "manager1"
     And I navigate to "Appearance > Manage tags" in site administration
     And I follow "Default collection"
-    And I press "Edit" action in the "Cat" report row
+    And I click on "Edit this tag" "link" in the "Cat" "table_row"
     And I set the following fields to these values:
       | Tag name | DOG |
     And I press "Update"
@@ -146,10 +141,12 @@ Feature: Users can edit tags to add description or rename
     And I set the following fields to these values:
       | Tag name | Kitten |
     And I press "Update"
-    And I press "Edit" action in the "Kitten" report row
+    Then "Default collection" "text" should exist in the ".breadcrumb" "css_element"
+    And I click on "Edit this tag" "link" in the "Kitten" "table_row"
     And I set the following fields to these values:
       | Tag name | KITTEN |
     And I press "Update"
+    And "Default collection" "text" should exist in the ".breadcrumb" "css_element"
     And I should see "KITTEN"
     And I should not see "Kitten"
 
@@ -160,10 +157,9 @@ Feature: Users can edit tags to add description or rename
     And I follow "Default collection"
     # Renaming tag to a valid name
     And I set the field "Edit tag name" in the "Cat" "table_row" to "Kitten"
-    Then the following should not exist in the "reportbuilder-table" table:
-      | First name | Tag name |
-      | Admin User | Cat      |
-    And I reload the page
+    Then I should not see "Cat"
+    And "New name for tag" "field" should not exist
+    And I follow "Default collection"
     And I should see "Kitten"
     And I should not see "Cat"
     # Renaming tag to an invalid name
@@ -174,6 +170,20 @@ Feature: Users can edit tags to add description or rename
     And I should see "Turtle"
     And I should see "Dog"
     And I should not see "DOG"
+    And I follow "Default collection"
+    And I should see "Turtle"
+    And I should see "Dog"
+    And I should not see "DOG"
+    # Cancel tag renaming
+    And I click on "Edit tag name" "link" in the "Dog" "table_row"
+    And I type "Penguin"
+    And I press the escape key
+    And "New name for tag" "field" should not exist
+    And I should see "Turtle"
+    And I should not see "Penguin"
+    And I follow "Default collection"
+    And I should see "Turtle"
+    And I should not see "Penguin"
 
   @javascript
   Scenario: Combining tags when renaming
@@ -207,32 +217,18 @@ Feature: Users can edit tags to add description or rename
     # Even though Turtle was not standard but at least one of combined tags was (Neverusedtag). Now Turtle is also standard.
     And "Remove from standard tags" "link" should exist in the "Turtle" "table_row"
 
-  @javascript
-  Scenario: Combining all tags
-    When I log in as "manager1"
-    And I navigate to "Appearance > Manage tags" in site administration
-    And I follow "Default collection"
-    And I set the field "Select all" to "1"
-    And I press "Combine selected"
-    And I set the field "Turtle" in the "Combine selected" "dialogue" to "1"
-    And I click on "Continue" "button" in the "Combine selected" "dialogue"
-    Then I should see "Tags are combined"
-    And I should not see "Cat"
-    And I should not see "Dog"
-    And I should see "Turtle"
-    And I should not see "Neverusedtag"
-
-  @javascript
   Scenario: Filtering tags
     When I log in as "manager1"
     And I navigate to "Appearance > Manage tags" in site administration
     And I follow "Default collection"
-    And I click on "Filters" "button"
-    And I set the following fields in the "Tag name" "core_reportbuilder > Filter" to these values:
-      | Tag name operator | Is equal to |
-      | Tag name value    | Cat,Dog     |
-    And I click on "Apply" "button" in the "[data-region='report-filters']" "css_element"
-    Then I should see "Cat" in the "reportbuilder-table" "table"
-    And I should see "Dog" in the "reportbuilder-table" "table"
-    And I should not see "Turtle" in the "reportbuilder-table" "table"
-    And I should not see "Neverusedtag" in the "reportbuilder-table" "table"
+    And I should not see "Reset filter"
+    And I set the field "Search" to "t"
+    And I press "Search"
+    Then the field "Search" matches value "t"
+    And I should not see "Dog"
+    And I should see "Cat"
+    And I should see "Turtle"
+    And I follow "Reset filter"
+    And I should see "Dog"
+    And I should see "Cat"
+    And I should see "Turtle"

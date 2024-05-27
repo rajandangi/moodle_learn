@@ -23,14 +23,9 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace core;
-
 defined('MOODLE_INTERNAL') || die();
 
 require_once(__DIR__.'/../../../ddl/sql_generator.php');
-
-use xmldb_table;
-use xmldb_field;
 
 /**
  * Test SQL code generator class
@@ -39,11 +34,9 @@ use xmldb_field;
  * @category   ddl
  * @copyright  2018 Catalyst IT
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- *
  */
-class test_sql_generator extends \sql_generator {
-    // phpcs:disable moodle.NamingConventions.ValidFunctionName.LowercaseMethod
-
+class test_sql_generator extends sql_generator {
+    // @codingStandardsIgnoreStart
     /**
      * Reset a sequence to the id field of a table.
      *
@@ -51,9 +44,11 @@ class test_sql_generator extends \sql_generator {
      * @return array of sql statements
      */
     public function getResetSequenceSQL($table) {
+    // @codingStandardsIgnoreEnd
         return [];
     }
 
+    // @codingStandardsIgnoreStart
     /**
      * Given one correct xmldb_table, returns the SQL statements
      * to create temporary table (inside one array).
@@ -62,9 +57,11 @@ class test_sql_generator extends \sql_generator {
      * @return array of sql statements
      */
     public function getCreateTempTableSQL($xmldbtable) {
+    // @codingStandardsIgnoreEnd
         return [];
     }
 
+    // @codingStandardsIgnoreStart
     /**
      * Given one XMLDB Type, length and decimals, returns the DB proper SQL type.
      *
@@ -74,19 +71,23 @@ class test_sql_generator extends \sql_generator {
      * @return string The DB defined data type.
      */
     public function getTypeSQL($xmldbtype, $xmldblength = null, $xmldbdecimals = null) {
+    // @codingStandardsIgnoreEnd
         return '';
     }
 
+    // @codingStandardsIgnoreStart
     /**
      * Returns the code (array of statements) needed to add one comment to the table.
      *
      * @param xmldb_table $xmldbtable The xmldb_table object instance.
      * @return array Array of SQL statements to add one comment to the table.
      */
-    function getCommentSQL($xmldbtable) {
+    function getCommentSQL ($xmldbtable) {
+    // @codingStandardsIgnoreEnd
         return [];
     }
 
+    // @codingStandardsIgnoreStart
     /**
      * Given one xmldb_table and one xmldb_field, return the SQL statements needed to add its default
      * (usually invoked from getModifyDefaultSQL()
@@ -96,9 +97,11 @@ class test_sql_generator extends \sql_generator {
      * @return array Array of SQL statements to create a field's default.
      */
     public function getCreateDefaultSQL($xmldbtable, $xmldbfield) {
+    // @codingStandardsIgnoreEnd
         return [];
     }
 
+    // @codingStandardsIgnoreStart
     /**
      * Given one xmldb_table and one xmldb_field, return the SQL statements needed to drop its default
      * (usually invoked from getModifyDefaultSQL()
@@ -108,14 +111,17 @@ class test_sql_generator extends \sql_generator {
      * @return array Array of SQL statements to create a field's default.
      */
     public function getDropDefaultSQL($xmldbtable, $xmldbfield) {
+    // @codingStandardsIgnoreEnd
         return [];
     }
 
+    // @codingStandardsIgnoreStart
     /**
      * Returns an array of reserved words (lowercase) for this DB
      * @return array An array of database specific reserved words
      */
     public static function getReservedWords() {
+    // @codingStandardsIgnoreEnd
         return [];
     }
 

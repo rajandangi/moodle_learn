@@ -53,7 +53,7 @@ class provider implements
      * @param   collection $collection The initialised collection to add items to.
      * @return  collection A listing of user data stored through this system.
      */
-    public static function get_metadata(collection $collection): collection {
+    public static function get_metadata(collection $collection) : collection {
         $collection->add_subsystem_link('core_completion', [], 'privacy:metadata:completionsummary');
         $collection->add_subsystem_link('core_favourites', [], 'privacy:metadata:favouritessummary');
         $collection->add_subsystem_link('core_favourites', [], 'privacy:metadata:activityfavouritessummary');
@@ -67,7 +67,7 @@ class provider implements
      * @param   int $userid The user to search.
      * @return  contextlist $contextlist The contextlist containing the list of contexts used in this plugin.
      */
-    public static function get_contexts_for_userid(int $userid): contextlist {
+    public static function get_contexts_for_userid(int $userid) : contextlist {
         list($join, $where, $params) = \core_completion\privacy\provider::get_course_completion_join_sql($userid, 'cc', 'c.id');
         $sql = "SELECT ctx.id
                 FROM {context} ctx
@@ -192,17 +192,11 @@ class provider implements
             $context = \context_course::instance($course->id);
             $courseformat = $course->format !== 'site' ? get_string('pluginname', 'format_' . $course->format) : get_string('site');
             $data = (object) [
-                'fullname' => format_string($course->fullname, true, ['context' => $context]),
+                'fullname' => $course->fullname,
                 'shortname' => $course->shortname,
                 'idnumber' => $course->idnumber,
-                'summary' => format_text(
-                    writer::with_context($context)->rewrite_pluginfile_urls(
-                        [],
-                        'course',
-                        'summary',
-                        0,
-                        $course->summary
-                    ), $course->summaryformat, ['context' => $context]),
+                'summary' => writer::with_context($context)->rewrite_pluginfile_urls([], 'course', 'summary', 0,
+                                                                                     format_string($course->summary)),
                 'format' => $courseformat,
                 'startdate' => transform::datetime($course->startdate),
                 'enddate' => transform::datetime($course->enddate)
@@ -233,7 +227,7 @@ class provider implements
     /**
      * Delete all data for all users in the specified context.
      *
-     * @param \context $context The specific context to delete data for.
+     * @param context $context The specific context to delete data for.
      */
     public static function delete_data_for_all_users_in_context(\context $context) {
         // Check what context we've been delivered.

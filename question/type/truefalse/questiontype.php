@@ -94,25 +94,18 @@ class qtype_truefalse extends question_type {
             // But we'll do it anyway, just for robustness.
             $options->trueanswer  = $trueid;
             $options->falseanswer = $falseid;
-            $options->showstandardinstruction = !empty($question->showstandardinstruction);
             $DB->update_record('question_truefalse', $options);
         } else {
             $options = new stdClass();
             $options->question    = $question->id;
             $options->trueanswer  = $trueid;
             $options->falseanswer = $falseid;
-            $options->showstandardinstruction = !empty($question->showstandardinstruction);
             $DB->insert_record('question_truefalse', $options);
         }
 
         $this->save_hints($question);
 
         return true;
-    }
-
-    public function save_defaults_for_new_questions(stdClass $fromform): void {
-        parent::save_defaults_for_new_questions($fromform);
-        $this->set_default_value('showstandardinstruction', $fromform->showstandardinstruction);
     }
 
     /**
@@ -142,9 +135,11 @@ class qtype_truefalse extends question_type {
     protected function initialise_question_instance(question_definition $question, $questiondata) {
         parent::initialise_question_instance($question, $questiondata);
         $answers = $questiondata->options->answers;
-
-        /** @var qtype_truefalse_question $question */
-        $question->rightanswer = $answers[$questiondata->options->trueanswer]->fraction > 0.99;
+        if ($answers[$questiondata->options->trueanswer]->fraction > 0.99) {
+            $question->rightanswer = true;
+        } else {
+            $question->rightanswer = false;
+        }
         $question->truefeedback =  $answers[$questiondata->options->trueanswer]->feedback;
         $question->falsefeedback = $answers[$questiondata->options->falseanswer]->feedback;
         $question->truefeedbackformat =
@@ -153,7 +148,6 @@ class qtype_truefalse extends question_type {
                 $answers[$questiondata->options->falseanswer]->feedbackformat;
         $question->trueanswerid =  $questiondata->options->trueanswer;
         $question->falseanswerid = $questiondata->options->falseanswer;
-        $question->showstandardinstruction = $questiondata->options->showstandardinstruction;
     }
 
     public function delete_question($questionid, $contextid) {

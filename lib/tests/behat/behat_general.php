@@ -189,31 +189,6 @@ class behat_general extends behat_base {
     }
 
     /**
-     * Switches to the main Moodle frame.
-     *
-     * @Given /^I switch to the main frame$/
-     */
-    public function switch_to_the_main_frame() {
-        $this->getSession()->switchToIFrame();
-    }
-
-    /**
-     * Switches to the specified window. Useful when interacting with popup windows.
-     *
-     * @Given /^I switch to "(?P<window_name_string>(?:[^"]|\\")*)" (window|tab)$/
-     * @param string $windowname
-     */
-    public function switch_to_window($windowname) {
-        if ($windowname === self::MAIN_WINDOW_NAME) {
-            // When switching to the main window normalise the window name to null.
-            // This is normalised further in the Mink driver to the root window ID.
-            $windowname = null;
-        }
-
-        $this->getSession()->switchToWindow($windowname);
-    }
-
-    /**
      * Switches to a second window.
      *
      * @Given /^I switch to a second window$/
@@ -230,9 +205,34 @@ class behat_general extends behat_base {
     }
 
     /**
+     * Switches to the main Moodle frame.
+     *
+     * @Given /^I switch to the main frame$/
+     */
+    public function switch_to_the_main_frame() {
+        $this->getSession()->switchToIFrame();
+    }
+
+    /**
+     * Switches to the specified window. Useful when interacting with popup windows.
+     *
+     * @Given /^I switch to "(?P<window_name_string>(?:[^"]|\\")*)" window$/
+     * @param string $windowname
+     */
+    public function switch_to_window($windowname) {
+        if ($windowname === self::MAIN_WINDOW_NAME) {
+            // When switching to the main window normalise the window name to null.
+            // This is normalised further in the Mink driver to the root window ID.
+            $windowname = null;
+        }
+
+        $this->getSession()->switchToWindow($windowname);
+    }
+
+    /**
      * Switches to the main Moodle window. Useful when you finish interacting with popup windows.
      *
-     * @Given /^I switch to the main (window|tab)$/
+     * @Given /^I switch to the main window$/
      */
     public function switch_to_the_main_window() {
         $this->switch_to_window(self::MAIN_WINDOW_NAME);
@@ -370,22 +370,6 @@ class behat_general extends behat_base {
     }
 
     /**
-     * Generic mouse over action. Mouse over a element of the specified type.
-     *
-     * @When I hover over the :element :selectortype in the :containerelement :containerselectortype
-     * @param string $element Element we look for
-     * @param string $selectortype The type of what we look for
-     * @param string $containerelement Element we look for
-     * @param string $containerselectortype The type of what we look for
-     */
-    public function i_hover_in_the(string $element, $selectortype, string $containerelement, $containerselectortype): void {
-        // Gets the node based on the requested selector type and locator.
-        $node = $this->get_node_in_container($selectortype, $element, $containerselectortype, $containerelement);
-        $this->execute_js_on_node($node, '{{ELEMENT}}.scrollIntoView();');
-        $node->mouseOver();
-    }
-
-    /**
      * Generic click action. Click on the element of the specified type.
      *
      * @When /^I click on "(?P<element_string>(?:[^"]|\\")*)" "(?P<selector_string>[^"]*)"$/
@@ -462,55 +446,6 @@ class behat_general extends behat_base {
         $node = $this->get_node_in_container($selectortype, $element, $nodeselectortype, $nodeelement);
         $this->ensure_node_is_visible($node);
         $node->click();
-    }
-
-    /**
-     * Click on the element with some modifier key pressed (alt, shift, meta or control).
-     *
-     * It is important to note that not all HTML elements are compatible with this step because
-     * the webdriver limitations. For example, alt click on checkboxes with a visible label will
-     * produce a normal checkbox click without the modifier.
-     *
-     * @When I :modifier click on :element :selectortype in the :nodeelement :nodeselectortype
-     * @param string $modifier the extra modifier to press (for example, alt+shift or shift)
-     * @param string $element Element we look for
-     * @param string $selectortype The type of what we look for
-     * @param string $nodeelement Element we look in
-     * @param string $nodeselectortype The type of selector where we look in
-     */
-    public function i_key_click_on_in_the($modifier, $element, $selectortype, $nodeelement, $nodeselectortype) {
-        behat_base::require_javascript_in_session($this->getSession());
-
-        $key = null;
-        switch (strtoupper(trim($modifier))) {
-            case '':
-                break;
-            case 'SHIFT':
-                $key = behat_keys::SHIFT;
-                break;
-            case 'CTRL':
-                $key = behat_keys::CONTROL;
-                break;
-            case 'ALT':
-                $key = behat_keys::ALT;
-                break;
-            case 'META':
-                $key = behat_keys::META;
-                break;
-            default:
-                throw new \coding_exception("Unknown modifier key '$modifier'}");
-        }
-
-        $node = $this->get_node_in_container($selectortype, $element, $nodeselectortype, $nodeelement);
-        $this->ensure_node_is_visible($node);
-
-        // KeyUP and KeyDown require the element to be displayed in the current window.
-        $this->execute_js_on_node($node, '{{ELEMENT}}.scrollIntoView();');
-        $node->keyDown($key);
-        $node->click();
-        // Any click action can move the scroll. Ensure the element is still displayed.
-        $this->execute_js_on_node($node, '{{ELEMENT}}.scrollIntoView();');
-        $node->keyUp($key);
     }
 
     /**
@@ -1093,45 +1028,6 @@ EOF;
     }
 
     /**
-     * Ensure that edit mode is (not) available on the current page.
-     *
-     * @Then edit mode should be available on the current page
-     * @Then edit mode should :not be available on the current page
-     * @param bool $not
-     */
-    public function edit_mode_should_be_available(bool $not = false): void {
-        $isavailable = $this->is_edit_mode_available();
-        $shouldbeavailable = empty($not);
-
-        if ($isavailable && !$shouldbeavailable) {
-            throw new ExpectationException("Edit mode is available and should not be", $this->getSession());
-        } else if ($shouldbeavailable && !$isavailable) {
-            throw new ExpectationException("Edit mode is not available and should be", $this->getSession());
-        }
-    }
-
-    /**
-     * Check whether edit mode is available on the current page.
-     *
-     * @return bool
-     */
-    public function is_edit_mode_available(): bool {
-        // If the course is already in editing mode then it will have the class 'editing' on the body.
-        // This is a 'cheap' way of telling if the course is in editing mode and therefore if edit mode is available.
-        $body = $this->find('css', 'body');
-        if ($body->hasClass('editing')) {
-            return true;
-        }
-
-        try {
-            $this->find('field', get_string('editmode'), false, false, 0);
-            return true;
-        } catch (ElementNotFoundException $e) {
-            return false;
-        }
-    }
-
-    /**
      * This step triggers cron like a user would do going to admin/cron.php.
      *
      * @Given /^I trigger cron$/
@@ -1151,12 +1047,15 @@ EOF;
      * the Behat result look ugly.
      *
      * Note: Most of the code relating to running a task is based on
-     * admin/cli/scheduled_task.php.
+     * admin/tool/task/cli/schedule_task.php.
      *
      * @Given /^I run the scheduled task "(?P<task_name>[^"]+)"$/
      * @param string $taskname Name of task e.g. 'mod_whatever\task\do_something'
      */
     public function i_run_the_scheduled_task($taskname) {
+        global $CFG;
+        require_once("{$CFG->libdir}/cronlib.php");
+
         $task = \core\task\manager::get_scheduled_task($taskname);
         if (!$task) {
             throw new DriverException('The "' . $taskname . '" scheduled task does not exist');
@@ -1164,7 +1063,7 @@ EOF;
 
         // Do setup for cron task.
         raise_memory_limit(MEMORY_EXTRA);
-        \core\cron::setup_user();
+        cron_setup_user();
 
         // Get lock.
         $cronlockfactory = \core\lock\lock_config::get_lock_factory('cron');
@@ -1176,11 +1075,15 @@ EOF;
             throw new DriverException('Unable to obtain task lock for scheduled task');
         }
         $task->set_lock($lock);
-        $cronlock->release();
+        if (!$task->is_blocking()) {
+            $cronlock->release();
+        } else {
+            $task->set_cron_lock($cronlock);
+        }
 
         try {
             // Prepare the renderer.
-            \core\cron::prepare_core_renderer();
+            cron_prepare_core_renderer();
 
             // Discard task output as not appropriate for Behat output!
             ob_start();
@@ -1188,13 +1091,13 @@ EOF;
             ob_end_clean();
 
             // Restore the previous renderer.
-            \core\cron::prepare_core_renderer(true);
+            cron_prepare_core_renderer(true);
 
             // Mark task complete.
             \core\task\manager::scheduled_task_complete($task);
         } catch (Exception $e) {
             // Restore the previous renderer.
-            \core\cron::prepare_core_renderer(true);
+            cron_prepare_core_renderer(true);
 
             // Mark task failed and throw exception.
             \core\task\manager::scheduled_task_failed($task);
@@ -1217,10 +1120,11 @@ EOF;
      * @throws DriverException
      */
     public function i_run_all_adhoc_tasks() {
-        global $DB;
+        global $CFG, $DB;
+        require_once("{$CFG->libdir}/cronlib.php");
 
         // Do setup for cron task.
-        \core\cron::setup_user();
+        cron_setup_user();
 
         // Discard task output as not appropriate for Behat output!
         ob_start();
@@ -1234,7 +1138,7 @@ EOF;
             ob_clean();
 
             // Run the task.
-            \core\cron::run_inner_adhoc_task($task);
+            cron_run_inner_adhoc_task($task);
 
             // Check whether the task record still exists.
             // If a task was successful it will be removed.
@@ -1303,24 +1207,16 @@ EOF;
     }
 
     /**
-     * Change browser window size
-     *
-     * Allowed sizes:
-     * - mobile: 425x750
-     * - tablet: 768x1024
-     * - small: 1024x768
-     * - medium: 1366x768
-     * - large: 2560x1600
-     * - custom: widthxheight
+     * Change browser window size small: 640x480, medium: 1024x768, large: 2560x1600, custom: widthxheight
      *
      * Example: I change window size to "small" or I change window size to "1024x768"
      * or I change viewport size to "800x600". The viewport option is useful to guarantee that the
      * browser window has same viewport size even when you run Behat on multiple operating systems.
      *
      * @throws ExpectationException
-     * @Then /^I change (window|viewport) size to "(mobile|tablet|small|medium|large|\d+x\d+)"$/
-     * @Then /^I change the (window|viewport) size to "(mobile|tablet|small|medium|large|\d+x\d+)"$/
-     * @param string $windowsize size of the window (mobile|tablet|small|medium|large|wxh).
+     * @Then /^I change (window|viewport) size to "(small|medium|large|\d+x\d+)"$/
+     * @Then /^I change the (window|viewport) size to "(small|medium|large|\d+x\d+)"$/
+     * @param string $windowsize size of the window (small|medium|large|wxh).
      */
     public function i_change_window_size_to($windowviewport, $windowsize) {
         $this->resize_window($windowsize, $windowviewport === 'viewport');
@@ -1451,9 +1347,9 @@ EOF;
 
         // Check if value exists in specific row/column.
         // Get row xpath.
-        // Some drivers make XPath relative to the current context, so use descendant.
-        $rowxpath = $tablexpath . "/tbody/tr[descendant::*[@class='rowtitle'][normalize-space(.)=" . $rowliteral . "] | " . "
-            descendant::th[normalize-space(.)=" . $rowliteral . "] | descendant::td[normalize-space(.)=" . $rowliteral . "]]";
+        // GoutteDriver uses DomCrawler\Crawler and it is making XPath relative to the current context, so use descendant.
+        $rowxpath = $tablexpath."/tbody/tr[descendant::th[normalize-space(.)=" . $rowliteral .
+                    "] | descendant::td[normalize-space(.)=" . $rowliteral . "]]";
 
         $columnvaluexpath = $rowxpath . $columnpositionxpath . "[contains(normalize-space(.)," . $valueliteral . ")]";
 
@@ -1507,19 +1403,12 @@ EOF;
         $datahash = $data->getHash();
 
         foreach ($datahash as $row) {
-
-            // Row contains only a single column, just assert it's present in the table.
-            if (count($row) === 1) {
-                $this->execute('behat_general::assert_element_contains_text', [reset($row), $table, 'table']);
-            } else {
-                // Iterate over all columns.
-                $firstcell = null;
-                foreach ($row as $column => $value) {
-                    if ($firstcell === null) {
-                        $firstcell = $value;
-                    } else {
-                        $this->row_column_of_table_should_contain($firstcell, $column, $table, $value);
-                    }
+            $firstcell = null;
+            foreach ($row as $column => $value) {
+                if ($firstcell === null) {
+                    $firstcell = $value;
+                } else {
+                    $this->row_column_of_table_should_contain($firstcell, $column, $table, $value);
                 }
             }
         }
@@ -1539,25 +1428,18 @@ EOF;
         $datahash = $data->getHash();
 
         foreach ($datahash as $value) {
-
-            // Row contains only a single column, just assert it's not present in the table.
-            if (count($value) === 1) {
-                $this->execute('behat_general::assert_element_not_contains_text', [reset($value), $table, 'table']);
-            } else {
-                // Iterate over all columns.
-                $row = array_shift($value);
-                foreach ($value as $column => $value) {
-                    try {
-                        $this->row_column_of_table_should_contain($row, $column, $table, $value);
-                        // Throw exception if found.
-                    } catch (ElementNotFoundException $e) {
-                        // Table row/column doesn't contain this value. Nothing to do.
-                        continue;
-                    }
-                    throw new ExpectationException('"' . $column . '" with value "' . $value . '" is present in "' .
-                        $row . '"  row for table "' . $table . '"', $this->getSession()
-                    );
+            $row = array_shift($value);
+            foreach ($value as $column => $value) {
+                try {
+                    $this->row_column_of_table_should_contain($row, $column, $table, $value);
+                    // Throw exception if found.
+                } catch (ElementNotFoundException $e) {
+                    // Table row/column doesn't contain this value. Nothing to do.
+                    continue;
                 }
+                throw new ExpectationException('"' . $column . '" with value "' . $value . '" is present in "' .
+                    $row . '"  row for table "' . $table . '"', $this->getSession()
+                );
             }
         }
     }
@@ -1812,7 +1694,7 @@ EOF;
 
     /**
      * Presses a given button in the browser.
-     * NOTE: Phantomjs and browserkit driver reloads page while navigating back and forward.
+     * NOTE: Phantomjs and goutte driver reloads page while navigating back and forward.
      *
      * @Then /^I press the "(back|forward|reload)" button in the browser$/
      * @param string $button the button to press.
@@ -1970,9 +1852,6 @@ EOF;
                 break;
             case 'SPACE':
                 $keys[] = behat_keys::SPACE;
-                break;
-            case 'MULTIPLY':
-                $keys[] = behat_keys::MULTIPLY;
                 break;
             default:
                 // You can enter a single ASCII character (e.g. a letter) to directly type that key.
@@ -2211,39 +2090,6 @@ EOF;
     }
 
     /**
-     * Checks, that the specified element contains the specified node type a certain amount of times.
-     * When running Javascript tests it also considers that texts may be hidden.
-     *
-     * @Then /^I should see "(?P<elementscount_number>\d+)" node occurrences of type "(?P<node_type>(?:[^"]|\\")*)" in the "(?P<element_string>(?:[^"]|\\")*)" "(?P<text_selector_string>[^"]*)"$/
-     * @throws ElementNotFoundException
-     * @throws ExpectationException
-     * @param int    $elementscount How many occurrences of the element we look for.
-     * @param string $nodetype
-     * @param string $element Element we look in.
-     * @param string $selectortype The type of element where we are looking in.
-     */
-    public function i_should_see_node_occurrences_of_type_in_element(int $elementscount, string $nodetype, string $element, string $selectortype) {
-
-        // Getting the container where the text should be found.
-        $container = $this->get_selected_node($selectortype, $element);
-
-        $xpath = "/descendant-or-self::$nodetype [count(descendant::$nodetype) = 0]";
-
-        $nodes = $this->find_all('xpath', $xpath, false, $container);
-
-        if ($this->running_javascript()) {
-            $nodes = array_filter($nodes, function($node) {
-                return $node->isVisible();
-            });
-        }
-
-        if ($elementscount != count($nodes)) {
-            throw new ExpectationException('Found '.count($nodes).' elements in column. Expected '.$elementscount,
-                $this->getSession());
-        }
-    }
-
-    /**
      * Manually press enter key.
      *
      * @When /^I press enter/
@@ -2277,31 +2123,6 @@ EOF;
     }
 
     /**
-     * Click on a dynamic tab to load its content
-     *
-     * @Given /^I click on the "(?P<tab_string>(?:[^"]|\\")*)" dynamic tab$/
-     *
-     * @param string $tabname
-     */
-    public function i_click_on_the_dynamic_tab(string $tabname): void {
-        $xpath = "//*[@id='dynamictabs-tabs'][descendant::a[contains(text(), '" . $this->escape($tabname) . "')]]";
-        $this->execute('behat_general::i_click_on_in_the',
-            [$tabname, 'link', $xpath, 'xpath_element']);
-    }
-
-    /**
-     * Enable an specific plugin.
-     *
-     * @When /^I enable "(?P<plugin_string>(?:[^"]|\\")*)" "(?P<plugintype_string>[^"]*)" plugin$/
-     * @param string $plugin Plugin we look for
-     * @param string $plugintype The type of the plugin
-     */
-    public function i_enable_plugin($plugin, $plugintype) {
-        $class = core_plugin_manager::resolve_plugininfo_class($plugintype);
-        $class::enable_plugin($plugin, true);
-    }
-
-    /**
      * Set the default text editor to the named text editor.
      *
      * @Given the default editor is set to :editor
@@ -2321,7 +2142,7 @@ EOF;
         }
 
         // Make the provided editor the default one in $CFG->texteditors by
-        // moving it to the first [editor],atto,tiny,textarea on the list.
+        // moving it to the first [editor],atto,tiny,tinymce,textarea on the list.
         $list = explode(',', $CFG->texteditors);
         array_unshift($list, $editor);
         $list = array_unique($list);
@@ -2393,7 +2214,7 @@ EOF;
             $actualtitle = $titleelement->getText();
         }
 
-        if (!str_contains($actualtitle, $title)) {
+        if (strpos($actualtitle, $title) === false) {
             throw new ExpectationException(
                 "'$title' was not found from the current page title '$actualtitle'",
                 $session

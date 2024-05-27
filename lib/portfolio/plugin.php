@@ -19,6 +19,7 @@
  *
  * portfolio_plugin_pull_base and portfolio_plugin_push_base
  * which both in turn inherit from portfolio_plugin_base.
+ * {@link http://docs.moodle.org/dev/Writing_a_Portfolio_Plugin}
  *
  * @package    core_portfolio
  * @copyright  2008 Penny Leach <penny@catalyst.net.nz>,
@@ -58,7 +59,7 @@ abstract class portfolio_plugin_base {
     /** @var bool whether this instance is visible or not */
     protected $visible;
 
-    /** @var stdClass admin configured config use {@see set_config} and {@see get_config} to access */
+    /** @var array admin configured config use {@link set_config} and {@get_config} to access */
     protected $config;
 
     /** @var array user config cache. keyed on userid and then on config field => value use {@link get_user_config} and {@link set_user_config} to access. */
@@ -107,14 +108,14 @@ abstract class portfolio_plugin_base {
      *                             is given the final say
      *                             because it might be (for example) download.
      */
-    abstract public function expected_time($callertime);
+    public abstract function expected_time($callertime);
 
     /**
      * Is this plugin push or pull.
      * If push, cleanup will be called directly after send_package
      * If not, cleanup will be called after portfolio/file.php is requested
      */
-    abstract public function is_push();
+    public abstract function is_push();
 
     /**
      * Returns the user-friendly name for this plugin.
@@ -207,7 +208,7 @@ abstract class portfolio_plugin_base {
      * Eg: things that your subclasses want to keep in state
      * across the export.
      * Keys must be in get_allowed_export_config
-     * This is deliberately not final (see googledocs plugin)
+     * This is deliberately not final (see boxnet plugin)
      * @see get_allowed_export_config
      *
      * @param array $config named array of config items to set.
@@ -233,7 +234,7 @@ abstract class portfolio_plugin_base {
      * @param string $key field to fetch
      * @return null|string config value
      */
-    final public function get_export_config($key) {
+    public final function get_export_config($key) {
         $allowed = array_merge(
             array('hidewait', 'wait', 'format', 'hideformat'),
             $this->get_allowed_export_config()
@@ -271,7 +272,7 @@ abstract class portfolio_plugin_base {
      * @see get_tempfiles
      *
      */
-    abstract public function prepare_package();
+    public abstract function prepare_package();
 
     /**
      * This is the function that is responsible for sending
@@ -280,7 +281,7 @@ abstract class portfolio_plugin_base {
      *
      * @return bool success
      */
-    abstract public function send_package();
+    public abstract function send_package();
 
 
     /**
@@ -300,7 +301,7 @@ abstract class portfolio_plugin_base {
      * The url for the user to continue to their portfolio
      * during the lifecycle of the request
      */
-    abstract public function get_interactive_continue_url();
+    public abstract function get_interactive_continue_url();
 
     /**
      * The url to save in the log as the continue url.
@@ -401,7 +402,7 @@ abstract class portfolio_plugin_base {
      * and the request (get and post but not cookie) parameters.
      * This is useful for external systems that need to redirect the user back
      * with some extra data in the url (like auth tokens etc)
-     * for an example implementation, see googledocs portfolio plugin.
+     * for an example implementation, see boxnet portfolio plugin.
      *
      * @param int $stage the stage before control was stolen
      * @param array $params a merge of $_GET and $_POST
@@ -517,7 +518,7 @@ abstract class portfolio_plugin_base {
      *
      * @param array $config array of config items.
      */
-    final public function set_config($config) {
+    public final function set_config($config) {
         global $DB;
         foreach ($config as $key => $value) {
             // try set it in $this first
@@ -548,7 +549,7 @@ abstract class portfolio_plugin_base {
      * @param string $key key to fetch
      * @return null|mixed the corresponding value
      */
-    final public function get_config($key) {
+    public final function get_config($key) {
         if (!in_array($key, $this->get_allowed_config())) {
             $a = (object)array('property' => $key, 'class' => get_class($this));
             throw new portfolio_export_exception($this->get('exporter'), 'invalidconfigproperty', 'portfolio', null, $a);
@@ -567,7 +568,7 @@ abstract class portfolio_plugin_base {
      * @return string the corresponding value
      *
      */
-    final public function get_user_config($key, $userid=0) {
+    public final function get_user_config($key, $userid=0) {
         global $DB;
 
         if (empty($userid)) {
@@ -600,7 +601,7 @@ abstract class portfolio_plugin_base {
      * @param int $userid userid to set config for (defaults to current)
      *
      */
-    final public function set_user_config($config, $userid=0) {
+    public final function set_user_config($config, $userid=0) {
         global $DB;
 
         if (empty($userid)) {
@@ -633,9 +634,9 @@ abstract class portfolio_plugin_base {
      * like name, visible etc.
      *
      * @param string $field property name
-     * @return mixed value of the field
+     * @return array|string|int|boolean value of the field
      */
-    final public function get($field) {
+    public final function get($field) {
         // This is a legacy change to the way files are get/set.
         // We now only set $this->file to the id of the \stored_file. So, we need to convert that id back to a \stored_file here.
         if ($field === 'file') {
@@ -657,7 +658,7 @@ abstract class portfolio_plugin_base {
      * @param string $value property's value
      * @return bool
      */
-    final public function set($field, $value) {
+    public final function set($field, $value) {
         // This is a legacy change to the way files are get/set.
         // Make sure we never save the \stored_file object. Instead, use the id from $file->get_id() - set_file() does this for us.
         if ($field === 'file') {
@@ -816,7 +817,7 @@ abstract class portfolio_plugin_pull_base extends portfolio_plugin_base {
      *
      * @param array $params request parameters (POST wins over GET)
      */
-    abstract public function verify_file_request_params($params);
+    public abstract function verify_file_request_params($params);
 
     /**
      * Called from portfolio/file.php.

@@ -14,16 +14,19 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-defined('MOODLE_INTERNAL') || die();
-
-use \core_badges\badge;
-
 /**
- * Event observer for badges.
+ * Local stuff for category enrolment plugin.
  *
  * @package    core_badges
  * @copyright  2013 Rajesh Taneja <rajesh@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+defined('MOODLE_INTERNAL') || die();
+
+use \core_badges\badge;
+/**
+ * Event observer for badges.
  */
 class core_badges_observer {
     /**

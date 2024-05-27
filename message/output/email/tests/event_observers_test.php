@@ -14,7 +14,16 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace message_email;
+/**
+ * Tests the event observers.
+ *
+ * @package message_email
+ * @category test
+ * @copyright 2019 Mark Nelson <markn@moodle.com>
+ * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+defined('MOODLE_INTERNAL') || die();
 
 /**
  * Class for testing the event observers.
@@ -24,7 +33,7 @@ namespace message_email;
  * @copyright 2019 Mark Nelson <markn@moodle.com>
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class event_observers_test extends \advanced_testcase {
+class message_email_event_observers_task_testcase extends advanced_testcase {
 
     /**
      * Test the message viewed event observer.
@@ -54,7 +63,7 @@ class event_observers_test extends \advanced_testcase {
             'core_group',
             'groups',
             $group1->id,
-            \context_course::instance($course->id)->id
+            context_course::instance($course->id)->id
         );
 
         $message = new \core\message\message();

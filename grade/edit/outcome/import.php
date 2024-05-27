@@ -32,14 +32,13 @@ $courseid = optional_param('courseid', 0, PARAM_INT);
 $action   = optional_param('action', '', PARAM_ALPHA);
 $scope    = optional_param('scope', 'custom', PARAM_ALPHA);
 
-$url = new moodle_url('/grade/edit/outcome/import.php', array('courseid' => $courseid));
-$PAGE->set_url($url);
+$PAGE->set_url('/grade/edit/outcome/import.php', array('courseid' => $courseid));
 $PAGE->set_pagelayout('admin');
 
 /// Make sure they can even access this course
 if ($courseid) {
     if (!$course = $DB->get_record('course', array('id' => $courseid))) {
-        throw new \moodle_exception('invalidcourseid');
+        print_error('invalidcourseid');
     }
     require_login($course);
     $context = context_course::instance($course->id);
@@ -47,11 +46,6 @@ if ($courseid) {
     if (empty($CFG->enableoutcomes)) {
         redirect('../../index.php?id='.$courseid);
     }
-    navigation_node::override_active_url(new moodle_url('/grade/edit/outcome/course.php', ['id' => $courseid]));
-    $PAGE->navbar->add(get_string('manageoutcomes', 'grades'),
-        new moodle_url('/grade/edit/outcome/index.php', ['id' => $courseid]));
-    $PAGE->navbar->add(get_string('importoutcomes', 'grades'),
-        new moodle_url('/grade/edit/outcome/import.php', ['courseid' => $courseid]));
 
 } else {
     require_once $CFG->libdir.'/adminlib.php';
@@ -61,21 +55,18 @@ if ($courseid) {
 
 require_capability('moodle/grade:manageoutcomes', $context);
 
+$navigation = grade_build_nav(__FILE__, get_string('outcomes', 'grades'), $courseid);
+
 $upload_form = new import_outcomes_form();
 
-if ($upload_form->is_cancelled()) {
-    redirect(new moodle_url('/grade/edit/outcome/index.php', ['id' => $courseid]));
-    die;
-}
-
-print_grade_page_head($courseid, 'outcome', 'import', get_string('importoutcomes', 'grades'),
-    false, false, false);
-
-if (!$upload_form->get_data()) { // Display the import form.
+// display import form
+if (!$upload_form->get_data()) {
+    print_grade_page_head($courseid, 'outcome', 'import', get_string('importoutcomes', 'grades'));
     $upload_form->display();
     echo $OUTPUT->footer();
     die;
 }
+print_grade_page_head($courseid, 'outcome', 'import', get_string('importoutcomes', 'grades'));
 
 $imported_file = $CFG->tempdir . '/outcomeimport/importedfile_'.time().'.csv';
 make_temp_directory('outcomeimport');
@@ -108,7 +99,6 @@ if ($handle = fopen($imported_file, 'r')) {
     $imported_headers = array(); // will later be initialized with the values found in the file
 
     $fatal_error = false;
-    $errormessage = '';
 
     // data should be separated by a ';'.  *NOT* by a comma!  TODO: version 2.0
     // or whenever we can depend on PHP5, set the second parameter (8192) to 0 (unlimited line length) : the database can store over 128k per line.
@@ -134,8 +124,11 @@ if ($handle = fopen($imported_file, 'r')) {
                 }
             }
             if ($error) {
+                echo $OUTPUT->box_start('generalbox importoutcomenofile buttons');
+                echo get_string('importoutcomenofile', 'grades', $line);
+                echo $OUTPUT->single_button(new moodle_url('/grade/edit/outcome/import.php', array('courseid'=> $courseid)), get_string('back'), 'get');
+                echo $OUTPUT->box_end();
                 $fatal_error = true;
-                $errormessage = get_string('importoutcomenofile', 'grades', $line);
                 break;
             }
 
@@ -150,16 +143,23 @@ if ($handle = fopen($imported_file, 'r')) {
         // sanity check #2: every line must have the same number of columns as there are
         // headers.  If not, processing stops.
         if ( count($csv_data) != count($file_headers) ) {
+            echo $OUTPUT->box_start('generalbox importoutcomenofile');
+            echo get_string('importoutcomenofile', 'grades', $line);
+            echo $OUTPUT->single_button(new moodle_url('/grade/edit/outcome/import.php', array('courseid'=> $courseid)), get_string('back'), 'get');
+            echo $OUTPUT->box_end();
             $fatal_error = true;
-            $errormessage = get_string('importoutcomenofile', 'grades', $line);
+            //echo $OUTPUT->box(var_export($csv_data, true) ."<br />". var_export($header, true));
             break;
         }
 
         // sanity check #3: all required fields must be present on the current line.
         foreach ($headers as $header => $position) {
             if ($csv_data[$imported_headers[$header]] == '') {
+                echo $OUTPUT->box_start('generalbox importoutcomenofile');
+                echo get_string('importoutcomenofile', 'grades', $line);
+                echo $OUTPUT->single_button(new moodle_url('/grade/edit/outcome/import.php', array('courseid'=> $courseid)), get_string('back'), 'get');
+                echo $OUTPUT->box_end();
                 $fatal_error = true;
-                $errormessage = get_string('importoutcomenofile', 'grades', $line);
                 break;
             }
         }
@@ -182,8 +182,7 @@ if ($handle = fopen($imported_file, 'r')) {
 
         if ($outcome) {
             // already exists, print a message and skip.
-            echo $OUTPUT->notification(get_string('importskippedoutcome', 'grades',
-                $csv_data[$imported_headers['outcome_shortname']]), 'info', false);
+            echo $OUTPUT->box(get_string('importskippedoutcome', 'grades', $csv_data[$imported_headers['outcome_shortname']]));
             continue;
         }
 
@@ -197,8 +196,7 @@ if ($handle = fopen($imported_file, 'r')) {
             $scale_id = key($scale);
         } else {
             if (!has_capability('moodle/course:managescales', $context)) {
-                echo $OUTPUT->notification(get_string('importskippedoutcome', 'grades',
-                    $csv_data[$imported_headers['outcome_shortname']]), 'warning', false);
+                echo $OUTPUT->box(get_string('importskippednomanagescale', 'grades', $csv_data[$imported_headers['outcome_shortname']]));
                 continue;
             } else {
                 // scale doesn't exists : create it.
@@ -235,17 +233,7 @@ if ($handle = fopen($imported_file, 'r')) {
         $outcome_success_strings = new StdClass();
         $outcome_success_strings->name = $outcome_data['fullname'];
         $outcome_success_strings->id = $outcome_id;
-        echo $OUTPUT->notification(get_string('importoutcomesuccess', 'grades', $outcome_success_strings),
-            'success', false);
-    }
-
-    if ($fatal_error) {
-        echo $OUTPUT->notification($errormessage, 'error', false);
-        echo $OUTPUT->single_button(new moodle_url('/grade/edit/outcome/import.php', ['courseid' => $courseid]),
-            get_string('back'), 'get');
-    } else {
-        echo $OUTPUT->single_button(new moodle_url('/grade/edit/outcome/index.php', ['id' => $courseid]),
-            get_string('continue'), 'get');
+        echo $OUTPUT->box(get_string('importoutcomesuccess', 'grades', $outcome_success_strings));
     }
 } else {
     echo $OUTPUT->box(get_string('importoutcomenofile', 'grades', 0));

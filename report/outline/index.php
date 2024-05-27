@@ -23,8 +23,6 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-use core\report_helper;
-
 require('../../config.php');
 require_once($CFG->dirroot.'/report/outline/locallib.php');
 
@@ -89,10 +87,7 @@ $strrelatedblogentries = get_string('relatedblogentries', 'blog');
 $PAGE->set_title($course->shortname .': '. $stractivityreport);
 $PAGE->set_heading($course->fullname);
 echo $OUTPUT->header();
-
-// Print selector drop down.
-$pluginname = get_string('pluginname', 'report_outline');
-report_helper::print_report_selector($pluginname);
+echo $OUTPUT->heading(format_string($course->fullname));
 
 list($uselegacyreader, $useinternalreader, $minloginternalreader, $logtable) = report_outline_get_common_log_variables();
 
@@ -252,7 +247,7 @@ foreach ($modinfo->sections as $sectionnum=>$section) {
         $activitycell = new html_table_cell();
         $activitycell->attributes['class'] = 'activity';
 
-        $activityicon = $OUTPUT->pix_icon('monologo', $modulename, $cm->modname, array('class'=>'icon'));
+        $activityicon = $OUTPUT->pix_icon('icon', $modulename, $cm->modname, array('class'=>'icon'));
 
         $attributes = array();
         if (!$cm->visible) {

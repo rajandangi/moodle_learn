@@ -44,10 +44,6 @@ class mod_choice_mod_form extends moodleform_mod {
         $mform->addElement('selectyesno', 'limitanswers', get_string('limitanswers', 'choice'));
         $mform->addHelpButton('limitanswers', 'limitanswers', 'choice');
 
-        $mform->addElement('selectyesno', 'showavailable', get_string('showavailable', 'choice'));
-        $mform->addHelpButton('showavailable', 'showavailable', 'choice');
-        $mform->hideIf('showavailable', 'limitanswers', 'eq', 0);
-
         $repeatarray = array();
         $repeatarray[] = $mform->createElement('text', 'option', get_string('optionno', 'choice'));
         $repeatarray[] = $mform->createElement('text', 'limit', get_string('limitno', 'choice'));
@@ -138,11 +134,10 @@ class mod_choice_mod_form extends moodleform_mod {
      */
     public function data_postprocessing($data) {
         parent::data_postprocessing($data);
-        // Set up completion section even if checkbox is not ticked.
+        // Set up completion section even if checkbox is not ticked
         if (!empty($data->completionunlocked)) {
-            $suffix = $this->get_suffix();
-            if (empty($data->{'completionsubmit' . $suffix})) {
-                $data->{'completionsubmit' . $suffix} = 0;
+            if (empty($data->completionsubmit)) {
+                $data->completionsubmit = 0;
             }
         }
     }
@@ -166,19 +161,17 @@ class mod_choice_mod_form extends moodleform_mod {
         return $errors;
     }
 
-    public function add_completion_rules() {
+    function add_completion_rules() {
         $mform =& $this->_form;
 
-        $suffix = $this->get_suffix();
-        $completionsubmitel = 'completionsubmit' . $suffix;
-        $mform->addElement('checkbox', $completionsubmitel, '', get_string('completionsubmit', 'choice'));
+        $mform->addElement('checkbox', 'completionsubmit', '', get_string('completionsubmit', 'choice'));
         // Enable this completion rule by default.
-        $mform->setDefault($completionsubmitel, 1);
-        return [$completionsubmitel];
+        $mform->setDefault('completionsubmit', 1);
+        return array('completionsubmit');
     }
 
-    public function completion_rule_enabled($data) {
-        $suffix = $this->get_suffix();
-        return !empty($data['completionsubmit' . $suffix]);
+    function completion_rule_enabled($data) {
+        return !empty($data['completionsubmit']);
     }
 }
+

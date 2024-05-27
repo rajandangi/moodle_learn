@@ -14,11 +14,16 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace qtype_calculatedmulti;
 
-use question_attempt_step;
-use question_classified_response;
-use question_state;
+/**
+ * Unit tests for the calculated multiple-choice question definition class.
+ *
+ * @package    qtype
+ * @subpackage calculatedmulti
+ * @copyright  2011 The Open University
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -29,13 +34,12 @@ require_once($CFG->dirroot . '/question/engine/tests/helpers.php');
 /**
  * Unit tests for qtype_calculatedmulti_definition.
  *
- * @package    qtype_calculatedmulti
  * @copyright  2011 The Open University
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class question_test extends \advanced_testcase {
+class qtype_calculatedmulti_question_test extends advanced_testcase {
     public function test_is_complete_response() {
-        $question = \test_question_maker::make_question('calculated');
+        $question = test_question_maker::make_question('calculated');
 
         $this->assertFalse($question->is_complete_response(array()));
         $this->assertTrue($question->is_complete_response(array('answer' => '0')));
@@ -44,7 +48,7 @@ class question_test extends \advanced_testcase {
     }
 
     public function test_is_gradable_response() {
-        $question = \test_question_maker::make_question('calculated');
+        $question = test_question_maker::make_question('calculated');
 
         $this->assertFalse($question->is_gradable_response(array()));
         $this->assertTrue($question->is_gradable_response(array('answer' => '0')));
@@ -53,7 +57,7 @@ class question_test extends \advanced_testcase {
     }
 
     public function test_grading() {
-        $question = \test_question_maker::make_question('calculated');
+        $question = test_question_maker::make_question('calculated');
         $question->start_attempt(new question_attempt_step(), 1);
         $values = $question->vs->get_values();
 
@@ -64,7 +68,7 @@ class question_test extends \advanced_testcase {
     }
 
     public function test_get_correct_response() {
-        $question = \test_question_maker::make_question('calculated');
+        $question = test_question_maker::make_question('calculated');
         $question->start_attempt(new question_attempt_step(), 1);
         $values = $question->vs->get_values();
 
@@ -73,7 +77,7 @@ class question_test extends \advanced_testcase {
     }
 
     public function test_get_question_summary() {
-        $question = \test_question_maker::make_question('calculated');
+        $question = test_question_maker::make_question('calculated');
         $question->start_attempt(new question_attempt_step(), 1);
         $values = $question->vs->get_values();
 
@@ -82,7 +86,7 @@ class question_test extends \advanced_testcase {
     }
 
     public function test_summarise_response() {
-        $question = \test_question_maker::make_question('calculated');
+        $question = test_question_maker::make_question('calculated');
         $question->start_attempt(new question_attempt_step(), 1);
         $values = $question->vs->get_values();
 
@@ -90,7 +94,7 @@ class question_test extends \advanced_testcase {
     }
 
     public function test_classify_response() {
-        $question = \test_question_maker::make_question('calculated');
+        $question = test_question_maker::make_question('calculated');
         $question->start_attempt(new question_attempt_step(), 1);
         $values = $question->vs->get_values();
 

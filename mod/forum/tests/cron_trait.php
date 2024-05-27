@@ -36,7 +36,7 @@ trait mod_forum_tests_cron_trait {
 
         // Note, we cannot use expectOutputRegex because it only allows for a single RegExp.
         ob_start();
-        \core\cron::setup_user();
+        cron_setup_user();
         $cron = new \mod_forum\task\cron_task();
         $cron->execute();
         $output = ob_get_contents();
@@ -51,10 +51,10 @@ trait mod_forum_tests_cron_trait {
                 $expect->mentioned = true;
             }
             if (!$expect->mentioned) {
-                $this->assertDoesNotMatchRegularExpression("/Queued 0 for {$expect->userid}/", $output);
+                $this->assertNotRegExp("/Queued 0 for {$expect->userid}/", $output);
             } else {
                 $uniqueusers++;
-                $this->assertMatchesRegularExpression(
+                $this->assertRegExp(
                         "/Queued {$expect->digests} digests and {$expect->messages} messages for {$expect->userid}/",
                         $output
                     );
@@ -62,9 +62,9 @@ trait mod_forum_tests_cron_trait {
         }
 
         if (empty($expectations)) {
-            $this->assertMatchesRegularExpression("/No posts found./", $output);
+            $this->assertRegExp("/No posts found./", $output);
         } else {
-            $this->assertMatchesRegularExpression("/Unique users: {$uniqueusers}/", $output);
+            $this->assertRegExp("/Unique users: {$uniqueusers}/", $output);
         }
 
         // Update the forum queue for digests.
@@ -88,12 +88,12 @@ trait mod_forum_tests_cron_trait {
         if (empty($posts) && !$ignoreemptyposts) {
             $this->assertEquals('', $output);
         } else {
-            $this->assertMatchesRegularExpression("/Sending messages to {$user->username}/", $output);
+            $this->assertRegExp("/Sending messages to {$user->username}/", $output);
             foreach ($posts as $post) {
-                $this->assertMatchesRegularExpression("/Post {$post->id} sent/", $output);
+                $this->assertRegExp("/Post {$post->id} sent/", $output);
             }
             $count = count($posts);
-            $this->assertMatchesRegularExpression("/Sent {$count} messages with 0 failures/", $output);
+            $this->assertRegExp("/Sent {$count} messages with 0 failures/", $output);
         }
     }
 
@@ -113,17 +113,17 @@ trait mod_forum_tests_cron_trait {
 
         if (empty($shortposts) && empty($fullposts)) {
             $this->assertEquals('', $output);
-            $this->assertMatchesRegularExpression("/Digest sent with 0 messages./", $output);
+            $this->assertRegExp("/Digest sent with 0 messages./", $output);
         } else {
-            $this->assertMatchesRegularExpression("/Sending forum digests for {$user->username}/", $output);
+            $this->assertRegExp("/Sending forum digests for {$user->username}/", $output);
             foreach ($fullposts as $post) {
-                $this->assertMatchesRegularExpression("/Adding post {$post->id} in format 1/", $output);
+                $this->assertRegExp("/Adding post {$post->id} in format 1/", $output);
             }
             foreach ($shortposts as $post) {
-                $this->assertMatchesRegularExpression("/Adding post {$post->id} in format 2/", $output);
+                $this->assertRegExp("/Adding post {$post->id} in format 2/", $output);
             }
             $count = count($fullposts) + count($shortposts);
-            $this->assertMatchesRegularExpression("/Digest sent with {$count} messages./", $output);
+            $this->assertRegExp("/Digest sent with {$count} messages./", $output);
         }
     }
 }

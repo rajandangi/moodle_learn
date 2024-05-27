@@ -11,8 +11,6 @@ Feature: Backup and restore of quizzes
     And the following "question categories" exist:
       | contextlevel | reference | name           |
       | Course       | C1        | Test questions |
-    And the following config values are set as admin:
-      | enableasyncbackup | 0 |
     And I log in as "admin"
 
   @javascript
@@ -63,13 +61,14 @@ Feature: Backup and restore of quizzes
     And I restore "test_backup.mbz" backup into a new course using this options:
       | Schema | Course name | Restored course |
     Then I should see "Restored course"
-    And I click on "Quiz 1" "link" in the "region-main" "region"
+    And I follow "Quiz 1"
     And I should see "Attempts: 1"
 
   @javascript @_file_upload
   Scenario: Restore a Moodle 2.8 quiz backup
-    When I am on the "Course 1" "restore" page
-    And I press "Manage course backups"
+    When I am on "Course 1" course homepage
+    And I navigate to "Restore" in current page administration
+    And I press "Manage backup files"
     And I upload "mod/quiz/tests/fixtures/moodle_28_quiz.mbz" file to "Files" filemanager
     And I press "Save changes"
     And I restore "moodle_28_quiz.mbz" backup into "Course 1" course using this options:

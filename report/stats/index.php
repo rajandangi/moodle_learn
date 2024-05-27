@@ -23,8 +23,6 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-use core\report_helper;
-
 require_once('../../config.php');
 require_once($CFG->dirroot.'/report/stats/locallib.php');
 require_once($CFG->libdir.'/adminlib.php');
@@ -50,7 +48,7 @@ if ($mode == STATS_MODE_RANKED) {
 }
 
 if (!$course = $DB->get_record("course", array("id"=>$courseid))) {
-    throw new \moodle_exception("invalidcourseid");
+    print_error("invalidcourseid");
 }
 
 if (!empty($userid)) {
@@ -88,10 +86,6 @@ if ($course->id == SITEID) {
     $PAGE->set_pagelayout('report');
     $PAGE->set_headingmenu(report_stats_mode_menu($course, $mode, $time, "$CFG->wwwroot/report/stats/index.php"));
     echo $OUTPUT->header();
-
-    // Print the selected dropdown.
-    $pluginname = get_string('pluginname', 'report_stats');
-    report_helper::print_report_selector($pluginname);
 }
 
 report_stats_report($course, $report, $mode, $user, $roleid, $time);
@@ -100,7 +94,7 @@ if (empty($CFG->enablestats)) {
     if (has_capability('moodle/site:config', context_system::instance())) {
         redirect("$CFG->wwwroot/$CFG->admin/settings.php?section=stats", get_string('mustenablestats', 'admin'), 3);
     } else {
-        throw new \moodle_exception('statsdisable');
+        print_error('statsdisable');
     }
 }
 

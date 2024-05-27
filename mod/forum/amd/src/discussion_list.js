@@ -17,6 +17,7 @@
  * Module for the list of discussions on when viewing a forum.
  *
  * @module     mod_forum/discussion_list
+ * @package    mod_forum
  * @copyright  2019 Andrew Nicols <andrew@nicols.co.uk>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -30,7 +31,6 @@ define([
     'mod_forum/repository',
     'core/pubsub',
     'mod_forum/forum_events',
-    'core_form/changechecker',
 ], function(
     $,
     Templates,
@@ -40,8 +40,7 @@ define([
     Selectors,
     Repository,
     PubSub,
-    ForumEvents,
-    FormChangeChecker
+    ForumEvents
 ) {
     var registerEventListeners = function(root) {
         PubSub.subscribe(ForumEvents.SUBSCRIPTION_TOGGLED, function(data) {
@@ -56,11 +55,6 @@ define([
                 discussionListItem.removeClass('subscribed');
                 subscribedLabel.attr('hidden', true);
             }
-        });
-
-        root.on('click', Selectors.post.inpageCancelButton, function(e) {
-            // Tell formchangechecker to reset the form state.
-            FormChangeChecker.resetFormDirtyState(e.currentTarget);
         });
 
         root.on('click', Selectors.favourite.toggle, function(e) {

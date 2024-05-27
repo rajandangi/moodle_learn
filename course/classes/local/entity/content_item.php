@@ -57,12 +57,6 @@ class content_item {
     /** @var string $componentname the name of the component from which this content item originates. */
     private $componentname;
 
-    /** @var string $purpose the purpose type of this component. */
-    private $purpose;
-
-    /** @var bool $branded whether or not this component is branded. */
-    private $branded;
-
     /**
      * The content_item constructor.
      *
@@ -74,11 +68,9 @@ class content_item {
      * @param string $help The description of the item.
      * @param int $archetype the archetype for the content item (see MOD_ARCHETYPE_X definitions in lib/moodlelib.php).
      * @param string $componentname the name of the component/plugin with which this content item is associated.
-     * @param string $purpose the purpose type of this component.
-     * @param bool $branded whether or not this item is branded.
      */
     public function __construct(int $id, string $name, title $title, \moodle_url $link, string $icon, string $help,
-            int $archetype, string $componentname, string $purpose, bool $branded = false) {
+            int $archetype, string $componentname) {
         $this->id = $id;
         $this->name = $name;
         $this->title = $title;
@@ -87,8 +79,6 @@ class content_item {
         $this->help = $help;
         $this->archetype = $archetype;
         $this->componentname = $componentname;
-        $this->purpose = $purpose;
-        $this->branded = $branded;
     }
 
     /**
@@ -160,23 +150,5 @@ class content_item {
      */
     public function get_icon(): string {
         return $this->icon;
-    }
-
-    /**
-     * Get purpose for this item.
-     *
-     * @return string
-     */
-    public function get_purpose(): string {
-        return $this->purpose;
-    }
-
-    /**
-     * Whether this item is branded.
-     *
-     * @return bool true if this item is branded, false otherwise.
-     */
-    public function is_branded(): bool {
-        return $this->branded;
     }
 }

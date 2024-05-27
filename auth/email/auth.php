@@ -57,7 +57,7 @@ class auth_plugin_email extends auth_plugin_base {
      * @param string $password The password
      * @return bool Authentication success or failure.
      */
-    function user_login($username, $password) {
+    function user_login ($username, $password) {
         global $CFG, $DB;
         if ($user = $DB->get_record('user', array('username'=>$username, 'mnethostid'=>$CFG->mnet_localhost_id))) {
             return validate_internal_user_password($user, $password);
@@ -139,7 +139,7 @@ class auth_plugin_email extends auth_plugin_base {
         \core\event\user_created::create_from_userid($user->id)->trigger();
 
         if (! send_confirmation_email($user, $confirmationurl)) {
-            throw new \moodle_exception('auth_emailnoemail', 'auth_email');
+            print_error('auth_emailnoemail', 'auth_email');
         }
 
         if ($notify) {

@@ -14,7 +14,20 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace core_competency;
+/**
+ * Course competency persistent class tests.
+ *
+ * @package    core_competency
+ * @copyright  2016 Frédéric Massart - FMCorz.net
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+defined('MOODLE_INTERNAL') || die();
+global $CFG;
+
+use core_competency\course_competency;
+use core_competency\api;
+use core_competency\course_competency_settings;
 
 /**
  * This test ensures that the course competency settings are applied and work correctly.
@@ -23,14 +36,14 @@ namespace core_competency;
  * @copyright  2016 Frédéric Massart - FMCorz.net
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class course_competency_settings_test extends \advanced_testcase {
+class core_competency_course_competency_settings_testcase extends advanced_testcase {
 
     public function test_who_can_change_settings() {
         global $CFG, $DB;
 
         $this->resetAfterTest(true);
 
-        $syscontext = \context_system::instance();
+        $syscontext = context_system::instance();
         $dg = $this->getDataGenerator();
         $lpg = $dg->get_plugin_generator('core_competency');
         $role = create_role('Settings changer role', 'settingschanger', 'Someone who can change course competency settings');

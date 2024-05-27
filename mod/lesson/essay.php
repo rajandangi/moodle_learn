@@ -45,7 +45,6 @@ if ($mode !== 'display') {
     $url->param('mode', $mode);
 }
 $PAGE->set_url($url);
-$PAGE->set_secondary_active_tab('modulepage');
 
 $currentgroup = groups_get_activity_group($cm, true);
 
@@ -84,13 +83,13 @@ switch ($mode) {
         require_sesskey();
 
         if (empty($attempt)) {
-            throw new \moodle_exception('cannotfindattempt', 'lesson');
+            print_error('cannotfindattempt', 'lesson');
         }
         if (empty($user)) {
-            throw new \moodle_exception('cannotfinduser', 'lesson');
+            print_error('cannotfinduser', 'lesson');
         }
         if (empty($answer)) {
-            throw new \moodle_exception('cannotfindanswer', 'lesson');
+            print_error('cannotfindanswer', 'lesson');
         }
         break;
 
@@ -98,10 +97,10 @@ switch ($mode) {
         require_sesskey();
 
         if (empty($attempt)) {
-            throw new \moodle_exception('cannotfindattempt', 'lesson');
+            print_error('cannotfindattempt', 'lesson');
         }
         if (empty($user)) {
-            throw new \moodle_exception('cannotfinduser', 'lesson');
+            print_error('cannotfinduser', 'lesson');
         }
 
         $editoroptions = array('noclean' => true, 'maxfiles' => EDITOR_UNLIMITED_FILES,
@@ -116,7 +115,7 @@ switch ($mode) {
         }
         if ($form = $mform->get_data()) {
             if (!$grades = $DB->get_records('lesson_grades', array("lessonid"=>$lesson->id, "userid"=>$attempt->userid), 'completed', '*', $attempt->retry, 1)) {
-                throw new \moodle_exception('cannotfindgrade', 'lesson');
+                print_error('cannotfindgrade', 'lesson');
             }
 
             $essayinfo->graded = 1;
@@ -167,7 +166,7 @@ switch ($mode) {
 
             redirect(new moodle_url('/mod/lesson/essay.php', array('id'=>$cm->id)));
         } else {
-            throw new \moodle_exception('invalidformdata');
+            print_error('invalidformdata');
         }
         break;
     case 'email':
@@ -178,7 +177,7 @@ switch ($mode) {
         if ($userid = optional_param('userid', 0, PARAM_INT)) {
             $queryadd = " AND userid = ?";
             if (! $users = $DB->get_records('user', array('id' => $userid))) {
-                throw new \moodle_exception('cannotfinduser', 'lesson');
+                print_error('cannotfinduser', 'lesson');
             }
         } else {
             $queryadd = '';
@@ -199,7 +198,7 @@ switch ($mode) {
                        ) ui ON u.id = ui.userid
                   JOIN ($esql) ue ON ue.id = u.id
                   ORDER BY $sort", $params)) {
-                throw new \moodle_exception('cannotfinduser', 'lesson');
+                print_error('cannotfinduser', 'lesson');
             }
         }
 
@@ -216,13 +215,13 @@ switch ($mode) {
             $params[] = $userid;
         }
         if (!$attempts = $DB->get_records_select('lesson_attempts', "pageid $usql".$queryadd, $params)) {
-            throw new \moodle_exception('nooneansweredthisquestion', 'lesson');
+            print_error('nooneansweredthisquestion', 'lesson');
         }
         // Get the answers
         list($answerUsql, $parameters) = $DB->get_in_or_equal(array_keys($pages));
         array_unshift($parameters, $lesson->id);
         if (!$answers = $DB->get_records_select('lesson_answers', "lessonid = ? AND pageid $answerUsql", $parameters, '', 'pageid, score')) {
-            throw new \moodle_exception('cannotfindanswer', 'lesson');
+            print_error('cannotfindanswer', 'lesson');
         }
 
         $userpicture = new user_picture($USER);
@@ -326,8 +325,7 @@ switch ($mode) {
                         JOIN ($esql) ue ON a.userid = ue.id
                         WHERE pageid $usql";
             if ($essayattempts = $DB->get_records_sql($sql, $parameters)) {
-                $userfieldsapi = \core_user\fields::for_userpic();
-                $ufields = $userfieldsapi->get_sql('u', false, '', '', false)->selects;
+                $ufields = user_picture::fields('u');
                 // Get all the users who have taken this lesson.
                 list($sort, $sortparams) = users_order_by_sql('u');
 
@@ -408,8 +406,12 @@ switch ($mode) {
                     }
                     $count++;
 
-                    // Make sure they didn't answer it more than the max number of attempts.
-                    $essay = $lesson->get_last_attempt($try);
+                    // Make sure they didn't answer it more than the max number of attmepts
+                    if (count($try) > $lesson->maxattempts) {
+                        $essay = $try[$lesson->maxattempts-1];
+                    } else {
+                        $essay = end($try);
+                    }
 
                     // Start processing the attempt
                     $essayinfo = lesson_page_type_essay::extract_useranswer($essay->useranswer);
@@ -421,13 +423,13 @@ switch ($mode) {
 
                     // Different colors for all the states of an essay (graded, if sent, not graded)
                     if (!$essayinfo->graded) {
-                        $class = "badge bg-warning text-dark";
+                        $class = "badge badge-warning";
                         $status = get_string('notgraded', 'lesson');
                     } elseif (!$essayinfo->sent) {
-                        $class = "badge bg-success text-white";
+                        $class = "badge badge-success";
                         $status = get_string('graded', 'lesson');
                     } else {
-                        $class = "badge bg-success text-white";
+                        $class = "badge badge-success";
                         $status = get_string('sent', 'lesson');
                     }
                     $attributes = array('tabindex' => 0);

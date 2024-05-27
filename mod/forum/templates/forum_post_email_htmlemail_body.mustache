@@ -15,7 +15,7 @@
     along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 }}
 {{!
-    @template mod_forum/forum_post_email_htmlemail_body
+    @template mod_forum/forum_post_emaildigestfull_htmlemail_body
 
     Template which defines the body component of a forum post for sending in a single-post HTML email.
 
@@ -123,17 +123,13 @@
                         {{# str }} parent, forum {{/ str }}
                     </a>
                     {{# canreply }}
-                        {{^ isprivatereply }}
                         |
-                        {{/ isprivatereply }}
                     {{/ canreply }}
                 {{/ firstpost }}
                 {{# canreply }}
-                    {{^ isprivatereply }}
                     <a target="_blank" href="{{{ replylink }}}">
                         {{# str }} reply, forum {{/ str }}
                     </a>
-                    {{/ isprivatereply }}
                 {{/ canreply }}
             </div>
 

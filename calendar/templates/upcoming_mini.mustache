@@ -15,7 +15,7 @@
     along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 }}
 {{!
-    @template core_calendar/upcoming_mini
+    @template calendar/upcoming_mini
 
     Calendar upcoming view for blocks.
 
@@ -40,33 +40,19 @@
     {{> core/overlay_loading}}
     {{#events}}
         <div{{!
-            }} class="event d-flex border-bottom pt-2 pb-3"{{!
+            }} class="event"{{!
             }} data-eventtype-{{normalisedeventtype}}="1"{{!
             }} data-region="event-item"{{!
         }}>
-            <div class="activityiconcontainer small courseicon mr-3">
-                {{#icon}}
-                {{#iconurl}}
-                    <img alt="{{alttext}}" title="{{alttext}}" src="{{{ iconurl }}}" class="icon {{iconclass}}">
-                {{/iconurl}}
-                {{^iconurl}}
-                    {{#pix}} {{key}}, {{component}}, {{alttext}} {{/pix}}
-                {{/iconurl}}
-                {{/icon}}
-            </div>
-            <div class="overflow-auto">
-                <h6 class="d-flex mb-1">
-                    <a{{!
-                        }} class="text-truncate"{{!
-                        }} data-type="event"{{!
-                        }} data-action="view-event"{{!
-                        }} data-event-id="{{id}}"{{!
-                        }} href="{{viewurl}}"{{!
-                        }} title="{{name}}"{{!
-                    }}>{{{name}}}</a>
-                </h6>
-                <div class="date small">{{{formattedtime}}}</div>
-            </div>
+            <span>{{#icon}}{{#pix}} {{key}}, {{component}}, {{alttext}} {{/pix}}{{/icon}}</span>
+            <a{{!
+                }} data-type="event"{{!
+                }} data-action="view-event"{{!
+                }} data-event-id="{{id}}"{{!
+                }} href="{{viewurl}}"{{!
+            }}>{{{name}}}</a>
+            <div class="date">{{{formattedtime}}}</div>
+            <hr>
         </div>
     {{/events}}
     {{^events}}

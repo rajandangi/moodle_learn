@@ -28,7 +28,6 @@ namespace core\output;
 use templatable;
 use renderable;
 use lang_string;
-use pix_icon;
 
 /**
  * Class allowing to quick edit a title inline
@@ -91,11 +90,6 @@ class inplace_editable implements templatable, renderable {
     protected $edithint = null;
 
     /**
-     * @var pix_icon icon to use to toggle editing
-     */
-    protected $editicon = null;
-
-    /**
      * @var bool indicates if the current user is allowed to edit this element - set in constructor after permissions are checked
      */
     protected $editable = false;
@@ -123,10 +117,9 @@ class inplace_editable implements templatable, renderable {
      * @param string $value what needs to be edited - usually raw value from the database, it may contain multilang tags
      * @param lang_string|string $edithint hint (title) that will be displayed under the edit link
      * @param lang_string|string $editlabel label for the input element in the editing mode (for screenreaders)
-     * @param pix_icon|null $editicon icon to use to toggle editing
      */
     public function __construct($component, $itemtype, $itemid, $editable,
-            $displayvalue, $value = null, $edithint = null, $editlabel = null, ?pix_icon $editicon = null) {
+            $displayvalue, $value = null, $edithint = null, $editlabel = null) {
         $this->component = $component;
         $this->itemtype = $itemtype;
         $this->itemid = $itemid;
@@ -135,7 +128,6 @@ class inplace_editable implements templatable, renderable {
         $this->value = $value;
         $this->edithint = $edithint;
         $this->editlabel = $editlabel;
-        $this->editicon = $editicon;
     }
 
     /**
@@ -198,9 +190,6 @@ class inplace_editable implements templatable, renderable {
         if ($this->displayvalue === null) {
             $this->displayvalue = $options[$this->value];
         }
-        if ($this->editicon === null) {
-            $this->editicon = new pix_icon('t/expanded', (string) $this->edithint);
-        }
         return $this;
     }
 
@@ -243,7 +232,7 @@ class inplace_editable implements templatable, renderable {
     /**
      * Export this data so it can be used as the context for a mustache template (core/inplace_editable).
      *
-     * @param \renderer_base $output typically, the renderer that's calling this function
+     * @param renderer_base $output typically, the renderer that's calling this function
      * @return array data context for a mustache template
      */
     public function export_for_template(\renderer_base $output) {
@@ -251,10 +240,6 @@ class inplace_editable implements templatable, renderable {
             return array(
                 'displayvalue' => (string)$this->displayvalue
             );
-        }
-
-        if ($this->editicon === null) {
-            $this->editicon = new pix_icon('t/editstring', (string) $this->edithint);
         }
 
         return array(
@@ -265,7 +250,6 @@ class inplace_editable implements templatable, renderable {
             'value' => (string)$this->value,
             'edithint' => (string)$this->edithint,
             'editlabel' => (string)$this->editlabel,
-            'editicon' => $this->editicon->export_for_pix(),
             'type' => $this->type,
             'options' => $this->options,
             'linkeverything' => $this->get_linkeverything() ? 1 : 0,
@@ -275,7 +259,7 @@ class inplace_editable implements templatable, renderable {
     /**
      * Renders this element
      *
-     * @param \renderer_base $output typically, the renderer that's calling this function
+     * @param renderer_base $output typically, the renderer that's calling this function
      * @return string
      */
     public function render(\renderer_base $output) {

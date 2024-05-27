@@ -35,8 +35,8 @@ use tool_policy\output\page_viewdoc;
 // Do not check for the site policies in require_login() to avoid the redirect loop.
 define('NO_SITEPOLICY_CHECK', true);
 
-// See the {@see page_viewdoc} for the access control checks.
-require(__DIR__.'/../../../config.php'); // phpcs:ignore
+// @codingStandardsIgnoreLine See the {@link page_viewdoc} for the access control checks.
+require(__DIR__.'/../../../config.php');
 
 $versionid = optional_param('versionid', null, PARAM_INT);
 $policyid = $versionid ? optional_param('policyid', null, PARAM_INT) : required_param('policyid', PARAM_INT);

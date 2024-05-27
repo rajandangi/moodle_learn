@@ -14,7 +14,17 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+/**
+ * Tour manager.
+ *
+ * @package    tool_usertours
+ * @copyright  2016 Andrew Nicols <andrew@nicols.co.uk>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
 namespace tool_usertours;
+
+defined('MOODLE_INTERNAL') || die();
 
 use tool_usertours\local\forms;
 use tool_usertours\local\table;
@@ -23,11 +33,11 @@ use core\notification;
 /**
  * Tour manager.
  *
- * @package    tool_usertours
  * @copyright  2016 Andrew Nicols <andrew@nicols.co.uk>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class manager {
+
     /**
      * @var ACTION_LISTTOURS      The action to get the list of tours.
      */
@@ -148,12 +158,10 @@ class manager {
      * @param   string  $action     The action to perform.
      */
     public function execute($action) {
-        global $PAGE;
         $this->setup_admin_externalpage($action);
-        $PAGE->set_primary_active_tab('siteadminnode');
 
         // Add the main content.
-        switch ($action) {
+        switch($action) {
             case self::ACTION_NEWTOUR:
             case self::ACTION_EDITTOUR:
                 $this->edit_tour(optional_param('id', null, PARAM_INT));
@@ -273,7 +281,7 @@ class manager {
                 'title' => get_string('importtour', 'tool_usertours'),
             ],
             (object) [
-                'link'  => new \moodle_url('https://moodle.net/search', ['q' => 'user tours']),
+                'link'  => new \moodle_url('https://archive.moodle.net/tours'),
                 'linkproperties' => [
                         'target' => '_blank',
                     ],
@@ -345,7 +353,8 @@ class manager {
         global $PAGE;
         if ($id) {
             $tour = tour::instance($id);
-            $PAGE->navbar->add(helper::get_string_from_input($tour->get_name()), $tour->get_edit_link());
+            $PAGE->navbar->add($tour->get_name(), $tour->get_edit_link());
+
         } else {
             $tour = new tour();
             $PAGE->navbar->add(get_string('newtour', 'tool_usertours'), $tour->get_edit_link());
@@ -361,9 +370,6 @@ class manager {
             $tour->set_description($data->description);
             $tour->set_pathmatch($data->pathmatch);
             $tour->set_enabled(!empty($data->enabled));
-            $tour->set_endtourlabel($data->endtourlabel);
-            $tour->set_display_step_numbers(!empty($data->displaystepnumbers));
-            $tour->set_showtourwhen($data->showtourwhen);
 
             foreach (configuration::get_defaultable_keys() as $key) {
                 $tour->set_config($key, $data->$key);
@@ -385,15 +391,13 @@ class manager {
                     notification::add(get_string('modifyshippedtourwarning', 'tool_usertours'), notification::WARNING);
                 }
 
-                $tourname = !empty($tour->get_name()) ? helper::get_string_from_input($tour->get_name()) : '';
-                $this->header($tourname);
+                $this->header($tour->get_name());
                 $data = $tour->prepare_data_for_form();
 
                 // Prepare filter values for the form.
                 foreach (helper::get_all_filters() as $filterclass) {
                     $filterclass::prepare_filter_values_for_form($tour, $data);
                 }
-
                 $form->set_data($data);
             }
 
@@ -422,7 +426,7 @@ class manager {
         // Step export.
         $export->steps = [];
         foreach ($tour->get_steps() as $step) {
-            $record = $step->to_record(true);
+            $record = $step->to_record();
             unset($record->id);
             unset($record->tourid);
 
@@ -469,13 +473,12 @@ class manager {
     protected function view_tour($tourid) {
         global $PAGE;
         $tour = helper::get_tour($tourid);
-        $tourname = helper::get_string_from_input($tour->get_name());
 
-        $PAGE->navbar->add($tourname, $tour->get_view_link());
+        $PAGE->navbar->add($tour->get_name(), $tour->get_view_link());
 
-        $this->header($tourname);
+        $this->header($tour->get_name());
         echo \html_writer::span(get_string('viewtour_info', 'tool_usertours', [
-                'tourname'  => $tourname,
+                'tourname'  => $tour->get_name(),
                 'path'      => $tour->get_pathmatch(),
             ]));
         echo \html_writer::div(get_string('viewtour_edit', 'tool_usertours', [
@@ -517,7 +520,7 @@ class manager {
         // Step export.
         $export->steps = [];
         foreach ($tour->get_steps() as $step) {
-            $record = $step->to_record(true);
+            $record = $step->to_record();
             unset($record->id);
             unset($record->tourid);
 
@@ -559,7 +562,7 @@ class manager {
 
         require_sesskey();
 
-        $tour = $DB->get_record('tool_usertours_tours', ['id' => $tourid]);
+        $tour = $DB->get_record('tool_usertours_tours', array('id' => $tourid));
         $tour->enabled = $visibility;
         $DB->update_record('tool_usertours_tours', $tour);
 
@@ -595,52 +598,42 @@ class manager {
     }
 
     /**
-     * Get all tours for the current page URL.
+     * Get the first tour matching the current page URL.
      *
-     * @param   bool        $reset      Forcibly update the current tours
-     * @return  array
+     * @param   bool        $reset      Forcibly update the current tour
+     * @return  tour
      */
-    public static function get_current_tours($reset = false): array {
+    public static function get_current_tour($reset = false) {
         global $PAGE;
 
-        static $tours = false;
+        static $tour = false;
 
-        if ($tours === false || $reset) {
-            $tours = self::get_matching_tours($PAGE->url);
+        if ($tour === false || $reset) {
+            $tour = self::get_matching_tours($PAGE->url);
         }
 
-        return $tours;
+        return $tour;
     }
 
     /**
-     * Get all tours matching the specified URL.
+     * Get the first tour matching the specified URL.
      *
      * @param   moodle_url  $pageurl        The URL to match.
-     * @return  array
+     * @return  tour
      */
-    public static function get_matching_tours(\moodle_url $pageurl): array {
+    public static function get_matching_tours(\moodle_url $pageurl) {
         global $PAGE;
-
-        if (\core_user::awaiting_action()) {
-            // User not fully ready to use the site. Don't show any tours, we need the user to get properly set up so
-            // that all require_login() and other bits work as expected.
-            return [];
-        }
 
         $tours = cache::get_matching_tourdata($pageurl);
 
-        $matches = [];
-        if ($tours) {
-            $filters = helper::get_all_filters();
-            foreach ($tours as $record) {
-                $tour = tour::load_from_record($record);
-                if ($tour->is_enabled() && $tour->matches_all_filters($PAGE->context, $filters)) {
-                    $matches[] = $tour;
-                }
+        foreach ($tours as $record) {
+            $tour = tour::load_from_record($record);
+            if ($tour->is_enabled() && $tour->matches_all_filters($PAGE->context)) {
+                return $tour;
             }
         }
 
-        return $matches;
+        return null;
     }
 
     /**
@@ -669,7 +662,7 @@ class manager {
         foreach ($steps as $stepconfig) {
             $stepconfig->id = null;
             $stepconfig->tourid = $tour->get_id();
-            $step = step::load_from_record($stepconfig, true, true);
+            $step = step::load_from_record($stepconfig, true);
             $step->persist(true);
         }
 
@@ -723,9 +716,9 @@ class manager {
             notification::add(get_string('modifyshippedtourwarning', 'tool_usertours'), notification::WARNING);
         }
 
-        $PAGE->navbar->add(helper::get_string_from_input($tour->get_name()), $tour->get_view_link());
+        $PAGE->navbar->add($tour->get_name(), $tour->get_view_link());
         if (isset($id)) {
-            $PAGE->navbar->add(helper::get_string_from_input($step->get_title()), $step->get_edit_link());
+            $PAGE->navbar->add($step->get_title(), $step->get_edit_link());
         } else {
             $PAGE->navbar->add(get_string('newstep', 'tool_usertours'), $step->get_edit_link());
         }
@@ -741,7 +734,7 @@ class manager {
             if (empty($id)) {
                 $this->header(get_string('newstep', 'tool_usertours'));
             } else {
-                $this->header(get_string('editstep', 'tool_usertours', helper::get_string_from_input($step->get_title())));
+                $this->header(get_string('editstep', 'tool_usertours', $step->get_title()));
             }
             $form->set_data($step->prepare_data_for_form());
 
@@ -775,10 +768,9 @@ class manager {
      */
     protected static function _move_tour(tour $tour, $direction) {
         // We can't move the first tour higher, nor the last tour any lower.
-        if (
-            ($tour->is_first_tour() && $direction == helper::MOVE_UP) ||
-                ($tour->is_last_tour() && $direction == helper::MOVE_DOWN)
-        ) {
+        if (($tour->is_first_tour() && $direction == helper::MOVE_UP) ||
+                ($tour->is_last_tour() && $direction == helper::MOVE_DOWN)) {
+
             return;
         }
 
@@ -858,11 +850,6 @@ class manager {
         // the format filename => version. The version value needs to
         // be increased if the tour has been updated.
         $shippedtours = [
-            '40_tour_navigation_dashboard.json' => 4,
-            '40_tour_navigation_mycourse.json' => 5,
-            '40_tour_navigation_course_teacher.json' => 3,
-            '40_tour_navigation_course_student.json' => 3,
-            '42_tour_gradebook_grader_report.json' => 1,
         ];
 
         // These are tours that we used to ship but don't ship any longer.
@@ -875,12 +862,6 @@ class manager {
             // Formerly included in Moodle 3.6.0.
             '36_dashboard.json' => 3,
             '36_messaging.json' => 3,
-
-            // Formerly included in Moodle 3.11.0.
-            '311_activity_information_activity_page_student.json' => 2,
-            '311_activity_information_activity_page_teacher.json' => 2,
-            '311_activity_information_course_page_student.json' => 2,
-            '311_activity_information_course_page_teacher.json' => 2,
         ];
 
         $existingtourrecords = $DB->get_recordset('tool_usertours_tours');

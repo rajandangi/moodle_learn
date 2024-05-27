@@ -50,8 +50,6 @@ class pdf extends TcpdfFpdi {
     protected $imagefolder = null;
     /** @var string the path to the PDF currently being processed */
     protected $filename = null;
-    /** @var string the fontname used when the PDF being processed */
-    protected $fontname = null;
 
     /** No errors */
     const GSPATH_OK = 'ok';
@@ -83,21 +81,13 @@ class pdf extends TcpdfFpdi {
      * @return string
      */
     private function get_export_font_name() {
+        global $CFG;
+
         $fontname = 'freesans';
-        if (!empty($this->fontname)) {
-            $fontname = $this->fontname;
+        if (!empty($CFG->pdfexportfont)) {
+            $fontname = $CFG->pdfexportfont;
         }
         return $fontname;
-    }
-
-    /**
-     * Set font name.
-     *
-     * @param string $fontname Font name which is
-     * @return void
-     */
-    public function set_export_font_name($fontname): void {
-        $this->fontname = $fontname;
     }
 
     /**
@@ -405,7 +395,7 @@ class pdf extends TcpdfFpdi {
      * @param string $imagefolder - Folder containing stamp images.
      * @return bool true if successful (always)
      */
-    public function add_annotation($sx, $sy, $ex, $ey, $colour, $type, $path, $imagefolder) {
+    public function add_annotation($sx, $sy, $ex, $ey, $colour = 'yellow', $type = 'line', $path, $imagefolder) {
         global $CFG;
         if (!$this->filename) {
             return false;
@@ -539,38 +529,6 @@ class pdf extends TcpdfFpdi {
     }
 
     /**
-     * Generate images from the PDF
-     * @return array Array of filename of the generated images
-     */
-    public function get_images(): array {
-        $this->precheck_generate_image();
-
-        $imagefile = $this->imagefolder . '/' . self::IMAGE_PAGE;
-        $command = $this->get_command_for_image(-1, $imagefile);
-        exec($command);
-        $images = array();
-        for ($i = 0; $i < $this->pagecount; $i++) {
-            // Image file is created from 1, so need to change to 0.
-            $file = $imagefile . ($i + 1) . '.png';
-            $newfile = $imagefile . $i . '.png';
-            if (file_exists($file)) {
-                rename($file, $newfile);
-            } else {
-                // Converter added '-' and zerofill for the pagenumber.
-                $length = strlen($this->pagecount);
-                $file = $imagefile . '-' . str_pad(($i + 1), $length, '0', STR_PAD_LEFT) . '.png';
-                if (file_exists($file)) {
-                    rename($file, $newfile);
-                } else {
-                    $newfile = self::get_error_image($this->imagefolder, $i);
-                }
-            }
-            $images[$i] = basename($newfile);
-        }
-        return $images;
-    }
-
-    /**
      * Generate an image of the specified page in the PDF
      * @param int $pageno the page to generate the image of
      * @throws \moodle_exception
@@ -578,40 +536,8 @@ class pdf extends TcpdfFpdi {
      * @return string the filename of the generated image
      */
     public function get_image($pageno) {
-        $this->precheck_generate_image();
+        global $CFG;
 
-        $imagefile = $this->imagefolder . '/' . self::IMAGE_PAGE . $pageno . '.png';
-        $generate = true;
-        if (file_exists($imagefile)) {
-            if (filemtime($imagefile) > filemtime($this->filename)) {
-                // Make sure the image is newer than the PDF file.
-                $generate = false;
-            }
-        }
-
-        if ($generate) {
-            $command = $this->get_command_for_image($pageno, $imagefile);
-            $output = null;
-            $result = exec($command, $output);
-            if (!file_exists($imagefile)) {
-                $fullerror = '<pre>'.get_string('command', 'assignfeedback_editpdf')."\n";
-                $fullerror .= $command . "\n\n";
-                $fullerror .= get_string('result', 'assignfeedback_editpdf')."\n";
-                $fullerror .= htmlspecialchars($result, ENT_COMPAT) . "\n\n";
-                $fullerror .= get_string('output', 'assignfeedback_editpdf')."\n";
-                $fullerror .= htmlspecialchars(implode("\n", $output), ENT_COMPAT) . '</pre>';
-                throw new \moodle_exception('errorgenerateimage', 'assignfeedback_editpdf', '', $fullerror);
-            }
-        }
-
-        return self::IMAGE_PAGE . $pageno . '.png';
-    }
-
-    /**
-     * Make sure the file name and image folder are ready before generate image.
-     * @return bool
-     */
-    protected function precheck_generate_image() {
         if (!$this->filename) {
             throw new \coding_exception('Attempting to generate a page image without first setting the PDF filename');
         }
@@ -623,89 +549,46 @@ class pdf extends TcpdfFpdi {
         if (!is_dir($this->imagefolder)) {
             throw new \coding_exception('The specified image output folder is not a valid folder');
         }
-        return true;
-    }
 
-    /**
-     * Gets the command to use to extract as image the given $pageno page number
-     * from a PDF document into the $imagefile file.
-     * @param int $pageno Page number to extract from document. -1 means for all pages.
-     * @param string $imagefile Target filename for the PNG image as absolute path.
-     * @return string The command to use to extract a page as PNG image.
-     */
-    private function get_command_for_image(int $pageno, string $imagefile): string {
-        global $CFG;
-
-        // First, quickest convertion option.
-        if (!empty($CFG->pathtopdftoppm) && is_executable($CFG->pathtopdftoppm)) {
-            return $this->get_pdftoppm_command_for_image($pageno, $imagefile);
+        $imagefile = $this->imagefolder . '/' . self::IMAGE_PAGE . $pageno . '.png';
+        $generate = true;
+        if (file_exists($imagefile)) {
+            if (filemtime($imagefile) > filemtime($this->filename)) {
+                // Make sure the image is newer than the PDF file.
+                $generate = false;
+            }
         }
 
-        // Otherwise, rely on default behaviour.
-        return $this->get_gs_command_for_image($pageno, $imagefile);
-    }
+        if ($generate) {
+            // Use ghostscript to generate an image of the specified page.
+            $gsexec = \escapeshellarg($CFG->pathtogs);
+            $imageres = \escapeshellarg(100);
+            $imagefilearg = \escapeshellarg($imagefile);
+            $filename = \escapeshellarg($this->filename);
+            $pagenoinc = \escapeshellarg($pageno + 1);
+            $command = "$gsexec -q -sDEVICE=png16m -dSAFER -dBATCH -dNOPAUSE -r$imageres -dFirstPage=$pagenoinc -dLastPage=$pagenoinc ".
+                "-dDOINTERPOLATE -dGraphicsAlphaBits=4 -dTextAlphaBits=4 -sOutputFile=$imagefilearg $filename";
 
-    /**
-     * Gets the pdftoppm command to use to extract as image the given $pageno page number
-     * from a PDF document into the $imagefile file.
-     * @param int $pageno Page number to extract from document. -1 means for all pages.
-     * @param string $imagefile Target filename for the PNG image as absolute path.
-     * @return string The pdftoppm command to use to extract a page as PNG image.
-     */
-    private function get_pdftoppm_command_for_image(int $pageno, string $imagefile): string {
-        global $CFG;
-        $pdftoppmexec = \escapeshellarg($CFG->pathtopdftoppm);
-        $imageres = \escapeshellarg(100);
-        $filename = \escapeshellarg($this->filename);
-        $pagenoinc = \escapeshellarg($pageno + 1);
-        if ($pageno >= 0) {
-            // Convert 1 page.
-            $imagefile = substr($imagefile, 0, -4); // Pdftoppm tool automatically adds extension file.
-            $frompageno = $pagenoinc;
-            $topageno = $pagenoinc;
-            $singlefile = '-singlefile';
-        } else {
-            // Convert all pages at once.
-            $frompageno = 1;
-            $topageno = $this->pagecount;
-            $singlefile = '';
+            $output = null;
+            $result = exec($command, $output);
+            if (!file_exists($imagefile)) {
+                $fullerror = '<pre>'.get_string('command', 'assignfeedback_editpdf')."\n";
+                $fullerror .= $command . "\n\n";
+                $fullerror .= get_string('result', 'assignfeedback_editpdf')."\n";
+                $fullerror .= htmlspecialchars($result) . "\n\n";
+                $fullerror .= get_string('output', 'assignfeedback_editpdf')."\n";
+                $fullerror .= htmlspecialchars(implode("\n", $output)) . '</pre>';
+                throw new \moodle_exception('errorgenerateimage', 'assignfeedback_editpdf', '', $fullerror);
+            }
         }
-        $imagefilearg = \escapeshellarg($imagefile);
-        return "$pdftoppmexec -q -r $imageres -f $frompageno -l $topageno -png $singlefile $filename $imagefilearg";
-    }
 
-    /**
-     * Gets the ghostscript (gs) command to use to extract as image the given $pageno page number
-     * from a PDF document into the $imagefile file.
-     * @param int $pageno Page number to extract from document. -1 means for all pages.
-     * @param string $imagefile Target filename for the PNG image as absolute path.
-     * @return string The ghostscript (gs) command to use to extract a page as PNG image.
-     */
-    private function get_gs_command_for_image(int $pageno, string $imagefile): string {
-        global $CFG;
-        $gsexec = \escapeshellarg($CFG->pathtogs);
-        $imageres = \escapeshellarg(100);
-        $imagefilearg = \escapeshellarg($imagefile);
-        $filename = \escapeshellarg($this->filename);
-        $pagenoinc = \escapeshellarg($pageno + 1);
-        if ($pageno >= 0) {
-            // Convert 1 page.
-            $firstpage = $pagenoinc;
-            $lastpage = $pagenoinc;
-        } else {
-            // Convert all pages at once.
-            $imagefilearg = \escapeshellarg($imagefile . '%d.png');
-            $firstpage = 1;
-            $lastpage = $this->pagecount;
-        }
-        return "$gsexec -q -sDEVICE=png16m -dSAFER -dBATCH -dNOPAUSE -r$imageres -dFirstPage=$firstpage -dLastPage=$lastpage ".
-            "-dDOINTERPOLATE -dGraphicsAlphaBits=4 -dTextAlphaBits=4 -sOutputFile=$imagefilearg $filename";
+        return self::IMAGE_PAGE . $pageno . '.png';
     }
 
     /**
      * Check to see if PDF is version 1.4 (or below); if not: use ghostscript to convert it
      *
-     * @param \stored_file $file
+     * @param stored_file $file
      * @return string path to copy or converted pdf (false == fail)
      */
     public static function ensure_pdf_compatible(\stored_file $file) {
@@ -720,7 +603,7 @@ class pdf extends TcpdfFpdi {
     }
 
     /**
-     * Flatten and convert file using ghostscript then load pdf.
+     * Check to see if PDF is version 1.4 (or below); if not: use ghostscript to convert it
      *
      * @param   string $tempsrc The path to the file on disk.
      * @return  string path to copy or converted pdf (false == fail)
@@ -728,15 +611,28 @@ class pdf extends TcpdfFpdi {
     public static function ensure_pdf_file_compatible($tempsrc) {
         global $CFG;
 
+        $pdf = new pdf();
+        $pagecount = 0;
+        try {
+            $pagecount = $pdf->load_pdf($tempsrc);
+        } catch (\Exception $e) {
+            // PDF was not valid - try running it through ghostscript to clean it up.
+            $pagecount = 0;
+        }
+        $pdf->Close(); // PDF loaded and never saved/outputted needs to be closed.
+
+        if ($pagecount > 0) {
+            // PDF is already valid and can be read by tcpdf.
+            return $tempsrc;
+        }
+
         $temparea = make_request_directory();
         $tempdst = $temparea . "/target.pdf";
 
         $gsexec = \escapeshellarg($CFG->pathtogs);
         $tempdstarg = \escapeshellarg($tempdst);
         $tempsrcarg = \escapeshellarg($tempsrc);
-        $command = "$gsexec -q -sDEVICE=pdfwrite -dPreserveAnnots=false -dSAFER -dBATCH -dNOPAUSE "
-            . "-sOutputFile=$tempdstarg $tempsrcarg";
-
+        $command = "$gsexec -q -sDEVICE=pdfwrite -dSAFER -dBATCH -dNOPAUSE -sOutputFile=$tempdstarg $tempsrcarg";
         exec($command);
         if (!file_exists($tempdst)) {
             // Something has gone wrong in the conversion.
@@ -883,14 +779,13 @@ class pdf extends TcpdfFpdi {
         $this->currentpage++;
         $template = $this->importPage($this->currentpage);
         $size = $this->getTemplateSize($template);
-        $orientation = 'P';
+
         if ($imageinfo["width"] > $imageinfo["height"]) {
             if ($size['width'] < $size['height']) {
                 $temp = $size['width'];
                 $size['width'] = $size['height'];
                 $size['height'] = $temp;
             }
-            $orientation = 'L';
         } else if ($imageinfo["width"] < $imageinfo["height"]) {
             if ($size['width'] > $size['height']) {
                 $temp = $size['width'];
@@ -898,7 +793,7 @@ class pdf extends TcpdfFpdi {
                 $size['height'] = $temp;
             }
         }
-
+        $orientation = $size['orientation'];
         $this->SetHeaderMargin(0);
         $this->SetFooterMargin(0);
         $this->SetMargins(0, 0, 0, true);
@@ -907,7 +802,7 @@ class pdf extends TcpdfFpdi {
 
         $this->AddPage($orientation, $size);
         $this->SetAutoPageBreak(false, 0);
-        $this->Image('@' . $imagecontent, 0, 0, $size['width'], $size['height'],
+        $this->Image('@' . $imagecontent, 0, 0, $size['w'], $size['h'],
             '', '', '', false, null, '', false, false, 0);
     }
 }

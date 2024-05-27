@@ -14,9 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace core_completion;
-
-use core_completion_bulkedit_form;
+/**
+ * External completion functions unit tests
+ *
+ * @package    core_completion
+ * @copyright  2017 Marina Glancy
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -30,7 +34,7 @@ require_once($CFG->libdir . '/completionlib.php');
  * @copyright  2017 Marina Glancy
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class bulk_update_test extends \advanced_testcase {
+class core_completion_bulk_update_testcase extends advanced_testcase {
 
     /**
      * Provider for test_bulk_form_submit_single
@@ -76,23 +80,15 @@ class bulk_update_test extends \advanced_testcase {
             'lti-2' => ['lti', ['completion' => COMPLETION_TRACKING_MANUAL]],
             'page-1' => ['page', ['completion' => COMPLETION_TRACKING_AUTOMATIC, 'completionview' => 1]],
             'page-2' => ['page', ['completion' => COMPLETION_TRACKING_MANUAL]],
-            'quiz-1' => ['quiz', ['completion' => COMPLETION_TRACKING_AUTOMATIC, 'completionpassgrade' => 1]],
+            'quiz-1' => ['quiz', ['completion' => COMPLETION_TRACKING_AUTOMATIC, 'completionpass' => 1]],
             'quiz-2' => ['quiz', ['completion' => COMPLETION_TRACKING_MANUAL]],
             'resource-1' => ['resource', ['completion' => COMPLETION_TRACKING_AUTOMATIC, 'completionview' => 1]],
             'resource-2' => ['resource', ['completion' => COMPLETION_TRACKING_MANUAL]],
             'scorm-1' => ['scorm',
-                [
-                    'completion' => COMPLETION_TRACKING_AUTOMATIC,
-                    'completionscoreenabled' => 1,
-                    'completionscorerequired' => 1,
-                    'completionstatusrequired' => [2 => 'passed'],
-                ],
-                [
-                    'completion' => COMPLETION_TRACKING_AUTOMATIC,
-                    'completionscorerequired' => 1,
-                    'completionstatusrequired' => 2,
-                ],
-            ],
+                ['completion' => COMPLETION_TRACKING_AUTOMATIC, 'completionscorerequired' => 1,
+                    'completionstatusrequired' => [2 => 'passed']],
+                ['completion' => COMPLETION_TRACKING_AUTOMATIC, 'completionscorerequired' => 1,
+                    'completionstatusrequired' => 2]],
             'scorm-2' => ['scorm', ['completion' => COMPLETION_TRACKING_MANUAL]],
             'survey-1' => ['survey', ['completion' => COMPLETION_TRACKING_AUTOMATIC, 'completionsubmit' => 1]],
             'survey-2' => ['survey', ['completion' => COMPLETION_TRACKING_MANUAL]],
@@ -134,7 +130,7 @@ class bulk_update_test extends \advanced_testcase {
         }
 
         // Apply completion rules to the modules.
-        $manager = new manager($course->id);
+        $manager = new core_completion\manager($course->id);
         $manager->apply_completion($data, $form->has_custom_completion_rules());
 
         // Make sure either course_modules or instance table was respectfully updated.
@@ -157,11 +153,6 @@ class bulk_update_test extends \advanced_testcase {
      */
     protected function create_course_and_modules($modulenames) {
         global $CFG, $PAGE;
-
-        // Chat and Survey modules are disabled by default, enable them for testing.
-        $manager = \core_plugin_manager::resolve_plugininfo_class('mod');
-        $manager::enable_plugin('chat', 1);
-        $manager::enable_plugin('survey', 1);
 
         $CFG->enablecompletion = true;
         $course = $this->getDataGenerator()->create_course(['enablecompletion' => 1], ['createsections' => true]);
@@ -254,7 +245,7 @@ class bulk_update_test extends \advanced_testcase {
         }
 
         // Apply completion rules to the modules.
-        $manager = new manager($course->id);
+        $manager = new core_completion\manager($course->id);
         $manager->apply_completion($data, $form->has_custom_completion_rules());
 
         // Make sure either course_modules or instance table was respectfully updated.

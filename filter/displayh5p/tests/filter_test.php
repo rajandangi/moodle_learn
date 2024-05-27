@@ -23,10 +23,6 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace filter_displayh5p;
-
-use filter_displayh5p;
-
 defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
@@ -38,9 +34,9 @@ require_once($CFG->dirroot.'/filter/displayh5p/filter.php');
  * @copyright 2019 Victor Deniz <victor@moodle.com>
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class filter_test extends \advanced_testcase {
+class filter_displayh5p_testcase extends advanced_testcase {
 
-    public function setUp(): void {
+    public function setUp() {
         parent::setUp();
 
         $this->resetAfterTest(true);
@@ -64,7 +60,7 @@ class filter_test extends \advanced_testcase {
         $filterplugin = new filter_displayh5p(null, array());
 
         $filteredtext = $filterplugin->filter($text);
-        $this->assertMatchesRegularExpression($filteredtextpattern, $filteredtext);
+        $this->assertRegExp($filteredtextpattern, $filteredtext);
     }
 
     /**

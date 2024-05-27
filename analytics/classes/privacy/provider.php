@@ -52,7 +52,7 @@ class provider implements
      * @param   collection $collection The initialised collection to add items to.
      * @return  collection     A listing of user data stored through this system.
      */
-    public static function get_metadata(collection $collection): collection {
+    public static function get_metadata(collection $collection) : collection {
         $collection->add_database_table(
             'analytics_indicator_calc',
             [
@@ -96,26 +96,6 @@ class provider implements
             'privacy:metadata:analytics:predictionactions'
         );
 
-        // Regarding this block, we are unable to export or purge this data, as
-        // it would damage the analytics data across the whole site.
-        $collection->add_database_table(
-            'analytics_models',
-            [
-                'usermodified' => 'privacy:metadata:analytics:analyticsmodels:usermodified',
-            ],
-            'privacy:metadata:analytics:analyticsmodels'
-        );
-
-        // Regarding this block, we are unable to export or purge this data, as
-        // it would damage the analytics log data across the whole site.
-        $collection->add_database_table(
-            'analytics_models_log',
-            [
-                'usermodified' => 'privacy:metadata:analytics:analyticsmodelslog:usermodified',
-            ],
-            'privacy:metadata:analytics:analyticsmodelslog'
-        );
-
         return $collection;
     }
 
@@ -125,7 +105,7 @@ class provider implements
      * @param   int $userid The user to search.
      * @return  contextlist   $contextlist  The contextlist containing the list of contexts used in this plugin.
      */
-    public static function get_contexts_for_userid(int $userid): contextlist {
+    public static function get_contexts_for_userid(int $userid) : contextlist {
         global $DB;
 
         $contextlist = new \core_privacy\local\request\contextlist();

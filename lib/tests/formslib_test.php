@@ -17,20 +17,11 @@
 /**
  * Unit tests for /lib/formslib.php.
  *
- * @package   core
- * @category  test
+ * @package   core_form
+ * @category  phpunit
  * @copyright 2011 Sam Hemelryk
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
-namespace core;
-
-use HTML_QuickForm_Rule_Range;
-use moodleform;
-use MoodleQuickForm_radio;
-use MoodleQuickForm_Rule_Required;
-use MoodleQuickForm_select;
-use MoodleQuickForm_text;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -40,15 +31,8 @@ require_once($CFG->libdir . '/form/radio.php');
 require_once($CFG->libdir . '/form/select.php');
 require_once($CFG->libdir . '/form/text.php');
 
-/**
- * Unit tests for /lib/formslib.php.
- *
- * @package   core
- * @category  test
- * @copyright 2011 Sam Hemelryk
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-class formslib_test extends \advanced_testcase {
+
+class core_formslib_testcase extends advanced_testcase {
 
     public function test_require_rule() {
         global $CFG;

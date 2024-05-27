@@ -21,29 +21,32 @@ Feature: Users can auto-enrol themself in courses where self enrolment is allowe
   @javascript
   Scenario: Self-enrolment enabled as guest
     Given I log in as "teacher1"
-    And I add "Self enrolment" enrolment method in "Course 1" with:
+    And I am on "Course 1" course homepage
+    And I add "Self enrolment" enrolment method with:
       | Custom instance name | Test student enrolment |
     And I log out
     When I am on "Course 1" course homepage
-    And I press "Access as a guest"
+    And I press "Log in as a guest"
     Then I should see "Guests cannot access this course. Please log in."
     And I press "Continue"
     And I should see "Log in"
 
   Scenario: Self-enrolment enabled
     Given I log in as "teacher1"
-    When I add "Self enrolment" enrolment method in "Course 1" with:
+    And I am on "Course 1" course homepage
+    When I add "Self enrolment" enrolment method with:
       | Custom instance name | Test student enrolment |
     And I log out
     And I log in as "student1"
     And I am on "Course 1" course homepage
     And I press "Enrol me"
-    Then I should see "New section"
+    Then I should see "Topic 1"
     And I should not see "Enrolment options"
 
   Scenario: Self-enrolment enabled requiring an enrolment key
     Given I log in as "teacher1"
-    When I add "Self enrolment" enrolment method in "Course 1" with:
+    And I am on "Course 1" course homepage
+    When I add "Self enrolment" enrolment method with:
       | Custom instance name | Test student enrolment |
       | Enrolment key | moodle_rules |
     And I log out
@@ -52,7 +55,7 @@ Feature: Users can auto-enrol themself in courses where self enrolment is allowe
     And I set the following fields to these values:
       | Enrolment key | moodle_rules |
     And I press "Enrol me"
-    Then I should see "New section"
+    Then I should see "Topic 1"
     And I should not see "Enrolment options"
     And I should not see "Enrol me in this course"
 
@@ -63,11 +66,13 @@ Feature: Users can auto-enrol themself in courses where self enrolment is allowe
 
   Scenario: Self-enrolment enabled requiring a group enrolment key
     Given I log in as "teacher1"
-    When I add "Self enrolment" enrolment method in "Course 1" with:
+    And I am on "Course 1" course homepage
+    When I add "Self enrolment" enrolment method with:
       | Custom instance name | Test student enrolment |
       | Enrolment key | moodle_rules |
       | Use group enrolment keys | Yes |
-    And I am on the "Course 1" "groups" page
+    And I am on "Course 1" course homepage
+    And I navigate to "Users > Groups" in current page administration
     And I press "Create group"
     And I set the following fields to these values:
       | Group name | Group 1 |
@@ -79,14 +84,15 @@ Feature: Users can auto-enrol themself in courses where self enrolment is allowe
     And I set the following fields to these values:
       | Enrolment key | Test-groupenrolkey1 |
     And I press "Enrol me"
-    Then I should see "New section"
+    Then I should see "Topic 1"
     And I should not see "Enrolment options"
     And I should not see "Enrol me in this course"
 
   @javascript
   Scenario: Edit a self-enrolled user's enrolment from the course participants page
     Given I log in as "teacher1"
-    When I add "Self enrolment" enrolment method in "Course 1" with:
+    And I am on "Course 1" course homepage
+    When I add "Self enrolment" enrolment method with:
       | Custom instance name | Test student enrolment |
     And I log out
     And I log in as "student1"
@@ -106,7 +112,8 @@ Feature: Users can auto-enrol themself in courses where self enrolment is allowe
   @javascript
   Scenario: Unenrol a self-enrolled student from the course participants page
     Given I log in as "teacher1"
-    When I add "Self enrolment" enrolment method in "Course 1" with:
+    And I am on "Course 1" course homepage
+    When I add "Self enrolment" enrolment method with:
       | Custom instance name | Test student enrolment |
     And I log out
     And I log in as "student1"
@@ -120,39 +127,3 @@ Feature: Users can auto-enrol themself in courses where self enrolment is allowe
     When I click on "//a[@data-action='unenrol']" "xpath_element" in the "student1" "table_row"
     And I click on "Unenrol" "button" in the "Unenrol" "dialogue"
     Then I should not see "Student 1" in the "participants" "table"
-
-  @javascript
-  Scenario: Self unenrol as a self-enrolled student from the course
-    Given the "multilang" filter is "on"
-    And the "multilang" filter applies to "content and headings"
-    And I am on the "C1" "Course" page logged in as "teacher1"
-    When I add "Self enrolment" enrolment method in "Course 1" with:
-      | Custom instance name | Test student enrolment |
-    And I am on "Course 1" course homepage
-    And I navigate to "Settings" in current page administration
-    And I set the field "Course full name" in the "General" "fieldset" to "<span lang=\"en\" class=\"multilang\">Course</span><span lang=\"it\" class=\"multilang\">Corso</span> 1"
-    And I press "Save and display"
-    And I log out
-    And I am on the "C1" "Course" page logged in as "student1"
-    And I press "Enrol me"
-    And I should see "You are enrolled in the course"
-    And I am on the "C1" "course" page
-    And I navigate to "Unenrol me from this course" in current page administration
-    And I click on "Continue" "button" in the "Confirm" "dialogue"
-    Then I should see "You are unenrolled from the course \"Course 1\""
-
-  @javascript
-  Scenario: Self-enrolment enabled with simultaneous guest access
-    Given I log in as "teacher1"
-    And I am on the "Course 1" "enrolment methods" page
-    And I click on "Enable" "link" in the "Self enrolment (Student)" "table_row"
-    And I click on "Edit" "link" in the "Guest access" "table_row"
-    And I set the following fields to these values:
-      | Allow guest access | Yes |
-    And I press "Save changes"
-    And I log out
-    And I log in as "student1"
-    And I am on "Course 1" course homepage
-    And I navigate to "Enrol me in this course" in current page administration
-    And I click on "Enrol me" "button"
-    Then I should see "New section"

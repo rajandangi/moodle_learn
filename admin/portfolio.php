@@ -102,27 +102,32 @@ if (($action == 'edit') || ($action == 'new')) {
     require_sesskey();
 
     $instance = portfolio_instance($portfolio);
-    $plugin = $instance->get('plugin');
+    $current = $instance->get('visible');
+    if (empty($current) && $instance->instance_sanity_check()) {
+        print_error('cannotsetvisible', 'portfolio', $baseurl);
+    }
+
     if ($action == 'show') {
         $visible = 1;
     } else {
         $visible = 0;
     }
 
-    $class = \core_plugin_manager::resolve_plugininfo_class('portfolio');
-    $class::enable_plugin($plugin, $visible);
+    $instance->set('visible', $visible);
+    $instance->save();
+    core_plugin_manager::reset_caches();
     $return = true;
 } else if ($action == 'delete') {
     $instance = portfolio_instance($portfolio);
     if ($sure) {
         if (!confirm_sesskey()) {
-            throw new \moodle_exception('confirmsesskeybad', '', $baseurl);
+            print_error('confirmsesskeybad', '', $baseurl);
         }
         if ($instance->delete()) {
             $deletedstr = get_string('instancedeleted', 'portfolio');
             redirect($baseurl, $deletedstr, 1);
         } else {
-            throw new \moodle_exception('instancenotdeleted', 'portfolio', $baseurl);
+            print_error('instancenotdeleted', 'portfolio', $baseurl);
         }
         exit;
     } else {
@@ -241,3 +246,4 @@ if ($return) {
 }
 
 echo $OUTPUT->footer();
+

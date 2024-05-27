@@ -17,21 +17,19 @@
 /**
  * Unit tests for the question import and export system.
  *
- * @package    core_question
- * @category   test
+ * @package    moodlecore
+ * @subpackage questionbank
  * @copyright  2009 The Open University
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace core_question;
-
-use qformat_default;
 
 defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
 require_once($CFG->libdir . '/questionlib.php');
 require_once($CFG->dirroot . '/question/format.php');
+
 
 /**
  * Subclass to make it easier to test qformat_default.
@@ -49,23 +47,24 @@ class testable_qformat extends qformat_default {
     }
 }
 
+
 /**
  * Unit tests for the matching question definition class.
  *
  * @copyright  2009 The Open University
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class importexport_test extends \advanced_testcase {
+class qformat_default_test extends advanced_testcase {
     public function test_assemble_category_path() {
         $format = new testable_qformat();
-        $pathsections = [
+        $pathsections = array(
             '$course$',
             "Tim's questions",
             "Tricky things like / // and so on",
             'Category name ending in /',
             '/ and one that starts with one',
             '<span lang="en" class="multilang">Matematically</span> <span lang="sv" class="multilang">Matematiskt (svenska)</span>'
-        ];
+        );
         $this->assertEquals('$course$/Tim\'s questions/Tricky things like // //// and so on/Category name ending in // / // and one that starts with one/<span lang="en" class="multilang">Matematically<//span> <span lang="sv" class="multilang">Matematiskt (svenska)<//span>',
                 $format->assemble_category_path($pathsections));
     }
@@ -73,20 +72,20 @@ class importexport_test extends \advanced_testcase {
     public function test_split_category_path() {
         $format = new testable_qformat();
         $path = '$course$/Tim\'s questions/Tricky things like // //// and so on/Category name ending in // / // and one that starts with one/<span lang="en" class="multilang">Matematically<//span> <span lang="sv" class="multilang">Matematiskt (svenska)<//span>';
-        $this->assertEquals([
+        $this->assertEquals(array(
                     '$course$',
                     "Tim's questions",
                     "Tricky things like / // and so on",
                     'Category name ending in /',
                     '/ and one that starts with one',
                     '<span lang="en" class="multilang">Matematically</span> <span lang="sv" class="multilang">Matematiskt (svenska)</span>'
-                ], $format->split_category_path($path));
+                ), $format->split_category_path($path));
     }
 
     public function test_split_category_path_cleans() {
         $format = new testable_qformat();
         $path = '<evil>Nasty <virus //> thing<//evil>';
-        $this->assertEquals(['Nasty  thing'], $format->split_category_path($path));
+        $this->assertEquals(array('Nasty  thing'), $format->split_category_path($path));
     }
 
     public function test_clean_question_name() {

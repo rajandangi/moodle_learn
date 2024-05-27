@@ -14,16 +14,22 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace mod_book;
-
 /**
- * Generator tests class.
+ * Genarator tests.
  *
  * @package    mod_book
  * @copyright  2013 Frédéric Massart
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class generator_test extends \advanced_testcase {
+
+/**
+ * Genarator tests class.
+ *
+ * @package    mod_book
+ * @copyright  2013 Frédéric Massart
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+class mod_book_generator_testcase extends advanced_testcase {
 
     public function test_create_instance() {
         global $DB;
@@ -62,7 +68,7 @@ class generator_test extends \advanced_testcase {
         $this->assertEquals('Oops', $DB->get_field_select('book_chapters', 'title', 'id = :id', array('id' => $chapter->id)));
         $this->assertEquals('Yay!', $DB->get_field_select('book_chapters', 'content', 'id = :id', array('id' => $chapter->id)));
         $this->assertEquals(array('Cats', 'mice'),
-            array_values(\core_tag_tag::get_item_tags_array('mod_book', 'book_chapters', $chapter->id)));
+            array_values(core_tag_tag::get_item_tags_array('mod_book', 'book_chapters', $chapter->id)));
 
         $chapter = $bookgenerator->create_content($book);
         $this->assertEquals(3, $DB->count_records('book_chapters', array('bookid' => $book->id)));

@@ -22,8 +22,6 @@
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace core_analytics;
-
 defined('MOODLE_INTERNAL') || die();
 
 require_once(__DIR__ . '/fixtures/test_indicator_max.php');
@@ -41,15 +39,9 @@ require_once(__DIR__ . '/fixtures/test_analysis.php');
  * @copyright 2017 David Monllaó {@link http://www.davidmonllao.com}
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class model_test extends \advanced_testcase {
+class analytics_model_testcase extends advanced_testcase {
 
-    /** @var model Store Model. */
-    protected $model;
-
-    /** @var \stdClass Store model object. */
-    protected $modelobj;
-
-    public function setUp(): void {
+    public function setUp() {
 
         $this->setAdminUser();
 
@@ -191,7 +183,7 @@ class model_test extends \advanced_testcase {
         global $DB;
         $this->resetAfterTest();
 
-        $statictarget = new \test_static_target_shortname();
+        $statictarget = new test_static_target_shortname();
         $indicators['test_indicator_max'] = \core_analytics\manager::get_indicator('test_indicator_max');
         $model = \core_analytics\model::create($statictarget, $indicators, '\core\analytics\time_splitting\quarters');
         $modelobj = $model->get_model_obj();
@@ -309,11 +301,11 @@ class model_test extends \advanced_testcase {
             $courses[$analysable->get_id()] = $course;
         }
 
-        $target = new \test_target_course_level_shortname();
+        $target = new test_target_course_level_shortname();
         $analyser = new \core\analytics\analyser\courses(1, $target, [], [], []);
 
         $result = new \core_analytics\local\analysis\result_array(1, false, []);
-        $analysis = new \test_analysis($analyser, false, $result);
+        $analysis = new test_analysis($analyser, false, $result);
 
         // Each analysable element takes 0.5 secs minimum (test_analysis), so the max (and likely) number of analysable
         // elements that will be processed is 2.
@@ -350,7 +342,7 @@ class model_test extends \advanced_testcase {
 
         // Training and prediction data do not get mixed.
         $result = new \core_analytics\local\analysis\result_array(1, false, []);
-        $analysis = new \test_analysis($analyser, false, $result);
+        $analysis = new test_analysis($analyser, false, $result);
         $analysis->run();
         $params = array('modelid' => 1, 'action' => 'training');
         $this->assertLessThanOrEqual(2, $DB->count_records('analytics_used_analysables', $params));
@@ -410,7 +402,7 @@ class model_test extends \advanced_testcase {
         $this->model->update(true, [], false);
         $this->assertFalse($this->model->can_export_configuration());
 
-        $statictarget = new \test_static_target_shortname();
+        $statictarget = new test_static_target_shortname();
         $indicators['test_indicator_max'] = \core_analytics\manager::get_indicator('test_indicator_max');
         $model = \core_analytics\model::create($statictarget, $indicators, '\\core\\analytics\\time_splitting\\quarters');
         $this->assertFalse($model->can_export_configuration());
@@ -426,12 +418,13 @@ class model_test extends \advanced_testcase {
 
         $modelconfig = new \core_analytics\model_config($this->model);
 
-        $method = new \ReflectionMethod('\\core_analytics\\model_config', 'export_model_data');
+        $method = new ReflectionMethod('\\core_analytics\\model_config', 'export_model_data');
+        $method->setAccessible(true);
 
         $modeldata = $method->invoke($modelconfig);
 
         $this->assertArrayHasKey('core', $modeldata->dependencies);
-        $this->assertIsFloat($modeldata->dependencies['core']);
+        $this->assertInternalType('float', $modeldata->dependencies['core']);
         $this->assertNotEmpty($modeldata->target);
         $this->assertNotEmpty($modeldata->timesplitting);
         $this->assertCount(3, $modeldata->indicators);
@@ -573,7 +566,7 @@ class model_test extends \advanced_testcase {
     private function add_fake_log() {
         global $DB, $USER;
 
-        $log = new \stdClass();
+        $log = new stdClass();
         $log->modelid = $this->modelobj->id;
         $log->version = $this->modelobj->version;
         $log->target = $this->modelobj->target;

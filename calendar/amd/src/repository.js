@@ -17,6 +17,8 @@
  * A javascript module to handle calendar ajax actions.
  *
  * @module     core_calendar/repository
+ * @class      repository
+ * @package    core_calendar
  * @copyright  2017 Simey Lameze <lameze@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -92,10 +94,9 @@ export const submitCreateUpdateForm = (formData) => {
  * @param {boolean} includeNavigation Whether to include navigation.
  * @param {boolean} mini Whether the month is in mini view.
  * @param {number} day Day (optional)
- * @param {string} view The calendar view mode.
  * @return {promise} Resolved with the month view data.
  */
-export const getCalendarMonthData = (year, month, courseId, categoryId, includeNavigation, mini, day = 1, view = 'month') => {
+export const getCalendarMonthData = (year, month, courseId, categoryId, includeNavigation, mini, day = 1) => {
     const request = {
         methodname: 'core_calendar_get_calendar_monthly_view',
         args: {
@@ -106,7 +107,6 @@ export const getCalendarMonthData = (year, month, courseId, categoryId, includeN
             includenavigation: includeNavigation,
             mini,
             day,
-            view,
         }
     };
 
@@ -191,23 +191,6 @@ export const getCourseGroupsData = (courseId) => {
         methodname: 'core_group_get_course_groups',
         args: {
             courseid: courseId
-        }
-    };
-
-    return Ajax.call([request])[0];
-};
-
-/**
- * Delete calendar subscription by id.
- *
- * @param {Number} subscriptionId The subscription id
- * @return {promise}
- */
-export const deleteSubscription = (subscriptionId) => {
-    const request = {
-        methodname: 'core_calendar_delete_subscription',
-        args: {
-            subscriptionid: subscriptionId
         }
     };
 

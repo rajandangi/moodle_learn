@@ -1,7 +1,3 @@
-/**
- Blocks
- */
-
 .blockmovetarget .accesshide {
     position: relative;
     left: initial;
@@ -36,7 +32,7 @@ $blocks-column-width: 360px !default;
     float: right;
 }
 
-$blocks-plus-gutter: $blocks-column-width + ( $grid-gutter-width * 0.5 );
+$blocks-plus-gutter: $blocks-column-width + ( $grid-gutter-width / 2 );
 
 /* We put an absolutely positioned div in a relatively positioned div so it takes up no space */
 @include media-breakpoint-up(sm) {
@@ -57,8 +53,8 @@ $blocks-plus-gutter: $blocks-column-width + ( $grid-gutter-width * 0.5 );
         width: 4rem;
         height: 2rem;
         background-color: $body-bg;
-        margin-left: $card-spacer-x * 0.5;
-        margin-bottom: $card-spacer-x * 0.5;
+        margin-left: $card-spacer-x / 2;
+        margin-bottom: $card-spacer-x / 2;
         border-bottom-left-radius: 0.5rem;
         float: right;
     }
@@ -71,6 +67,7 @@ $blocks-plus-gutter: $blocks-column-width + ( $grid-gutter-width * 0.5 );
 }
 
 // Required for IE11 to prevent blocks being pushed under the content.
+#region-main-settings-menu.has-blocks,
 #region-main.has-blocks {
     display: inline-block;
     width: calc(100% - #{$blocks-plus-gutter});
@@ -102,21 +99,11 @@ $blocks-plus-gutter: $blocks-column-width + ( $grid-gutter-width * 0.5 );
     }
 }
 
+$card-gutter : $card-deck-margin * 2;
+
 .block .empty-placeholder-image-lg {
     height: 5rem;
 }
-
-.block {
-    .searchbar {
-        .icon {
-            margin-right: 0;
-        }
-    }
-}
-
-//
-// Cards.
-//
 
 .block .block-cards {
     .course-info-container {
@@ -135,12 +122,10 @@ $blocks-plus-gutter: $blocks-column-width + ( $grid-gutter-width * 0.5 );
     .card .coursemenubtn {
         margin-top: -0.5rem;
     }
+    a.coursename,
     span.categoryname,
     .btn-link {
-        color: $gray-900;
-    }
-    .progress-text {
-        color: $gray-600;
+        color: inherit;
     }
     .multiline {
         white-space: normal;
@@ -150,55 +135,159 @@ $blocks-plus-gutter: $blocks-column-width + ( $grid-gutter-width * 0.5 );
         width: 36px;
         padding: 0;
         border-radius: 50%;
-    }
-}
-.card-grid {
-    display: flex;
-    .card {
-        flex: 1;
-    }
-    .drawercontent & .col,
-    .blockcolumn & .col {
-        flex: 0 0 auto;
-        max-width: 100%;
-    }
-}
-.card-carousel {
-    display: flex;
-    .card {
-        flex: 1;
-        @include media-breakpoint-up(sm) {
-            flex: 0 1 auto;
-            width: 240px;
-            max-width: 100%;
+
+        @include hover-focus {
+            background-color: $gray-200;
         }
     }
 }
-.course-card,
-.theme-card {
-    .card-img-top {
-        height: 7rem;
-        background-position: center;
-        background-size: cover;
+
+.dashboard-card-deck.one-row {
+    flex-flow: nowrap;
+    overflow-x: scroll;
+}
+
+.summaryimage {
+    height: 5rem;
+    width: 5rem;
+    background-position: center;
+    background-size: cover;
+}
+
+.dashboard-card-deck {
+    .dashboard-card {
+        margin-bottom: $card-gutter;
+        flex-basis: auto;
+        width: 100%;
+        flex-grow: 0;
+        flex-shrink: 0;
+        .dashboard-card-img {
+            height: 7rem;
+            background-position: center;
+            background-size: cover;
+        }
+        .dashboard-card-footer {
+            padding: 0.8rem;
+        }
+    }
+    @include media-breakpoint-up(sm) {
+        &.fixed-width-cards {
+            .dashboard-card {
+                width: 300px;
+                max-width: 100%;
+            }
+        }
     }
 }
 
-//
-// Block block_recentlyaccessedcourses
-//
+.dashboard-card-deck:not(.fixed-width-cards) {
+    @media (min-width: 576px) {
+        .dashboard-card {
+            width: calc(50% - #{$card-gutter});
+        }
+    }
+    @media (min-width: 840px) {
+        .dashboard-card {
+            width: calc(33.33% - #{$card-gutter});
+        }
+    }
+    @media (min-width: 1100px) {
+        .dashboard-card {
+            width: calc(25% - #{$card-gutter});
+        }
+    }
+    @media (min-width: 1360px) {
+        .dashboard-card {
+            width: calc(20% - #{$card-gutter});
+        }
+    }
+}
+
+#region-main.has-blocks {
+    .dashboard-card-deck:not(.fixed-width-cards) {
+        @media (min-width: 1200px) {
+            .dashboard-card {
+                width: calc(33.33% - #{$card-gutter});
+            }
+        }
+        @media (min-width: 1470px) {
+            .dashboard-card {
+                width: calc(25% - #{$card-gutter});
+            }
+        }
+    }
+}
+
+body.drawer-open-left {
+    .dashboard-card-deck:not(.fixed-width-cards) {
+        @media (min-width: 768px) {
+            .dashboard-card {
+                width: calc(100% - #{$card-gutter});
+            }
+        }
+        @media (min-width: 861px) {
+            .dashboard-card {
+                width: calc(50% - #{$card-gutter});
+            }
+        }
+        @media (min-width: 1122px) {
+            .dashboard-card {
+                width: calc(33.33% - #{$card-gutter});
+            }
+        }
+        @media (min-width: 1381px) {
+            .dashboard-card {
+                width: calc(25% - #{$card-gutter});
+            }
+        }
+    }
+}
+
+body.drawer-open-left #region-main.has-blocks {
+    .dashboard-card-deck:not(.fixed-width-cards) {
+        @media (min-width: 1200px) {
+            .dashboard-card {
+                width: calc(100% - #{$card-gutter});
+            }
+        }
+        @media (min-width: 1236px) {
+            .dashboard-card {
+                width: calc(50% - #{$card-gutter});
+            }
+        }
+        @media (min-width: 1497px) {
+            .dashboard-card {
+                width: calc(33.33% - #{$card-gutter});
+            }
+        }
+    }
+}
+
+@media (min-width: 1200px) {
+    #block-region-side-pre {
+        .dashboard-card-deck:not(.fixed-width-cards) {
+            margin-left: 0;
+            margin-right: 0;
+            .dashboard-card {
+                width: calc(100% - #{$card-gutter}) !important;
+            }
+        }
+    }
+}
 
 .block_recentlyaccessedcourses {
     .paging-bar-container {
         margin-top: -2.4rem;
-        padding-right: 0.5rem;
         justify-content: flex-end;
     }
+
     @include media-breakpoint-down(xs) {
         .paging-bar-container {
             margin-top: 0;
         }
     }
 }
+
 #block-region-side-pre {
     .block_recentlyaccessedcourses {
         .paging-bar-container {
@@ -207,38 +296,13 @@ $blocks-plus-gutter: $blocks-column-width + ( $grid-gutter-width * 0.5 );
     }
 }
 
-//
-// Block block_recentlyaccesseditems
-//
-
 .block_recentlyaccesseditems {
-    .activityiconcontainer {
-        width: 40px;
-        height: 40px;
-    }
-    aside[id^="block-region-side-"] & .card:nth-of-type(n+4) {
-        display: none;
-    }
-    #block-region-content & [data-region="more-items-button-container"] {
-        display: none;
-    }
-    a.card {
-        &:hover,
-        &:focus {
-            text-decoration: none;
-            h6 {
-                text-decoration: underline;
-            }
-        }
-        small {
-            color: $body-color;
-        }
+    img.icon {
+        height: 24px;
+        width: 24px;
+        margin-right: 6px;
     }
 }
-
-//
-// Block block_myoverview
-//
 
 .block_myoverview {
     .content {
@@ -247,41 +311,7 @@ $blocks-plus-gutter: $blocks-column-width + ( $grid-gutter-width * 0.5 );
     .paged-content-page-container {
         min-height: 13rem;
     }
-    .summary-image {
-        height: 5rem;
-        width: 5rem;
-        background-position: center;
-        background-size: cover;
-    }
-    .list-image {
-        height: 5rem;
-        width: 20rem;
-        background-position: center;
-        background-size: cover;
-        @include media-breakpoint-down(lg) {
-            width: 100%;
-        }
-    }
 }
-
-//
-// Block block_timeline
-//
-
-.block_timeline {
-    .paged-content-page-container {
-        background-color: $list-group-bg;
-    }
-}
-.block_timeline {
-    .event-action {
-        padding-left: 5.55em;
-    }
-}
-
-//
-// Blocks block_settings and block_navigation
-//
 
 // Show expand collapse with font-awesome.
 .block_settings .block_tree [aria-expanded="true"],
@@ -292,28 +322,27 @@ $blocks-plus-gutter: $blocks-column-width + ( $grid-gutter-width * 0.5 );
 .block_navigation .block_tree [aria-expanded="false"] {
     background-image: none;
 }
-.block_settings .block_tree [aria-expanded="true"] > p:before,
-.block_navigation .block_tree [aria-expanded="true"] > p:before {
-    @extend .fa-solid;
-    content: fa-content($fa-var-angle-down);
+.block_settings .block_tree [aria-expanded="true"]:before,
+.block_navigation .block_tree [aria-expanded="true"]:before {
+    content: $fa-var-angle-down;
     margin-right: 0;
+    @include fa-icon();
     font-size: 16px;
     width: 16px;
 }
 
-.block_settings .block_tree [aria-expanded="false"] > p:before,
-.block_navigation .block_tree [aria-expanded="false"] > p:before {
-    @extend .fa-solid;
-    content: fa-content($fa-var-angle-right);
+.block_settings .block_tree [aria-expanded="false"]:before,
+.block_navigation .block_tree [aria-expanded="false"]:before {
+    content: $fa-var-angle-right;
     margin-right: 0;
+    @include fa-icon();
     font-size: 16px;
     width: 16px;
 }
 .dir-rtl {
-    .block_settings .block_tree [aria-expanded="false"] > p:before,
-    .block_navigation .block_tree [aria-expanded="false"] > p:before {
-        @extend .fa-solid;
-        content: fa-content($fa-var-angle-left);
+    .block_settings .block_tree [aria-expanded="false"]:before,
+    .block_navigation .block_tree [aria-expanded="false"]:before {
+        content: $fa-var-angle-left;
     }
 }
 
@@ -330,68 +359,9 @@ $blocks-plus-gutter: $blocks-column-width + ( $grid-gutter-width * 0.5 );
     color: $text-muted;
 }
 
-.block_social_activities li a.movehere,
-.block_site_main_menu li a.movehere {
-    display: block;
-    width: 100%;
-    height: 2rem;
-    border: 2px dashed $gray-800;
-    margin: 4px 0;
-}
-
-//
-// Fake blocks
-//
-
-.pagelayout-embedded {
-    .has-fake-blocks {
-        padding: 1rem;
-        display: flex;
-    }
-
-    .has-fake-blocks .embedded-main {
-        order: 0;
-        width: calc(100% - #{$blocks-column-width});
-        margin-right: 1rem;
-    }
-
-    .embedded-blocks {
-        order: 1;
-        width: $blocks-column-width;
-    }
-
-    @media (max-width: 767.98px) {
-        .has-fake-blocks {
-            display: block;
-        }
-        .has-fake-blocks .embedded-main {
-            width: 100%;
-        }
-        .embedded-blocks {
-            width: 100%;
-        }
-    }
-}
-
-//
-// Block add button
-//
-.block-add {
-    @include alert-variant($primary-light-background, $primary-light-border, $primary);
-    @include border-radius();
-    width: 100%;
-    border-width: $border-width;
-    .pluscontainer {
-        border: $border-width solid $primary-light-border;
-        border-radius: 50%;
-        width: map-get($iconsizes, 5);
-        height: map-get($iconsizes, 5);
-    }
-    &:hover {
-        cursor: pointer;
-        background-color: $primary-light-background;
-        .activity-add-text {
-            text-decoration: underline;
-        }
+@include media-breakpoint-down(sm) {
+    .block.card {
+        border-left: 0;
+        border-right: 0;
     }
 }

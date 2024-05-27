@@ -14,7 +14,15 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-use core_completion\manager;
+/**
+ * Bulk edit activity completion form
+ *
+ * @package     core_completion
+ * @copyright   2017 Marina Glancy
+ * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+defined('MOODLE_INTERNAL') || die;
 
 /**
  * Bulk edit activity completion form
@@ -46,20 +54,6 @@ class core_completion_bulkedit_form extends core_completion_edit_base_form {
     }
 
     /**
-     * It will return the course module when $cms has only one course module; otherwise, null will be returned.
-     *
-     * @return cm_info|null
-     */
-    protected function get_cm(): ?cm_info {
-        if (count($this->cms) === 1) {
-            return reset($this->cms);
-        }
-
-        // If there are multiple modules, so none will be selected.
-        return null;
-    }
-
-    /**
      * Returns an instance of component-specific module form for the first selected module
      *
      * @return moodleform_mod|null
@@ -72,11 +66,26 @@ class core_completion_bulkedit_form extends core_completion_edit_base_form {
         }
 
         $cm = reset($this->cms);
-        $this->_moduleform = manager::get_module_form(
-            modname: $cm->modname,
-            course: $this->course,
-            cm: $cm,
-        );
+        $course = $this->course;
+        $modname = $cm->modname;
+
+        $modmoodleform = "$CFG->dirroot/mod/$modname/mod_form.php";
+        if (file_exists($modmoodleform)) {
+            require_once($modmoodleform);
+        } else {
+            print_error('noformdesc');
+        }
+
+        list($cmrec, $context, $module, $data, $cw) = get_moduleinfo_data($cm, $course);
+        $data->return = 0;
+        $data->sr = 0;
+        $data->update = $modname;
+
+        // Initialise the form but discard all JS requirements it adds, our form has already added them.
+        $mformclassname = 'mod_'.$modname.'_mod_form';
+        $PAGE->start_collecting_javascript_requirements();
+        $this->_moduleform = new $mformclassname($data, 0, $cmrec, $course);
+        $PAGE->end_collecting_javascript_requirements();
 
         return $this->_moduleform;
     }
@@ -128,8 +137,7 @@ class core_completion_bulkedit_form extends core_completion_edit_base_form {
         // Completion: Don't let them choose automatic completion without turning
         // on some conditions.
         if (array_key_exists('completion', $data) &&
-                $data['completion'] == COMPLETION_TRACKING_AUTOMATIC &&
-                (!empty($data['completionusegrade']) || !empty($data['completionpassgrade']))) {
+                $data['completion'] == COMPLETION_TRACKING_AUTOMATIC && !empty($data['completionusegrade'])) {
             require_once($CFG->libdir.'/gradelib.php');
             $moduleswithoutgradeitem = [];
             foreach ($this->cms as $cm) {

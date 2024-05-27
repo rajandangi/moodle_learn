@@ -23,8 +23,6 @@
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-use mod_quiz\output\attempt_summary_information;
-
 require_once('../../config.php');
 require_once('locallib.php');
 
@@ -32,15 +30,14 @@ $attemptid = required_param('attempt', PARAM_INT);
 $slot = required_param('slot', PARAM_INT); // The question number in the attempt.
 $cmid = optional_param('cmid', null, PARAM_INT);
 
-$PAGE->set_url('/mod/quiz/comment.php', ['attempt' => $attemptid, 'slot' => $slot]);
+$PAGE->set_url('/mod/quiz/comment.php', array('attempt' => $attemptid, 'slot' => $slot));
 
 $attemptobj = quiz_create_attempt_handling_errors($attemptid, $cmid);
-$attemptobj->preload_all_attempt_step_users();
-$student = $DB->get_record('user', ['id' => $attemptobj->get_userid()]);
+$student = $DB->get_record('user', array('id' => $attemptobj->get_userid()));
 
 // Can only grade finished attempts.
 if (!$attemptobj->is_finished()) {
-    throw new \moodle_exception('attemptclosed', 'quiz');
+    print_error('attemptclosed', 'quiz');
 }
 
 // Check login and permissions.
@@ -49,28 +46,37 @@ $attemptobj->require_capability('mod/quiz:grade');
 
 // Print the page header.
 $PAGE->set_pagelayout('popup');
-$PAGE->set_title(get_string('manualgradequestion', 'quiz', [
+$PAGE->set_title(get_string('manualgradequestion', 'quiz', array(
         'question' => format_string($attemptobj->get_question_name($slot)),
-        'quiz' => format_string($attemptobj->get_quiz_name()), 'user' => fullname($student)]));
+        'quiz' => format_string($attemptobj->get_quiz_name()), 'user' => fullname($student))));
 $PAGE->set_heading($attemptobj->get_course()->fullname);
 $output = $PAGE->get_renderer('mod_quiz');
 echo $output->header();
 
 // Prepare summary information about this question attempt.
-$summary = new attempt_summary_information();
+$summarydata = array();
 
 // Student name.
 $userpicture = new user_picture($student);
 $userpicture->courseid = $attemptobj->get_courseid();
-$summary->add_item('user', $userpicture, new action_link(
-        new moodle_url('/user/view.php', [ 'id' => $student->id, 'course' => $attemptobj->get_courseid()]),
-        fullname($student, true)));
+$summarydata['user'] = array(
+    'title'   => $userpicture,
+    'content' => new action_link(new moodle_url('/user/view.php', array(
+            'id' => $student->id, 'course' => $attemptobj->get_courseid())),
+            fullname($student, true)),
+);
 
 // Quiz name.
-$summary->add_item('quizname', get_string('modulename', 'quiz'), format_string($attemptobj->get_quiz_name()));
+$summarydata['quizname'] = array(
+    'title'   => get_string('modulename', 'quiz'),
+    'content' => format_string($attemptobj->get_quiz_name()),
+);
 
 // Question name.
-$summary->add_item('questionname', get_string('question', 'quiz'), $attemptobj->get_question_name($slot));
+$summarydata['questionname'] = array(
+    'title'   => get_string('question', 'quiz'),
+    'content' => $attemptobj->get_question_name($slot),
+);
 
 // Process any data that was submitted.
 if (data_submitted() && confirm_sesskey()) {
@@ -80,16 +86,16 @@ if (data_submitted() && confirm_sesskey()) {
         $transaction->allow_commit();
 
         // Log this action.
-        $params = [
+        $params = array(
             'objectid' => $attemptobj->get_question_attempt($slot)->get_question_id(),
             'courseid' => $attemptobj->get_courseid(),
-            'context' => $attemptobj->get_quizobj()->get_context(),
-            'other' => [
+            'context' => context_module::instance($attemptobj->get_cmid()),
+            'other' => array(
                 'quizid' => $attemptobj->get_quizid(),
                 'attemptid' => $attemptobj->get_attemptid(),
                 'slot' => $slot
-            ]
-        ];
+            )
+        );
         $event = \mod_quiz\event\question_manually_graded::create($params);
         $event->trigger();
 
@@ -100,7 +106,7 @@ if (data_submitted() && confirm_sesskey()) {
 }
 
 // Print quiz information.
-echo html_writer::div($output->render($summary), 'mb-3');
+echo $output->review_summary_table($summarydata, 0);
 
 // Print the comment form.
 echo '<form method="post" class="mform" id="manualgradingform" action="' .
@@ -115,7 +121,7 @@ echo $attemptobj->render_question_for_commenting($slot);
 </div>
 <fieldset class="hidden">
     <div>
-        <div class="fitem fitem_actionbuttons fitem_fsubmit mt-3">
+        <div class="fitem fitem_actionbuttons fitem_fsubmit">
             <fieldset class="felement fsubmit">
                 <input id="id_submitbutton" type="submit" name="submit" class="btn btn-primary" value="<?php
                         print_string('save', 'quiz'); ?>"/>

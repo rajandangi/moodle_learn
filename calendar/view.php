@@ -96,23 +96,15 @@ $course = get_course($courseid);
 
 if ($iscoursecalendar && !empty($courseid)) {
     navigation_node::override_active_url(new moodle_url('/course/view.php', array('id' => $course->id)));
-    $PAGE->set_secondary_navigation(false);
 } else if (!empty($categoryid)) {
     core_course_category::get($categoryid); // Check that category exists and can be accessed.
     $PAGE->set_category_by_id($categoryid);
     navigation_node::override_active_url(new moodle_url('/course/index.php', array('categoryid' => $categoryid)));
-    $PAGE->navbar->add(
-        get_string('calendar', 'calendar'),
-        new moodle_url('/calendar/view.php', ['view' => 'month', 'category' => $categoryid])
-    );
-    $PAGE->set_secondary_navigation(false);
 } else {
     $PAGE->set_context(context_system::instance());
 }
 
-// Auto log in guests on frontpage.
-$autologinguest = !$iscoursecalendar;
-require_login($course, $autologinguest);
+require_login($course, false);
 
 $calendar = calendar_information::create($time, $courseid, $categoryid);
 
@@ -134,28 +126,20 @@ switch($view) {
     break;
 }
 
-$PAGE->set_show_course_index(false);
+// Print title and header
 $PAGE->set_pagelayout('standard');
-
-// Print title and header.
 $PAGE->set_title("$course->shortname: $strcalendar: $pagetitle");
 
-$headingstr = get_string('calendar', 'core_calendar');
-// If the user is on the course page,
-// then make the course name linkable to ease the user's navigation to the course page.
-if ($iscoursecalendar) {
-    $url = new \moodle_url('/course/view.php', ['id' => $courseid]);
-    $linkcourse = html_writer::link($url, $course->shortname);
-    $headingstr = "{$headingstr}: {$linkcourse}";
-}
-$PAGE->set_heading($headingstr, false);
+$headingstr = ($iscoursecalendar) ? get_string('coursecalendar', 'core_calendar', $COURSE->shortname) :
+        get_string('calendar', 'core_calendar');
+$PAGE->set_heading($headingstr);
 
 $renderer = $PAGE->get_renderer('core_calendar');
 $calendar->add_sidecalendar_blocks($renderer, true, $view);
 
 echo $OUTPUT->header();
 echo $renderer->start_layout();
-echo html_writer::start_tag('div', ['class' => 'heightcontainer', 'data-calendar-type' => 'main-block']);
+echo html_writer::start_tag('div', array('class'=>'heightcontainer'));
 
 
 

@@ -58,7 +58,7 @@ class qtype_ddmarker_renderer extends qtype_ddtoimage_renderer_base {
         $output .= html_writer::start_div('ddarea');
         $output .= html_writer::start_div($dropareaclass);
         $output .= html_writer::img(self::get_url_for_image($qa, 'bgimage'), get_string('dropbackground', 'qtype_ddmarker'),
-                ['class' => 'dropbackground img-fluid w-100']);
+                ['class' => 'dropbackground img-responsive img-fluid']);
 
         $output .= html_writer::div('', 'dropzones');
         $output .= html_writer::div('', 'markertexts');
@@ -69,7 +69,7 @@ class qtype_ddmarker_renderer extends qtype_ddtoimage_renderer_base {
         $orderedgroup = $question->get_ordered_choices(1);
         $hiddenfields = '';
         foreach ($orderedgroup as $choiceno => $drag) {
-            $classes = ['marker', 'user-select-none', 'choice' . $choiceno];
+            $classes = ['marker', 'choice' . $choiceno];
             $attr = [];
             if ($drag->infinite) {
                 $classes[] = 'infinite';

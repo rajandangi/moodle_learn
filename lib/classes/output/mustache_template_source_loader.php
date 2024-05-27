@@ -69,7 +69,7 @@ class mustache_template_source_loader {
      * @param string $templatestr
      * @return string
      */
-    protected function strip_template_comments($templatestr): string {
+    protected function strip_template_comments($templatestr) : string {
         return preg_replace('/(?={{!)(.*)(}})/sU', '', $templatestr);
     }
 
@@ -87,8 +87,7 @@ class mustache_template_source_loader {
         string $name,
         string $themename,
         bool $includecomments = false
-    ): string {
-        global $CFG;
+    ) : string {
         // Get the template source from the callback.
         $source = ($this->gettemplatesource)($component, $name, $themename);
 
@@ -96,9 +95,7 @@ class mustache_template_source_loader {
         if (!$includecomments) {
             $source = $this->strip_template_comments($source);
         }
-        if (!empty($CFG->debugtemplateinfo)) {
-            return "<!-- template(JS): $name -->" . $source . "<!-- /template(JS): $name -->";
-        }
+
         return $source;
     }
 
@@ -152,7 +149,7 @@ class mustache_template_source_loader {
         array $seentemplates = [],
         array $seenstrings = [],
         string $lang = null
-    ): array {
+    ) : array {
         // Initialise the return values.
         $templates = [];
         $strings = [];
@@ -286,7 +283,7 @@ class mustache_template_source_loader {
      * @param string $source The template source
      * @return array
      */
-    protected function scan_template_source_for_dependencies(string $source): array {
+    protected function scan_template_source_for_dependencies(string $source) : array {
         $tokenizer = new Mustache_Tokenizer();
         $tokens = $tokenizer->scan($source);
         $templates = [];

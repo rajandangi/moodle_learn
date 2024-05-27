@@ -14,6 +14,15 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+/**
+ * Test for content bank contenttype class.
+ *
+ * @package    core_contentbank
+ * @category   test
+ * @copyright  2020 Amaia Anabitarte <amaia@moodle.com>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
 namespace core_contentbank;
 
 use stdClass;
@@ -31,7 +40,7 @@ use contenttype_testable\contenttype as contenttype;
  * @coversDefaultClass \core_contentbank\contenttype
  *
  */
-class contenttype_test extends \advanced_testcase {
+class core_contenttype_contenttype_testcase extends \advanced_testcase {
 
     /** @var int Identifier for the manager role. */
     protected $managerroleid;
@@ -95,8 +104,6 @@ class contenttype_test extends \advanced_testcase {
      * @covers ::get_icon
      */
     public function test_get_icon() {
-        global $CFG;
-
         $this->resetAfterTest();
 
         $systemcontext = \context_system::instance();
@@ -104,10 +111,8 @@ class contenttype_test extends \advanced_testcase {
         $record = new stdClass();
         $record->name = 'New content';
         $content = $testable->create_content($record);
-        $this->assertEquals(
-            "{$CFG->wwwroot}/theme/image.php/boost/core/1/f/unknown",
-            $testable->get_icon($content),
-        );
+        $icon = $testable->get_icon($content);
+        $this->assertContains('archive', $icon);
     }
 
     /**
@@ -286,84 +291,6 @@ class contenttype_test extends \advanced_testcase {
     }
 
     /**
-     * Tests for behaviour of replace_content() using a dummy file.
-     *
-     * @covers ::replace_content
-     */
-    public function test_replace_content(): void {
-        global $USER;
-
-        $this->resetAfterTest();
-        $this->setAdminUser();
-        $context = context_system::instance();
-
-        // Add some content to the content bank.
-        $generator = $this->getDataGenerator()->get_plugin_generator('core_contentbank');
-        $contents = $generator->generate_contentbank_data('contenttype_testable', 3, 0, $context);
-        $content = reset($contents);
-
-        $dummy = [
-            'contextid' => context_user::instance($USER->id)->id,
-            'component' => 'user',
-            'filearea' => 'draft',
-            'itemid' => 1,
-            'filepath' => '/',
-            'filename' => 'file.h5p',
-            'userid' => $USER->id,
-        ];
-        $fs = get_file_storage();
-        $dummyfile = $fs->create_file_from_string($dummy, 'Dummy content');
-
-        $contenttype = new contenttype(context_system::instance());
-        $content = $contenttype->replace_content($dummyfile, $content);
-
-        $this->assertEquals('contenttype_testable', $content->get_content_type());
-        $this->assertInstanceOf('\\contenttype_testable\\content', $content);
-
-        $file = $content->get_file();
-        $this->assertEquals($dummyfile->get_userid(), $file->get_userid());
-        $this->assertEquals($dummyfile->get_contenthash(), $file->get_contenthash());
-        $this->assertEquals('contentbank', $file->get_component());
-        $this->assertEquals('public', $file->get_filearea());
-        $this->assertEquals('/', $file->get_filepath());
-    }
-
-    /**
-     * Tests for behaviour of replace_content() using an error file.
-     *
-     * @covers ::replace_content
-     */
-    public function test_replace_content_exception(): void {
-        global $USER;
-
-        $this->resetAfterTest();
-        $this->setAdminUser();
-        $context = context_system::instance();
-
-        // Add some content to the content bank.
-        $generator = $this->getDataGenerator()->get_plugin_generator('core_contentbank');
-        $contents = $generator->generate_contentbank_data('contenttype_testable', 3, 0, $context);
-        $content = reset($contents);
-
-        $dummy = [
-            'contextid' => context_user::instance($USER->id)->id,
-            'component' => 'user',
-            'filearea' => 'draft',
-            'itemid' => 1,
-            'filepath' => '/',
-            'filename' => 'error.txt',
-            'userid' => $USER->id,
-        ];
-        $fs = get_file_storage();
-        $dummyfile = $fs->create_file_from_string($dummy, 'Dummy content');
-
-        $contenttype = new contenttype(context_system::instance());
-
-        $this->expectException(Exception::class);
-        $content = $contenttype->replace_content($dummyfile, $content);
-    }
-
-    /**
      * Test the behaviour of can_delete().
      */
     public function test_can_delete() {
@@ -421,7 +348,7 @@ class contenttype_test extends \advanced_testcase {
     /**
      * Helper function to setup 3 users (manager1, manager2 and user) and 4 contents (3 created by manager1 and 1 by user).
      */
-    protected function contenttype_setup_scenario_data(string $contenttype = 'contenttype_testable'): void {
+    protected function contenttype_setup_scenario_data(): void {
         global $DB;
         $systemcontext = context_system::instance();
 
@@ -431,17 +358,14 @@ class contenttype_test extends \advanced_testcase {
         $this->managerroleid = $DB->get_field('role', 'id', array('shortname' => 'manager'));
         $this->getDataGenerator()->role_assign($this->managerroleid, $this->manager1->id);
         $this->getDataGenerator()->role_assign($this->managerroleid, $this->manager2->id);
-        $editingteacherrolerid = $DB->get_field('role', 'id', ['shortname' => 'editingteacher']);
         $this->user = $this->getDataGenerator()->create_user();
-        $this->getDataGenerator()->role_assign($editingteacherrolerid, $this->user->id);
 
         // Add some content to the content bank.
         $generator = $this->getDataGenerator()->get_plugin_generator('core_contentbank');
-        $this->contents[$this->manager1->id] = $generator->generate_contentbank_data($contenttype, 3, $this->manager1->id);
-        $this->contents[$this->user->id] = $generator->generate_contentbank_data($contenttype, 1, $this->user->id);
+        $this->contents[$this->manager1->id] = $generator->generate_contentbank_data(null, 3, $this->manager1->id);
+        $this->contents[$this->user->id] = $generator->generate_contentbank_data(null, 1, $this->user->id);
 
-        $contenttypeclass = "\\$contenttype\\contenttype";
-        $this->contenttype = new $contenttypeclass($systemcontext);
+        $this->contenttype = new \contenttype_testable\contenttype($systemcontext);
     }
 
     /**
@@ -586,84 +510,5 @@ class contenttype_test extends \advanced_testcase {
         unassign_capability('moodle/contentbank:manageowncontent', $teacherroleid);
         $this->assertFalse($contenttype->can_manage($contentbyteacher));
         $this->assertFalse($contenttype->can_manage($contentbyadmin));
-    }
-
-    /**
-     * Test the behaviour of can_download().
-     *
-     * @covers ::can_download
-     */
-    public function test_can_download() {
-        global $DB;
-
-        $this->resetAfterTest();
-        $this->contenttype_setup_scenario_data('contenttype_h5p');
-
-        $managercontent = array_shift($this->contents[$this->manager1->id]);
-        $usercontent = array_shift($this->contents[$this->user->id]);
-
-        // Check the content has been created as expected.
-        $records = $DB->count_records('contentbank_content');
-        $this->assertEquals(4, $records);
-
-        // Check user can download content created by anybody.
-        $this->setUser($this->user);
-        $this->assertTrue($this->contenttype->can_download($usercontent));
-        $this->assertTrue($this->contenttype->can_download($managercontent));
-
-        // Check manager can download all the content too.
-        $this->setUser($this->manager1);
-        $this->assertTrue($this->contenttype->can_download($managercontent));
-        $this->assertTrue($this->contenttype->can_download($usercontent));
-
-        // Unassign capability to manager role and check she cannot download content anymore.
-        unassign_capability('moodle/contentbank:downloadcontent', $this->managerroleid);
-        $this->assertFalse($this->contenttype->can_download($managercontent));
-        $this->assertFalse($this->contenttype->can_download($usercontent));
-    }
-
-    /**
-     * Tests get_download_url result.
-     *
-     * @covers ::get_download_url
-     */
-    public function test_get_download_url() {
-        global $CFG;
-
-        $this->resetAfterTest();
-        $this->setAdminUser();
-        $systemcontext = context_system::instance();
-
-        // Add some content to the content bank.
-        $filename = 'filltheblanks.h5p';
-        $filepath = $CFG->dirroot . '/h5p/tests/fixtures/' . $filename;
-        $generator = $this->getDataGenerator()->get_plugin_generator('core_contentbank');
-        $contents = $generator->generate_contentbank_data('contenttype_testable', 1, 0, $systemcontext, true, $filepath);
-        $content = array_shift($contents);
-
-        // Check the URL is returned OK for a content with file.
-        $contenttype = new contenttype($systemcontext);
-        $url = $contenttype->get_download_url($content);
-        $this->assertNotEmpty($url);
-        $this->assertStringContainsString($filename, $url);
-
-        // Check the URL is empty when the content hasn't any file.
-        $record = new stdClass();
-        $content = $contenttype->create_content($record);
-        $url = $contenttype->get_download_url($content);
-        $this->assertEmpty($url);
-    }
-
-    /**
-     * Tests pluginfile result.
-     *
-     * @covers ::pluginfile
-     */
-    public function test_pluginfile() {
-        $this->resetAfterTest();
-        $this->setAdminUser();
-        $systemcontext = context_system::instance();
-        $contenttype = new contenttype($systemcontext);
-        $this->assertIsCallable([$contenttype, 'pluginfile']);
     }
 }

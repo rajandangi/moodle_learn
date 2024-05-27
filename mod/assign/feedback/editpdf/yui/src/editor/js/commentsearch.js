@@ -33,7 +33,7 @@ Y.extend(COMMENTSEARCH, M.core.dialogue, {
      * @method initializer
      * @return void
      */
-    initializer: function() {
+    initializer: function(config) {
         var editor,
             container,
             placeholder,
@@ -59,6 +59,8 @@ Y.extend(COMMENTSEARCH, M.core.dialogue, {
 
         // Set the body content.
         this.set('bodyContent', container);
+
+        COMMENTSEARCH.superclass.initializer.call(this, config);
     },
 
     /**

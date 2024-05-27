@@ -14,7 +14,15 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace mod_forum;
+/**
+ * The discussion entity tests.
+ *
+ * @package    mod_forum
+ * @copyright  2019 Ryan Wyllie <ryan@moodle.com>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+defined('MOODLE_INTERNAL') || die();
 
 use mod_forum\local\entities\sorter as sorter_entity;
 
@@ -25,7 +33,7 @@ use mod_forum\local\entities\sorter as sorter_entity;
  * @copyright  2019 Ryan Wyllie <ryan@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class entities_sorter_test extends \advanced_testcase {
+class mod_forum_entities_sorter_testcase extends advanced_testcase {
     /**
      * Test the entity returns expected values.
      */

@@ -35,7 +35,7 @@ $PAGE->set_url($url);
 
 require_login();
 if (isguestuser()) {
-    throw new \moodle_exception('noguest');
+    print_error('noguest');
 }
 
 // Return URL and context.
@@ -95,11 +95,6 @@ if ($data = $mform->get_data()) {
             && !\tool_dataprivacy\api::can_create_data_deletion_request_for_children($data->userid)) {
             throw new moodle_exception('nopermissions', 'error', '',
                 get_string('errorcannotrequestdeleteforother', 'tool_dataprivacy'));
-        }
-    } else if ($data->type == \tool_dataprivacy\api::DATAREQUEST_TYPE_EXPORT) {
-        if ($data->userid == $USER->id && !\tool_dataprivacy\api::can_create_data_download_request_for_self()) {
-            throw new moodle_exception('nopermissions', 'error', '',
-                get_string('errorcannotrequestexportforself', 'tool_dataprivacy'));
         }
     }
 

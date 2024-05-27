@@ -33,12 +33,13 @@ use context;
 use core_user;
 use core_grades\component_gradeitem as gradeitem;
 use core_grades\component_gradeitems;
-use core_external\external_api;
-use core_external\external_function_parameters;
-use core_external\external_multiple_structure;
-use core_external\external_single_structure;
-use core_external\external_value;
-use core_external\external_warnings;
+use external_api;
+use external_format_value;
+use external_function_parameters;
+use external_multiple_structure;
+use external_single_structure;
+use external_value;
+use external_warnings;
 use moodle_exception;
 use stdClass;
 require_once($CFG->dirroot.'/grade/grading/form/guide/lib.php');
@@ -153,7 +154,7 @@ class fetch extends external_api {
         global $USER;
 
         $hasgrade = $gradeitem->user_has_grade($gradeduser);
-        $grade = $gradeitem->get_formatted_grade_for_user($gradeduser, $USER);
+        $grade = $gradeitem->get_grade_for_user($gradeduser, $USER);
         $instance = $gradeitem->get_advanced_grading_instance($USER, $grade);
         if (!$instance) {
             throw new moodle_exception('error:gradingunavailable', 'grading');
@@ -236,7 +237,7 @@ class fetch extends external_api {
                 'criterion' => $criterion,
                 'hascomments' => !empty($comments),
                 'comments' => $comments,
-                'usergrade' => $grade->usergrade,
+                'usergrade' => $grade->grade,
                 'maxgrade' => $maxgrade,
                 'gradedby' => $gradername,
                 'timecreated' => $grade->timecreated,
@@ -306,15 +307,7 @@ class fetch extends external_api {
             'filter' => true,
         ];
 
-        [$newtext] = \core_external\util::format_text(
-            $text,
-            $format,
-            $context,
-            'grading',
-            $filearea,
-            $definitionid,
-            $formatoptions
-        );
+        [$newtext, ] = external_format_text($text, $format, $context, 'grading', $filearea, $definitionid, $formatoptions);
 
         return $newtext;
     }

@@ -292,7 +292,12 @@ class lesson_page_type_shortanswer extends lesson_page {
         return $table;
     }
     public function stats(array &$pagestats, $tries) {
-        $temp = $this->lesson->get_last_attempt($tries);
+        if(count($tries) > $this->lesson->maxattempts) { // if there are more tries than the max that is allowed, grab the last "legal" attempt
+            $temp = $tries[$this->lesson->maxattempts - 1];
+        } else {
+            // else, user attempted the question less than the max, so grab the last one
+            $temp = end($tries);
+        }
         if (isset($pagestats[$temp->pageid][$temp->useranswer])) {
             $pagestats[$temp->pageid][$temp->useranswer]++;
         } else {
@@ -385,7 +390,7 @@ class lesson_page_type_shortanswer extends lesson_page {
      * @param stdClass $data The form data to update.
      * @return stdClass The updated fom data.
      */
-    public function update_form_data(stdClass $data): stdClass {
+    public function update_form_data(stdClass $data) : stdClass {
         $answercount = count($this->get_answers());
         // Check for other answer entry.
         $lastanswer = $data->{'answer_editor[' . ($answercount - 1) . ']'};

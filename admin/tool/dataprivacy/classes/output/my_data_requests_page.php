@@ -106,12 +106,12 @@ class my_data_requests_page implements renderable, templatable {
             $cancancel = true;
             switch ($status) {
                 case api::DATAREQUEST_STATUS_COMPLETE:
-                    $item->statuslabelclass = 'bg-success text-white';
+                    $item->statuslabelclass = 'badge-success';
                     $item->statuslabel = get_string('statuscomplete', 'tool_dataprivacy');
                     $cancancel = false;
                     break;
                 case api::DATAREQUEST_STATUS_DOWNLOAD_READY:
-                    $item->statuslabelclass = 'bg-success text-white';
+                    $item->statuslabelclass = 'badge-success';
                     $item->statuslabel = get_string('statusready', 'tool_dataprivacy');
                     $cancancel = false;
                     $candownload = true;
@@ -122,12 +122,12 @@ class my_data_requests_page implements renderable, templatable {
                     }
                     break;
                 case api::DATAREQUEST_STATUS_DELETED:
-                    $item->statuslabelclass = 'bg-success text-white';
+                    $item->statuslabelclass = 'badge-success';
                     $item->statuslabel = get_string('statusdeleted', 'tool_dataprivacy');
                     $cancancel = false;
                     break;
                 case api::DATAREQUEST_STATUS_EXPIRED:
-                    $item->statuslabelclass = 'bg-secondary text-dark';
+                    $item->statuslabelclass = 'badge-secondary';
                     $item->statuslabel = get_string('statusexpired', 'tool_dataprivacy');
                     $item->statuslabeltitle = get_string('downloadexpireduser', 'tool_dataprivacy');
                     $cancancel = false;
@@ -153,6 +153,7 @@ class my_data_requests_page implements renderable, templatable {
                 $actionsmenu = new action_menu($actions);
                 $actionsmenu->set_menu_trigger(get_string('actions'));
                 $actionsmenu->set_owner_selector('request-actions-' . $requestid);
+                $actionsmenu->set_alignment(\action_menu::TL, \action_menu::BL);
                 $item->actions = $actionsmenu->export_for_template($output);
             }
 

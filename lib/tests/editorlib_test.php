@@ -14,17 +14,20 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace core;
-
 /**
  * Tests editors subsystem.
  *
- * @package    core
+ * @package    core_editors
+ * @subpackage phpunit
  * @copyright  2013 onwards Martin Dougiamas (http://dougiamas.com)
  * @author     Damyon Wiese
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class editorlib_test extends \advanced_testcase {
+
+defined('MOODLE_INTERNAL') || die();
+
+
+class core_editorslib_testcase extends advanced_testcase {
 
     /**
      * Tests the installation of event handlers from file

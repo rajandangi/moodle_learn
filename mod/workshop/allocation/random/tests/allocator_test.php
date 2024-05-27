@@ -18,15 +18,10 @@
  * Unit tests for Random allocation
  *
  * @package    workshopallocation_random
- * @category   test
+ * @category   phpunit
  * @copyright  2009 David Mudrak <david.mudrak@gmail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
-namespace workshopallocation_random;
-
-use workshop;
-use workshop_random_allocator;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -35,15 +30,8 @@ global $CFG;
 require_once($CFG->dirroot . '/mod/workshop/locallib.php');
 require_once($CFG->dirroot . '/mod/workshop/allocation/random/lib.php');
 
-/**
- * Unit tests for Random allocation
- *
- * @package    workshopallocation_random
- * @category   test
- * @copyright  2009 David Mudrak <david.mudrak@gmail.com>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-class allocator_test extends \advanced_testcase {
+
+class workshopallocation_random_testcase extends advanced_testcase {
 
     /** workshop instance emulation */
     protected $workshop;
@@ -51,7 +39,7 @@ class allocator_test extends \advanced_testcase {
     /** allocator instance */
     protected $allocator;
 
-    protected function setUp(): void {
+    protected function setUp() {
         parent::setUp();
         $this->resetAfterTest();
         $this->setAdminUser();
@@ -62,7 +50,7 @@ class allocator_test extends \advanced_testcase {
         $this->allocator = new testable_workshop_random_allocator($this->workshop);
     }
 
-    protected function tearDown(): void {
+    protected function tearDown() {
         $this->allocator    = null;
         $this->workshop     = null;
         parent::tearDown();
@@ -75,8 +63,8 @@ class allocator_test extends \advanced_testcase {
 
     public function test_self_allocation_equal_user_groups() {
         // fixture setup
-        $authors    = array(0 => array_fill_keys(array(4, 6, 10), new \stdClass()));
-        $reviewers  = array(0 => array_fill_keys(array(4, 6, 10), new \stdClass()));
+        $authors    = array(0 => array_fill_keys(array(4, 6, 10), new stdclass()));
+        $reviewers  = array(0 => array_fill_keys(array(4, 6, 10), new stdclass()));
         // exercise SUT
         $newallocations = $this->allocator->self_allocation($authors, $reviewers);
         // verify
@@ -85,8 +73,8 @@ class allocator_test extends \advanced_testcase {
 
     public function test_self_allocation_different_user_groups() {
         // fixture setup
-        $authors    = array(0 => array_fill_keys(array(1, 4, 5, 10, 13), new \stdClass()));
-        $reviewers  = array(0 => array_fill_keys(array(4, 7, 10), new \stdClass()));
+        $authors    = array(0 => array_fill_keys(array(1, 4, 5, 10, 13), new stdclass()));
+        $reviewers  = array(0 => array_fill_keys(array(4, 7, 10), new stdclass()));
         // exercise SUT
         $newallocations = $this->allocator->self_allocation($authors, $reviewers);
         // verify
@@ -95,8 +83,8 @@ class allocator_test extends \advanced_testcase {
 
     public function test_self_allocation_skip_existing() {
         // fixture setup
-        $authors        = array(0 => array_fill_keys(array(3, 4, 10), new \stdClass()));
-        $reviewers      = array(0 => array_fill_keys(array(3, 4, 10), new \stdClass()));
+        $authors        = array(0 => array_fill_keys(array(3, 4, 10), new stdclass()));
+        $reviewers      = array(0 => array_fill_keys(array(3, 4, 10), new stdclass()));
         $assessments    = array(23 => (object)array('authorid' => 3, 'reviewerid' => 3));
         // exercise SUT
         $newallocations = $this->allocator->self_allocation($authors, $reviewers, $assessments);
@@ -126,6 +114,9 @@ class allocator_test extends \advanced_testcase {
         ), $submissions);
     }
 
+    /**
+     * @expectedException moodle_exception
+     */
     public function test_index_submissions_by_authors_duplicate_author() {
         // fixture setup
         $submissions = array(
@@ -133,7 +124,6 @@ class allocator_test extends \advanced_testcase {
             87 => (object)array('id' => 121, 'authorid' => 3),
         );
         // exercise SUT
-        $this->expectException(\moodle_exception::class);
         $submissions = $this->allocator->index_submissions_by_authors($submissions);
     }
 

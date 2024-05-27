@@ -39,14 +39,12 @@ class repository_url extends repository {
     /** @var int Maximum time of recursion. */
     const MAX_RECURSION_TIME = 5;
     /** @var int Maximum number of CSS imports. */
-    protected const MAX_CSS_IMPORTS = 10;
+    const MAX_CSS_IMPORTS = 10;
     /** @var int CSS import counter. */
-    protected int $cssimportcounter = 0;
+    var $cssimportcounter = 0;
     var $processedfiles = array();
     /** @var int Recursion counter. */
     var $recursioncounter = 0;
-    /** @var string file URL. */
-    public $file_url;
 
     /**
      * @param int $repositoryid
@@ -134,7 +132,7 @@ EOD;
         if (empty($baseurl)) {
             $url = $relativeurl;
         } else {
-            $url = htmlspecialchars_decode(url_to_absolute($baseurl, $relativeurl), ENT_COMPAT);
+            $url = htmlspecialchars_decode(url_to_absolute($baseurl, $relativeurl));
         }
         if (in_array($url, $this->processedfiles)) {
             // Avoid endless recursion for the same URL with same parameters.
@@ -221,7 +219,7 @@ EOD;
         if (empty($list['list'])) {
             $list['list'] = array();
         }
-        $src = url_to_absolute($baseurl, htmlspecialchars_decode($url, ENT_COMPAT));
+        $src = url_to_absolute($baseurl, htmlspecialchars_decode($url));
         foreach ($list['list'] as $image) {
             if ($image['source'] == $src) {
                 return;

@@ -14,19 +14,28 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace core;
+/**
+ * Test \core\dml\recordset_walk.
+ *
+ * @package    core
+ * @category   dml
+ * @copyright  2015 David Monllao
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+defined('MOODLE_INTERNAL') || die();
 
 /**
  * Test case for recordset_walk.
  *
  * @package    core
- * @category   test
+ * @category   dml
  * @copyright  2015 David Monllao
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class recordset_walk_test extends \advanced_testcase {
+class core_recordset_walk_testcase extends advanced_testcase {
 
-    public function setUp(): void {
+    public function setUp() {
         parent::setUp();
         $this->resetAfterTest();
     }
@@ -50,7 +59,6 @@ class recordset_walk_test extends \advanced_testcase {
     public function test_simple_callback() {
         global $DB;
 
-        /** @var \mod_assign_generator $generator */
         $generator = $this->getDataGenerator()->get_plugin_generator('mod_assign');
         $courses = array();
         for ($i = 0; $i < 10; $i++) {
@@ -75,7 +83,6 @@ class recordset_walk_test extends \advanced_testcase {
     public function test_extra_params_callback() {
         global $DB;
 
-        /** @var \mod_assign_generator $generator */
         $generator = $this->getDataGenerator()->get_plugin_generator('mod_assign');
         $courses = array();
         for ($i = 0; $i < 10; $i++) {
@@ -106,7 +113,7 @@ class recordset_walk_test extends \advanced_testcase {
     /**
      * Simple callback requiring 1 row fields.
      *
-     * @param \stdClass $data
+     * @param stdClass $data
      * @return \Traversable
      */
     public function simple_callback($data, $nothing = 'notpassed') {
@@ -119,7 +126,7 @@ class recordset_walk_test extends \advanced_testcase {
     /**
      * Callback requiring 1 row fields + other params.
      *
-     * @param \stdClass $data
+     * @param stdClass $data
      * @param mixed $extra
      * @return \Traversable
      */

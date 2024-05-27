@@ -33,15 +33,14 @@ $courseid = optional_param('id', 0, PARAM_INT);
 require_login();
 
 if (empty($CFG->enablebadges)) {
-    throw new \moodle_exception('badgesdisabled', 'badges');
+    print_error('badgesdisabled', 'badges');
 }
 
 if (empty($CFG->badges_allowcoursebadges) && ($type == BADGE_TYPE_COURSE)) {
-    throw new \moodle_exception('coursebadgesdisabled', 'badges');
+    print_error('coursebadgesdisabled', 'badges');
 }
 
 $title = get_string('create', 'badges');
-$PAGE->add_body_class('limitedwidth');
 
 if (($type == BADGE_TYPE_COURSE) && ($course = $DB->get_record('course', array('id' => $courseid)))) {
     require_login($course);
@@ -61,6 +60,8 @@ if (($type == BADGE_TYPE_COURSE) && ($course = $DB->get_record('course', array('
 }
 
 require_capability('moodle/badges:createbadge', $PAGE->context);
+
+badges_local_backpack_js(true);
 
 $fordb = new stdClass();
 $fordb->id = null;
@@ -116,7 +117,6 @@ if ($form->is_cancelled()) {
     $event->trigger();
 
     $newbadge = new badge($newid);
-    core_tag_tag::set_item_tags('core_badges', 'badge', $newid, $PAGE->context, $data->tags);
     badges_process_badge_image($newbadge, $form->save_temp_file('image'));
     // If a user can configure badge criteria, they will be redirected to the criteria page.
     if (has_capability('moodle/badges:configurecriteria', $PAGE->context)) {

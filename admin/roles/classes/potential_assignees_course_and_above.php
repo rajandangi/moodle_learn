@@ -33,22 +33,20 @@ class core_role_potential_assignees_course_and_above extends core_role_assign_us
     public function find_users($search) {
         global $DB;
 
-        list($wherecondition, $params) = $this->search_sql($search, 'u');
-        $params = array_merge($params, $this->userfieldsparams);
+        list($wherecondition, $params) = $this->search_sql($search, '');
 
-        $fields      = 'SELECT u.id, ' . $this->userfieldsselects;
+        $fields      = 'SELECT ' . $this->required_fields_sql('');
         $countfields = 'SELECT COUNT(1)';
 
-        $sql = " FROM {user} u
-                      $this->userfieldsjoin
+        $sql = " FROM {user}
                 WHERE $wherecondition
-                      AND u.id NOT IN (
+                      AND id NOT IN (
                          SELECT r.userid
                            FROM {role_assignments} r
                           WHERE r.contextid = :contextid
                                 AND r.roleid = :roleid)";
 
-        list($sort, $sortparams) = users_order_by_sql('', $search, $this->accesscontext, $this->userfieldsmappings);
+        list($sort, $sortparams) = users_order_by_sql('', $search, $this->accesscontext);
         $order = ' ORDER BY ' . $sort;
 
         $params['contextid'] = $this->context->id;

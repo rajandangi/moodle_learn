@@ -39,23 +39,6 @@
     * description
     * instancecount
 
-    Example context (json):
-    {
-        "id": 1,
-        "name": "Test Tool",
-        "urls": {
-            "edit": "https://moodle.example.com/mod/lti/registersettings.php",
-            "icon": "https://moodle.example.com/theme/image.php/boost/lti/-1/icon"
-        },
-        "state": {
-            "text": "Accepted",
-            "configured": false,
-            "pending": false,
-            "rejected": false,
-            "accepted": true,
-            "unknown": false
-        }
-    }
 }}
 <div class="tool-card" data-proxy-id="{{id}}">
     <div class="overlay-container">
@@ -72,10 +55,10 @@
         <div class="tool-card-header">
             <div class="tool-card-subheader">
                 <div class="badge
-                            {{#state.pending}}bg-info text-white{{/state.pending}}
-                            {{#state.configured}}bg-success text-white{{/state.configured}}
-                            {{#state.rejected}}bg-danger text-white{{/state.rejected}}
-                            {{#state.unknown}}bg-warning text-dark{{/state.unknown}}">
+                            {{#state.pending}}badge-info{{/state.pending}}
+                            {{#state.configured}}badge-success{{/state.configured}}
+                            {{#state.rejected}}badge-danger{{/state.rejected}}
+                            {{#state.unknown}}badge-warning{{/state.unknown}}">
                     {{state.text}}
                 </div>
                 <div class="tool-card-actions float-sm-right">
@@ -86,7 +69,7 @@
                     <a class="delete" href="#" title="{{#str}} delete {{/str}}">{{#pix}} t/delete, core, {{#str}} delete {{/str}}{{/pix}}</a>
                 </div>
             </div>
-            <img class="tool-card-icon" src="{{{urls.icon}}}" alt="{{name}}">
+            <img class="tool-card-icon" src="{{{urls.icon}}}" alt="{{name}}"></img>
             <div class="contenteditable-container">
                 <h4 class="name">{{name}}</h4>
                 <div class="overlay-container">{{> mod_lti/loader }}</div>

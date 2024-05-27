@@ -352,9 +352,8 @@ class file_system_filedir extends file_system {
 
         $newfile = true;
 
-        $hashsize = self::check_file_exists_and_get_size($hashfile);
-        if ($hashsize !== null) {
-            if ($hashsize === $filesize) {
+        if (file_exists($hashfile)) {
+            if (filesize($hashfile) === $filesize) {
                 return array($contenthash, $filesize, false);
             }
             if (file_storage::hash_from_path($hashfile) === $contenthash) {
@@ -379,9 +378,7 @@ class file_system_filedir extends file_system {
         // Let's try to prevent some race conditions.
 
         $prev = ignore_user_abort(true);
-        if (file_exists($hashfile.'.tmp')) {
-            @unlink($hashfile.'.tmp');
-        }
+        @unlink($hashfile.'.tmp');
         if (!copy($pathname, $hashfile.'.tmp')) {
             // Borked permissions or out of disk space.
             @unlink($hashfile.'.tmp');
@@ -394,58 +391,12 @@ class file_system_filedir extends file_system {
             ignore_user_abort($prev);
             throw new file_exception('storedfilecannotcreatefile');
         }
-        if (!rename($hashfile.'.tmp', $hashfile)) {
-            // Something very strange went wrong.
-            @unlink($hashfile . '.tmp');
-            // Note, we don't try to clean up $hashfile. Almost certainly, if it exists
-            // (e.g. written by another process?) it will be right, so don't wipe it.
-            ignore_user_abort($prev);
-            throw new file_exception('storedfilecannotcreatefile');
-        }
+        rename($hashfile.'.tmp', $hashfile);
         chmod($hashfile, $this->filepermissions); // Fix permissions if needed.
-        if (file_exists($hashfile.'.tmp')) {
-            // Just in case anything fails in a weird way.
-            @unlink($hashfile.'.tmp');
-        }
+        @unlink($hashfile.'.tmp'); // Just in case anything fails in a weird way.
         ignore_user_abort($prev);
 
         return array($contenthash, $filesize, $newfile);
-    }
-
-    /**
-     * Checks if the file exists and gets its size. This function avoids a specific issue with
-     * networked file systems if they incorrectly report the file exists, but then decide it doesn't
-     * as soon as you try to get the file size.
-     *
-     * @param string $hashfile File to check
-     * @return int|null Null if the file does not exist, or the result of filesize(), or -1 if error
-     */
-    protected static function check_file_exists_and_get_size(string $hashfile): ?int {
-        if (!file_exists($hashfile)) {
-            // The file does not exist, return null.
-            return null;
-        }
-
-        // In some networked file systems, it's possible that file_exists will return true when
-        // the file doesn't exist (due to caching), but filesize will then return false because
-        // it doesn't exist.
-        $hashsize = @filesize($hashfile);
-        if ($hashsize !== false) {
-            // We successfully got a file size. Return it.
-            return $hashsize;
-        }
-
-        // If we can't get the filesize, let's check existence again to see if we really
-        // for sure think it exists.
-        clearstatcache();
-        if (!file_exists($hashfile)) {
-            // The file doesn't exist any more, so return null.
-            return null;
-        }
-
-        // It still thinks the file exists, but filesize failed, so we had better return an invalid
-        // value for filesize.
-        return -1;
     }
 
     /**
@@ -463,16 +414,15 @@ class file_system_filedir extends file_system {
 
         $contenthash = file_storage::hash_from_string($content);
         // Binary length.
-        $filesize = strlen($content ?? '');
+        $filesize = strlen($content);
 
         $hashpath = $this->get_fulldir_from_hash($contenthash);
         $hashfile = $this->get_local_path_from_hash($contenthash, false);
 
         $newfile = true;
 
-        $hashsize = self::check_file_exists_and_get_size($hashfile);
-        if ($hashsize !== null) {
-            if ($hashsize === $filesize) {
+        if (file_exists($hashfile)) {
+            if (filesize($hashfile) === $filesize) {
                 return array($contenthash, $filesize, false);
             }
             if (file_storage::hash_from_path($hashfile) === $contenthash) {
@@ -515,19 +465,9 @@ class file_system_filedir extends file_system {
             ignore_user_abort($prev);
             throw new file_exception('storedfilecannotcreatefile');
         }
-        if (!rename($hashfile.'.tmp', $hashfile)) {
-            // Something very strange went wrong.
-            @unlink($hashfile . '.tmp');
-            // Note, we don't try to clean up $hashfile. Almost certainly, if it exists
-            // (e.g. written by another process?) it will be right, so don't wipe it.
-            ignore_user_abort($prev);
-            throw new file_exception('storedfilecannotcreatefile');
-        }
+        rename($hashfile.'.tmp', $hashfile);
         chmod($hashfile, $this->filepermissions); // Fix permissions if needed.
-        if (file_exists($hashfile.'.tmp')) {
-            // Just in case anything fails in a weird way.
-            @unlink($hashfile.'.tmp');
-        }
+        @unlink($hashfile.'.tmp'); // Just in case anything fails in a weird way.
         ignore_user_abort($prev);
 
         return array($contenthash, $filesize, $newfile);

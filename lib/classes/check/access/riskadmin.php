@@ -52,7 +52,7 @@ class riskadmin extends check {
     /**
      * A link to a place to action this
      *
-     * @return \action_link|null
+     * @return action_link|null
      */
     public function get_action_link(): ?\action_link {
         return new \action_link(
@@ -66,8 +66,7 @@ class riskadmin extends check {
      */
     public function get_result(): result {
         global $DB, $CFG;
-        $userfieldsapi = \core_user\fields::for_userpic();
-        $userfields = $userfieldsapi->get_sql('u', false, '', '', false)->selects;
+        $userfields = \user_picture::fields('u');
         $sql = "SELECT $userfields
                   FROM {user} u
                  WHERE u.id IN ($CFG->siteadmins)";

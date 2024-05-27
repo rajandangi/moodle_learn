@@ -44,7 +44,7 @@ if ($id) {
 } else {
     $context = context::instance_by_id($contextid, MUST_EXIST);
     if ($context->contextlevel != CONTEXT_COURSECAT and $context->contextlevel != CONTEXT_SYSTEM) {
-        throw new \moodle_exception('invalidcontext');
+        print_error('invalidcontext');
     }
     $cohort = new stdClass();
     $cohort->id          = 0;
@@ -73,17 +73,11 @@ $PAGE->set_context($context);
 $PAGE->set_pagelayout('admin');
 
 if ($context->contextlevel == CONTEXT_COURSECAT) {
-    core_course_category::page_setup();
-    // Set the cohorts node active in the settings navigation block.
-    if ($cohortsnode = $PAGE->settingsnav->find('cohort', navigation_node::TYPE_SETTING)) {
-        $cohortsnode->make_active();
-    }
-
-    $PAGE->set_secondary_active_tab('cohort');
+    $category = $DB->get_record('course_categories', array('id'=>$context->instanceid), '*', MUST_EXIST);
+    navigation_node::override_active_url(new moodle_url('/cohort/index.php', array('contextid'=>$cohort->contextid)));
 
 } else {
     navigation_node::override_active_url(new moodle_url('/cohort/index.php', array()));
-    $PAGE->set_heading($COURSE->fullname);
 }
 
 if ($delete and $cohort->id) {
@@ -95,6 +89,7 @@ if ($delete and $cohort->id) {
     $strheading = get_string('delcohort', 'cohort');
     $PAGE->navbar->add($strheading);
     $PAGE->set_title($strheading);
+    $PAGE->set_heading($COURSE->fullname);
     echo $OUTPUT->header();
     echo $OUTPUT->heading($strheading);
     $yesurl = new moodle_url('/cohort/edit.php', array('id' => $cohort->id, 'delete' => 1,
@@ -137,6 +132,7 @@ if ($cohort->id) {
 }
 
 $PAGE->set_title($strheading);
+$PAGE->set_heading($COURSE->fullname);
 $PAGE->navbar->add($strheading);
 
 $editform = new cohort_edit_form(null, array('editoroptions'=>$editoroptions, 'data'=>$cohort, 'returnurl'=>$returnurl));

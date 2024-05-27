@@ -34,13 +34,13 @@ $inpopup = optional_param('inpopup', 0, PARAM_BOOL);
 
 if ($p) {
     if (!$page = $DB->get_record('page', array('id'=>$p))) {
-        throw new \moodle_exception('invalidaccessparameter');
+        print_error('invalidaccessparameter');
     }
     $cm = get_coursemodule_from_instance('page', $page->id, $page->course, false, MUST_EXIST);
 
 } else {
     if (!$cm = get_coursemodule_from_id('page', $id)) {
-        throw new \moodle_exception('invalidcoursemodule');
+        print_error('invalidcoursemodule');
     }
     $page = $DB->get_record('page', array('id'=>$cm->instance), '*', MUST_EXIST);
 }
@@ -58,26 +58,28 @@ $PAGE->set_url('/mod/page/view.php', array('id' => $cm->id));
 
 $options = empty($page->displayoptions) ? [] : (array) unserialize_array($page->displayoptions);
 
-$activityheader = ['hidecompletion' => false];
-if (empty($options['printintro'])) {
-    $activityheader['description'] = '';
-}
-
 if ($inpopup and $page->display == RESOURCELIB_DISPLAY_POPUP) {
     $PAGE->set_pagelayout('popup');
     $PAGE->set_title($course->shortname.': '.$page->name);
     $PAGE->set_heading($course->fullname);
 } else {
-    $PAGE->add_body_class('limitedwidth');
     $PAGE->set_title($course->shortname.': '.$page->name);
     $PAGE->set_heading($course->fullname);
     $PAGE->set_activity_record($page);
-    if (!$PAGE->activityheader->is_title_allowed()) {
-        $activityheader['title'] = "";
+}
+echo $OUTPUT->header();
+if (!isset($options['printheading']) || !empty($options['printheading'])) {
+    echo $OUTPUT->heading(format_string($page->name), 2);
+}
+
+if (!empty($options['printintro'])) {
+    if (trim(strip_tags($page->intro))) {
+        echo $OUTPUT->box_start('mod_introbox', 'pageintro');
+        echo format_module_intro('page', $page, $cm->id);
+        echo $OUTPUT->box_end();
     }
 }
-$PAGE->activityheader->set_attrs($activityheader);
-echo $OUTPUT->header();
+
 $content = file_rewrite_pluginfile_urls($page->content, 'pluginfile.php', $context->id, 'mod_page', 'content', $page->revision);
 $formatoptions = new stdClass;
 $formatoptions->noclean = true;

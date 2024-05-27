@@ -14,8 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace tool_monitor;
-
 /**
  * Unit tests for subscription manager api.
  *
@@ -24,7 +22,17 @@ namespace tool_monitor;
  * @copyright  2014 onwards Simey Lameze <simey@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class subscription_manager_test extends \advanced_testcase {
+
+defined('MOODLE_INTERNAL') || die();
+
+global $CFG;
+
+/**
+ * Tests for subscription manager.
+ *
+ * Class tool_monitor_subscription_manager_testcase.
+ */
+class tool_monitor_subscription_manager_testcase extends advanced_testcase {
 
     /**
      * Test count_rule_subscriptions method.
@@ -48,7 +56,7 @@ class subscription_manager_test extends \advanced_testcase {
         $this->assertEquals(0, $subs);
 
         // Subscribe user 1 to rule 1.
-        $record = new \stdClass;
+        $record = new stdClass;
         $record->ruleid = $rule1->id;
         $record->userid = $user1->id;
         $monitorgenerator->create_subscription($record);

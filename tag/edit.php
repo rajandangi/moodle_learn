@@ -33,7 +33,7 @@ $returnurl = optional_param('returnurl', '', PARAM_LOCALURL);
 require_login();
 
 if (empty($CFG->usetags)) {
-    throw new \moodle_exception('tagsaredisabled', 'tag');
+    print_error('tagsaredisabled', 'tag');
 }
 
 //Editing a tag requires moodle/tag:edit capability
@@ -78,6 +78,7 @@ $data = $tag->to_object();
 $data->relatedtags = core_tag_tag::get_item_tags_array('core', 'tag', $tag->id);
 
 $options = new stdClass();
+$options->smiley = false;
 $options->filter = false;
 
 // convert and remove any XSS

@@ -14,10 +14,21 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace tool_lpmigrate;
+/**
+ * Framework processor tests.
+ *
+ * @package    tool_lpmigrate
+ * @copyright  2016 Frédéric Massart - FMCorz.net
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+defined('MOODLE_INTERNAL') || die();
+global $CFG;
 
 use core_competency\course_competency;
 use core_competency\course_module_competency;
+use tool_lpmigrate\framework_mapper;
+use tool_lpmigrate\framework_processor;
 
 /**
  * Framework processor testcase.
@@ -26,34 +37,7 @@ use core_competency\course_module_competency;
  * @copyright  2016 Frédéric Massart - FMCorz.net
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class processor_test extends \advanced_testcase {
-
-    /** @var \core_competency\competency_framework|null $f1  */
-    protected $f1 = null;
-
-    /** @var \core_competency\competency_framework|null $f2 */
-    protected $f2 = null;
-
-    /** @var object|null $c1 course instance. */
-    protected ?object $c1 = null;
-
-    /** @var object|null $c2 course instance. */
-    protected ?object $c2 = null;
-
-    /** @var array $f1comps */
-    protected array $f1comps = [];
-
-    /** @var array $f2comps */
-    protected array $f2comps = [];
-
-    /** @var array $cms */
-    protected array $cms = [];
-
-    /** @var array $ccs */
-    protected array $ccs = [];
-
-    /** @var array $cmcs */
-    protected array $cmcs = [];
+class tool_lpmigrate_framework_processor_testcase extends advanced_testcase {
 
     /**
      * This sets up a few things, and assign class variables.
@@ -62,7 +46,7 @@ class processor_test extends \advanced_testcase {
      * Then we create 2 courses, and in each 1 CM.
      * Then we attach some competencies from the first framework to courses and CM.
      */
-    public function setUp(): void {
+    public function setUp() {
         $this->resetAfterTest(true);
         $dg = $this->getDataGenerator();
         $lpg = $dg->get_plugin_generator('core_competency');
@@ -363,13 +347,13 @@ class processor_test extends \advanced_testcase {
         $this->assertEquals($this->c1->id, $warning['courseid']);
         $this->assertEquals($this->f1comps['A1']->get('id'), $warning['competencyid']);
         $this->assertEquals(null, $warning['cmid']);
-        $this->assertMatchesRegularExpression('/competency already exists/', $warning['message']);
+        $this->assertRegexp('/competency already exists/', $warning['message']);
 
         $warning = array_shift($warnings);
         $this->assertEquals($this->c2->id, $warning['courseid']);
         $this->assertEquals($this->f1comps['A2']->get('id'), $warning['competencyid']);
         $this->assertEquals($this->cms[$this->c2->id]['F1']->cmid, $warning['cmid']);
-        $this->assertMatchesRegularExpression('/competency already exists/', $warning['message']);
+        $this->assertRegexp('/competency already exists/', $warning['message']);
 
         $this->assertCourseCompetencyExists($this->c1, $this->f1comps['A1']);
         $this->assertModuleCompetencyExists($this->cms[$this->c2->id]['F1'], $this->f1comps['A2']);
@@ -418,13 +402,13 @@ class processor_test extends \advanced_testcase {
         $dg = $this->getDataGenerator();
         $u = $dg->create_user();
         $role = $dg->create_role();
-        $sysctx = \context_system::instance();
+        $sysctx = context_system::instance();
 
         $dg->enrol_user($u->id, $this->c1->id, 'editingteacher');
         $dg->enrol_user($u->id, $this->c2->id, 'editingteacher');
         assign_capability('moodle/competency:coursecompetencymanage', CAP_PROHIBIT, $role, $sysctx->id);
-        role_assign($role, $u->id, \context_course::instance($this->c1->id)->id);
-        role_assign($role, $u->id, \context_module::instance($this->cms[$this->c2->id]['F1']->cmid)->id);
+        role_assign($role, $u->id, context_course::instance($this->c1->id)->id);
+        role_assign($role, $u->id, context_module::instance($this->cms[$this->c2->id]['F1']->cmid)->id);
 
         accesslib_clear_all_caches_for_unit_testing();
         $this->setUser($u);
@@ -452,8 +436,7 @@ class processor_test extends \advanced_testcase {
         $this->assertEquals($this->c1->id, $errors[0]['courseid']);
         $this->assertEquals($this->f1comps['A1']->get('id'), $errors[0]['competencyid']);
         $this->assertEquals(null, $errors[0]['cmid']);
-        $this->assertMatchesRegularExpression('/Sorry, but you do not currently have permissions to do that/',
-            $errors[0]['message']);
+        $this->assertRegexp('/Sorry, but you do not currently have permissions to do that/', $errors[0]['message']);
         $this->assertEquals($this->f1comps['A3']->get('id'), $errors[1]['competencyid']);
 
         $this->assertCourseCompetencyNotMigrated($this->c1, $this->f1comps['A1'], $this->f2comps['A1']);
@@ -482,8 +465,7 @@ class processor_test extends \advanced_testcase {
         $this->assertEquals($this->c2->id, $errors[0]['courseid']);
         $this->assertEquals($this->f1comps['A2']->get('id'), $errors[0]['competencyid']);
         $this->assertEquals($this->cms[$this->c2->id]['F1']->cmid, $errors[0]['cmid']);
-        $this->assertMatchesRegularExpression('/Sorry, but you do not currently have permissions to do that/',
-            $errors[0]['message']);
+        $this->assertRegexp('/Sorry, but you do not currently have permissions to do that/', $errors[0]['message']);
         $this->assertEquals($this->f1comps['A3']->get('id'), $errors[1]['competencyid']);
 
         // The new competencies were added to the course, but the old ones were not removed because they are still in modules.
@@ -500,7 +482,7 @@ class processor_test extends \advanced_testcase {
     /**
      * Assert that the course competency exists.
      *
-     * @param \stdClass $course The course.
+     * @param stdClass $course The course.
      * @param competency $competency The competency.
      */
     protected function assertCourseCompetencyExists($course, $competency) {
@@ -511,7 +493,7 @@ class processor_test extends \advanced_testcase {
     /**
      * Assert that the course competency does not exist.
      *
-     * @param \stdClass $course The course.
+     * @param stdClass $course The course.
      * @param competency $competency The competency.
      */
     protected function assertCourseCompetencyNotExists($course, $competency) {
@@ -522,7 +504,7 @@ class processor_test extends \advanced_testcase {
     /**
      * Assert that the course competency was migrated.
      *
-     * @param \stdClass $course The course.
+     * @param stdClass $course The course.
      * @param competency $compfrom The competency from.
      * @param competency $compto The competency to.
      */
@@ -547,7 +529,7 @@ class processor_test extends \advanced_testcase {
     /**
      * Assert that the course competency was not migrated.
      *
-     * @param \stdClass $course The course.
+     * @param stdClass $course The course.
      * @param competency $compfrom The competency from.
      * @param competency $compto The competency to.
      */
@@ -569,7 +551,7 @@ class processor_test extends \advanced_testcase {
     /**
      * Assert that the course module competency exists.
      *
-     * @param \stdClass $cm The CM.
+     * @param stdClass $cm The CM.
      * @param competency $competency The competency.
      */
     protected function assertModuleCompetencyExists($cm, $competency) {
@@ -580,7 +562,7 @@ class processor_test extends \advanced_testcase {
     /**
      * Assert that the course module competency does not exist.
      *
-     * @param \stdClass $cm The CM.
+     * @param stdClass $cm The CM.
      * @param competency $competency The competency.
      */
     protected function assertModuleCompetencyNotExists($cm, $competency) {
@@ -591,7 +573,7 @@ class processor_test extends \advanced_testcase {
     /**
      * Assert that the course module competency was migrated.
      *
-     * @param \stdClass $cm The CM.
+     * @param stdClass $cm The CM.
      * @param competency $compfrom The competency from.
      * @param competency $compto The competency to.
      */
@@ -616,7 +598,7 @@ class processor_test extends \advanced_testcase {
     /**
      * Assert that the course module competency was not migrated.
      *
-     * @param \stdClass $cm The CM.
+     * @param stdClass $cm The CM.
      * @param competency $compfrom The competency from.
      * @param competency $compto The competency to.
      */
@@ -634,4 +616,5 @@ class processor_test extends \advanced_testcase {
         $this->assertEquals($before->get('sortorder'), $after->get('sortorder'));
         $this->assertEquals($before->get('ruleoutcome'), $after->get('ruleoutcome'));
     }
+
 }

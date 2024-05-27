@@ -15,7 +15,6 @@
     along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 }}
 {{!
-    @deprecated since Moodle 4.0
     @template theme_boost/flat_navigation
 
     Display the flat navigation for the boost theme
@@ -69,13 +68,13 @@
             <li>
                 <a class="list-group-item list-group-item-action {{#isactive}}active{{/isactive}} {{#classes}}{{.}} {{/classes}}" href="{{{action}}}" data-key="{{key}}" data-isexpandable="{{isexpandable}}" data-indent="{{get_indent}}" data-showdivider="{{showdivider}}" data-type="{{type}}" data-nodetype="{{nodetype}}" data-collapse="{{collapse}}" data-forceopen="{{forceopen}}" data-isactive="{{isactive}}" data-hidden="{{hidden}}" data-preceedwithhr="{{preceedwithhr}}" {{#parent.key}}data-parent-key="{{.}}"{{/parent.key}}>
                     <div class="ml-{{get_indent}}">
-                        <div class="d-flex">
+                        <div class="media">
                             {{#icon.pix}}
-                                <span class="flex-shrink-0">
+                                <span class="media-left">
                                     {{#pix}}{{{icon.pix}}}, {{{icon.component}}}, {{{icon.alt}}}{{/pix}}
                                 </span>
                             {{/icon.pix}}
-                            <span class="flex-grow-1 ml-3 {{#isactive}}font-weight-bold{{/isactive}}">{{{text}}}</span>
+                            <span class="media-body {{#isactive}}font-weight-bold{{/isactive}}">{{{text}}}</span>
                         </div>
                     </div>
                 </a>
@@ -85,13 +84,13 @@
             <li>
                 <div class="list-group-item {{#classes}}{{.}} {{/classes}}" data-key="{{key}}" data-isexpandable="{{isexpandable}}" data-indent="{{get_indent}}" data-showdivider="{{showdivider}}" data-type="{{type}}" data-nodetype="{{nodetype}}" data-collapse="{{collapse}}" data-forceopen="{{forceopen}}" data-isactive="{{isactive}}" data-hidden="{{hidden}}" data-preceedwithhr="{{preceedwithhr}}" {{#parent.key}}data-parent-key="{{.}}"{{/parent.key}}>
                     <div class="ml-{{get_indent}}">
-                        <div class="d-flex">
+                        <div class="media">
                             {{#icon.pix}}
-                                <span class="flex-shrink-0">
+                                <span class="media-left">
                                     {{#pix}}{{{icon.pix}}}, {{{icon.component}}}, {{{icon.alt}}}{{/pix}}
                                 </span>
                             {{/icon.pix}}
-                            <span class="flex-grow-1 ml-3">{{{text}}}</span>
+                            <span class="media-body">{{{text}}}</span>
                         </div>
                     </div>
                 </div>

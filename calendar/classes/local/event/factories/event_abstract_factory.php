@@ -74,7 +74,7 @@ abstract class event_abstract_factory implements event_factory_interface {
      * @param event_interface $event The event to be updated.
      * @return event_interface The potentially modified event.
      */
-    abstract protected function apply_component_action(event_interface $event);
+    protected abstract function apply_component_action(event_interface $event);
 
     /**
      * Exposes the event (or not).
@@ -82,7 +82,7 @@ abstract class event_abstract_factory implements event_factory_interface {
      * @param event_interface $event The event to potentially expose.
      * @return event_interface|null The exposed event or null.
      */
-    abstract protected function expose_event(event_interface $event);
+    protected abstract function expose_event(event_interface $event);
 
     /**
      * Constructor.
@@ -191,8 +191,7 @@ abstract class event_abstract_factory implements event_factory_interface {
                 (new \DateTimeImmutable())->setTimestamp($dbrow->timestart),
                 (new \DateTimeImmutable())->setTimestamp($dbrow->timestart + $dbrow->timeduration),
                 (new \DateTimeImmutable())->setTimestamp($dbrow->timesort ? $dbrow->timesort : $dbrow->timestart),
-                (new \DateTimeImmutable())->setTimestamp($dbrow->timemodified),
-                (new \DateTimeImmutable())->setTimestamp($dbrow->timesort ? usergetmidnight($dbrow->timesort) : 0)
+                (new \DateTimeImmutable())->setTimestamp($dbrow->timemodified)
             ),
             !empty($dbrow->visible),
             $subscription,

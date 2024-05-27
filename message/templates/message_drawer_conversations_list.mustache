@@ -54,9 +54,7 @@
             >
         {{/imageurl}}
         {{#showonlinestatus}}
-            <span class="contact-status icon-size-2 {{#isonline}}online{{/isonline}}">
-                {{#isonline}} {{#pix}} t/online, core, {{#str}} online, core_message {{/str}} {{/pix}} {{/isonline}}
-            </span>
+            <span class="contact-status {{#isonline}}online{{/isonline}}"></span>
         {{/showonlinestatus}}
         <div class="w-100 text-truncate ml-2 my-2">
             <div class="d-flex">
@@ -80,12 +78,12 @@
                         {{#str}} sender, core_message, {{.}} {{/str}}
                     {{/lastsendername}}
                 {{/sentfromcurrentuser}}
-                <span>{{{lastmessage}}}</span>
+                <span class="text-muted">{{{lastmessage}}}</span>
             </p>
         </div>
         <div class="d-flex align-self-stretch">
             <div
-                class="px-2 py-1 small position-absolute position-right {{^lastmessagedate}}hidden{{/lastmessagedate}}"
+                class="px-2 py-1 small position-absolute position-right text-muted {{^lastmessagedate}}hidden{{/lastmessagedate}}"
                 data-region="last-message-date" aria-hidden="true"
             >
                 {{#lastmessagedate}}
@@ -100,11 +98,11 @@
             </div>
             <div class="d-flex align-self-center align-items-center">
                 <span
-                    class="badge rounded-pill bg-primary text-white {{^unreadcount}}hidden{{/unreadcount}}"
+                    class="badge badge-pill badge-primary bg-primary {{^unreadcount}}hidden{{/unreadcount}}"
                     data-region="unread-count"
+                    aria-label="{{#str}} unreadmessages, core_message, {{unreadcount}} {{/str}}"
                 >
-                    <span aria-hidden="true">{{unreadcount}}</span>
-                    <span class="sr-only">{{#str}} unreadmessages, core_message, {{unreadcount}} {{/str}}</span>
+                    {{unreadcount}}
                 </span>
 
                 <div class="text-muted ml-auto">

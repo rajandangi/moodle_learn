@@ -152,9 +152,9 @@ class page_managedocs_list implements renderable, templatable {
         $version->statustext = get_string('status' . $status, 'tool_policy');
 
         if ($status == policy_version::STATUS_ACTIVE) {
-            $version->statustext = html_writer::span($version->statustext, 'badge bg-success text-white');
+            $version->statustext = html_writer::span($version->statustext, 'badge badge-success');
         } else if ($status == policy_version::STATUS_DRAFT) {
-            $version->statustext = html_writer::span($version->statustext, 'badge bg-warning text-dark');
+            $version->statustext = html_writer::span($version->statustext, 'badge badge-warning');
         } else {
             $version->statustext = html_writer::span($version->statustext, 'label');
         }
@@ -182,6 +182,7 @@ class page_managedocs_list implements renderable, templatable {
 
         $actionmenu = new action_menu();
         $actionmenu->set_menu_trigger(get_string('actions', 'tool_policy'));
+        $actionmenu->set_alignment(action_menu::TL, action_menu::BL);
         $actionmenu->prioritise = true;
         if ($moveup) {
             $actionmenu->add(new action_menu_link(

@@ -31,15 +31,14 @@ $filterpath = optional_param('filterpath', '', PARAM_PLUGIN);
 admin_externalpage_setup('managefilters');
 
 // Clean up bogus filter states first.
-/** @var core\plugininfo\filter[] $plugininfos */
 $plugininfos = core_plugin_manager::instance()->get_plugins_of_type('filter');
-$filters = [];
+$filters = array();
 $states = filter_get_global_states();
 foreach ($states as $state) {
     if (!isset($plugininfos[$state->filter]) and !get_config('filter_'.$state->filter, 'version')) {
-        // Purge messy leftovers after incorrectly uninstalled plugins and unfinished installations.
-        $DB->delete_records('filter_active', ['filter' => $state->filter]);
-        $DB->delete_records('filter_config', ['filter' => $state->filter]);
+        // Purge messy leftovers after incorrectly uninstalled plugins and unfinished installs.
+        $DB->delete_records('filter_active', array('filter' => $state->filter));
+        $DB->delete_records('filter_config', array('filter' => $state->filter));
         error_log('Deleted bogus "filter_'.$state->filter.'" states and config data.');
     } else {
         $filters[$state->filter] = $state;
@@ -51,6 +50,7 @@ foreach ($plugininfos as $filter => $info) {
     if (isset($filters[$filter])) {
         continue;
     }
+    /** @var \core\plugininfo\base $info */
     if ($info->is_installed_and_upgraded()) {
         filter_set_global_state($filter, TEXTFILTER_DISABLED);
         $states = filter_get_global_states();
@@ -72,9 +72,10 @@ switch ($action) {
 
     case 'setstate':
         if (isset($filters[$filterpath]) and $newstate = optional_param('newstate', '', PARAM_INT)) {
-            /** @var \core\plugininfo\filter $class */
-            $class = core_plugin_manager::resolve_plugininfo_class('filter');
-            $class::enable_plugin($filterpath, $newstate);
+            filter_set_global_state($filterpath, $newstate);
+            if ($newstate == TEXTFILTER_DISABLED) {
+                filter_set_applies_to_strings($filterpath, false);
+            }
         }
         break;
 
@@ -82,16 +83,12 @@ switch ($action) {
         if (isset($filters[$filterpath])) {
             $applytostrings = optional_param('stringstoo', false, PARAM_BOOL);
             filter_set_applies_to_strings($filterpath, $applytostrings);
-            reset_text_filters_cache();
-            core_plugin_manager::reset_caches();
         }
         break;
 
     case 'down':
         if (isset($filters[$filterpath])) {
             filter_set_global_state($filterpath, $filters[$filterpath]->active, 1);
-            reset_text_filters_cache();
-            core_plugin_manager::reset_caches();
         }
         break;
 
@@ -99,14 +96,14 @@ switch ($action) {
         if (isset($filters[$filterpath])) {
             $oldpos = $filters[$filterpath]->sortorder;
             filter_set_global_state($filterpath, $filters[$filterpath]->active, -1);
-            reset_text_filters_cache();
-            core_plugin_manager::reset_caches();
         }
         break;
 }
 
-// Return.
+// Reset caches and return.
 if ($action) {
+    reset_text_filters_cache();
+    core_plugin_manager::reset_caches();
     redirect(new moodle_url('/admin/filters.php'));
 }
 
@@ -118,12 +115,12 @@ $states = filter_get_global_states();
 $stringfilters = filter_get_string_filters();
 
 $table = new html_table();
-$table->head  = [get_string('filter'), get_string('isactive', 'filters'),
-        get_string('order'), get_string('applyto', 'filters'), get_string('settings'), get_string('uninstallplugin', 'core_admin')];
+$table->head  = array(get_string('filter'), get_string('isactive', 'filters'),
+        get_string('order'), get_string('applyto', 'filters'), get_string('settings'), get_string('uninstallplugin', 'core_admin'));
 $table->colclasses = array ('leftalign', 'leftalign', 'centeralign', 'leftalign', 'leftalign', 'leftalign');
 $table->attributes['class'] = 'admintable generaltable';
 $table->id = 'filterssetting';
-$table->data  = [];
+$table->data  = array();
 
 $lastactive = null;
 foreach ($states as $state) {
@@ -160,16 +157,15 @@ die;
 /**
  * Return action URL.
  *
- * @param string $filterpath which filter to get the URL for.
- * @param string $action which action to get the URL for.
- * @return moodle_url|null the requested URL.
+ * @param string $filterpath
+ * @param string $action
+ * @return moodle_url
  */
-function filters_action_url(string $filterpath, string $action): ?moodle_url {
+function filters_action_url($filterpath, $action) {
     if ($action === 'delete') {
         return core_plugin_manager::instance()->get_uninstall_url('filter_'.$filterpath, 'manage');
     }
-    return new moodle_url('/admin/filters.php',
-            ['sesskey' => sesskey(), 'filterpath' => $filterpath, 'action' => $action]);
+    return new moodle_url('/admin/filters.php', array('sesskey'=>sesskey(), 'filterpath'=>$filterpath, 'action'=>$action));
 }
 
 /**
@@ -182,25 +178,24 @@ function filters_action_url(string $filterpath, string $action): ?moodle_url {
  * @param bool $applytostrings
  * @return array data
  */
-function get_table_row(\core\plugininfo\filter $plugininfo, stdClass $state,
-        bool $isfirstrow, bool $islastactive, bool $applytostrings): array {
+function get_table_row(\core\plugininfo\filter $plugininfo, $state, $isfirstrow, $islastactive, $applytostrings) {
     global $OUTPUT;
-    $row = [];
+    $row = array();
     $filter = $state->filter;
     $active = $plugininfo->is_installed_and_upgraded();
 
     static $activechoices;
     static $applytochoices;
     if (!isset($activechoices)) {
-        $activechoices = [
+        $activechoices = array(
             TEXTFILTER_DISABLED => get_string('disabled', 'core_filters'),
             TEXTFILTER_OFF => get_string('offbutavailable', 'core_filters'),
             TEXTFILTER_ON => get_string('on', 'core_filters'),
-        ];
-        $applytochoices = [
+        );
+        $applytochoices = array(
             0 => get_string('content', 'core_filters'),
             1 => get_string('contentandheadings', 'core_filters'),
-        ];
+        );
     }
 
     // Filter name.
@@ -214,7 +209,7 @@ function get_table_row(\core\plugininfo\filter $plugininfo, stdClass $state,
 
     // Disable/off/on.
     $select = new single_select(filters_action_url($filter, 'setstate'), 'newstate', $activechoices, $state->active, null, 'active' . $filter);
-    $select->set_label(get_string('isactive', 'filters'), ['class' => 'accesshide']);
+    $select->set_label(get_string('isactive', 'filters'), array('class' => 'accesshide'));
     $row[] = $OUTPUT->render($select);
 
     // Re-order.
@@ -222,14 +217,12 @@ function get_table_row(\core\plugininfo\filter $plugininfo, stdClass $state,
     $spacer = $OUTPUT->spacer();
     if ($state->active != TEXTFILTER_DISABLED) {
         if (!$isfirstrow) {
-            $updown .= $OUTPUT->action_icon(filters_action_url($filter, 'up'),
-                    new pix_icon('t/up', get_string('up'), '', ['class' => 'iconsmall']));
+            $updown .= $OUTPUT->action_icon(filters_action_url($filter, 'up'), new pix_icon('t/up', get_string('up'), '', array('class' => 'iconsmall')));
         } else {
             $updown .= $spacer;
         }
         if (!$islastactive) {
-            $updown .= $OUTPUT->action_icon(filters_action_url($filter, 'down'),
-                    new pix_icon('t/down', get_string('down'), '', ['class' => 'iconsmall']));
+            $updown .= $OUTPUT->action_icon(filters_action_url($filter, 'down'), new pix_icon('t/down', get_string('down'), '', array('class' => 'iconsmall')));
         } else {
             $updown .= $spacer;
         }
@@ -237,23 +230,20 @@ function get_table_row(\core\plugininfo\filter $plugininfo, stdClass $state,
     $row[] = $updown;
 
     // Apply to strings.
-    $select = new single_select(filters_action_url($filter, 'setapplyto'),
-            'stringstoo', $applytochoices, $applytostrings, null, 'applyto' . $filter);
-    $select->set_label(get_string('applyto', 'filters'), ['class' => 'accesshide']);
+    $select = new single_select(filters_action_url($filter, 'setapplyto'), 'stringstoo', $applytochoices, $applytostrings, null, 'applyto' . $filter);
+    $select->set_label(get_string('applyto', 'filters'), array('class' => 'accesshide'));
     $select->disabled = ($state->active == TEXTFILTER_DISABLED);
     $row[] = $OUTPUT->render($select);
 
     // Settings link, if required.
     if ($active and filter_has_global_settings($filter)) {
-        $row[] = html_writer::link(new moodle_url('/admin/settings.php',
-                ['section' => 'filtersetting'.$filter]), get_string('settings'));
+        $row[] = html_writer::link(new moodle_url('/admin/settings.php', array('section'=>'filtersetting'.$filter)), get_string('settings'));
     } else {
         $row[] = '';
     }
 
     // Uninstall.
-    $row[] = html_writer::link(filters_action_url($filter, 'delete'),
-            get_string('uninstallplugin', 'core_admin'));
+    $row[] = html_writer::link(filters_action_url($filter, 'delete'), get_string('uninstallplugin', 'core_admin'));
 
     return $row;
 }

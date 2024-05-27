@@ -22,11 +22,26 @@
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace tool_generator;
-
-use tool_generator_site_backend;
-
 defined('MOODLE_INTERNAL') || die();
+
+/**
+ * Silly class to access site_backend internal methods.
+ *
+ * @package tool_generator
+ * @copyright 2013 David Monllaó
+ * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+class testable_tool_generator_site_backend extends tool_generator_site_backend {
+
+    /**
+     * Public accessor.
+     *
+     * @return int
+     */
+    public static function get_last_testcourse_id() {
+        return parent::get_last_testcourse_id();
+    }
+}
 
 /**
  * Unit test for the site generator
@@ -35,7 +50,7 @@ defined('MOODLE_INTERNAL') || die();
  * @copyright 2013 David Monllaó
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class maketestsite_test extends \advanced_testcase {
+class tool_generator_maketestsite_testcase extends advanced_testcase {
 
     /**
      * Checks that site courses shortnames are properly generated.
@@ -87,22 +102,5 @@ class maketestsite_test extends \advanced_testcase {
         $lastshortname = testable_tool_generator_site_backend::get_last_testcourse_id();
         $this->assertEquals(20, $lastshortname);
     }
-}
 
-/**
- * Silly class to access site_backend internal methods.
- *
- * @copyright 2013 David Monllaó
- * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-class testable_tool_generator_site_backend extends tool_generator_site_backend {
-
-    /**
-     * Public accessor.
-     *
-     * @return int
-     */
-    public static function get_last_testcourse_id() {
-        return parent::get_last_testcourse_id();
-    }
 }

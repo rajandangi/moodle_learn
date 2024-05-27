@@ -49,10 +49,25 @@ if ($action == 'newon') {
 
 admin_externalpage_setup($pagename);
 
-// The URL used for redirection, and that all edit related URLs will be based off.
-$baseurl = new moodle_url('/admin/repository.php');
+$sesskeyurl = $CFG->wwwroot.'/'.$CFG->admin.'/repository.php?sesskey=' . sesskey();
+$baseurl    = $CFG->wwwroot.'/'.$CFG->admin.'/repository.php';
+
+$configstr  = get_string('manage', 'repository');
 
 $return = true;
+
+if (!empty($action)) {
+    require_sesskey();
+}
+
+/**
+ * Helper function that generates a moodle_url object
+ * relevant to the repository
+ */
+function repository_action_url($repository) {
+    global $baseurl;
+    return new moodle_url($baseurl, array('sesskey'=>sesskey(), 'repos'=>$repository));
+}
 
 if (($action == 'edit') || ($action == 'new')) {
     $pluginname = '';
@@ -127,8 +142,6 @@ if (($action == 'edit') || ($action == 'new')) {
             $success = true;
             if (!$repoid = $type->create()) {
                 $success = false;
-            } else {
-                add_to_config_log('repository_visibility', '', (int)$visible, $plugin);
             }
             $data = data_submitted();
         }
@@ -137,7 +150,7 @@ if (($action == 'edit') || ($action == 'new')) {
             core_plugin_manager::reset_caches();
             redirect($baseurl);
         } else {
-            throw new \moodle_exception('instancenotsaved', 'repository', $baseurl);
+            print_error('instancenotsaved', 'repository', $baseurl);
         }
         exit;
     } else {
@@ -167,28 +180,40 @@ if (($action == 'edit') || ($action == 'new')) {
         }
     }
 } else if ($action == 'show') {
-    require_sesskey();
-    $class = \core_plugin_manager::resolve_plugininfo_class('repository');
-    $class::enable_plugin($repository, 1);
+    if (!confirm_sesskey()) {
+        print_error('confirmsesskeybad', '', $baseurl);
+    }
+    $repositorytype = repository::get_type_by_typename($repository);
+    if (empty($repositorytype)) {
+        print_error('invalidplugin', 'repository', '', $repository);
+    }
+    $repositorytype->update_visibility(true);
+    core_plugin_manager::reset_caches();
     $return = true;
 } else if ($action == 'hide') {
-    require_sesskey();
-    $class = \core_plugin_manager::resolve_plugininfo_class('repository');
-    $class::enable_plugin($repository, 0);
+    if (!confirm_sesskey()) {
+        print_error('confirmsesskeybad', '', $baseurl);
+    }
+    $repositorytype = repository::get_type_by_typename($repository);
+    if (empty($repositorytype)) {
+        print_error('invalidplugin', 'repository', '', $repository);
+    }
+    $repositorytype->update_visibility(false);
+    core_plugin_manager::reset_caches();
     $return = true;
 } else if ($action == 'delete') {
     $repositorytype = repository::get_type_by_typename($repository);
     if ($sure) {
         $PAGE->set_pagetype('admin-repository-' . $repository);
-        require_sesskey();
+        if (!confirm_sesskey()) {
+            print_error('confirmsesskeybad', '', $baseurl);
+        }
 
         if ($repositorytype->delete($downloadcontents)) {
-            // Include this information into config changes table.
-            add_to_config_log('repository_visibility', $repositorytype->get_visible(), '', $repository);
             core_plugin_manager::reset_caches();
             redirect($baseurl);
         } else {
-            throw new \moodle_exception('instancenotdeleted', 'repository', $baseurl);
+            print_error('instancenotdeleted', 'repository', $baseurl);
         }
         exit;
     } else {
@@ -199,15 +224,20 @@ if (($action == 'edit') || ($action == 'new')) {
         $output = $OUTPUT->box_start('generalbox', 'notice');
         $output .= html_writer::tag('p', $message);
 
-        $removeurl = new moodle_url($baseurl, [
+        $removeurl = new moodle_url($sesskeyurl);
+        $removeurl->params(array(
             'action' =>'delete',
             'repos' => $repository,
             'sure' => 'yes',
-        ]);
+        ));
 
-        $removeanddownloadurl = new moodle_url($removeurl, [
+        $removeanddownloadurl = new moodle_url($sesskeyurl);
+        $removeanddownloadurl->params(array(
+            'action' =>'delete',
+            'repos'=> $repository,
+            'sure' => 'yes',
             'downloadcontents' => 1,
-        ]);
+        ));
 
         $output .= $OUTPUT->single_button($removeurl, get_string('continueuninstall', 'repository'));
         $output .= $OUTPUT->single_button($removeanddownloadurl, get_string('continueuninstallanddownload', 'repository'));
@@ -219,11 +249,9 @@ if (($action == 'edit') || ($action == 'new')) {
         $return = false;
     }
 } else if ($action == 'moveup') {
-    require_sesskey();
     $repositorytype = repository::get_type_by_typename($repository);
     $repositorytype->move_order('up');
 } else if ($action == 'movedown') {
-    require_sesskey();
     $repositorytype = repository::get_type_by_typename($repository);
     $repositorytype->move_order('down');
 } else {
@@ -315,7 +343,8 @@ if (($action == 'edit') || ($action == 'new')) {
                     $userinstancenumbertext = "";
                 }
 
-                $settings = html_writer::link(new moodle_url($baseurl, ['action' => 'edit', 'repos' => $typename]), $settingsstr);
+                $settings .= '<a href="' . $sesskeyurl . '&amp;action=edit&amp;repos=' . $typename . '">' . $settingsstr .'</a>';
+
                 $settings .= $OUTPUT->container_start('mdl-left');
                 $settings .= '<br/>';
                 $settings .= $admininstancenumbertext;
@@ -332,34 +361,22 @@ if (($action == 'edit') || ($action == 'new')) {
                 $currentaction = 'hide';
             }
 
-            // Active toggle.
-            $selectaction = new moodle_url($baseurl, ['sesskey' => sesskey(), 'repos' => $typename]);
-            $select = new single_select($selectaction, 'action', $actionchoicesforexisting, $currentaction, null,
-                'applyto' . basename($typename));
+            $select = new single_select(repository_action_url($typename, 'repos'), 'action', $actionchoicesforexisting, $currentaction, null, 'applyto' . basename($typename));
             $select->set_label(get_string('action'), array('class' => 'accesshide'));
-
             // Display up/down link
             $updown = '';
             $spacer = $OUTPUT->spacer(array('height'=>15, 'width'=>15)); // should be done with CSS instead
 
             if ($updowncount > 1) {
-                $moveupaction = new moodle_url($baseurl, [
-                    'sesskey' => sesskey(),
-                    'action' => 'moveup',
-                    'repos' => $typename,
-                ]);
-                $updown .= html_writer::link($moveupaction, $OUTPUT->pix_icon('t/up', get_string('moveup'))) . '&nbsp;';
+                $updown .= "<a href=\"$sesskeyurl&amp;action=moveup&amp;repos=".$typename."\">";
+                $updown .= $OUTPUT->pix_icon('t/up', get_string('moveup')) . "</a>&nbsp;";
             }
             else {
                 $updown .= $spacer;
             }
             if ($updowncount < $totalrepositorytypes) {
-                $movedownaction = new moodle_url($baseurl, [
-                    'sesskey' => sesskey(),
-                    'action' => 'movedown',
-                    'repos' => $typename,
-                ]);
-                $updown .= html_writer::link($movedownaction, $OUTPUT->pix_icon('t/down', get_string('movedown'))) . '&nbsp;';
+                $updown .= "<a href=\"$sesskeyurl&amp;action=movedown&amp;repos=".$typename."\">";
+                $updown .= $OUTPUT->pix_icon('t/down', get_string('movedown')) . "</a>&nbsp;";
             }
             else {
                 $updown .= $spacer;
@@ -373,7 +390,6 @@ if (($action == 'edit') || ($action == 'new')) {
             }
 
             $table->data[] = array($i->get_readablename(), $OUTPUT->render($select), $updown, $settings, $uninstall);
-            $table->rowclasses[] = '';
 
             if (!in_array($typename, $alreadyplugins)) {
                 $alreadyplugins[] = $typename;
@@ -387,16 +403,13 @@ if (($action == 'edit') || ($action == 'new')) {
         foreach ($plugins as $plugin => $dir) {
             // Check that it has not already been listed
             if (!in_array($plugin, $alreadyplugins)) {
-                $selectaction = new moodle_url($baseurl, ['sesskey' => sesskey(), 'repos' => $plugin]);
-                $select = new single_select($selectaction, 'action', $actionchoicesfornew, 'delete', null,
-                    'applyto' . basename($plugin));
+                $select = new single_select(repository_action_url($plugin, 'repos'), 'action', $actionchoicesfornew, 'delete', null, 'applyto' . basename($plugin));
                 $select->set_label(get_string('action'), array('class' => 'accesshide'));
                 $uninstall = '';
                 if ($uninstallurl = core_plugin_manager::instance()->get_uninstall_url('repository_' . $plugin, 'manage')) {
                     $uninstall = html_writer::link($uninstallurl, $struninstall);
                 }
                 $table->data[] = array(get_string('pluginname', 'repository_'.$plugin), $OUTPUT->render($select), '', '', $uninstall);
-                $table->rowclasses[] = 'dimmed_text';
             }
         }
     }

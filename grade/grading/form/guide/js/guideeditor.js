@@ -80,7 +80,7 @@ M.gradingform_guideeditor.editmode = function(el, editmode) {
     if (editmode && !ta.hasClass('hiddenelement')) {
         return;
     }
-    var pseudotablink = '<span class="pseudotablink" tabindex="0"></span>',
+    var pseudotablink = '<input type="text" size="1" class="pseudotablink"/>',
         taplain = ta.next('.plainvalue'),
         tbplain = null,
         tb = el.one('.score input[type=text]')
@@ -178,7 +178,11 @@ M.gradingform_guideeditor.buttonclick = function(e, confirmed) {
     if (action == 'addcriterion' || action == 'addcomment') {
         newid = M.gradingform_guideeditor.calculatenewid(elements_str);
     }
-
+    var dialog_options = {
+        'scope' : this,
+        'callbackargs' : [e, true],
+        'callback' : M.gradingform_guideeditor.buttonclick
+    };
     if (chunks.length == 3 && (action == 'addcriterion' || action == 'addcomment')) {
         // ADD NEW CRITERION OR COMMENT
         var parentel = Y.one('#'+name+'-'+section)
@@ -224,18 +228,8 @@ M.gradingform_guideeditor.buttonclick = function(e, confirmed) {
             Y.one('#'+name+'-'+section+'-'+chunks[2]).remove()
             M.gradingform_guideeditor.assignclasses(elements_str)
         } else {
-            require(['core/notification', 'core/str'], function(Notification, Str) {
-                Notification.saveCancelPromise(
-                    Str.get_string('confirmation', 'admin'),
-                    Str.get_string('confirmdeletecriterion', 'gradingform_guide'),
-                    Str.get_string('yes', 'moodle')
-                ).then(function() {
-                    M.gradingform_guideeditor.buttonclick.apply(this, [e, true]);
-                    return;
-                }.bind(this)).catch(function() {
-                    // User cancelled.
-                });
-            }.bind(this));
+            dialog_options['message'] = M.util.get_string('confirmdeletecriterion', 'gradingform_guide')
+            M.util.show_confirm_dialog(e, dialog_options);
         }
     } else {
         // unknown action

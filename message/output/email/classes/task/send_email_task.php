@@ -73,7 +73,7 @@ class send_email_task extends scheduled_task {
         // Keep track of which emails failed to send.
         $users = $this->get_unique_users();
         foreach ($users as $user) {
-            \core\cron::setup_user($user);
+            cron_setup_user($user);
 
             $hascontent = false;
             $renderable = new \message_email\output\email_digest($user);
@@ -99,7 +99,7 @@ class send_email_task extends scheduled_task {
                 }
             }
         }
-        \core\cron::setup_user();
+        cron_setup_user();
         $users->close();
     }
 
@@ -108,7 +108,7 @@ class send_email_task extends scheduled_task {
      *
      * @return moodle_recordset A moodle_recordset instance.
      */
-    private function get_unique_users(): moodle_recordset {
+    private function get_unique_users() : moodle_recordset {
         global $DB;
 
         $subsql = 'SELECT DISTINCT(useridto) as id
@@ -128,7 +128,7 @@ class send_email_task extends scheduled_task {
      * @param int $userid The ID of the user we are sending a digest to.
      * @return moodle_recordset A moodle_recordset instance.
      */
-    private function get_conversations_for_user(int $userid): moodle_recordset {
+    private function get_conversations_for_user(int $userid) : moodle_recordset {
         global $DB;
 
         // We shouldn't be joining directly on the group table as group
@@ -137,7 +137,7 @@ class send_email_task extends scheduled_task {
         // now this will have to do before 3.7 code freeze.
         // See related MDL-63814.
         $sql = "SELECT DISTINCT mc.id, mc.name, c.id as courseid, c.fullname as coursename, g.id as groupid,
-                                g.picture
+                                g.picture, g.hidepicture
                   FROM {message_conversations} mc
                   JOIN {groups} g
                     ON mc.itemid = g.id
@@ -158,11 +158,10 @@ class send_email_task extends scheduled_task {
      * @param int $userid
      * @return moodle_recordset A moodle_recordset instance.
      */
-    protected function get_users_messages_for_conversation(int $conversationid, int $userid): moodle_recordset {
+    protected function get_users_messages_for_conversation(int $conversationid, int $userid) : moodle_recordset {
         global $DB;
 
-        $userfieldsapi = \core_user\fields::for_userpic();
-        $usernamefields = $userfieldsapi->get_sql('u', false, '', '', false)->selects;
+        $usernamefields = \user_picture::fields('u');
         $sql = "SELECT $usernamefields, m.*
                   FROM {messages} m
                   JOIN {user} u

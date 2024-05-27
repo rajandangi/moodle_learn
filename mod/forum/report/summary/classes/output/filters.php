@@ -24,13 +24,14 @@
 
 namespace forumreport_summary\output;
 
-use context_course;
 use moodle_url;
 use renderable;
 use renderer_base;
 use stdClass;
 use templatable;
 use forumreport_summary;
+
+defined('MOODLE_INTERNAL') || die();
 
 /**
  * Forum summary report filters renderable.
@@ -185,9 +186,8 @@ class filters implements renderable, templatable {
             $allowedgroupsobj = $usergroups;
         }
 
-        $contextcourse = context_course::instance($this->courseid);
         foreach ($allowedgroupsobj as $group) {
-            $groupsavailable[$group->id] = format_string($group->name, true, ['context' => $contextcourse]);
+            $groupsavailable[$group->id] = $group->name;
         }
 
         // Set valid groups selected.

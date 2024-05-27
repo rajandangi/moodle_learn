@@ -14,7 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace core_search;
 /**
  * Area category unit tests.
  *
@@ -22,7 +21,17 @@ namespace core_search;
  * @copyright  2018 Dmitrii Metelkin <dmitriim@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class area_category_test extends \advanced_testcase {
+
+defined('MOODLE_INTERNAL') || die();
+
+/**
+ * Area category unit tests.
+ *
+ * @package    core_search
+ * @copyright  2018 Dmitrii Metelkin <dmitriim@catalyst-au.net>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+class search_area_category_testcase extends advanced_testcase {
 
     /**
      * A helper function to get a mocked search area.
@@ -33,7 +42,7 @@ class area_category_test extends \advanced_testcase {
     protected function get_mocked_area($areaid) {
         $builder = $this->getMockBuilder('\core_search\base');
         $builder->disableOriginalConstructor();
-        $builder->onlyMethods(array('get_area_id'));
+        $builder->setMethods(array('get_area_id'));
         $area = $builder->getMockForAbstractClass();
         $area->method('get_area_id')->willReturn($areaid);
 
@@ -56,7 +65,7 @@ class area_category_test extends \advanced_testcase {
         $areas[] = null;
         $areas[] = [$this->get_mocked_area('area2')];
         $areas[] = $this;
-        $areas[] = new \stdClass();
+        $areas[] = new stdClass();
         $areas[] = $this->get_mocked_area('area3');
         $areas[] = $this->get_mocked_area('area4');
 

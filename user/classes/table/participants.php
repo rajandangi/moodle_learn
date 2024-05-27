@@ -124,24 +124,26 @@ class participants extends \table_sql implements dynamic_table {
         $headers = [];
         $columns = [];
 
-        // At the very least, the user viewing this table will be able to use bulk actions to export it, so add 'select' column.
-        $mastercheckbox = new \core\output\checkbox_toggleall('participants-table', true, [
-            'id' => 'select-all-participants',
-            'name' => 'select-all-participants',
-            'label' => get_string('selectall'),
-            'labelclasses' => 'sr-only',
-            'classes' => 'm-1',
-            'checked' => false,
-        ]);
-        $headers[] = $OUTPUT->render($mastercheckbox);
-        $columns[] = 'select';
+        $bulkoperations = has_capability('moodle/course:bulkmessaging', $this->context);
+        if ($bulkoperations) {
+            $mastercheckbox = new \core\output\checkbox_toggleall('participants-table', true, [
+                'id' => 'select-all-participants',
+                'name' => 'select-all-participants',
+                'label' => get_string('selectall'),
+                'labelclasses' => 'sr-only',
+                'classes' => 'm-1',
+                'checked' => false,
+            ]);
+            $headers[] = $OUTPUT->render($mastercheckbox);
+            $columns[] = 'select';
+        }
 
         $headers[] = get_string('fullname');
         $columns[] = 'fullname';
 
-        $extrafields = \core_user\fields::get_identity_fields($this->context);
+        $extrafields = get_extra_user_fields($this->context);
         foreach ($extrafields as $field) {
-            $headers[] = \core_user\fields::get_display_name($field);
+            $headers[] = get_user_field_name($field);
             $columns[] = $field;
         }
 
@@ -193,8 +195,6 @@ class participants extends \table_sql implements dynamic_table {
             $this->no_sorting('groups');
         }
 
-        $this->set_default_per_page(20);
-
         $this->set_attribute('id', 'participants');
 
         $this->countries = get_string_manager()->get_list_of_countries(true);
@@ -202,11 +202,8 @@ class participants extends \table_sql implements dynamic_table {
         if ($canseegroups) {
             $this->groups = groups_get_all_groups($this->courseid, 0, 0, 'g.*', true);
         }
-
-        // If user has capability to review enrol, show them both role names.
-        $allrolesnamedisplay = ($canreviewenrol ? ROLENAME_BOTH : ROLENAME_ALIAS);
-        $this->allroles = role_fix_names(get_all_roles($this->context), $this->context, $allrolesnamedisplay);
-        $this->assignableroles = get_assignable_roles($this->context, ROLENAME_BOTH, false);
+        $this->allroles = role_fix_names(get_all_roles($this->context), $this->context);
+        $this->assignableroles = get_assignable_roles($this->context, ROLENAME_ALIAS, false);
         $this->profileroles = get_profile_roles($this->context);
         $this->viewableroles = get_viewable_roles($this->context);
 
@@ -250,8 +247,8 @@ class participants extends \table_sql implements dynamic_table {
      */
     public function col_fullname($data) {
         global $OUTPUT;
-        return $OUTPUT->render(\core_user::get_profile_picture($data, null,
-            ['courseid' => $this->course->id, 'includefullname' => true]));
+
+        return $OUTPUT->user_picture($data, array('size' => 35, 'courseid' => $this->course->id, 'includefullname' => true));
     }
 
     /**
@@ -335,7 +332,7 @@ class participants extends \table_sql implements dynamic_table {
         $canreviewenrol = has_capability('moodle/course:enrolreview', $this->context);
         if ($canreviewenrol) {
             $canviewfullnames = has_capability('moodle/site:viewfullnames', $this->context);
-            $fullname = htmlspecialchars(fullname($data, $canviewfullnames), ENT_QUOTES, 'utf-8');
+            $fullname = fullname($data, $canviewfullnames);
             $coursename = format_string($this->course->fullname, true, array('context' => $this->context));
             require_once($CFG->dirroot . '/enrol/locallib.php');
             $manager = new \course_enrolment_manager($PAGE, $this->course);

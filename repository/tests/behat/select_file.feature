@@ -8,9 +8,6 @@ Feature: Select file feature
     Given the following "courses" exist:
       | fullname | shortname | category |
       | Course 1 | C1 | 0 |
-    And the following "blocks" exist:
-      | blockname     | contextlevel | reference | pagetypepattern | defaultregion |
-      | private_files | System       | 1         | my-index        | side-post     |
     And the following "activities" exist:
       | activity | course | name        |
       | folder   | C1     | Test folder |
@@ -21,7 +18,7 @@ Feature: Select file feature
 
   @javascript
   Scenario: Select a file from the "Recent files" repository using "icons" view
-    Given I follow "Dashboard"
+    Given I follow "Dashboard" in the user menu
     And I follow "Manage private files"
     And I click on "Add..." "button" in the "Files" "form_row"
     And I click on "Recent files" "link" in the ".fp-repo-area" "css_element"
@@ -34,7 +31,7 @@ Feature: Select file feature
 
   @javascript
   Scenario: Select a file from the "Recent files" repository using "list" view
-    Given I follow "Dashboard"
+    Given I follow "Dashboard" in the user menu
     And I follow "Manage private files"
     And I click on "Add..." "button" in the "Files" "form_row"
     And I click on "Recent files" "link" in the ".fp-repo-area" "css_element"
@@ -47,7 +44,7 @@ Feature: Select file feature
 
   @javascript
   Scenario: Select a file from the "Recent files" repository using "tree" view
-    Given I follow "Dashboard"
+    Given I follow "Dashboard" in the user menu
     And I follow "Manage private files"
     And I click on "Add..." "button" in the "Files" "form_row"
     And I click on "Recent files" "link" in the ".fp-repo-area" "css_element"

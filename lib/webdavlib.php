@@ -50,6 +50,8 @@ class webdav_client {
     private $_socket = '';
     private $_path ='/';
     private $_auth = false;
+    private $_user;
+    private $_pass;
 
     private $_socket_timeout = 5;
     private $_errno;
@@ -86,21 +88,6 @@ class webdav_client {
      */
     private $oauthtoken;
 
-    /** @var string Username (for basic/digest auth, see $auth). */
-    private $_user;
-
-    /** @var string Password (for basic/digest auth, see $auth). */
-    private $_pass;
-
-    /** @var mixed to store xml data that need to be handled. */
-    private $_lock_ref_cdata;
-
-    /** @var mixed to store the deleted xml data. */
-    private $_delete_cdata;
-
-    /** @var string to store the locked xml data. */
-    private $_lock_cdata;
-
     /**#@-*/
 
     /**
@@ -117,8 +104,8 @@ class webdav_client {
             $this->_server = $server;
         }
         if (!empty($user) && !empty($pass)) {
-            $this->_user = $user;
-            $this->_pass = $pass;
+            $this->user = $user;
+            $this->pass = $pass;
         }
         $this->_auth = $auth;
         $this->_socket = $socket;
@@ -210,10 +197,7 @@ class webdav_client {
     function close() {
         $this->_error_log('closing socket ' . $this->sock);
         $this->_connection_closed = true;
-        if (is_resource($this->sock)) {
-            // Only close the socket if it is a resource.
-            fclose($this->sock);
-        }
+        fclose($this->sock);
     }
 
     /**
@@ -656,7 +640,7 @@ class webdav_client {
                     if (strcmp($response['header']['Content-Type'], 'text/xml; charset="utf-8"') == 0) {
                         // ok let's get the content of the xml stuff
                         $this->_parser = xml_parser_create_ns();
-                        $this->_parserid = $this->get_parser_id($this->_parser);
+                        $this->_parserid = (int) $this->_parser;
                         // forget old data...
                         unset($this->_lock[$this->_parserid]);
                         unset($this->_xmltree[$this->_parserid]);
@@ -754,7 +738,7 @@ class webdav_client {
                     if (strcmp($response['header']['Content-Type'], 'text/xml; charset="utf-8"') == 0) {
                         // ok let's get the content of the xml stuff
                         $this->_parser = xml_parser_create_ns();
-                        $this->_parserid = $this->get_parser_id($this->_parser);
+                        $this->_parserid = (int) $this->_parser;
                         // forget old data...
                         unset($this->_delete[$this->_parserid]);
                         unset($this->_xmltree[$this->_parserid]);
@@ -846,7 +830,7 @@ EOD;
                     if (preg_match('#(application|text)/xml;\s?charset=[\'\"]?utf-8[\'\"]?#i', $response['header']['Content-Type'])) {
                         // ok let's get the content of the xml stuff
                         $this->_parser = xml_parser_create_ns('UTF-8');
-                        $this->_parserid = $this->get_parser_id($this->_parser);
+                        $this->_parserid = (int) $this->_parser;
                         // forget old data...
                         unset($this->_ls[$this->_parserid]);
                         unset($this->_xmltree[$this->_parserid]);
@@ -1085,7 +1069,7 @@ EOD;
 
     private function _endElement($parser, $name) {
         // end tag was found...
-        $parserid = $this->get_parser_id($parser);
+        $parserid = (int) $parser;
         $this->_xmltree[$parserid] = substr($this->_xmltree[$parserid],0, strlen($this->_xmltree[$parserid]) - (strlen($name) + 1));
     }
 
@@ -1101,7 +1085,7 @@ EOD;
      */
     private function _propfind_startElement($parser, $name, $attrs) {
         // lower XML Names... maybe break a RFC, don't know ...
-        $parserid = $this->get_parser_id($parser);
+        $parserid = (int) $parser;
 
         $propname = strtolower($name);
         if (!empty($this->_xmltree[$parserid])) {
@@ -1197,7 +1181,7 @@ EOD;
      */
     private function _delete_startElement($parser, $name, $attrs) {
         // lower XML Names... maybe break a RFC, don't know ...
-        $parserid = $this->get_parser_id($parser);
+        $parserid = (int) $parser;
         $propname = strtolower($name);
         $this->_xmltree[$parserid] .= $propname . '_';
 
@@ -1249,7 +1233,7 @@ EOD;
      */
     private function _lock_startElement($parser, $name, $attrs) {
         // lower XML Names... maybe break a RFC, don't know ...
-        $parserid = $this->get_parser_id($parser);
+        $parserid = (int) $parser;
         $propname = strtolower($name);
         $this->_xmltree[$parserid] .= $propname . '_';
 
@@ -1305,7 +1289,7 @@ EOD;
      * @access private
      */
     private function _lock_cData($parser, $cdata) {
-        $parserid = $this->get_parser_id($parser);
+        $parserid = (int) $parser;
         if (trim($cdata) <> '') {
             // $this->_error_log(($this->_xmltree[$parserid]) . '='. htmlentities($cdata));
             $this->_lock_ref_cdata .= $cdata;
@@ -1577,7 +1561,7 @@ EOD;
                             $chunk_size = ($mod == $max_chunk_size ? $max_chunk_size : $matches[1] - strlen($chunk));
                             $chunk .= fread($this->sock, $chunk_size);
                             $this->_error_log('mod: ' . $mod . ' chunk: ' . $chunk_size . ' total: ' . strlen($chunk));
-                        } while (strlen($chunk) < $matches[1]);
+                        } while ($mod == $max_chunk_size);
                     }
                     self::update_file_or_buffer($chunk, $fp, $buffer);
                     break;
@@ -1602,7 +1586,11 @@ EOD;
                 self::update_file_or_buffer($chunk, $fp, $buffer);
                 $loadsize += strlen($chunk);
                 $this->_error_log('mod: ' . $mod . ' chunk: ' . $chunk_size . ' total: ' . $loadsize);
-            } while ($matches[1] > $loadsize);
+            } while ($mod == $max_chunk_size);
+            if ($loadsize < $matches[1]) {
+                $chunk = fread($this->sock, $matches[1] - $loadsize);
+                self::update_file_or_buffer($chunk, $fp, $buffer);
+            }
             break;
 
             // check for 204 No Content
@@ -1638,7 +1626,7 @@ EOD;
      * @param resource $fp the file handle to write to (or null)
      * @param string &$buffer the buffer to append to (if $fp is null)
      */
-    private static function update_file_or_buffer($chunk, $fp, &$buffer) {
+    static private function update_file_or_buffer($chunk, $fp, &$buffer) {
         if ($fp) {
             fwrite($fp, $chunk);
         } else {
@@ -1722,14 +1710,14 @@ EOD;
      */
     private function translate_uri($uri) {
         // remove all html entities...
-        $native_path = html_entity_decode($uri, ENT_COMPAT);
+        $native_path = html_entity_decode($uri);
         $parts = explode('/', $native_path);
         for ($i = 0; $i < count($parts); $i++) {
             // check if part is allready utf8
             if (iconv('UTF-8', 'UTF-8', $parts[$i]) == $parts[$i]) {
                 $parts[$i] = rawurlencode($parts[$i]);
             } else {
-                $parts[$i] = rawurlencode(\core_text::convert($parts[$i], 'ISO-8859-1', 'UTF-8'));
+                $parts[$i] = rawurlencode(utf8_encode($parts[$i]));
             }
         }
         return implode('/', $parts);
@@ -1746,7 +1734,7 @@ EOD;
         $fullpath = $path;
         if (iconv('UTF-8', 'UTF-8', $fullpath) == $fullpath) {
             $this->_error_log("filename is utf-8. Needs conversion...");
-            $fullpath = \core_text::convert($fullpath, 'UTF-8', 'ISO-8859-1');
+            $fullpath = utf8_decode($fullpath);
         }
         return $fullpath;
     }
@@ -1761,20 +1749,6 @@ EOD;
     private function _error_log($err_string) {
         if ($this->_debug) {
             error_log($err_string);
-        }
-    }
-
-    /**
-     * Helper method to get the parser id for both PHP 7 and 8.
-     *
-     * @param resource|object $parser
-     * @return int
-     */
-    private function get_parser_id($parser): int {
-        if (is_object($parser)) {
-            return spl_object_id($parser);
-        } else {
-            return (int) $parser;
         }
     }
 }

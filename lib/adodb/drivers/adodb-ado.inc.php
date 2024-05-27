@@ -1,25 +1,17 @@
 <?php
-/**
- * Microsoft ADO driver.
- *
- * Requires ADO. Works only on MS Windows.
- *
- * This file is part of ADOdb, a Database Abstraction Layer library for PHP.
- *
- * @package ADOdb
- * @link https://adodb.org Project's web site and documentation
- * @link https://github.com/ADOdb/ADOdb Source code and issue tracker
- *
- * The ADOdb Library is dual-licensed, released under both the BSD 3-Clause
- * and the GNU Lesser General Public Licence (LGPL) v2.1 or, at your option,
- * any later version. This means you can use it in proprietary products.
- * See the LICENSE.md file distributed with this source code for details.
- * @license BSD-3-Clause
- * @license LGPL-2.1-or-later
- *
- * @copyright 2000-2013 John Lim
- * @copyright 2014 Damien Regad, Mark Newnham and the ADOdb community
- */
+/*
+@version   v5.20.16  12-Jan-2020
+@copyright (c) 2000-2013 John Lim (jlim#natsoft.com). All rights reserved.
+@copyright (c) 2014      Damien Regad, Mark Newnham and the ADOdb community
+  Released under both BSD license and Lesser GPL library license.
+  Whenever there is any discrepancy between the two licenses,
+  the BSD license will take precedence.
+Set tabs to 4 for best viewing.
+
+  Latest version is available at http://adodb.org/
+
+	Microsoft ADO data driver. Requires ADO. Works only on MS Windows.
+*/
 
 // security - hide paths
 if (!defined('ADODB_DIR')) die();
@@ -60,7 +52,9 @@ class ADODB_ado extends ADOConnection {
 
 	function _affectedrows()
 	{
-		return $this->_affectedRows;
+		if (PHP_VERSION >= 5) return $this->_affectedRows;
+
+		return $this->_affectedRows->value;
 	}
 
 	// you can also pass a connection string like this:
@@ -87,7 +81,7 @@ class ADODB_ado extends ADOConnection {
 			// not yet
 			//if ($argDatabasename) $argHostname .= ";Initial Catalog=$argDatabasename";
 
-			//use trusted connection for SQL if username not specified
+			//use trusted conection for SQL if username not specified
 			if (!$argUsername) $argHostname .= ";Trusted_Connection=Yes";
 		} else if ($argProvider=='access')
 			$argProvider = "Microsoft.Jet.OLEDB.4.0"; // Microsoft Jet Provider
@@ -208,6 +202,10 @@ class ADODB_ado extends ADOConnection {
 		return empty($arr) ? $false : $arr;
 	}
 
+
+
+
+	/* returns queryID or false */
 	function _query($sql,$inputarr=false)
 	{
 
@@ -352,7 +350,7 @@ class ADORecordSet_ado extends ADORecordSet {
 			$mode = $ADODB_FETCH_MODE;
 		}
 		$this->fetchMode = $mode;
-		parent::__construct($id);
+		return parent::__construct($id,$mode);
 	}
 
 
@@ -501,9 +499,6 @@ class ADORecordSet_ado extends ADORecordSet {
 			$len = $fieldobj->max_length;
 		}
 
-		if (array_key_exists($t,$this->connection->customActualTypes))
-			return  $this->connection->customActualTypes[$t];
-
 		if (!is_numeric($t)) return $t;
 
 		switch ($t) {
@@ -543,7 +538,7 @@ class ADORecordSet_ado extends ADORecordSet {
 		case 19://adUnsignedInt	= 19,
 		case 20://adUnsignedBigInt	= 21,
 			return 'I';
-		default: return ADODB_DEFAULT_METATYPE;
+		default: return 'N';
 		}
 	}
 

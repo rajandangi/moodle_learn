@@ -51,10 +51,58 @@ class core_calendar_renderer extends plugin_renderer_base {
     }
 
     /**
-     * @deprecated since 4.0 MDL-72810.
+     * Produces the content for the three months block (pretend block)
+     *
+     * This includes the previous month, the current month, and the next month
+     *
+     * @param calendar_information $calendar
+     * @return string
      */
-    public function fake_block_threemonths() {
-        throw new coding_exception(__FUNCTION__ . '() has been removed.');
+    public function fake_block_threemonths(calendar_information $calendar) {
+        // Get the calendar type we are using.
+        $calendartype = \core_calendar\type_factory::get_calendar_instance();
+        $time = $calendartype->timestamp_to_date_array($calendar->time);
+
+        $current = $calendar->time;
+        $prevmonthyear = $calendartype->get_prev_month($time['year'], $time['mon']);
+        $prev = $calendartype->convert_to_timestamp(
+                $prevmonthyear[1],
+                $prevmonthyear[0],
+                1
+            );
+        $nextmonthyear = $calendartype->get_next_month($time['year'], $time['mon']);
+        $next = $calendartype->convert_to_timestamp(
+                $nextmonthyear[1],
+                $nextmonthyear[0],
+                1
+            );
+
+        $content = '';
+
+        // Previous.
+        $calendar->set_time($prev);
+        list($previousmonth, ) = calendar_get_view($calendar, 'minithree', false, true);
+
+        // Current month.
+        $calendar->set_time($current);
+        list($currentmonth, ) = calendar_get_view($calendar, 'minithree', false, true);
+
+        // Next month.
+        $calendar->set_time($next);
+        list($nextmonth, ) = calendar_get_view($calendar, 'minithree', false, true);
+
+        // Reset the time back.
+        $calendar->set_time($current);
+
+        $data = (object) [
+            'previousmonth' => $previousmonth,
+            'currentmonth' => $currentmonth,
+            'nextmonth' => $nextmonth,
+        ];
+
+        $template = 'core_calendar/calendar_threemonth';
+        $content .= $this->render_from_template($template, $data);
+        return $content;
     }
 
     /**
@@ -195,10 +243,9 @@ class core_calendar_renderer extends plugin_renderer_base {
      * @param moodle_url $returnurl The URL that the user should be taken too upon selecting a course.
      * @param string $label The label to use for the course select.
      * @param int $courseid The id of the course to be selected.
-     * @param int|null $calendarinstanceid The instance ID of the calendar we're generating this course filter for.
      * @return string
      */
-    public function course_filter_selector(moodle_url $returnurl, $label = null, $courseid = null, int $calendarinstanceid = null) {
+    public function course_filter_selector(moodle_url $returnurl, $label = null, $courseid = null) {
         global $CFG, $DB;
 
         if (!isloggedin() or isguestuser()) {
@@ -254,56 +301,11 @@ class core_calendar_renderer extends plugin_renderer_base {
             $labelattributes['class'] = 'sr-only';
         }
 
-        $filterid = 'calendar-course-filter';
-        if ($calendarinstanceid) {
-            $filterid .= "-$calendarinstanceid";
-        }
-        $select = html_writer::label($label, $filterid, false, $labelattributes);
+        $select = html_writer::label($label, 'course', false, $labelattributes);
         $select .= html_writer::select($courseoptions, 'course', $selected, false,
-                ['class' => 'cal_courses_flt ml-1 mr-auto', 'id' => $filterid]);
+                ['class' => 'cal_courses_flt ml-1 mr-auto', 'id' => 'course']);
 
         return $select;
-    }
-
-    /**
-     * Render the subscriptions header
-     *
-     * @return string
-     */
-    public function render_subscriptions_header(): string {
-        $importcalendarbutton = new single_button(new moodle_url('/calendar/import.php', calendar_get_export_import_link_params()),
-                get_string('importcalendar', 'calendar'), 'get', single_button::BUTTON_PRIMARY);
-        $importcalendarbutton->class .= ' float-sm-right float-right';
-        $exportcalendarbutton = new single_button(new moodle_url('/calendar/export.php', calendar_get_export_import_link_params()),
-                get_string('exportcalendar', 'calendar'), 'get', single_button::BUTTON_PRIMARY);
-        $exportcalendarbutton->class .= ' float-sm-right float-right';
-        $output = $this->output->heading(get_string('managesubscriptions', 'calendar'));
-        $output .= html_writer::start_div('header d-flex flex-wrap mt-5');
-        $headerattr = [
-            'class' => 'mr-auto',
-            'aria-describedby' => 'subscription_details_table',
-        ];
-        $output .= html_writer::tag('h3', get_string('yoursubscriptions', 'calendar'), $headerattr);
-        $output .= $this->output->render($importcalendarbutton);
-        $output .= $this->output->render($exportcalendarbutton);
-        $output .= html_writer::end_div();
-
-        return $output;
-    }
-
-    /**
-     * Render the subscriptions blank state appearance
-     *
-     * @return string
-     */
-    public function render_no_calendar_subscriptions(): string {
-        $output = html_writer::start_div('mt-5');
-        $importlink = html_writer::link((new moodle_url('/calendar/import.php', calendar_get_export_import_link_params()))->out(),
-                get_string('importcalendarexternal', 'calendar'));
-        $output .= get_string('nocalendarsubscriptions', 'calendar', $importlink);
-        $output .= html_writer::end_div();
-
-        return $output;
     }
 
     /**
@@ -311,10 +313,10 @@ class core_calendar_renderer extends plugin_renderer_base {
      *
      * @param int $unused
      * @param array $subscriptions
-     * @param string $unused2
+     * @param string $importresults
      * @return string
      */
-    public function subscription_details($unused, $subscriptions, $unused2 = '') {
+    public function subscription_details($unused = null, $subscriptions, $importresults = '') {
         $table = new html_table();
         $table->head  = array(
             get_string('colcalendar', 'calendar'),
@@ -323,8 +325,9 @@ class core_calendar_renderer extends plugin_renderer_base {
             get_string('colpoll', 'calendar'),
             get_string('colactions', 'calendar')
         );
+        $table->align = array('left', 'left', 'left', 'center');
+        $table->width = '100%';
         $table->data  = array();
-        $table->id = 'subscription_details_table';
 
         if (empty($subscriptions)) {
             $cell = new html_table_cell(get_string('nocalendarsubscriptions', 'calendar'));
@@ -343,58 +346,66 @@ class core_calendar_renderer extends plugin_renderer_base {
                 $lastupdated = userdate($sub->lastupdated, get_string('strftimedatetimeshort', 'langconfig'));
             }
 
+            $cell = new html_table_cell($this->subscription_action_form($sub));
+            $cell->colspan = 2;
             $type = $sub->eventtype . 'events';
-            $calendarname = new html_table_cell($label);
-            $calendarname->header = true;
 
-            $tablerow = new html_table_row(array(
-                $calendarname,
+            $table->data[] = new html_table_row(array(
+                new html_table_cell($label),
                 new html_table_cell($lastupdated),
                 new html_table_cell(get_string($type, 'calendar')),
-                new html_table_cell($this->render_subscription_update_interval($sub)),
-                new html_table_cell($this->subscription_action_links())
+                $cell
             ));
-            $tablerow->attributes += [
-                'data-subid' => $sub->id,
-                'data-subname' => $sub->name
-            ];
-            $table->data[] = $tablerow;
         }
 
         $out  = $this->output->box_start('generalbox calendarsubs');
 
+        $out .= $importresults;
         $out .= html_writer::table($table);
         $out .= $this->output->box_end();
-
-        $this->page->requires->js_call_amd('core_calendar/manage_subscriptions', 'init');
         return $out;
-    }
-
-    /**
-     * Render subscription update interval form.
-     *
-     * @param stdClass $subscription
-     * @return string
-     */
-    protected function render_subscription_update_interval(stdClass $subscription): string {
-        if (empty($subscription->url)) {
-            return '';
-        }
-
-        $tmpl = new \core_calendar\output\refreshintervalcollection($subscription);
-        return $this->output->render_from_template('core/inplace_editable', $tmpl->export_for_template($this->output));
     }
 
     /**
      * Creates a form to perform actions on a given subscription.
      *
+     * @param stdClass $subscription
      * @return string
      */
-    protected function subscription_action_links(): string {
-        $html = html_writer::start_tag('div', array('class' => 'btn-group float-left'));
-        $html .= html_writer::span(html_writer::link('#', get_string('delete'),
-            ['data-action' => 'delete-subscription']), '');
+    protected function subscription_action_form($subscription) {
+        // Assemble form for the subscription row.
+        $html = html_writer::start_tag('form', array('action' => new moodle_url('/calendar/managesubscriptions.php'), 'method' => 'post'));
+        if (empty($subscription->url)) {
+            // Don't update an iCal file, which has no URL.
+            $html .= html_writer::empty_tag('input', array('type' => 'hidden', 'name' => 'pollinterval', 'value' => '0'));
+        } else {
+            // Assemble pollinterval control.
+            $html .= html_writer::start_tag('div', array('style' => 'float:left;'));
+            $html .= html_writer::start_tag('select', array('name' => 'pollinterval', 'class' => 'custom-select'));
+            foreach (calendar_get_pollinterval_choices() as $k => $v) {
+                $attributes = array();
+                if ($k == $subscription->pollinterval) {
+                    $attributes['selected'] = 'selected';
+                }
+                $attributes['value'] = $k;
+                $html .= html_writer::tag('option', $v, $attributes);
+            }
+            $html .= html_writer::end_tag('select');
+            $html .= html_writer::end_tag('div');
+        }
+        $html .= html_writer::empty_tag('input', array('type' => 'hidden', 'name' => 'sesskey', 'value' => sesskey()));
+        $html .= html_writer::empty_tag('input', array('type' => 'hidden', 'name' => 'id', 'value' => $subscription->id));
+        $html .= html_writer::start_tag('div', array('class' => 'btn-group float-right'));
+        if (!empty($subscription->url)) {
+            $html .= html_writer::tag('button', get_string('update'), array('type'  => 'submit', 'name' => 'action',
+                                                                            'class' => 'btn btn-secondary',
+                                                                            'value' => CALENDAR_SUBSCRIPTION_UPDATE));
+        }
+        $html .= html_writer::tag('button', get_string('remove'), array('type'  => 'submit', 'name' => 'action',
+                                                                        'class' => 'btn btn-secondary',
+                                                                        'value' => CALENDAR_SUBSCRIPTION_REMOVE));
         $html .= html_writer::end_tag('div');
+        $html .= html_writer::end_tag('form');
         return $html;
     }
 
@@ -408,24 +419,5 @@ class core_calendar_renderer extends plugin_renderer_base {
             'eventtypes' => calendar_get_filter_types(),
         ];
         return $this->render_from_template('core_calendar/event_filter', $data);
-    }
-
-    /**
-     * Render the calendar import result.
-     *
-     * @param array $result Import result
-     * @return string|null
-     */
-    public function render_import_result(array $result): ?string {
-        $data = [
-            'eventsimported' => $result['eventsimported'],
-            'eventsskipped' => $result['eventsskipped'],
-            'eventsupdated' => $result['eventsupdated'],
-            'eventsdeleted' => $result['eventsdeleted'],
-            'haserror' => $result['haserror'],
-            'errors' => $result['errors']
-        ];
-
-        return $this->render_from_template('core_calendar/subscription_update_result', $data);
     }
 }

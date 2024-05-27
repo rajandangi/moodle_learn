@@ -37,6 +37,6 @@ Feature: Students can reply to a discussion in page.
       | post | Discussion contents 1, third message |
       | privatereply | 1                            |
     Then I should see "Discussion contents 1, third message"
-    And I should see "This is a private reply. (Teachers and other users with the capability to view private replies can also see it.)"
+    And I should see "This is a private reply. It is not visible to other participants."
     And I reload the page
     And I should see "Discussion contents 1, third message"

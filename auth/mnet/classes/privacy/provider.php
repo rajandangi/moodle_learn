@@ -49,7 +49,7 @@ class provider implements
      * @param   collection $collection The initialised item collection to add items to.
      * @return  collection     A listing of user data stored through this system.
      */
-    public static function get_metadata(collection $collection): collection {
+    public static function get_metadata(collection $collection) : collection {
 
         $sessionfields = [
                 'userid' => 'privacy:metadata:mnet_session:userid',
@@ -81,6 +81,7 @@ class provider implements
 
         $externalfields = [
                 'address' => 'privacy:metadata:mnet_external:address',
+                'aim' => 'privacy:metadata:mnet_external:aim',
                 'alternatename' => 'privacy:metadata:mnet_external:alternatename',
                 'autosubscribe' => 'privacy:metadata:mnet_external:autosubscribe',
                 'calendartype' => 'privacy:metadata:mnet_external:calendartype',
@@ -94,6 +95,7 @@ class provider implements
                 'firstaccess' => 'privacy:metadata:mnet_external:firstaccess',
                 'firstname' => 'privacy:metadata:mnet_external:firstname',
                 'firstnamephonetic' => 'privacy:metadata:mnet_external:firstnamephonetic',
+                'icq' => 'privacy:metadata:mnet_external:icq',
                 'id' => 'privacy:metadata:mnet_external:id',
                 'idnumber' => 'privacy:metadata:mnet_external:idnumber',
                 'imagealt' => 'privacy:metadata:mnet_external:imagealt',
@@ -106,15 +108,19 @@ class provider implements
                 'maildigest' => 'privacy:metadata:mnet_external:maildigest',
                 'maildisplay' => 'privacy:metadata:mnet_external:maildisplay',
                 'middlename' => 'privacy:metadata:mnet_external:middlename',
+                'msn' => 'privacy:metadata:mnet_external:msn',
                 'phone1' => 'privacy:metadata:mnet_external:phone1',
                 'pnone2' => 'privacy:metadata:mnet_external:phone2',
                 'picture' => 'privacy:metadata:mnet_external:picture',
                 'policyagreed' => 'privacy:metadata:mnet_external:policyagreed',
+                'skype' => 'privacy:metadata:mnet_external:skype',
                 'suspended' => 'privacy:metadata:mnet_external:suspended',
                 'timezone' => 'privacy:metadata:mnet_external:timezone',
                 'trackforums' => 'privacy:metadata:mnet_external:trackforums',
                 'trustbitmask' => 'privacy:metadata:mnet_external:trustbitmask',
+                'url' => 'privacy:metadata:mnet_external:url',
                 'username' => 'privacy:metadata:mnet_external:username',
+                'yahoo' => 'privacy:metadata:mnet_external:yahoo',
         ];
 
         $collection->add_external_location_link('moodle', $externalfields, 'privacy:metadata:external:moodle');
@@ -130,7 +136,7 @@ class provider implements
      * @param   int $userid The user to search.
      * @return  contextlist   $contextlist  The list of contexts used in this plugin.
      */
-    public static function get_contexts_for_userid(int $userid): contextlist {
+    public static function get_contexts_for_userid(int $userid) : contextlist {
         $sql = "SELECT ctx.id
                   FROM {mnet_log} ml
                   JOIN {context} ctx ON ctx.instanceid = ml.userid AND ctx.contextlevel = :contextlevel

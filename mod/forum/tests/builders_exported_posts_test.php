@@ -14,9 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace mod_forum;
-
-use mod_forum_tests_generator_trait;
+/**
+ * The exported_posts builder tests.
+ *
+ * @package    mod_forum
+ * @copyright  2019 Ryan Wyllie <ryan@moodle.com>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -29,7 +33,7 @@ require_once(__DIR__ . '/generator_trait.php');
  * @copyright  2019 Ryan Wyllie <ryan@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class builders_exported_posts_test extends \advanced_testcase {
+class mod_forum_builders_exported_posts_testcase extends advanced_testcase {
     // Make use of the test generator trait.
     use mod_forum_tests_generator_trait;
 
@@ -39,7 +43,7 @@ class builders_exported_posts_test extends \advanced_testcase {
     /**
      * Set up function for tests.
      */
-    public function setUp(): void {
+    public function setUp() {
         // We must clear the subscription caches. This has to be done both before each test, and after in case of other
         // tests using these functions.
         \mod_forum\subscriptions::reset_forum_cache();
@@ -51,7 +55,7 @@ class builders_exported_posts_test extends \advanced_testcase {
     /**
      * Tear down function for tests.
      */
-    public function tearDown(): void {
+    public function tearDown() {
         // We must clear the subscription caches. This has to be done both before each test, and after in case of other
         // tests using these functions.
         \mod_forum\subscriptions::reset_forum_cache();
@@ -74,16 +78,16 @@ class builders_exported_posts_test extends \advanced_testcase {
             array_map(function($forum) use ($entityfactory, $DB) {
                 $course = $DB->get_record('course', ['id' => $forum->course]);
                 $coursemodule = get_coursemodule_from_instance('forum', $forum->id);
-                $context = \context_module::instance($coursemodule->id);
-                return $entityfactory->get_forum_from_stdClass($forum, $context, $coursemodule, $course);
+                $context = context_module::instance($coursemodule->id);
+                return $entityfactory->get_forum_from_stdclass($forum, $context, $coursemodule, $course);
             }, $forums),
             // Discussions.
             array_map(function($discussion) use ($entityfactory) {
-                return $entityfactory->get_discussion_from_stdClass($discussion);
+                return $entityfactory->get_discussion_from_stdclass($discussion);
             }, $discussions),
             // Posts.
             array_map(function($post) use ($entityfactory) {
-                return $entityfactory->get_post_from_stdClass($post);
+                return $entityfactory->get_post_from_stdclass($post);
             }, $posts)
         ];
     }
@@ -146,10 +150,9 @@ class builders_exported_posts_test extends \advanced_testcase {
         $this->resetAfterTest();
 
         $datagenerator = $this->getDataGenerator();
+        $user1 = $datagenerator->create_user();
+        $user2 = $datagenerator->create_user();
         $course = $datagenerator->create_course();
-        $user1 = $datagenerator->create_and_enrol($course);
-        $user2 = $datagenerator->create_and_enrol($course);
-
         $forum1 = $datagenerator->create_module('forum', ['course' => $course->id]);
         $forum2 = $datagenerator->create_module('forum', ['course' => $course->id]);
         [$discussion1, $post1] = $this->helper_post_to_forum($forum1, $user1);

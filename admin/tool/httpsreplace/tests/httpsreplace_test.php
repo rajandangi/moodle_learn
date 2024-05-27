@@ -22,7 +22,8 @@
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace tool_httpsreplace;
+namespace tool_httpsreplace\tests;
+
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -144,7 +145,7 @@ class httpsreplace_test extends \advanced_testcase {
         $this->resetAfterTest();
         $this->expectOutputRegex($ouputregex);
 
-        $finder = new tool_httpreplace_url_finder_mock();
+        $finder = new tool_httpreplace_url_finder_test();
 
         $generator = $this->getDataGenerator();
         $course = $generator->create_course((object) [
@@ -154,7 +155,7 @@ class httpsreplace_test extends \advanced_testcase {
         $finder->upgrade_http_links();
 
         $summary = $DB->get_field('course', 'summary', ['id' => $course->id]);
-        $this->assertStringContainsString($expectedcontent, $summary);
+        $this->assertContains($expectedcontent, $summary);
     }
 
     /**
@@ -215,7 +216,7 @@ class httpsreplace_test extends \advanced_testcase {
     public function test_http_link_stats($content, $domain, $expectedcount) {
         $this->resetAfterTest();
 
-        $finder = new tool_httpreplace_url_finder_mock();
+        $finder = new tool_httpreplace_url_finder_test();
 
         $generator = $this->getDataGenerator();
         $course = $generator->create_course((object) [
@@ -236,7 +237,7 @@ class httpsreplace_test extends \advanced_testcase {
         $this->resetAfterTest();
         $this->expectOutputRegex('/^$/');
 
-        $finder = new tool_httpreplace_url_finder_mock();
+        $finder = new tool_httpreplace_url_finder_test();
 
         $generator = $this->getDataGenerator();
         $course = $generator->create_course((object) [
@@ -252,10 +253,10 @@ class httpsreplace_test extends \advanced_testcase {
         $this->assertCount(0, $results);
 
         $summary = $DB->get_field('course', 'summary', ['id' => $course->id]);
-        $this->assertStringContainsString('http://intentionally.unavailable/page.php', $summary);
-        $this->assertStringContainsString('http://other.unavailable/page.php', $summary);
-        $this->assertStringNotContainsString('https://intentionally.unavailable', $summary);
-        $this->assertStringNotContainsString('https://other.unavailable', $summary);
+        $this->assertContains('http://intentionally.unavailable/page.php', $summary);
+        $this->assertContains('http://other.unavailable/page.php', $summary);
+        $this->assertNotContains('https://intentionally.unavailable', $summary);
+        $this->assertNotContains('https://other.unavailable', $summary);
     }
 
     /**
@@ -268,7 +269,7 @@ class httpsreplace_test extends \advanced_testcase {
         $CFG->wwwroot = preg_replace('/^https:/', 'http:', $CFG->wwwroot);
         $this->expectOutputRegex('/^$/');
 
-        $finder = new tool_httpreplace_url_finder_mock();
+        $finder = new tool_httpreplace_url_finder_test();
 
         $generator = $this->getDataGenerator();
         $course = $generator->create_course((object) [
@@ -280,7 +281,7 @@ class httpsreplace_test extends \advanced_testcase {
 
         $finder->upgrade_http_links();
         $summary = $DB->get_field('course', 'summary', ['id' => $course->id]);
-        $this->assertStringContainsString($CFG->wwwroot, $summary);
+        $this->assertContains($CFG->wwwroot, $summary);
     }
 
     /**
@@ -291,16 +292,16 @@ class httpsreplace_test extends \advanced_testcase {
 
         set_config('test_upgrade_http_links', '<img src="http://somesite/someimage.png" />');
 
-        $finder = new tool_httpreplace_url_finder_mock();
+        $finder = new tool_httpreplace_url_finder_test();
         ob_start();
         $results = $finder->upgrade_http_links();
         $output = ob_get_contents();
         ob_end_clean();
         $this->assertTrue($results);
-        $this->assertStringNotContainsString('https://somesite', $output);
+        $this->assertNotContains('https://somesite', $output);
         $testconf = get_config('core', 'test_upgrade_http_links');
-        $this->assertStringContainsString('http://somesite', $testconf);
-        $this->assertStringNotContainsString('https://somesite', $testconf);
+        $this->assertContains('http://somesite', $testconf);
+        $this->assertNotContains('https://somesite', $testconf);
     }
 
     /**
@@ -317,7 +318,7 @@ class httpsreplace_test extends \advanced_testcase {
 
         set_config('renames', json_encode($renames), 'tool_httpsreplace');
 
-        $finder = new tool_httpreplace_url_finder_mock();
+        $finder = new tool_httpreplace_url_finder_test();
 
         $generator = $this->getDataGenerator();
         $course = $generator->create_course((object) [
@@ -330,8 +331,8 @@ class httpsreplace_test extends \advanced_testcase {
         $finder->upgrade_http_links();
 
         $summary = $DB->get_field('course', 'summary', ['id' => $course->id]);
-        $this->assertStringContainsString('https://secure.example.com', $summary);
-        $this->assertStringNotContainsString('http://example.com', $summary);
+        $this->assertContains('https://secure.example.com', $summary);
+        $this->assertNotContains('http://example.com', $summary);
         $this->assertEquals('<script src="https://secure.example.com/test.js">' .
             '<img src="https://secure.example.com/someimage.png">', $summary);
     }
@@ -352,7 +353,7 @@ class httpsreplace_test extends \advanced_testcase {
             $original2 .= '<img src="http://example.com/image' . ($i + 15 ) . '.png">';
             $expected2 .= '<img src="https://example.com/image' . ($i + 15) . '.png">';
         }
-        $finder = new tool_httpreplace_url_finder_mock();
+        $finder = new tool_httpreplace_url_finder_test();
 
         $generator = $this->getDataGenerator();
         $course1 = $generator->create_course((object) ['summary' => $original1]);
@@ -396,24 +397,24 @@ class httpsreplace_test extends \advanced_testcase {
         $columnamequoted = $dbman->generator->getEncQuoted('where');
         $DB->execute("INSERT INTO {reserved_words_temp} ($columnamequoted) VALUES (?)", [$content]);
 
-        $finder = new tool_httpreplace_url_finder_mock();
+        $finder = new tool_httpreplace_url_finder_test();
         $finder->upgrade_http_links();
 
         $record = $DB->get_record('reserved_words_temp', []);
-        $this->assertStringContainsString($expectedcontent, $record->where);
+        $this->assertContains($expectedcontent, $record->where);
 
         $dbman->drop_table($table);
     }
 }
 
 /**
- * Class tool_httpreplace_url_finder_mock for testing replace tool without calling curl
+ * Class tool_httpreplace_url_finder_test for testing replace tool without calling curl
  *
  * @package   tool_httpsreplace
  * @copyright 2017 Marina Glancy
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class tool_httpreplace_url_finder_mock extends \tool_httpsreplace\url_finder {
+class tool_httpreplace_url_finder_test extends \tool_httpsreplace\url_finder {
     /**
      * Check if url is available (check hardcoded for unittests)
      *

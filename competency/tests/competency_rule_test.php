@@ -14,12 +14,23 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace core_competency;
+/**
+ * Competency rule tests.
+ *
+ * @package    core_competency
+ * @copyright  2015 Frédéric Massart - FMCorz.net
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
 defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
 require_once($CFG->dirroot . '/webservice/tests/helpers.php');
+
+use core_competency\user_competency;
+use core_competency\competency;
+use core_competency\competency_rule_all;
+use core_competency\competency_rule_points;
 
 /**
  * Competency rule testcase.
@@ -28,7 +39,7 @@ require_once($CFG->dirroot . '/webservice/tests/helpers.php');
  * @copyright  2015 Frédéric Massart - FMCorz.net
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class competency_rule_test extends \externallib_advanced_testcase {
+class core_competency_competency_rule_testcase extends externallib_advanced_testcase {
 
     public function test_rule_all_matching() {
         $this->resetAfterTest(true);

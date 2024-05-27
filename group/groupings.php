@@ -31,7 +31,7 @@ $courseid = required_param('id', PARAM_INT);
 $PAGE->set_url('/group/groupings.php', array('id'=>$courseid));
 
 if (!$course = $DB->get_record('course', array('id'=>$courseid))) {
-    throw new \moodle_exception('invalidcourseid');
+    print_error('invalidcourseid');
 }
 
 require_login($course);
@@ -57,9 +57,13 @@ $PAGE->navbar->add($strgroupings);
 $PAGE->set_title($strgroupings);
 $PAGE->set_heading($course->fullname);
 $PAGE->set_pagelayout('standard');
-
 echo $OUTPUT->header();
-echo $OUTPUT->render_participants_tertiary_nav($course);
+
+// Add tabs
+$currenttab = 'groupings';
+require('tabs.php');
+
+echo $OUTPUT->heading($strgroupings);
 
 $data = array();
 if ($groupings = $DB->get_records('groupings', array('courseid'=>$course->id), 'name')) {

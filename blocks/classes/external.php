@@ -24,18 +24,9 @@
  * @since      Moodle 3.3
  */
 
-use core_external\external_api;
-use core_external\external_files;
-use core_external\external_format_value;
-use core_external\external_function_parameters;
-use core_external\external_multiple_structure;
-use core_external\external_single_structure;
-use core_external\external_value;
-use core_external\external_warnings;
-
 defined('MOODLE_INTERNAL') || die;
 
-require_once("$CFG->dirroot/my/lib.php");
+require_once("$CFG->libdir/externallib.php");
 
 /**
  * Blocks external functions
@@ -230,7 +221,6 @@ class core_block_external extends external_api {
             array(
                 'userid'  => new external_value(PARAM_INT, 'User id (optional), default is current user.', VALUE_DEFAULT, 0),
                 'returncontents' => new external_value(PARAM_BOOL, 'Whether to return the block contents.', VALUE_DEFAULT, false),
-                'mypage' => new external_value(PARAM_TEXT, 'What my page to return blocks of', VALUE_DEFAULT, MY_PAGE_DEFAULT),
             )
         );
     }
@@ -238,21 +228,20 @@ class core_block_external extends external_api {
     /**
      * Returns blocks information for the given user dashboard.
      *
-     * @param int $userid The user id to retrieve the blocks from, optional, default is to current user.
+     * @param int $userid The user id to retrive the blocks from, optional, default is to current user.
      * @param bool $returncontents Whether to return the block contents
-     * @param string $mypage The page to get blocks of within my
      * @return array Blocks list and possible warnings
      * @throws moodle_exception
      * @since Moodle 3.6
      */
-    public static function get_dashboard_blocks($userid = 0, $returncontents = false, $mypage = MY_PAGE_DEFAULT) {
+    public static function get_dashboard_blocks($userid = 0, $returncontents = false) {
         global $CFG, $USER, $PAGE;
 
         require_once($CFG->dirroot . '/my/lib.php');
 
         $warnings = array();
         $params = self::validate_parameters(self::get_dashboard_blocks_parameters(),
-            ['userid' => $userid, 'returncontents' => $returncontents, 'mypage' => $mypage]);
+            ['userid' => $userid, 'returncontents' => $returncontents]);
 
         $userid = $params['userid'];
         if (empty($userid)) {
@@ -269,14 +258,8 @@ class core_block_external extends external_api {
         $context = context_user::instance($userid);;
         self::validate_context($context);
 
-        $currentpage = null;
-        if ($params['mypage'] === MY_PAGE_DEFAULT) {
-            $currentpage = my_get_page($userid);
-        } else if ($params['mypage'] === MY_PAGE_COURSES) {
-            $currentpage = my_get_page($userid, MY_PAGE_PUBLIC, MY_PAGE_COURSES);
-        }
-
-        if (!$currentpage) {
+        // Get the My Moodle page info.  Should always return something unless the database is broken.
+        if (!$currentpage = my_get_page($userid, MY_PAGE_PRIVATE)) {
             throw new moodle_exception('mymoodlesetup');
         }
 

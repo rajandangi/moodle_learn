@@ -14,15 +14,21 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace mod_forum;
-
-use mod_forum\local\entities\discussion as discussion_entity;
-use mod_forum\local\entities\forum as forum_entity;
+/**
+ * The forum entity tests.
+ *
+ * @package    mod_forum
+ * @copyright  2019 Ryan Wyllie <ryan@moodle.com>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
 defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
 require_once($CFG->dirroot . '/rating/lib.php');
+
+use mod_forum\local\entities\discussion as discussion_entity;
+use mod_forum\local\entities\forum as forum_entity;
 
 /**
  * The forum entity tests.
@@ -31,7 +37,7 @@ require_once($CFG->dirroot . '/rating/lib.php');
  * @copyright  2019 Ryan Wyllie <ryan@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class entities_forum_test extends \advanced_testcase {
+class mod_forum_entities_forum_testcase extends advanced_testcase {
     /**
      * Test the entity returns expected values.
      */
@@ -60,7 +66,7 @@ class entities_forum_test extends \advanced_testcase {
         $course = $this->getDataGenerator()->create_course();
         $forum = $this->getDataGenerator()->create_module('forum', ['course' => $course->id]);
         $coursemodule = get_coursemodule_from_instance('forum', $forum->id);
-        $context = \context_module::instance($coursemodule->id);
+        $context = context_module::instance($coursemodule->id);
         $effectivegroupmode = NOGROUPS;
         $id = 1;
         $courseid = 2;

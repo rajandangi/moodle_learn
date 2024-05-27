@@ -85,10 +85,7 @@ class sqlsrv_native_moodle_recordset extends moodle_recordset {
             return false;
         }
         if (!$row = sqlsrv_fetch_array($this->rsrc, SQLSRV_FETCH_ASSOC)) {
-            if (is_resource($this->rsrc)) {
-                // We need to make sure that the statement resource is in the correct type before freeing it.
-                sqlsrv_free_stmt($this->rsrc);
-            }
+            sqlsrv_free_stmt($this->rsrc);
             $this->rsrc = null;
             $this->unregister();
             return false;
@@ -108,11 +105,10 @@ class sqlsrv_native_moodle_recordset extends moodle_recordset {
         return $row;
     }
 
-    public function current(): stdClass {
+    public function current() {
         return (object)$this->current;
     }
 
-    #[\ReturnTypeWillChange]
     public function key() {
         // return first column value as key
         if (!$this->current) {
@@ -122,7 +118,7 @@ class sqlsrv_native_moodle_recordset extends moodle_recordset {
         return $key;
     }
 
-    public function next(): void {
+    public function next() {
         if ($this->buffer === null) {
             $this->current = $this->fetch_next();
         } else {
@@ -130,16 +126,13 @@ class sqlsrv_native_moodle_recordset extends moodle_recordset {
         }
     }
 
-    public function valid(): bool {
+    public function valid() {
         return !empty($this->current);
     }
 
     public function close() {
         if ($this->rsrc) {
-            if (is_resource($this->rsrc)) {
-                // We need to make sure that the statement resource is in the correct type before freeing it.
-                sqlsrv_free_stmt($this->rsrc);
-            }
+            sqlsrv_free_stmt($this->rsrc);
             $this->rsrc  = null;
         }
         $this->current = null;

@@ -14,7 +14,19 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace core_competency;
+/**
+ * Hook tests.
+ *
+ * @package    core_competency
+ * @copyright  2016 Frédéric Massart - FMCorz.net
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+defined('MOODLE_INTERNAL') || die();
+
+use core_competency\course_competency;
+use core_competency\course_module_competency;
+use core_competency\user_competency_course;
 
 /**
  * Hook tests.
@@ -23,7 +35,7 @@ namespace core_competency;
  * @copyright  2016 Frédéric Massart - FMCorz.net
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class hooks_test extends \advanced_testcase {
+class core_competency_hooks_testcase extends advanced_testcase {
 
     public function test_hook_course_deleted() {
         $this->resetAfterTest();
@@ -180,9 +192,9 @@ class hooks_test extends \advanced_testcase {
         $t2 = $corecompgen->create_template();
 
         // Create the template cohorts.
-        api::create_template_cohort($t1->get('id'), $c1->id);
-        api::create_template_cohort($t1->get('id'), $c2->id);
-        api::create_template_cohort($t2->get('id'), $c1->id);
+        core_competency\api::create_template_cohort($t1->get('id'), $c1->id);
+        core_competency\api::create_template_cohort($t1->get('id'), $c2->id);
+        core_competency\api::create_template_cohort($t2->get('id'), $c1->id);
 
         // Check that the association was made.
         $this->assertEquals(2, \core_competency\template_cohort::count_records(array('templateid' => $t1->get('id'))));

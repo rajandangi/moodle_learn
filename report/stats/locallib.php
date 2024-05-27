@@ -34,7 +34,7 @@ function report_stats_mode_menu($course, $mode, $time, $url) {
     $reportoptions = stats_get_report_options($course->id, $mode);
     $timeoptions = report_stats_timeoptions($mode);
     if (empty($timeoptions)) {
-        throw new \moodle_exception('nostatstodisplay', '', $CFG->wwwroot.'/course/view.php?id='.$course->id);
+        print_error('nostatstodisplay', '', $CFG->wwwroot.'/course/view.php?id='.$course->id);
     }
     */
 
@@ -119,7 +119,7 @@ function report_stats_report($course, $report, $mode, $user, $roleid, $time) {
     $reportoptions = stats_get_report_options($course->id, $mode);
     $timeoptions = report_stats_timeoptions($mode);
     if (empty($timeoptions)) {
-        throw new \moodle_exception('nostatstodisplay', '', $CFG->wwwroot.'/course/view.php?id='.$course->id);
+        print_error('nostatstodisplay', '', $CFG->wwwroot.'/course/view.php?id='.$course->id);
     }
 
     $users = array();
@@ -131,8 +131,7 @@ function report_stats_report($course, $report, $mode, $user, $roleid, $time) {
 
         list($sort, $moreparams) = users_order_by_sql('u');
         $moreparams['courseid'] = $course->id;
-        $userfieldsapi = \core_user\fields::for_userpic()->including('idnumber');
-        $fields = $userfieldsapi->get_sql('u', false, '', '', false)->selects;
+        $fields = user_picture::fields('u', array('idnumber'));
         $sql = "SELECT DISTINCT $fields
                   FROM {stats_user_{$param->table}} s
                   JOIN {user} u ON u.id = s.userid
@@ -148,7 +147,7 @@ function report_stats_report($course, $report, $mode, $user, $roleid, $time) {
         $sql .= " ORDER BY {$sort}";
 
         if (!$us = $DB->get_records_sql($sql, array_merge($param->params, $moreparams))) {
-            throw new \moodle_exception('nousers');
+            print_error('nousers');
         }
         foreach ($us as $u) {
             $users[$u->id] = fullname($u, true);
@@ -188,7 +187,7 @@ function report_stats_report($course, $report, $mode, $user, $roleid, $time) {
     //  - If the mode is not detailed OR a valid user has been selected.
     if (!empty($report) && !empty($time) && ($mode !== STATS_MODE_DETAILED || !empty($userid))) {
         if ($report == STATS_REPORT_LOGINS && $course->id != SITEID) {
-            throw new \moodle_exception('reportnotavailable');
+            print_error('reportnotavailable');
         }
 
         $param = stats_get_parameters($time, $report, $course->id, $mode, $roleid);
@@ -236,7 +235,7 @@ function report_stats_report($course, $report, $mode, $user, $roleid, $time) {
                 ' - ' .
                 get_string('statsreport' . $report) .
                 $rolename .
-                $userdisplayname, 3
+                $userdisplayname
             );
 
             if ($mode == STATS_MODE_DETAILED) {

@@ -14,17 +14,27 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace core;
+/**
+ * Test for various bits of datalib.php.
+ *
+ * @package   core
+ * @category  phpunit
+ * @copyright 2012 The Open University
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+defined('MOODLE_INTERNAL') || die();
+
 
 /**
  * Test for various bits of datalib.php.
  *
  * @package   core
- * @category  test
+ * @category  phpunit
  * @copyright 2012 The Open University
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class datalib_test extends \advanced_testcase {
+class core_datalib_testcase extends advanced_testcase {
     protected function normalise_sql($sort) {
         return preg_replace('~\s+~', ' ', $sort);
     }
@@ -50,11 +60,17 @@ class datalib_test extends \advanced_testcase {
             'address' => '2 Test Street Perth 6000 WA',
             'phone1' => '01010101010',
             'phone2' => '02020203',
+            'icq' => 'testuser1',
+            'skype' => 'testuser1',
+            'yahoo' => 'testuser1',
+            'aim' => 'testuser1',
+            'msn' => 'testuser1',
             'department' => 'Department of user 1',
             'institution' => 'Institution of user 1',
             'description' => 'This is a description for user 1',
             'descriptionformat' => FORMAT_MOODLE,
             'city' => 'Perth',
+            'url' => 'http://moodle.org',
             'country' => 'AU'
             );
         $user1 = self::getDataGenerator()->create_user($user1);
@@ -67,58 +83,58 @@ class datalib_test extends \advanced_testcase {
             'address' => '222 Test Street Perth 6000 WA',
             'phone1' => '01010101010',
             'phone2' => '02020203',
+            'icq' => 'testuser1',
+            'skype' => 'testuser1',
+            'yahoo' => 'testuser1',
+            'aim' => 'testuser1',
+            'msn' => 'testuser1',
             'department' => 'Department of user 2',
             'institution' => 'Institution of user 2',
             'description' => 'This is a description for user 2',
             'descriptionformat' => FORMAT_MOODLE,
             'city' => 'Perth',
+            'url' => 'http://moodle.org',
             'country' => 'AU'
             );
         $user2 = self::getDataGenerator()->create_user($user2);
 
         // Search by name (anywhere in text).
-        list($sql, $params) = users_search_sql('User Test 2', '', USER_SEARCH_CONTAINS);
+        list($sql, $params) = users_search_sql('User Test 2', '');
         $results = $DB->get_records_sql("SELECT id FROM {user} WHERE $sql ORDER BY username", $params);
         $this->assertFalse(array_key_exists($user1->id, $results));
         $this->assertTrue(array_key_exists($user2->id, $results));
 
         // Search by (most of) full name.
-        list($sql, $params) = users_search_sql('First Name User Test 2 Last Name User', '', USER_SEARCH_CONTAINS);
+        list($sql, $params) = users_search_sql('First Name User Test 2 Last Name User', '');
         $results = $DB->get_records_sql("SELECT id FROM {user} WHERE $sql ORDER BY username", $params);
         $this->assertFalse(array_key_exists($user1->id, $results));
         $this->assertTrue(array_key_exists($user2->id, $results));
 
         // Search by name (start of text) valid or not.
-        list($sql, $params) = users_search_sql('User Test 2', '');
+        list($sql, $params) = users_search_sql('User Test 2', '', false);
         $results = $DB->get_records_sql("SELECT id FROM {user} WHERE $sql ORDER BY username", $params);
         $this->assertEquals(0, count($results));
-        list($sql, $params) = users_search_sql('First Name User Test 2', '');
+        list($sql, $params) = users_search_sql('First Name User Test 2', '', false);
         $results = $DB->get_records_sql("SELECT id FROM {user} WHERE $sql ORDER BY username", $params);
         $this->assertFalse(array_key_exists($user1->id, $results));
         $this->assertTrue(array_key_exists($user2->id, $results));
 
         // Search by extra fields included or not (address).
-        list($sql, $params) = users_search_sql('Test Street', '', USER_SEARCH_CONTAINS);
+        list($sql, $params) = users_search_sql('Test Street', '', true);
         $results = $DB->get_records_sql("SELECT id FROM {user} WHERE $sql ORDER BY username", $params);
         $this->assertCount(0, $results);
-        list($sql, $params) = users_search_sql('Test Street', '', USER_SEARCH_CONTAINS, array('address'));
+        list($sql, $params) = users_search_sql('Test Street', '', true, array('address'));
         $results = $DB->get_records_sql("SELECT id FROM {user} WHERE $sql ORDER BY username", $params);
         $this->assertCount(2, $results);
 
         // Exclude user.
-        list($sql, $params) = users_search_sql('User Test', '', USER_SEARCH_CONTAINS, array(), array($user1->id));
+        list($sql, $params) = users_search_sql('User Test', '', true, array(), array($user1->id));
         $results = $DB->get_records_sql("SELECT id FROM {user} WHERE $sql ORDER BY username", $params);
         $this->assertFalse(array_key_exists($user1->id, $results));
         $this->assertTrue(array_key_exists($user2->id, $results));
 
         // Include only user.
-        list($sql, $params) = users_search_sql('User Test', '', USER_SEARCH_CONTAINS, array(), array(), array($user1->id));
-        $results = $DB->get_records_sql("SELECT id FROM {user} WHERE $sql ORDER BY username", $params);
-        $this->assertTrue(array_key_exists($user1->id, $results));
-        $this->assertFalse(array_key_exists($user2->id, $results));
-
-        // Exact match only.
-        [$sql, $params] = users_search_sql('Last Name User Test 1', '', USER_SEARCH_EXACT_MATCH, [], null, null, true);
+        list($sql, $params) = users_search_sql('User Test', '', true, array(), array(), array($user1->id));
         $results = $DB->get_records_sql("SELECT id FROM {user} WHERE $sql ORDER BY username", $params);
         $this->assertTrue(array_key_exists($user1->id, $results));
         $this->assertFalse(array_key_exists($user2->id, $results));
@@ -126,7 +142,7 @@ class datalib_test extends \advanced_testcase {
         // Join with another table and use different prefix.
         set_user_preference('amphibian', 'frog', $user1);
         set_user_preference('amphibian', 'salamander', $user2);
-        list($sql, $params) = users_search_sql('User Test 1', 'qq', USER_SEARCH_CONTAINS);
+        list($sql, $params) = users_search_sql('User Test 1', 'qq');
         $results = $DB->get_records_sql("
                 SELECT up.id, up.value
                   FROM {user} qq
@@ -136,21 +152,6 @@ class datalib_test extends \advanced_testcase {
         $this->assertEquals(1, count($results));
         foreach ($results as $record) {
             $this->assertSame('frog', $record->value);
-        }
-
-        // Join with another table and include other table fields in search.
-        set_user_preference('reptile', 'snake', $user1);
-        set_user_preference('reptile', 'lizard', $user2);
-        list($sql, $params) = users_search_sql('snake', 'qq', USER_SEARCH_CONTAINS, ['up.value']);
-        $results = $DB->get_records_sql("
-                SELECT up.id, up.value
-                  FROM {user} qq
-                  JOIN {user_preferences} up ON up.userid = qq.id
-                 WHERE up.name = :prefname
-                       AND $sql", array_merge(array('prefname' => 'reptile'), $params));
-        $this->assertEquals(1, count($results));
-        foreach ($results as $record) {
-            $this->assertSame('snake', $record->value);
         }
     }
 
@@ -172,7 +173,7 @@ class datalib_test extends \advanced_testcase {
 
         $CFG->showuseridentity = '';
 
-        list($sort, $params) = users_order_by_sql('', 'search', \context_system::instance());
+        list($sort, $params) = users_order_by_sql('', 'search', context_system::instance());
         $this->assert_same_sql('CASE WHEN
                     ' . $DB->sql_fullname() . ' = :usersortexact1 OR
                     LOWER(firstname) = LOWER(:usersortexact2) OR
@@ -189,7 +190,7 @@ class datalib_test extends \advanced_testcase {
         $CFG->showuseridentity = 'email,idnumber';
         $this->setAdminUser();
 
-        list($sort, $params) = users_order_by_sql('u', 'search', \context_system::instance());
+        list($sort, $params) = users_order_by_sql('u', 'search', context_system::instance());
         $this->assert_same_sql('CASE WHEN
                     ' . $DB->sql_fullname('u.firstname', 'u.lastname') . ' = :usersortexact1 OR
                     LOWER(u.firstname) = LOWER(:usersortexact2) OR
@@ -199,25 +200,6 @@ class datalib_test extends \advanced_testcase {
                 THEN 0 ELSE 1 END, u.lastname, u.firstname, u.id', $sort);
         $this->assertEquals(array('usersortexact1' => 'search', 'usersortexact2' => 'search',
                 'usersortexact3' => 'search', 'usersortexact4' => 'search', 'usersortexact5' => 'search'), $params);
-    }
-
-    public function test_users_order_by_sql_search_with_custom_fields(): void {
-        global $CFG, $DB;
-        $this->resetAfterTest();
-
-        $CFG->showuseridentity = 'email,idnumber';
-        $this->setAdminUser();
-
-        list($sort, $params) =
-                users_order_by_sql('u', 'search', \context_system::instance(), ['profile_field_customfield' => 'x.customfield']);
-        $this->assert_same_sql('CASE WHEN
-                    ' . $DB->sql_fullname('u.firstname', 'u.lastname') . ' = :usersortexact1 OR
-                    LOWER(u.firstname) = LOWER(:usersortexact2) OR
-                    LOWER(u.lastname) = LOWER(:usersortexact3) OR
-                    LOWER(x.customfield) = LOWER(:usersortexact4)
-                THEN 0 ELSE 1 END, u.lastname, u.firstname, u.id', $sort);
-        $this->assertEquals(array('usersortexact1' => 'search', 'usersortexact2' => 'search',
-                'usersortexact3' => 'search', 'usersortexact4' => 'search'), $params);
     }
 
     public function test_get_admin() {
@@ -418,7 +400,7 @@ class datalib_test extends \advanced_testcase {
         $this->assertSame('folder', $cm->modname);
         $this->assertSame($folder1a->id, $cm->instance);
         $this->assertSame($folder1a->course, $cm->course);
-        $this->assertObjectNotHasProperty('sectionnum', $cm);
+        $this->assertObjectNotHasAttribute('sectionnum', $cm);
 
         $this->assertEquals($cm, get_coursemodule_from_id('', $folder1a->cmid));
         $this->assertEquals($cm, get_coursemodule_from_id('folder', $folder1a->cmid, $course1->id));
@@ -435,28 +417,28 @@ class datalib_test extends \advanced_testcase {
         try {
             get_coursemodule_from_id('folder', -11, 0, false, MUST_EXIST);
             $this->fail('dml_missing_record_exception expected');
-        } catch (\moodle_exception $e) {
+        } catch (moodle_exception $e) {
             $this->assertInstanceOf('dml_missing_record_exception', $e);
         }
 
         try {
             get_coursemodule_from_id('', -11, 0, false, MUST_EXIST);
             $this->fail('dml_missing_record_exception expected');
-        } catch (\moodle_exception $e) {
+        } catch (moodle_exception $e) {
             $this->assertInstanceOf('dml_missing_record_exception', $e);
         }
 
         try {
             get_coursemodule_from_id('a b', $folder1a->cmid, 0, false, MUST_EXIST);
             $this->fail('coding_exception expected');
-        } catch (\moodle_exception $e) {
+        } catch (moodle_exception $e) {
             $this->assertInstanceOf('coding_exception', $e);
         }
 
         try {
             get_coursemodule_from_id('abc', $folder1a->cmid, 0, false, MUST_EXIST);
             $this->fail('dml_read_exception expected');
-        } catch (\moodle_exception $e) {
+        } catch (moodle_exception $e) {
             $this->assertInstanceOf('dml_read_exception', $e);
         }
     }
@@ -483,7 +465,7 @@ class datalib_test extends \advanced_testcase {
         $this->assertSame('folder', $cm->modname);
         $this->assertSame($folder1a->id, $cm->instance);
         $this->assertSame($folder1a->course, $cm->course);
-        $this->assertObjectNotHasProperty('sectionnum', $cm);
+        $this->assertObjectNotHasAttribute('sectionnum', $cm);
 
         $this->assertEquals($cm, get_coursemodule_from_instance('folder', $folder1a->id, $course1->id));
         $this->assertEquals($cm, get_coursemodule_from_instance('folder', $folder1a->id, 0));
@@ -499,28 +481,28 @@ class datalib_test extends \advanced_testcase {
         try {
             get_coursemodule_from_instance('folder', -11, 0, false, MUST_EXIST);
             $this->fail('dml_missing_record_exception expected');
-        } catch (\moodle_exception $e) {
+        } catch (moodle_exception $e) {
             $this->assertInstanceOf('dml_missing_record_exception', $e);
         }
 
         try {
             get_coursemodule_from_instance('a b', $folder1a->cmid, 0, false, MUST_EXIST);
             $this->fail('coding_exception expected');
-        } catch (\moodle_exception $e) {
+        } catch (moodle_exception $e) {
             $this->assertInstanceOf('coding_exception', $e);
         }
 
         try {
             get_coursemodule_from_instance('', $folder1a->cmid, 0, false, MUST_EXIST);
             $this->fail('coding_exception expected');
-        } catch (\moodle_exception $e) {
+        } catch (moodle_exception $e) {
             $this->assertInstanceOf('coding_exception', $e);
         }
 
         try {
             get_coursemodule_from_instance('abc', $folder1a->cmid, 0, false, MUST_EXIST);
             $this->fail('dml_read_exception expected');
-        } catch (\moodle_exception $e) {
+        } catch (moodle_exception $e) {
             $this->assertInstanceOf('dml_read_exception', $e);
         }
     }
@@ -553,17 +535,17 @@ class datalib_test extends \advanced_testcase {
         $this->assertSame('folder', $cm->modname);
         $this->assertSame($folder1a->id, $cm->instance);
         $this->assertSame($folder1a->course, $cm->course);
-        $this->assertObjectNotHasProperty('sectionnum', $cm);
-        $this->assertObjectNotHasProperty('revision', $cm);
-        $this->assertObjectNotHasProperty('display', $cm);
+        $this->assertObjectNotHasAttribute('sectionnum', $cm);
+        $this->assertObjectNotHasAttribute('revision', $cm);
+        $this->assertObjectNotHasAttribute('display', $cm);
 
         $cm = $modules[$folder1b->cmid];
         $this->assertSame('folder', $cm->modname);
         $this->assertSame($folder1b->id, $cm->instance);
         $this->assertSame($folder1b->course, $cm->course);
-        $this->assertObjectNotHasProperty('sectionnum', $cm);
-        $this->assertObjectNotHasProperty('revision', $cm);
-        $this->assertObjectNotHasProperty('display', $cm);
+        $this->assertObjectNotHasAttribute('sectionnum', $cm);
+        $this->assertObjectNotHasAttribute('revision', $cm);
+        $this->assertObjectNotHasAttribute('display', $cm);
 
         $modules = get_coursemodules_in_course('folder', $course1->id, 'revision, display');
         $this->assertCount(2, $modules);
@@ -572,9 +554,9 @@ class datalib_test extends \advanced_testcase {
         $this->assertSame('folder', $cm->modname);
         $this->assertSame($folder1a->id, $cm->instance);
         $this->assertSame($folder1a->course, $cm->course);
-        $this->assertObjectNotHasProperty('sectionnum', $cm);
-        $this->assertObjectHasProperty('revision', $cm);
-        $this->assertObjectHasProperty('display', $cm);
+        $this->assertObjectNotHasAttribute('sectionnum', $cm);
+        $this->assertObjectHasAttribute('revision', $cm);
+        $this->assertObjectHasAttribute('display', $cm);
 
         $modules = get_coursemodules_in_course('label', $course1->id);
         $this->assertCount(0, $modules);
@@ -582,14 +564,14 @@ class datalib_test extends \advanced_testcase {
         try {
             get_coursemodules_in_course('a b', $course1->id);
             $this->fail('coding_exception expected');
-        } catch (\moodle_exception $e) {
+        } catch (moodle_exception $e) {
             $this->assertInstanceOf('coding_exception', $e);
         }
 
         try {
             get_coursemodules_in_course('abc', $course1->id);
             $this->fail('dml_read_exception expected');
-        } catch (\moodle_exception $e) {
+        } catch (moodle_exception $e) {
             $this->assertInstanceOf('dml_read_exception', $e);
         }
     }
@@ -637,14 +619,14 @@ class datalib_test extends \advanced_testcase {
         try {
             get_all_instances_in_courses('a b', array($course1->id => $course1, $course2->id => $course2));
             $this->fail('coding_exception expected');
-        } catch (\moodle_exception $e) {
+        } catch (moodle_exception $e) {
             $this->assertInstanceOf('coding_exception', $e);
         }
 
         try {
             get_all_instances_in_courses('', array($course1->id => $course1, $course2->id => $course2));
             $this->fail('coding_exception expected');
-        } catch (\moodle_exception $e) {
+        } catch (moodle_exception $e) {
             $this->assertInstanceOf('coding_exception', $e);
         }
     }
@@ -690,109 +672,16 @@ class datalib_test extends \advanced_testcase {
         try {
             get_all_instances_in_course('a b', $course1);
             $this->fail('coding_exception expected');
-        } catch (\moodle_exception $e) {
+        } catch (moodle_exception $e) {
             $this->assertInstanceOf('coding_exception', $e);
         }
 
         try {
             get_all_instances_in_course('', $course1);
             $this->fail('coding_exception expected');
-        } catch (\moodle_exception $e) {
+        } catch (moodle_exception $e) {
             $this->assertInstanceOf('coding_exception', $e);
         }
-    }
-
-    /**
-     * Test max courses in category
-     */
-    public function test_max_courses_in_category() {
-        global $CFG;
-        $this->resetAfterTest();
-
-        // Default settings.
-        $this->assertEquals(MAX_COURSES_IN_CATEGORY, get_max_courses_in_category());
-
-        // Misc category.
-        $misc = \core_course_category::get_default();
-        $this->assertEquals(MAX_COURSES_IN_CATEGORY, $misc->sortorder);
-
-        $category1 = $this->getDataGenerator()->create_category();
-        $category2 = $this->getDataGenerator()->create_category();
-
-        // Check category sort orders.
-        $this->assertEquals(MAX_COURSES_IN_CATEGORY, \core_course_category::get($misc->id)->sortorder);
-        $this->assertEquals(MAX_COURSES_IN_CATEGORY * 2, \core_course_category::get($category1->id)->sortorder);
-        $this->assertEquals(MAX_COURSES_IN_CATEGORY * 3, \core_course_category::get($category2->id)->sortorder);
-
-        // Create courses.
-        $course1 = $this->getDataGenerator()->create_course(['category' => $category1->id]);
-        $course2 = $this->getDataGenerator()->create_course(['category' => $category2->id]);
-        $course3 = $this->getDataGenerator()->create_course(['category' => $category1->id]);
-        $course4 = $this->getDataGenerator()->create_course(['category' => $category2->id]);
-
-        // Check course sort orders.
-        $this->assertEquals(MAX_COURSES_IN_CATEGORY * 2 + 2, get_course($course1->id)->sortorder);
-        $this->assertEquals(MAX_COURSES_IN_CATEGORY * 3 + 2, get_course($course2->id)->sortorder);
-        $this->assertEquals(MAX_COURSES_IN_CATEGORY * 2 + 1, get_course($course3->id)->sortorder);
-        $this->assertEquals(MAX_COURSES_IN_CATEGORY * 3 + 1, get_course($course4->id)->sortorder);
-
-        // Increase max course in category.
-        $CFG->maxcoursesincategory = 20000;
-        $this->assertEquals(20000, get_max_courses_in_category());
-
-        // The sort order has not yet fixed, these sort orders should be the same as before.
-        // Categories.
-        $this->assertEquals(MAX_COURSES_IN_CATEGORY, \core_course_category::get($misc->id)->sortorder);
-        $this->assertEquals(MAX_COURSES_IN_CATEGORY * 2, \core_course_category::get($category1->id)->sortorder);
-        $this->assertEquals(MAX_COURSES_IN_CATEGORY * 3, \core_course_category::get($category2->id)->sortorder);
-        // Courses in category 1.
-        $this->assertEquals(MAX_COURSES_IN_CATEGORY * 2 + 2, get_course($course1->id)->sortorder);
-        $this->assertEquals(MAX_COURSES_IN_CATEGORY * 2 + 1, get_course($course3->id)->sortorder);
-        // Courses in category 2.
-        $this->assertEquals(MAX_COURSES_IN_CATEGORY * 3 + 2, get_course($course2->id)->sortorder);
-        $this->assertEquals(MAX_COURSES_IN_CATEGORY * 3 + 1, get_course($course4->id)->sortorder);
-
-        // Create new category so that the sort orders are applied.
-        $category3 = $this->getDataGenerator()->create_category();
-        // Categories.
-        $this->assertEquals(20000, \core_course_category::get($misc->id)->sortorder);
-        $this->assertEquals(20000 * 2, \core_course_category::get($category1->id)->sortorder);
-        $this->assertEquals(20000 * 3, \core_course_category::get($category2->id)->sortorder);
-        $this->assertEquals(20000 * 4, \core_course_category::get($category3->id)->sortorder);
-        // Courses in category 1.
-        $this->assertEquals(20000 * 2 + 2, get_course($course1->id)->sortorder);
-        $this->assertEquals(20000 * 2 + 1, get_course($course3->id)->sortorder);
-        // Courses in category 2.
-        $this->assertEquals(20000 * 3 + 2, get_course($course2->id)->sortorder);
-        $this->assertEquals(20000 * 3 + 1, get_course($course4->id)->sortorder);
-    }
-
-    /**
-     * Test debug message for max courses in category
-     */
-    public function test_debug_max_courses_in_category() {
-        global $CFG;
-        $this->resetAfterTest();
-
-        // Set to small value so that we can check the debug message.
-        $CFG->maxcoursesincategory = 3;
-        $this->assertEquals(3, get_max_courses_in_category());
-
-        $category1 = $this->getDataGenerator()->create_category();
-
-        // There is only one course, no debug message.
-        $this->getDataGenerator()->create_course(['category' => $category1->id]);
-        $this->assertDebuggingNotCalled();
-        // There are two courses, no debug message.
-        $this->getDataGenerator()->create_course(['category' => $category1->id]);
-        $this->assertDebuggingNotCalled();
-        // There is debug message when number of courses reaches the maximum number.
-        $this->getDataGenerator()->create_course(['category' => $category1->id]);
-        $this->assertDebuggingCalled("The number of courses (category id: $category1->id) has reached max number of courses " .
-            "in a category (" . get_max_courses_in_category() . "). It will cause a sorting performance issue. " .
-            "Please set higher value for \$CFG->maxcoursesincategory in config.php. " .
-            "Please also make sure \$CFG->maxcoursesincategory * MAX_COURSE_CATEGORIES less than max integer. " .
-            "See tracker issues: MDL-25669 and MDL-69573");
     }
 
     /**
@@ -810,7 +699,7 @@ class datalib_test extends \advanced_testcase {
                 'shortname' => 'specialid', 'name' => 'Special user id']);
 
         // Set up the show user identity option.
-        set_config('showuseridentity', 'department,profile_field_specialid');
+        set_config('showuseridentity', 'department');
 
         // Get all the existing user ids (we're going to remove these from test results).
         $existingids = array_fill_keys($DB->get_fieldset_select('user', 'id', '1 = 1'), true);
@@ -823,7 +712,6 @@ class datalib_test extends \advanced_testcase {
                 'firstname' => $key . '_first',
                 'lastname' => 'last_' . $key,
                 'department' => 'department_' . $key,
-                'profile_field_specialid' => 'special_' . $key,
                 'lastaccess' => ord($key)
             ];
             $user = $generator->create_user($record);
@@ -842,11 +730,10 @@ class datalib_test extends \advanced_testcase {
         $this->assertEquals('user_a@example.com', $results[$userids[0]]->email);
         $this->assertEquals(1, $results[$userids[0]]->confirmed);
         $this->assertEquals('a_first', $results[$userids[0]]->firstname);
-        $this->assertObjectHasProperty('firstnamephonetic', $results[$userids[0]]);
+        $this->assertObjectHasAttribute('firstnamephonetic', $results[$userids[0]]);
 
-        // Should not have the custom field or department because no context specified.
-        $this->assertObjectNotHasProperty('department', $results[$userids[0]]);
-        $this->assertObjectNotHasProperty('profile_field_specialid', $results[$userids[0]]);
+        // Should not have department because no context specified.
+        $this->assertObjectNotHasAttribute('department', $results[$userids[0]]);
 
         // Check sorting.
         $results = get_users_listing('username', 'DESC');
@@ -867,13 +754,11 @@ class datalib_test extends \advanced_testcase {
         // specify a context AND have permissions.
         $results = get_users_listing('lastaccess', 'asc', 0, 0, '', '', '', '', null,
                 \context_system::instance());
-        $this->assertObjectNotHasProperty('department', $results[$userids[0]]);
-        $this->assertObjectNotHasProperty('profile_field_specialid', $results[$userids[0]]);
+        $this->assertObjectNotHasAttribute('department', $results[$userids[0]]);
         $this->setAdminUser();
         $results = get_users_listing('lastaccess', 'asc', 0, 0, '', '', '', '', null,
                 \context_system::instance());
         $this->assertEquals('department_a', $results[$userids[0]]->department);
-        $this->assertEquals('special_a', $results[$userids[0]]->profile_field_specialid);
 
         // Check search (full name, email, username).
         $results = get_users_listing('lastaccess', 'asc', 0, 0, 'b_first last_b');
@@ -895,7 +780,7 @@ class datalib_test extends \advanced_testcase {
                 ['x' => $userids[1], 'y' => $userids[3]]);
         $results = array_diff_key($results, $existingids);
         $this->assertEquals([$userids[1], $userids[3]], array_keys($results));
-        $results = get_users_listing('lastaccess', 'asc', 0, 0, '', '', '', 'u.id IN (:x,:y)',
+        $results = get_users_listing('lastaccess', 'asc', 0, 0, '', '', '', 'id IN (:x,:y)',
                 ['x' => $userids[1], 'y' => $userids[3]]);
         $results = array_diff_key($results, $existingids);
         $this->assertEquals([$userids[1], $userids[3]], array_keys($results));

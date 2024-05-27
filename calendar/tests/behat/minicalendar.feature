@@ -18,7 +18,7 @@ Feature: Open calendar popup
 
   @javascript
   Scenario: I view calendar details of a day with multiple events
-    Given I follow "Full calendar"
+    Given I follow "This month"
     And I create a calendar event:
       | Type of event     | site |
       | Event title       | Event 1:1 |
@@ -27,21 +27,23 @@ Feature: Open calendar popup
       | Type of event     | site |
       | Event title       | Event 1:2 |
       | timestart[day]    | 1  |
-    When I reload the page
+    And I reload the page
+    When I hover over day "1" of this month in the calendar
     Then I should see "Event 1:1"
     And I should see "Event 1:2"
-    And I am on homepage
-    When I hover over day "1" of this month in the mini-calendar block
+    And I follow "Home"
+    And I hover over day "1" of this month in the calendar
     And I should see "Event 1:1"
     And I should see "Event 1:2"
 
   @javascript
   Scenario: I view calendar details for today
-    Given I follow "Full calendar"
-    When I create a calendar event:
+    Given I follow "This month"
+    And I create a calendar event:
       | Type of event     | site |
       | Event title       | Today's event |
+    When I hover over today in the calendar
     Then I should see "Today's event"
-    And I am on homepage
-    And I hover over today in the mini-calendar block
+    And I follow "Home"
+    And I hover over today in the calendar
     And I should see "Today's event"

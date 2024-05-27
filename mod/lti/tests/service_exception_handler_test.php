@@ -14,7 +14,17 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace mod_lti;
+/**
+ * Tests Exception handler for LTI services
+ *
+ * @package   mod_lti
+ * @copyright Copyright (c) 2015 Moodlerooms Inc. (http://www.moodlerooms.com)
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+use mod_lti\service_exception_handler;
+
+defined('MOODLE_INTERNAL') || die();
 
 /**
  * Tests Exception handler for LTI services
@@ -23,7 +33,7 @@ namespace mod_lti;
  * @copyright Copyright (c) 2015 Moodlerooms Inc. (http://www.moodlerooms.com)
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class service_exception_handler_test extends \advanced_testcase {
+class mod_lti_service_exception_handler_testcase extends advanced_testcase {
     /**
      * Testing service error handling.
      */
@@ -31,7 +41,7 @@ class service_exception_handler_test extends \advanced_testcase {
         $handler = new service_exception_handler(false);
         $handler->set_message_id('123');
         $handler->set_message_type('testRequest');
-        $handler->handle(new \Exception('Error happened'));
+        $handler->handle(new Exception('Error happened'));
 
         $this->expectOutputRegex('/imsx_codeMajor>failure/');
         $this->expectOutputRegex('/imsx_description>Error happened/');
@@ -45,7 +55,7 @@ class service_exception_handler_test extends \advanced_testcase {
      */
     public function test_handle_early_error() {
         $handler = new service_exception_handler(false);
-        $handler->handle(new \Exception('Error happened'));
+        $handler->handle(new Exception('Error happened'));
 
         $this->expectOutputRegex('/imsx_codeMajor>failure/');
         $this->expectOutputRegex('/imsx_description>Error happened/');
@@ -65,7 +75,7 @@ class service_exception_handler_test extends \advanced_testcase {
         $handler = new service_exception_handler(true);
 
         ob_start();
-        $handler->handle(new \Exception('Error happened'));
+        $handler->handle(new Exception('Error happened'));
         ob_end_clean();
 
         $this->assertTrue(is_dir($CFG->dataroot.'/temp/mod_lti'));

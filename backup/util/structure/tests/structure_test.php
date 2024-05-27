@@ -14,40 +14,26 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace core_backup;
-
-use backup;
-use backup_attribute;
-use backup_controller_dbops;
-use backup_final_element;
-use backup_nested_element;
-use backup_optigroup;
-use backup_optigroup_element;
-use backup_processor_exception;
-use backup_structure_processor;
-use base_element_struct_exception;
-use base_optigroup_exception;
-use base_processor;
-use memory_xml_output;
-use xml_writer;
+/**
+ * @package   core_backup
+ * @category  phpunit
+ * @copyright 2010 onwards Eloy Lafuente (stronk7) {@link http://stronk7.com}
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
 defined('MOODLE_INTERNAL') || die();
 
-// Include all the needed stuff.
+// Include all the needed stuff
 require_once(__DIR__.'/fixtures/structure_fixtures.php');
 
 global $CFG;
 require_once($CFG->dirroot . '/backup/util/xml/output/memory_xml_output.class.php');
 
+
 /**
  * Unit test case the all the backup structure classes. Note: Uses database
- *
- * @package   core_backup
- * @category  test
- * @copyright 2010 onwards Eloy Lafuente (stronk7) {@link http://stronk7.com}
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class structure_test extends \advanced_testcase {
+class backup_structure_testcase extends advanced_testcase {
 
     /** @var int Store the inserted forum->id for use in test functions */
     protected $forumid;
@@ -67,7 +53,7 @@ class structure_test extends \advanced_testcase {
     protected $contextid;
 
 
-    protected function setUp(): void {
+    protected function setUp() {
         parent::setUp();
 
         $this->resetAfterTest(true);
@@ -162,9 +148,9 @@ class structure_test extends \advanced_testcase {
                 'rsstype', 'rssarticles', 'timemodified', 'warnafter',
                 'blockafter',
                 new backup_final_element('blockperiod'),
-                new \mock_skip_final_element('completiondiscussions'),
-                new \mock_modify_final_element('completionreplies'),
-                new \mock_final_element_interceptor('completionposts'))
+                new mock_skip_final_element('completiondiscussions'),
+                new mock_modify_final_element('completionreplies'),
+                new mock_final_element_interceptor('completionposts'))
         );
         $discussions = new backup_nested_element('discussions');
         $discussion = new backup_nested_element('discussion',
@@ -340,9 +326,9 @@ class structure_test extends \advanced_testcase {
         $this->assertEquals($inventeds->get_counter(), 2); // Array
 
         // Perform some validations with the generated XML
-        $dom = new \DomDocument();
+        $dom = new DomDocument();
         $dom->loadXML($xo->get_allcontents());
-        $xpath = new \DOMXPath($dom);
+        $xpath = new DOMXPath($dom);
         // Some more counters
         $query = '/forum/discussions/discussion/posts/post';
         $posts = $xpath->query($query);
@@ -482,7 +468,7 @@ class structure_test extends \advanced_testcase {
         try {
             $processor->set_var('onenewvariable', 999);
             $this->assertTrue(false, 'backup_processor_exception expected');
-        } catch (\Exception $e) {
+        } catch (exception $e) {
             $this->assertTrue($e instanceof backup_processor_exception);
             $this->assertEquals($e->errorcode, 'processorvariablealreadyset');
             $this->assertEquals($e->a, 'onenewvariable');
@@ -492,7 +478,7 @@ class structure_test extends \advanced_testcase {
         try {
             $var = $processor->get_var('nonexistingvar');
             $this->assertTrue(false, 'backup_processor_exception expected');
-        } catch (\Exception $e) {
+        } catch (exception $e) {
             $this->assertTrue($e instanceof backup_processor_exception);
             $this->assertEquals($e->errorcode, 'processorvariablenotfound');
             $this->assertEquals($e->a, 'nonexistingvar');
@@ -504,7 +490,7 @@ class structure_test extends \advanced_testcase {
             $ne->set_source_table('forum', array('id' => backup::VAR_PARENTID));
             $ne->process($processor);
             $this->assertTrue(false, 'base_element_struct_exception expected');
-        } catch (\Exception $e) {
+        } catch (exception $e) {
             $this->assertTrue($e instanceof base_element_struct_exception);
             $this->assertEquals($e->errorcode, 'cannotfindparentidforelement');
         }
@@ -512,25 +498,25 @@ class structure_test extends \advanced_testcase {
         // Try to process one nested/final/attribute elements without processor
         $ne = new backup_nested_element('test', 'one', 'two', 'three');
         try {
-            $ne->process(new \stdClass());
+            $ne->process(new stdclass());
             $this->assertTrue(false, 'base_element_struct_exception expected');
-        } catch (\Exception $e) {
+        } catch (exception $e) {
             $this->assertTrue($e instanceof base_element_struct_exception);
             $this->assertEquals($e->errorcode, 'incorrect_processor');
         }
         $fe = new backup_final_element('test');
         try {
-            $fe->process(new \stdClass());
+            $fe->process(new stdclass());
             $this->assertTrue(false, 'base_element_struct_exception expected');
-        } catch (\Exception $e) {
+        } catch (exception $e) {
             $this->assertTrue($e instanceof base_element_struct_exception);
             $this->assertEquals($e->errorcode, 'incorrect_processor');
         }
         $at = new backup_attribute('test');
         try {
-            $at->process(new \stdClass());
+            $at->process(new stdclass());
             $this->assertTrue(false, 'base_element_struct_exception expected');
-        } catch (\Exception $e) {
+        } catch (exception $e) {
             $this->assertTrue($e instanceof base_element_struct_exception);
             $this->assertEquals($e->errorcode, 'incorrect_processor');
         }
@@ -540,7 +526,7 @@ class structure_test extends \advanced_testcase {
         try {
             $ne->set_source_alias('last', 'nonexisting');
             $this->assertTrue(false, 'base_element_struct_exception expected');
-        } catch (\Exception $e) {
+        } catch (exception $e) {
             $this->assertTrue($e instanceof base_element_struct_exception);
             $this->assertEquals($e->errorcode, 'incorrectaliasfinalnamenotfound');
             $this->assertEquals($e->a, 'nonexisting');
@@ -551,7 +537,7 @@ class structure_test extends \advanced_testcase {
         try {
             $ne->set_source_table('forum', array('/test/subtest'));
             $this->assertTrue(false, 'base_element_struct_exception expected');
-        } catch (\Exception $e) {
+        } catch (exception $e) {
             $this->assertTrue($e instanceof base_element_struct_exception);
             $this->assertEquals($e->errorcode, 'baseelementincorrectfinalorattribute');
             $this->assertEquals($e->a, 'subtest');
@@ -559,7 +545,7 @@ class structure_test extends \advanced_testcase {
         try {
             $ne->set_source_table('forum', array('/wrongtest'));
             $this->assertTrue(false, 'base_element_struct_exception expected');
-        } catch (\Exception $e) {
+        } catch (exception $e) {
             $this->assertTrue($e instanceof base_element_struct_exception);
             $this->assertEquals($e->errorcode, 'baseelementincorrectgrandparent');
             $this->assertEquals($e->a, 'wrongtest');
@@ -567,7 +553,7 @@ class structure_test extends \advanced_testcase {
         try {
             $ne->set_source_table('forum', array('../nonexisting'));
             $this->assertTrue(false, 'base_element_struct_exception expected');
-        } catch (\Exception $e) {
+        } catch (exception $e) {
             $this->assertTrue($e instanceof base_element_struct_exception);
             $this->assertEquals($e->errorcode, 'baseelementincorrectparent');
             $this->assertEquals($e->a, '..');
@@ -580,7 +566,7 @@ class structure_test extends \advanced_testcase {
         try {
             $ne->annotate_files('test', 'filearea', null); // Try to add annotations twice
             $this->assertTrue(false, 'base_element_struct_exception expected');
-        } catch (\Exception $e) {
+        } catch (exception $e) {
             $this->assertTrue($e instanceof base_element_struct_exception);
             $this->assertEquals($e->errorcode, 'annotate_files_duplicate_annotation');
             $this->assertEquals($e->a, 'test/filearea/');
@@ -590,7 +576,7 @@ class structure_test extends \advanced_testcase {
         try {
             $ne->annotate_files('test', 'filearea', 'four'); // Incorrect element
             $this->assertTrue(false, 'base_element_struct_exception expected');
-        } catch (\Exception $e) {
+        } catch (exception $e) {
             $this->assertTrue($e instanceof base_element_struct_exception);
             $this->assertEquals($e->errorcode, 'baseelementincorrectfinalorattribute');
             $this->assertEquals($e->a, 'four');
@@ -601,7 +587,7 @@ class structure_test extends \advanced_testcase {
         try {
             $bog->add_child(new backup_nested_element('test2'));
             $this->assertTrue(false, 'base_optigroup_exception expected');
-        } catch (\Exception $e) {
+        } catch (exception $e) {
             $this->assertTrue($e instanceof base_optigroup_exception);
             $this->assertEquals($e->errorcode, 'optigroup_element_incorrect');
             $this->assertEquals($e->a, 'backup_nested_element');
@@ -611,16 +597,16 @@ class structure_test extends \advanced_testcase {
         try {
             $bog->add_child('test2');
             $this->assertTrue(false, 'base_optigroup_exception expected');
-        } catch (\Exception $e) {
+        } catch (exception $e) {
             $this->assertTrue($e instanceof base_optigroup_exception);
             $this->assertEquals($e->errorcode, 'optigroup_element_incorrect');
             $this->assertEquals($e->a, 'non object');
         }
 
         try {
-            $bog = new backup_optigroup('test', new \stdClass());
+            $bog = new backup_optigroup('test', new stdclass());
             $this->assertTrue(false, 'base_optigroup_exception expected');
-        } catch (\Exception $e) {
+        } catch (exception $e) {
             $this->assertTrue($e instanceof base_optigroup_exception);
             $this->assertEquals($e->errorcode, 'optigroup_elements_incorrect');
         }
@@ -628,9 +614,9 @@ class structure_test extends \advanced_testcase {
         // Try a wrong processor with backup_optigroup
         $bog = new backup_optigroup('test');
         try {
-            $bog->process(new \stdClass());
+            $bog->process(new stdclass());
             $this->assertTrue(false, 'base_element_struct_exception expected');
-        } catch (\Exception $e) {
+        } catch (exception $e) {
             $this->assertTrue($e instanceof base_element_struct_exception);
             $this->assertEquals($e->errorcode, 'incorrect_processor');
         }
@@ -648,7 +634,7 @@ class structure_test extends \advanced_testcase {
         try {
             $boge2->add_child($ne2);
             $this->assertTrue(false, 'base_optigroup_exception expected');
-        } catch (\Exception $e) {
+        } catch (exception $e) {
             $this->assertTrue($e instanceof base_optigroup_exception);
             $this->assertEquals($e->errorcode, 'multiple_optigroup_duplicate_element');
             $this->assertEquals($e->a, 'ne1');
@@ -665,7 +651,7 @@ class structure_test extends \advanced_testcase {
         try {
             $bog->add_child($boge2);
             $this->assertTrue(false, 'base_element_struct_exception expected');
-        } catch (\Exception $e) {
+        } catch (exception $e) {
             $this->assertTrue($e instanceof base_element_struct_exception);
             $this->assertEquals($e->errorcode, 'baseelementexisting');
             $this->assertEquals($e->a, 'ne1');

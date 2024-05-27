@@ -10,8 +10,6 @@ Feature: Posting to all groups in a visible group discussion is restricted to us
       | teacher1 | Teacher | 1 | teacher1@example.com |
       | student1 | Student | 1 | student1@example.com |
       | student2 | Student | 2 | student2@example.com |
-      | student3 | Student | 3 | student3@example.com |
-      | student4 | Student | 4 | student4@example.com |
     And the following "courses" exist:
       | fullname | shortname | category |
       | Course 1 | C1 | 0 |
@@ -20,14 +18,11 @@ Feature: Posting to all groups in a visible group discussion is restricted to us
       | teacher1 | C1 | editingteacher |
       | student1 | C1 | student |
       | student2 | C1 | student |
-      | student3 | C1 | student |
-      | student4 | C1 | student |
     And the following "groups" exist:
-      | name    | course | idnumber | participation |
-      | Group A | C1     | G1       | 1             |
-      | Group B | C1     | G2       | 1             |
-      | Group C | C1     | G3       | 1             |
-      | Group D | C1     | G4       | 0             |
+      | name | course | idnumber |
+      | Group A | C1 | G1 |
+      | Group B | C1 | G2 |
+      | Group C | C1 | G3 |
     And the following "group members" exist:
       | user | group |
       | teacher1 | G1 |
@@ -35,7 +30,6 @@ Feature: Posting to all groups in a visible group discussion is restricted to us
       | student1 | G1 |
       | student2 | G1 |
       | student2 | G2 |
-      | student3 | G4 |
     And the following "activities" exist:
       | activity   | name                   | course | idnumber     | groupmode |
       | forum      | Standard forum name    | C1     | groups       | 2         |
@@ -52,7 +46,6 @@ Feature: Posting to all groups in a visible group discussion is restricted to us
     And the "Visible groups" select box should contain "Group A"
     And the "Visible groups" select box should contain "Group B"
     And the "Visible groups" select box should contain "Group C"
-    And the "Visible groups" select box should not contain "Group D"
     And I select "All participants" from the "Visible groups" singleselect
     And I should see "Initial Disc ALL"
     And I should see "Initial Disc G1"
@@ -71,19 +64,18 @@ Feature: Posting to all groups in a visible group discussion is restricted to us
 
   Scenario: Teacher with accessallgroups can select any group when posting
     Given I am on the "Standard forum name" "forum activity" page logged in as teacher1
-    When I click on "Add discussion topic" "link"
+    When I click on "Add a new discussion topic" "link"
     And I click on "Advanced" "button"
     Then the "Group" select box should contain "All participants"
     And the "Group" select box should contain "Group A"
     And the "Group" select box should contain "Group B"
     And the "Group" select box should contain "Group C"
-    And the "Group" select box should not contain "Group D"
     And I should see "Post a copy to all groups"
 
   Scenario: Teacher with accessallgroups can post in groups they are a member of
     Given I am on the "Standard forum name" "forum activity" page logged in as teacher1
     And I select "Group A" from the "Visible groups" singleselect
-    When I click on "Add discussion topic" "link"
+    When I click on "Add a new discussion topic" "link"
     And I click on "Advanced" "button"
     Then I should see "Post a copy to all groups"
     And I set the following fields to these values:
@@ -112,7 +104,7 @@ Feature: Posting to all groups in a visible group discussion is restricted to us
   Scenario: Teacher with accessallgroups can post in groups they are not a member of
     Given I am on the "Standard forum name" "forum activity" page logged in as teacher1
     And I select "Group A" from the "Visible groups" singleselect
-    When I click on "Add discussion topic" "link"
+    When I click on "Add a new discussion topic" "link"
     And I click on "Advanced" "button"
     Then I should see "Post a copy to all groups"
     And I set the following fields to these values:
@@ -140,7 +132,7 @@ Feature: Posting to all groups in a visible group discussion is restricted to us
 
   Scenario: Teacher with accessallgroups can post to all groups
     Given I am on the "Standard forum name" "forum activity" page logged in as teacher1
-    When I click on "Add discussion topic" "link"
+    When I click on "Add a new discussion topic" "link"
     And I click on "Advanced" "button"
     And I set the following fields to these values:
       | Subject                   | Teacher 1 -> Post to all  |
@@ -170,7 +162,6 @@ Feature: Posting to all groups in a visible group discussion is restricted to us
     And the "Visible groups" select box should contain "Group A"
     And the "Visible groups" select box should contain "Group B"
     And the "Visible groups" select box should contain "Group C"
-    And the "Visible groups" select box should not contain "Group D"
     And I select "All participants" from the "Visible groups" singleselect
     And I should see "Initial Disc ALL"
     And I should see "Initial Disc G1"
@@ -190,12 +181,11 @@ Feature: Posting to all groups in a visible group discussion is restricted to us
   Scenario: Students in one group can only post in their group
     When I am on the "Standard forum name" "forum activity" page logged in as student1
     Then I should see "Group A"
-    And I click on "Add discussion topic" "link"
+    And I click on "Add a new discussion topic" "link"
     And I click on "Advanced" "button"
     And I should see "Group A"
     And I should not see "Group B"
     And I should not see "Group C"
-    And I should not see "Group D"
     And I should not see "Post a copy to all groups"
     And I set the following fields to these values:
       | Subject | Student -> B |
@@ -208,13 +198,12 @@ Feature: Posting to all groups in a visible group discussion is restricted to us
   Scenario: Students in multiple group can post in all of their group individually
     When I am on the "Standard forum name" "forum activity" page logged in as student2
     And I select "Group A" from the "Visible groups" singleselect
-    And I click on "Add discussion topic" "link"
+    And I click on "Add a new discussion topic" "link"
     And I click on "Advanced" "button"
     And the "Group" select box should not contain "All participants"
     And the "Group" select box should contain "Group A"
     And the "Group" select box should contain "Group B"
     And the "Group" select box should not contain "Group C"
-    And the "Group" select box should not contain "Group D"
     And I should not see "Post a copy to all groups"
     And I set the following fields to these values:
       | Subject | Student -> B  |
@@ -230,7 +219,7 @@ Feature: Posting to all groups in a visible group discussion is restricted to us
     And I should not see "Student -> B"
     # Now try posting in Group A (starting at Group B)
     And I select "Group B" from the "Visible groups" singleselect
-    And I click on "Add discussion topic" "link"
+    And I click on "Add a new discussion topic" "link"
     And I click on "Advanced" "button"
     And the "Group" select box should not contain "All participants"
     And the "Group" select box should contain "Group A"
@@ -249,27 +238,3 @@ Feature: Posting to all groups in a visible group discussion is restricted to us
     And I should not see "Group B" in the "Student -> A" "table_row"
     And I select "Group B" from the "Visible groups" singleselect
     And I should not see "Student -> A"
-
-  Scenario: Students in no group can see all discussions, but not post.
-    Given I log in as "student4"
-    And I am on "Course 1" course homepage
-    When I follow "Standard forum name"
-    And I select "All participants" from the "Visible groups" singleselect
-    Then I should see "Initial Disc ALL"
-    And I should see "Initial Disc G1"
-    And I should see "Initial Disc G2"
-    And I should see "Initial Disc G2"
-    And I should see "You are not able to create a discussion"
-    And I should not see "Add discussion topic"
-
-  Scenario: Students in non-participation groups can see all discussions, but not post.
-    Given I log in as "student3"
-    And I am on "Course 1" course homepage
-    When I follow "Standard forum name"
-    And I select "All participants" from the "Visible groups" singleselect
-    Then I should see "Initial Disc ALL"
-    And I should see "Initial Disc G1"
-    And I should see "Initial Disc G2"
-    And I should see "Initial Disc G2"
-    And I should see "You are not able to create a discussion"
-    And I should not see "Add discussion topic"

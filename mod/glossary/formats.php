@@ -18,7 +18,7 @@ $PAGE->set_url($url);
 admin_externalpage_setup('managemodules'); // this is hacky, tehre should be a special hidden page for it
 
 if ( !$displayformat = $DB->get_record("glossary_formats", array("id"=>$id))) {
-    throw new \moodle_exception('invalidglossaryformat', 'glossary');
+    print_error('invalidglossaryformat', 'glossary');
 }
 
 $form = data_submitted();
@@ -78,8 +78,8 @@ echo '<table width="90%" align="center" class="generalbox">';
     <td align="right" width="20%"><?php echo html_writer::label(get_string('popupformat','glossary'), 'menupopupformatname'); ?></td>
     <td>
  <?php
-    // Get available formats.
-    $recformats = $DB->get_records("glossary_formats");
+    //get and update available formats
+    $recformats = glossary_get_available_formats();
 
     $formats = array();
 

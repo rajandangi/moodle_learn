@@ -14,7 +14,18 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace core_competency;
+/**
+ * User evidence competency persistent class tests.
+ *
+ * @package    core_competency
+ * @copyright  2016 Serge Gauthier - <serge.gauthier.2@umontreal.ca>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+defined('MOODLE_INTERNAL') || die();
+global $CFG;
+
+use core_competency\user_evidence_competency;
 
 /**
  * User evidence competency persistent testcase.
@@ -23,7 +34,7 @@ namespace core_competency;
  * @copyright  2016 Serge Gauthier - <serge.gauthier.2@umontreal.ca>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class user_evidence_competency_test extends \advanced_testcase {
+class core_competency_user_evidence_competency_testcase extends advanced_testcase {
 
     public function test_get_user_competencies_by_userevidenceid() {
         global $CFG, $DB;

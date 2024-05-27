@@ -48,12 +48,9 @@ navigation_node::override_active_url(new moodle_url('/backup/restorefile.php', a
 $PAGE->set_url(new moodle_url('/backup/restore.php', array('contextid'=>$contextid)));
 $PAGE->set_context($context);
 $PAGE->set_pagelayout('admin');
-$PAGE->set_secondary_active_tab('coursereuse');
 
 require_login($course, null, $cm);
 require_capability('moodle/restore:restorecourse', $context);
-
-$PAGE->secondarynav->set_overflow_selected_node('restore');
 
 if (is_null($course)) {
     $coursefullname = $SITE->fullname;
@@ -173,7 +170,7 @@ if ($restore->get_stage() != restore_ui::STAGE_PROCESS) {
     // Create adhoc task for restore.
     $restoreid = $restore->get_restoreid();
     $asynctask = new \core\task\asynchronous_restore_task();
-    $asynctask->set_userid($USER->id);
+    $asynctask->set_blocking(false);
     $asynctask->set_custom_data(array('backupid' => $restoreid));
     \core\task\manager::queue_adhoc_task($asynctask);
 

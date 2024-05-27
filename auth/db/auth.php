@@ -454,7 +454,9 @@ class auth_plugin_db extends auth_plugin_base {
                 $user->confirmed  = 1;
                 $user->auth       = $this->authtype;
                 $user->mnethostid = $CFG->mnet_localhost_id;
-
+                if (empty($user->lang)) {
+                    $user->lang = $CFG->lang;
+                }
                 if ($collision = $DB->get_record_select('user', "username = :username AND mnethostid = :mnethostid AND auth <> :auth", array('username'=>$user->username, 'mnethostid'=>$CFG->mnet_localhost_id, 'auth'=>$this->authtype), 'id,username,auth')) {
                     $trace->output(get_string('auth_dbinsertuserduplicate', 'auth_db', array('username'=>$user->username, 'auth'=>$collision->auth)), 1);
                     continue;
@@ -502,7 +504,7 @@ class auth_plugin_db extends auth_plugin_base {
                                  WHERE {$this->config->fielduser} = '".$this->ext_addslashes($extusername)."' ");
 
         if (!$rs) {
-            throw new \moodle_exception('auth_dbcantconnect', 'auth_db');
+            print_error('auth_dbcantconnect','auth_db');
         } else if (!$rs->EOF) {
             // User exists externally.
             $result = true;
@@ -525,7 +527,7 @@ class auth_plugin_db extends auth_plugin_base {
                                   FROM {$this->config->table} ");
 
         if (!$rs) {
-            throw new \moodle_exception('auth_dbcantconnect', 'auth_db');
+            print_error('auth_dbcantconnect','auth_db');
         } else if (!$rs->EOF) {
             while ($rec = $rs->FetchRow()) {
                 $rec = array_change_key_case((array)$rec, CASE_LOWER);
@@ -541,7 +543,7 @@ class auth_plugin_db extends auth_plugin_base {
      * Reads user information from DB and return it in an object.
      *
      * @param string $username username
-     * @return stdClass
+     * @return array
      */
     function get_userinfo_asobj($username) {
         $user_array = truncate_userinfo($this->get_userinfo($username));
@@ -607,7 +609,7 @@ class auth_plugin_db extends auth_plugin_base {
                        SET ".implode(',', $update)."
                      WHERE {$this->config->fielduser} = ?";
             if (!$authdb->Execute($sql, array($this->ext_addslashes($extusername)))) {
-                throw new \moodle_exception('auth_dbupdateerror', 'auth_db');
+                print_error('auth_dbupdateerror', 'auth_db');
             }
         }
         $authdb->Close();
@@ -760,7 +762,9 @@ class auth_plugin_db extends auth_plugin_base {
             $rs->close();
 
         } else {
-            $columns = array_keys($rs->fetchRow());
+            $fields_obj = $rs->FetchObj();
+            $columns = array_keys((array)$fields_obj);
+
             echo $OUTPUT->notification(get_string('auth_dbcolumnlist', 'auth_db', implode(', ', $columns)), 'notifysuccess');
             $rs->close();
         }

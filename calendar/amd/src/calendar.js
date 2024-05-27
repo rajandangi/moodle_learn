@@ -21,35 +21,44 @@
  * triggered within the calendar UI.
  *
  * @module     core_calendar/calendar
+ * @package    core_calendar
  * @copyright  2017 Simey Lameze <simey@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 define([
-    'jquery',
-    'core/templates',
-    'core/notification',
-    'core_calendar/repository',
-    'core_calendar/events',
-    'core_calendar/view_manager',
-    'core_calendar/crud',
-    'core_calendar/selectors',
-    'core/config',
-    'core/url',
-    'core/str',
-],
-function(
-    $,
-    Templates,
-    Notification,
-    CalendarRepository,
-    CalendarEvents,
-    CalendarViewManager,
-    CalendarCrud,
-    CalendarSelectors,
-    Config,
-    Url,
-    Str,
-) {
+            'jquery',
+            'core/ajax',
+            'core/str',
+            'core/templates',
+            'core/notification',
+            'core/custom_interaction_events',
+            'core/modal_events',
+            'core/modal_factory',
+            'core_calendar/modal_event_form',
+            'core_calendar/summary_modal',
+            'core_calendar/repository',
+            'core_calendar/events',
+            'core_calendar/view_manager',
+            'core_calendar/crud',
+            'core_calendar/selectors',
+        ],
+        function(
+            $,
+            Ajax,
+            Str,
+            Templates,
+            Notification,
+            CustomEvents,
+            ModalEvents,
+            ModalFactory,
+            ModalEventForm,
+            SummaryModal,
+            CalendarRepository,
+            CalendarEvents,
+            CalendarViewManager,
+            CalendarCrud,
+            CalendarSelectors
+        ) {
 
     var SELECTORS = {
         ROOT: "[data-region='calendar']",
@@ -60,10 +69,6 @@ function(
         VIEW_DAY_LINK: "[data-action='view-day-link']",
         CALENDAR_MONTH_WRAPPER: ".calendarwrapper",
         TODAY: '.today',
-        DAY_NUMBER_CIRCLE: '.day-number-circle',
-        DAY_NUMBER: '.day-number',
-        SCREEN_READER_ANNOUNCEMENTS: '.calendar-announcements',
-        CURRENT_MONTH: '.calendar-controls .current'
     };
 
     /**
@@ -124,7 +129,7 @@ function(
                     }
                     return;
                 })
-                .catch(Notification.exception);
+                .fail(Notification.exception);
         }
     };
 
@@ -157,12 +162,6 @@ function(
         body.on(CalendarEvents.eventMoved, function() {
             CalendarViewManager.reloadCurrentMonth(root);
         });
-        // Announce the newly loaded month to screen readers.
-        body.on(CalendarEvents.monthChanged, root, async function() {
-            const monthName = body.find(SELECTORS.CURRENT_MONTH).text();
-            const monthAnnoucement = await Str.get_string('newmonthannouncement', 'calendar', monthName);
-            body.find(SELECTORS.SCREEN_READER_ANNOUNCEMENTS).html(monthAnnoucement);
-        });
 
         CalendarCrud.registerEditListeners(root, eventFormModalPromise);
     };
@@ -173,50 +172,31 @@ function(
      * @param {object} root The calendar root element
      */
     var registerEventListeners = function(root) {
-        const viewingFullCalendar = document.getElementById(CalendarSelectors.fullCalendarView);
         // Listen the click on the day link to render the day view.
         root.on('click', SELECTORS.VIEW_DAY_LINK, function(e) {
-            var dayLink = $(e.target).closest(SELECTORS.VIEW_DAY_LINK);
+            var dayLink = $(e.target);
             var year = dayLink.data('year'),
                 month = dayLink.data('month'),
                 day = dayLink.data('day'),
                 courseId = dayLink.data('courseid'),
                 categoryId = dayLink.data('categoryid');
-            const urlParams = {
-                view: 'day',
-                time: dayLink.data('timestamp'),
-                course: courseId,
-            };
-            if (viewingFullCalendar) {
-                // Construct the URL parameter string from the urlParams object.
-                const urlParamString = Object.entries(urlParams)
-                    .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
-                    .join('&');
-                CalendarViewManager.refreshDayContent(root, year, month, day, courseId, categoryId, root,
+            CalendarViewManager.refreshDayContent(root, year, month, day, courseId, categoryId, root,
                     'core_calendar/calendar_day').then(function() {
-                    e.preventDefault();
-                    return CalendarViewManager.updateUrl(urlParamString);
-                }).catch(Notification.exception);
-            } else {
-                window.location.assign(Url.relativeUrl('calendar/view.php', urlParams));
-            }
+                e.preventDefault();
+                var url = '?view=day&time=' + dayLink.data('timestamp');
+                return window.history.pushState({}, '', url);
+            }).fail(Notification.exception);
         });
 
         root.on('change', CalendarSelectors.elements.courseSelector, function() {
             var selectElement = $(this);
             var courseId = selectElement.val();
-            const courseName = $("option:selected", selectElement).text();
             CalendarViewManager.reloadCurrentMonth(root, courseId, null)
                 .then(function() {
                     // We need to get the selector again because the content has changed.
                     return root.find(CalendarSelectors.elements.courseSelector).val(courseId);
                 })
-                .then(function() {
-                    CalendarViewManager.updateUrl('?view=month&course=' + courseId);
-                    CalendarViewManager.handleCourseChange(Number(courseId), courseName);
-                    return;
-                })
-                .catch(Notification.exception);
+                .fail(Notification.exception);
         });
 
         var eventFormPromise = CalendarCrud.registerEventFormModal(root),
@@ -225,42 +205,30 @@ function(
 
         if (contextId) {
             // Bind click events to calendar days.
-            root.on('click', SELECTORS.DAY, function(e) {
+            root.on('click', SELECTORS.DAY, function (e) {
+
                 var target = $(e.target);
-                const displayingSmallBlockCalendar = root.parents('aside').data('blockregion') === 'side-pre';
 
-                if (!viewingFullCalendar && displayingSmallBlockCalendar) {
-                    const dateContainer = target.closest(SELECTORS.DAY);
-                    const wrapper = target.closest(CalendarSelectors.wrapper);
-                    const courseId = wrapper.data('courseid');
-                    const params = {
-                        view: 'day',
-                        time: dateContainer.data('day-timestamp'),
-                        course: courseId,
-                    };
-                    window.location.assign(Url.relativeUrl('calendar/view.php', params));
-                } else {
-                    const hasViewDayLink = target.closest(SELECTORS.VIEW_DAY_LINK).length;
-                    const shouldShowNewEventModal = !hasViewDayLink;
-                    if (shouldShowNewEventModal) {
-                        var startTime = $(this).attr('data-new-event-timestamp');
-                        eventFormPromise.then(function(modal) {
-                            var wrapper = target.closest(CalendarSelectors.wrapper);
-                            modal.setCourseId(wrapper.data('courseid'));
+                if (!target.is(SELECTORS.VIEW_DAY_LINK)) {
+                    var startTime = $(this).attr('data-new-event-timestamp');
+                    eventFormPromise.then(function (modal) {
+                        var wrapper = target.closest(CalendarSelectors.wrapper);
+                        modal.setCourseId(wrapper.data('courseid'));
 
-                            var categoryId = wrapper.data('categoryid');
-                            if (typeof categoryId !== 'undefined') {
-                                modal.setCategoryId(categoryId);
-                            }
+                        var categoryId = wrapper.data('categoryid');
+                        if (typeof categoryId !== 'undefined') {
+                            modal.setCategoryId(categoryId);
+                        }
 
-                            modal.setContextId(wrapper.data('contextId'));
-                            modal.setStartTime(startTime);
-                            modal.show();
-                            return;
-                        }).catch(Notification.exception);
-                    }
+                        modal.setContextId(wrapper.data('contextId'));
+                        modal.setStartTime(startTime);
+                        modal.show();
+                        return;
+                    })
+                    .fail(Notification.exception);
+
+                    e.preventDefault();
                 }
-                e.preventDefault();
             });
         }
     };

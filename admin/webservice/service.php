@@ -36,11 +36,7 @@ if ($node && $newnode) {
     $node->display = false;
     $newnode->make_active();
 }
-$PAGE->navbar->add(get_string('externalservices', 'webservice'),
-    new moodle_url('/admin/settings.php', ['section' => 'externalservices']));
-
-$PAGE->set_primary_active_tab('siteadminnode');
-
+$PAGE->navbar->add(get_string('externalservice', 'webservice'));
 
 //Retrieve few general parameters
 $id = required_param('id', PARAM_INT);
@@ -106,12 +102,6 @@ if ($mform->is_cancelled()) {
     }
 
     redirect($returnurl);
-}
-
-if ($id == 0) {
-    $PAGE->navbar->add(get_string('addexternalservice', 'webservice'), $PAGE->url);
-} else {
-    $PAGE->navbar->add(get_string('editexternalservice', 'webservice'), $PAGE->url);
 }
 
 //OUTPUT edit/create form

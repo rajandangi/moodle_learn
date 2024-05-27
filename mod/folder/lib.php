@@ -33,7 +33,7 @@ define('FOLDER_DISPLAY_INLINE', 1);
 /**
  * List of features supported in Folder module
  * @param string $feature FEATURE_xx constant for requested feature
- * @return mixed True if module supports feature, false if not, null if doesn't know or string for the module purpose.
+ * @return mixed True if module supports feature, false if not, null if doesn't know
  */
 function folder_supports($feature) {
     switch($feature) {
@@ -46,7 +46,6 @@ function folder_supports($feature) {
         case FEATURE_GRADE_OUTCOMES:          return false;
         case FEATURE_BACKUP_MOODLE2:          return true;
         case FEATURE_SHOW_DESCRIPTION:        return true;
-        case FEATURE_MOD_PURPOSE:             return MOD_PURPOSE_CONTENT;
 
         default: return null;
     }
@@ -284,13 +283,9 @@ function folder_pluginfile($course, $cm, $context, $filearea, $args, $forcedownl
         return false;
     }
 
-    // Set security posture for in-browser display.
-    if (!$forcedownload) {
-        header("Content-Security-Policy: default-src 'none'; img-src 'self'; media-src 'self'");
-    }
-
-    // Finally send the file.
-    send_stored_file($file, 0, 0, $forcedownload, $options);
+    // finally send the file
+    // for folder module, we force download file all the time
+    send_stored_file($file, 0, 0, true, $options);
 }
 
 /**
@@ -404,7 +399,7 @@ function folder_dndupload_handle($uploadinfo) {
 function folder_get_coursemodule_info($cm) {
     global $DB;
     if (!($folder = $DB->get_record('folder', array('id' => $cm->instance),
-            'id, name, display, showexpanded, showdownloadfolder, forcedownload, intro, introformat'))) {
+            'id, name, display, showexpanded, showdownloadfolder, intro, introformat'))) {
         return NULL;
     }
     $cminfo = new cached_cm_info();
@@ -414,7 +409,6 @@ function folder_get_coursemodule_info($cm) {
         $fdata = new stdClass();
         $fdata->showexpanded = $folder->showexpanded;
         $fdata->showdownloadfolder = $folder->showdownloadfolder;
-        $fdata->forcedownload = $folder->forcedownload;
         if ($cm->showdescription && strlen(trim($folder->intro))) {
             $fdata->intro = $folder->intro;
             if ($folder->introformat != FORMAT_MOODLE) {
@@ -440,7 +434,7 @@ function folder_get_coursemodule_info($cm) {
  * @param cm_info $cm
  */
 function folder_cm_info_dynamic(cm_info $cm) {
-    if ($cm->get_custom_data()) {
+    if ($cm->customdata) {
         // the field 'customdata' is not empty IF AND ONLY IF we display contens inline
         $cm->set_no_view_link();
     }
@@ -590,52 +584,49 @@ function folder_downloaded($folder, $course, $cm, $context) {
  * @param int $groupid not used, but required for compatibilty with other modules
  */
 function folder_get_recent_mod_activity(&$activities, &$index, $timestart, $courseid, $cmid, $userid=0, $groupid=0) {
-    global $DB, $OUTPUT;
+    global $COURSE, $DB, $OUTPUT;
 
-    $modinfo = get_fast_modinfo($courseid);
+    if ($COURSE->id == $courseid) {
+        $course = $COURSE;
+    } else {
+        $course = $DB->get_record('course', array('id' => $courseid));
+    }
+
+    $modinfo = get_fast_modinfo($course);
     $cm = $modinfo->cms[$cmid];
 
     $context = context_module::instance($cm->id);
     if (!has_capability('mod/folder:view', $context)) {
         return;
     }
-    $instance = $DB->get_record('folder', ['id' => $cm->instance], '*', MUST_EXIST);
-
     $files = folder_get_recent_activity($context, $timestart, $userid);
-    foreach ($files as $file) {
-        $tmpactivity = (object) [
-            'type' => 'folder',
-            'cmid' => $cm->id,
-            'sectionnum' => $cm->sectionnum,
-            'timestamp' => $file->get_timemodified(),
-            'user' => core_user::get_user($file->get_userid()),
-        ];
 
-        $url = moodle_url::make_pluginfile_url(
-            $file->get_contextid(),
-            'mod_folder',
-            'content',
-            $file->get_itemid(),
-            $file->get_filepath(),
-            $file->get_filename(),
-            !empty($instance->forcedownload)
-        );
+    foreach ($files as $file) {
+        $tmpactivity = new stdClass();
+
+        $tmpactivity->type       = 'folder';
+        $tmpactivity->cmid       = $cm->id;
+        $tmpactivity->sectionnum = $cm->sectionnum;
+        $tmpactivity->timestamp  = $file->get_timemodified();
+        $tmpactivity->user       = core_user::get_user($file->get_userid());
+
+        $tmpactivity->content           = new stdClass();
+        $tmpactivity->content->url      = moodle_url::make_pluginfile_url($file->get_contextid(), 'mod_folder', 'content',
+            $file->get_itemid(), $file->get_filepath(), $file->get_filename());
 
         if (file_extension_in_typegroup($file->get_filename(), 'web_image')) {
-            $image = $url->out(false, array('preview' => 'tinyicon', 'oid' => $file->get_timemodified()));
+            $image = $tmpactivity->content->url->out(false, array('preview' => 'tinyicon', 'oid' => $file->get_timemodified()));
             $image = html_writer::empty_tag('img', array('src' => $image));
         } else {
-            $image = $OUTPUT->pix_icon(file_file_icon($file), $file->get_filename(), 'moodle');
+            $image = $OUTPUT->pix_icon(file_file_icon($file, 24), $file->get_filename(), 'moodle');
         }
 
-        $tmpactivity->content = (object) [
-            'image' => $image,
-            'filename' => $file->get_filename(),
-            'url' => $url,
-        ];
+        $tmpactivity->content->image    = $image;
+        $tmpactivity->content->filename = $file->get_filename();
 
         $activities[$index++] = $tmpactivity;
     }
+
 }
 
 /**
@@ -728,10 +719,7 @@ function folder_print_recent_activity($course, $viewfullnames, $timestart) {
         return false;
     }
 
-    // The list of all new files.
-    $newfiles = [];
-    // Save the force download setting of all instances with files indexed by context.
-    $forcedownloads = [];
+    $newfiles = array();
 
     $modinfo = get_fast_modinfo($course);
     foreach ($folders as $folder) {
@@ -744,9 +732,6 @@ function folder_print_recent_activity($course, $viewfullnames, $timestart) {
 
         // Get the files uploaded in the current time frame.
         $newfiles = array_merge($newfiles, folder_get_recent_activity($context, $timestart));
-        if (!isset($forcedownloads[$context->id])) {
-            $forcedownloads[$context->id] = !empty($folder->forcedownload);
-        }
     }
 
     if (empty($newfiles)) {
@@ -758,15 +743,8 @@ function folder_print_recent_activity($course, $viewfullnames, $timestart) {
     $list = html_writer::start_tag('ul', ['class' => 'unlist']);
     foreach ($newfiles as $file) {
         $filename = $file->get_filename();
-        $contextid = $file->get_contextid();
-        $url = moodle_url::make_pluginfile_url(
-            $contextid,
-            'mod_folder',
-            'content',
-            $file->get_itemid(),
-            $file->get_filepath(), $filename,
-            $forcedownloads[$contextid] ?? false
-        );
+        $url = moodle_url::make_pluginfile_url($file->get_contextid(), 'mod_folder', 'content',
+            $file->get_itemid(), $file->get_filepath(), $filename);
 
         $list .= html_writer::start_tag('li');
         $list .= html_writer::start_div('head');
@@ -848,7 +826,7 @@ function mod_folder_core_calendar_provide_event_action(calendar_event $event,
  * @param  array  $args The path (the part after the filearea and before the filename).
  * @return array The itemid and the filepath inside the $args path, for the defined filearea.
  */
-function mod_folder_get_path_from_pluginfile(string $filearea, array $args): array {
+function mod_folder_get_path_from_pluginfile(string $filearea, array $args) : array {
     // Folder never has an itemid (the number represents the revision but it's not stored in database).
     array_shift($args);
 

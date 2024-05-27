@@ -26,8 +26,8 @@ namespace core_h5p;
 
 use core_h5p\local\library\autoloader;
 use core_h5p\output\h5peditor as editor_renderer;
-use Moodle\H5PCore;
-use Moodle\H5peditor;
+use H5PCore;
+use H5peditor;
 use stdClass;
 use coding_exception;
 use MoodleQuickForm;
@@ -104,7 +104,7 @@ class editor {
         // Load the present content.
         $this->oldcontent = $this->core->loadContent($id);
         if ($this->oldcontent === null) {
-            throw new \moodle_exception('invalidelementid');
+            print_error('invalidelementid');
         }
 
         // Identify the content type library.
@@ -115,7 +115,7 @@ class editor {
         $fs = get_file_storage();
         $oldfile = $fs->get_file_by_hash($pathnamehash);
         if (!$oldfile) {
-            throw new \moodle_exception('invalidelementid');
+            print_error('invalidelementid');
         }
         $this->set_filearea(
             $oldfile->get_contextid(),

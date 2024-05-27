@@ -29,9 +29,10 @@ Feature: A teacher can choose whether to provide a printer-friendly glossary ent
     When I add a glossary entry with the following data:
       | Concept | Just a test concept |
       | Definition | Concept definition |
-    And I click on "Export entries" "button"
-    And I click on "Print" "link"
-    Then I should see "Just a test concept"
+    Then "Printer-friendly version" "link" should exist
+    And "//*[contains(concat(' ', normalize-space(@class), ' '), ' printicon ')][contains(@href, 'print.php')]" "xpath_element" should exist
+    And I follow "Printer-friendly version"
+    And I should see "Just a test concept"
 
   @javascript
   Scenario: Printer-friendly glossary view disabled
@@ -45,4 +46,5 @@ Feature: A teacher can choose whether to provide a printer-friendly glossary ent
     When I add a glossary entry with the following data:
       | Concept | Just a test concept |
       | Definition | Concept definition |
-    And "//select[contains(concat(' ', normalize-space(@class), ' '), ' urlselect ')]" "xpath_element" should not exist
+    Then "Printer-friendly version" "link" should not exist
+    And "//*[contains(concat(' ', normalize-space(@class), ' '), ' printicon ')][contains(@href, 'print.php')]" "xpath_element" should not exist

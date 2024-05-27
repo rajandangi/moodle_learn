@@ -52,11 +52,15 @@ $PAGE->set_url('/admin/mnet/peers.php');
 admin_externalpage_setup($adminsection);
 
 if (!extension_loaded('openssl')) {
-    throw new \moodle_exception('requiresopenssl', 'mnet');
+    print_error('requiresopenssl', 'mnet');
 }
 
 if (!function_exists('curl_init') ) {
-    throw new \moodle_exception('nocurl', 'mnet');
+    print_error('nocurl', 'mnet');
+}
+
+if (!function_exists('xmlrpc_encode_request')) {
+    print_error('xmlrpc-missing', 'mnet');
 }
 
 if (!isset($CFG->mnet_dispatcher_mode)) {
@@ -83,6 +87,7 @@ if ($formdata = $simpleform->get_data()) {
     $mnet_peer->bootstrap($formdata->wwwroot, null, $application);
     // bootstrap the second form straight with the data from the first form
     $reviewform = new mnet_review_host_form(null, array('peer' => $mnet_peer)); // the second step (also the edit host form)
+    $formdata->oldpublickey = $mnet_peer->public_key; // set this so we can confirm on form post without having to recreate the mnet_peer object
     $reviewform->set_data($mnet_peer);
     echo $OUTPUT->header();
     echo $OUTPUT->box_start();
@@ -114,6 +119,7 @@ if (!empty($hostid)) {
         }
         $credentials = $mnet_peer->check_credentials($mnet_peer->public_key);
         $reviewform = new mnet_review_host_form(null, array('peer' => $mnet_peer)); // the second step (also the edit host form)
+        $mnet_peer->oldpublickey = $mnet_peer->public_key; // set this so we can confirm on form post without having to recreate the mnet_peer object
         $reviewform->set_data((object)$mnet_peer);
         echo $OUTPUT->box_start();
         $reviewform->display();
@@ -167,7 +173,7 @@ if ($formdata = $reviewform->get_data()) {
     if ($mnet_peer->commit()) {
         redirect(new moodle_url('/admin/mnet/peers.php', array('hostid' => $mnet_peer->id)), get_string('changessaved'));
     } else {
-        throw new \moodle_exception('invalidaction', 'error', 'index.php');
+        print_error('invalidaction', 'error', 'index.php');
     }
 } else if ($reviewform->is_submitted()) { // submitted, but errors
     echo $OUTPUT->header();

@@ -51,15 +51,7 @@ try {
 
 if (empty($messages->error) && empty($messages->exception)) {
     // Configure page.
-    $context = $h5pplayer->get_context();
-    if ($context instanceof context_module) {
-        [$course, $cm] = get_course_and_cm_from_cmid($context->instanceid);
-        $PAGE->set_cm($cm, $course);
-        $PAGE->activityheader->disable();
-    } else {
-        $PAGE->set_context($context);
-    }
-
+    $PAGE->set_context($h5pplayer->get_context());
     $PAGE->set_title($h5pplayer->get_title());
     $PAGE->set_heading($h5pplayer->get_title());
 
@@ -94,9 +86,6 @@ if (empty($messages->error) && empty($messages->exception)) {
 
     $PAGE->add_body_class('h5p-embed');
     $PAGE->set_pagelayout('embedded');
-
-    // Load the embed.js to allow communication with the parent window.
-    $PAGE->requires->js(new moodle_url('/h5p/js/embed.js'));
 
     echo $OUTPUT->header();
 

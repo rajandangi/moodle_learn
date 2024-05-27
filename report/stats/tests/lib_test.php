@@ -21,7 +21,6 @@
  * @copyright  2014 onwards Ankit agarwal <ankit.agrr@gmail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later.
  */
-namespace report_stats;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -32,7 +31,7 @@ defined('MOODLE_INTERNAL') || die();
  * @copyright  2014 onwards Ankit agarwal <ankit.agrr@gmail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later.
  */
-class lib_test extends \advanced_testcase {
+class report_stats_lib_testcase extends advanced_testcase {
 
     /**
      * @var stdClass The user.
@@ -49,7 +48,7 @@ class lib_test extends \advanced_testcase {
      */
     private $tree;
 
-    public function setUp(): void {
+    public function setUp() {
         $this->user = $this->getDataGenerator()->create_user();
         $this->course = $this->getDataGenerator()->create_course();
         $this->tree = new \core_user\output\myprofile\tree();
@@ -64,6 +63,7 @@ class lib_test extends \advanced_testcase {
         $allstores = \core_component::get_plugin_list_with_class('logstore', 'log\store');
 
         $supportedstores = array(
+            'logstore_legacy' => '\logstore_legacy\log\store',
             'logstore_standard' => '\logstore_standard\log\store'
         );
 
@@ -87,8 +87,9 @@ class lib_test extends \advanced_testcase {
         set_config('enablestats', true);
 
         report_stats_myprofile_navigation($this->tree, $this->user, $iscurrentuser, $this->course);
-        $reflector = new \ReflectionObject($this->tree);
+        $reflector = new ReflectionObject($this->tree);
         $nodes = $reflector->getProperty('nodes');
+        $nodes->setAccessible(true);
         $this->assertArrayHasKey('stats', $nodes->getValue($this->tree));
     }
 
@@ -103,8 +104,9 @@ class lib_test extends \advanced_testcase {
         set_config('enablestats', false);
 
         report_stats_myprofile_navigation($this->tree, $this->user, $iscurrentuser, $this->course);
-        $reflector = new \ReflectionObject($this->tree);
+        $reflector = new ReflectionObject($this->tree);
         $nodes = $reflector->getProperty('nodes');
+        $nodes->setAccessible(true);
         $this->assertArrayNotHasKey('stats', $nodes->getValue($this->tree));
     }
 
@@ -120,8 +122,9 @@ class lib_test extends \advanced_testcase {
         set_config('enablestats', true);
 
         report_stats_myprofile_navigation($this->tree, $this->user, $iscurrentuser, $this->course);
-        $reflector = new \ReflectionObject($this->tree);
+        $reflector = new ReflectionObject($this->tree);
         $nodes = $reflector->getProperty('nodes');
+        $nodes->setAccessible(true);
         $this->assertArrayNotHasKey('stats', $nodes->getValue($this->tree));
     }
 }

@@ -268,7 +268,7 @@ abstract class persistent extends moodleform {
     /**
      * Return the persistent object associated with this form instance.
      *
-     * @return \core\persistent
+     * @return core\persistent
      */
     final protected function get_persistent() {
         return $this->persistent;
@@ -301,7 +301,7 @@ abstract class persistent extends moodleform {
      * @param  array $files
      * @return array
      */
-    final public function validation($data, $files) {
+    public final function validation($data, $files) {
         $errors = parent::validation($data, $files);
         $data = $this->get_submitted_data();
 

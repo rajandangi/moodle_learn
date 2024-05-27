@@ -22,11 +22,8 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
 define('FLICKR_DEV_KEY', '4fddbdd7ff2376beec54d7f6afad425e');
 define('DEFAULT_NUMBER_OF_PHOTOS', 6);
-
-require_once("{$CFG->libdir}/flickrclient.php");
 
 class block_tag_flickr extends block_base {
 
@@ -101,16 +98,11 @@ class block_tag_flickr extends block_base {
             $request .= '&api_key='.FLICKR_DEV_KEY;
             $request .= '&photoset_id='.$this->config->photoset;
             $request .= '&per_page='.$numberofphotos;
-            $request .= '&format=json';
-            // We need to add nojsoncallback=? here, otherwise, Flickr will return the jsonFlickrApi object.
-            $request .= '&nojsoncallback=?';
+            $request .= '&format=php_serial';
 
             $response = $this->fetch_request($request);
-            $search = @json_decode($response, true);
-            if (!is_array($search) || json_last_error() !== JSON_ERROR_NONE) {
-                // The response didn't appear to be in correct format.
-                return;
-            }
+
+            $search = unserialize($response);
 
             foreach ($search['photoset']['photo'] as $p){
                 $p['owner'] = $search['photoset']['owner'];
@@ -127,16 +119,11 @@ class block_tag_flickr extends block_base {
             $request .= '&tags='.$tagscsv;
             $request .= '&per_page='.$numberofphotos;
             $request .= '&sort='.$sortby;
-            $request .= '&format=json';
-            // We need to add nojsoncallback=? here, otherwise, Flickr will return the jsonFlickrApi object.
-            $request .= '&nojsoncallback=?';
+            $request .= '&format=php_serial';
 
             $response = $this->fetch_request($request);
-            $search = @json_decode($response, true);
-            if (!is_array($search) || json_last_error() !== JSON_ERROR_NONE) {
-                // The response didn't appear to be in correct format.
-                return;
-            }
+
+            $search = unserialize($response);
             $photos = array_values($search['photos']['photo']);
         }
 
@@ -160,17 +147,13 @@ class block_tag_flickr extends block_base {
 
     function fetch_request($request){
         $c =  new curl(array('cache' => true, 'module_cache'=> 'tag_flickr'));
-        // Set custom user agent as Flickr blocks our "MoodleBot" agent string.
-        $c->setopt([
-            'CURLOPT_USERAGENT' => flickr_client::user_agent(),
-        ]);
 
         $response = $c->get($request);
 
         return $response;
     }
 
-    function build_photo_url($photo, $size='medium') {
+    function build_photo_url ($photo, $size='medium') {
         //receives an array (can use the individual photo data returned
         //from an API call) and returns a URL (doesn't mean that the
         //file size exists)

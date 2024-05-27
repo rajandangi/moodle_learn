@@ -22,6 +22,8 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+defined('MOODLE_INTERNAL') || die();
+
 /**
  * Upgrade the plugin.
  *
@@ -29,17 +31,116 @@
  * @return bool always true
  */
 function xmldb_tool_moodlenet_upgrade(int $oldversion) {
-    // Automatically generated Moodle v4.1.0 release upgrade line.
+    global $CFG, $DB;
+    if ($oldversion < 2020060500) {
+
+        // Grab some of the old settings.
+        $categoryname = get_config('tool_moodlenet', 'profile_category');
+        $profilefield = get_config('tool_moodlenet', 'profile_field_name');
+
+        // Master version only!
+
+        // Find out if we have a custom profile field for moodle.net.
+        $sql = "SELECT f.*
+                  FROM {user_info_field} f
+                  JOIN {user_info_category} c ON c.id = f.categoryid and c.name = :categoryname
+                 WHERE f.shortname = :name";
+
+        $params = [
+            'categoryname' => $categoryname,
+            'name' => $profilefield
+        ];
+
+        $record = $DB->get_record_sql($sql, $params);
+
+        if (!empty($record)) {
+            $userentries = $DB->get_recordset('user_info_data', ['fieldid' => $record->id]);
+            $recordstodelete = [];
+            foreach ($userentries as $userentry) {
+                $data = (object) [
+                    'id' => $userentry->userid,
+                    'moodlenetprofile' => $userentry->data
+                ];
+                $DB->update_record('user', $data, true);
+                $recordstodelete[] = $userentry->id;
+            }
+            $userentries->close();
+
+            // Remove the user profile data, fields, and category.
+            $DB->delete_records_list('user_info_data', 'id', $recordstodelete);
+            $DB->delete_records('user_info_field', ['id' => $record->id]);
+            $DB->delete_records('user_info_category', ['name' => $categoryname]);
+            unset_config('profile_field_name', 'tool_moodlenet');
+            unset_config('profile_category', 'tool_moodlenet');
+        }
+
+        upgrade_plugin_savepoint(true, 2020060500, 'tool', 'moodlenet');
+    }
+
+    if ($oldversion < 2020061501) {
+        // Change the domain.
+        $defaultmoodlenet = get_config('tool_moodlenet', 'defaultmoodlenet');
+
+        if ($defaultmoodlenet === 'https://home.moodle.net') {
+            set_config('defaultmoodlenet', 'https://moodle.net', 'tool_moodlenet');
+        }
+
+        // Change the name.
+        $defaultmoodlenetname = get_config('tool_moodlenet', 'defaultmoodlenetname');
+
+        if ($defaultmoodlenetname === 'Moodle HQ MoodleNet') {
+            set_config('defaultmoodlenetname', 'MoodleNet Central', 'tool_moodlenet');
+        }
+
+        upgrade_plugin_savepoint(true, 2020061501, 'tool', 'moodlenet');
+    }
+
+    if ($oldversion < 2020061502) {
+        // Disable the MoodleNet integration by default till further notice.
+        set_config('enablemoodlenet', 0, 'tool_moodlenet');
+
+        upgrade_plugin_savepoint(true, 2020061502, 'tool', 'moodlenet');
+    }
+
+    // Automatically generated Moodle v3.9.0 release upgrade line.
     // Put any upgrade step following this.
 
-    // Automatically generated Moodle v4.2.0 release upgrade line.
-    // Put any upgrade step following this.
+    if ($oldversion < 2020061503) {
 
-    // Automatically generated Moodle v4.3.0 release upgrade line.
-    // Put any upgrade step following this.
+        // Find out if there are users with MoodleNet profiles set.
+        $sql = "SELECT u.*
+                  FROM {user} u
+                 WHERE u.moodlenetprofile IS NOT NULL";
 
-    // Automatically generated Moodle v4.4.0 release upgrade line.
-    // Put any upgrade step following this.
+        $records = $DB->get_records_sql($sql);
+
+        foreach ($records as $record) {
+            // Force clean user value just incase there is something malicious.
+            $record->moodlenetprofile = clean_text($record->moodlenetprofile, PARAM_NOTAGS);
+            $DB->update_record('user', $record);
+        }
+
+        upgrade_plugin_savepoint(true, 2020061503, 'tool', 'moodlenet');
+    }
+
+    if ($oldversion < 2020061504) {
+
+        $selectsql = "moodlenetprofile IS NOT NULL AND moodlenetprofile != ''";
+
+        // If there are any users with MoodleNet profile set.
+        if ($DB->count_records_select('user', $selectsql)) {
+            // Remove the value set for the MoodleNet profile as this format can no longer be used to authenticate
+            // MoodleNet users.
+            $DB->set_field_select('user', 'moodlenetprofile', '', $selectsql);
+
+            // Use an adhoc task to send a notification to admin stating that the user data related to the linked
+            // MoodleNet profiles has been removed.
+            $notificationtask = new tool_moodlenet\task\send_mnet_profiles_data_removed_notification();
+            core\task\manager::queue_adhoc_task($notificationtask);
+        }
+
+        upgrade_plugin_savepoint(true, 2020061504, 'tool', 'moodlenet');
+    }
 
     return true;
 }

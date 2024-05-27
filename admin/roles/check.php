@@ -48,7 +48,7 @@ if ($course) {
 // Security first.
 require_login($course, false, $cm);
 if (!has_any_capability(array('moodle/role:assign', 'moodle/role:safeoverride', 'moodle/role:override', 'moodle/role:manage'), $context)) {
-    throw new \moodle_exception('nopermissions', 'error', '', get_string('checkpermissions', 'core_role'));
+    print_error('nopermissions', 'error', '', get_string('checkpermissions', 'core_role'));
 }
 
 navigation_node::override_active_url($url);
@@ -87,7 +87,6 @@ if ($context->contextlevel == CONTEXT_BLOCK) {
     $PAGE->blocks->show_only_fake_blocks(true);
 }
 $PAGE->set_title($title);
-$PAGE->activityheader->disable();
 
 switch ($context->contextlevel) {
     case CONTEXT_SYSTEM:
@@ -100,7 +99,7 @@ switch ($context->contextlevel) {
         $showroles = 1;
         break;
     case CONTEXT_COURSECAT:
-        core_course_category::page_setup();
+        $PAGE->set_heading($SITE->fullname);
         break;
     case CONTEXT_COURSE:
         if ($isfrontpage) {
@@ -126,12 +125,7 @@ if (!is_null($reportuser)) {
     $rolenames = role_get_names($context);
 }
 
-$PAGE->set_navigation_overflow_state(false);
-
 echo $OUTPUT->header();
-if (in_array($context->contextlevel, [CONTEXT_COURSE, CONTEXT_MODULE, CONTEXT_COURSECAT])) {
-    echo $OUTPUT->render_participants_tertiary_nav($course);
-}
 
 // Print heading.
 echo $OUTPUT->heading($title);
@@ -186,7 +180,7 @@ echo '</form>';
 echo $OUTPUT->box_end();
 
 // Appropriate back link.
-if (!$PAGE->has_secondary_navigation() && $context->contextlevel > CONTEXT_USER) {
+if ($context->contextlevel > CONTEXT_USER) {
     echo html_writer::start_tag('div', array('class'=>'backlink'));
     if ($returnurl) {
         $backurl = new moodle_url($returnurl);

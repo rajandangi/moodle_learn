@@ -22,10 +22,6 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace filter_tex;
-
-use filter_tex;
-
 defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
@@ -40,14 +36,14 @@ require_once($CFG->dirroot . '/filter/tex/filter.php');
  * @copyright  2014 Damyon Wiese
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class filter_test extends \advanced_testcase {
+class filter_tex_testcase extends advanced_testcase {
 
     protected $filter;
 
-    protected function setUp(): void {
+    protected function setUp() {
         parent::setUp();
         $this->resetAfterTest(true);
-        $this->filter = new filter_tex(\context_system::instance(), array());
+        $this->filter = new filter_tex(context_system::instance(), array());
     }
 
     function run_with_delimiters($start, $end, $filtershouldrun) {

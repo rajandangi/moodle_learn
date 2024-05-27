@@ -14,12 +14,18 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace tool_dataprivacy;
-
-use data_privacy_testcase;
+/**
+ * Tests for the data_request persistent.
+ *
+ * @package    tool_dataprivacy
+ * @copyright  2018 Andrew Nicols <andrew@nicols.co.uk>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
 defined('MOODLE_INTERNAL') || die();
 require_once('data_privacy_testcase.php');
+
+use tool_dataprivacy\api;
 
 /**
  * Tests for the data_request persistent.
@@ -28,14 +34,14 @@ require_once('data_privacy_testcase.php');
  * @copyright  2018 Andrew Nicols <andrew@nicols.co.uk>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class data_request_test extends data_privacy_testcase {
+class tool_dataprivacy_data_request_testcase extends data_privacy_testcase {
 
     /**
      * Data provider for testing is_resettable, and is_active.
      *
      * @return  array
      */
-    public function status_state_provider(): array {
+    public function status_state_provider() : array {
         return [
             [
                 'state' => api::DATAREQUEST_STATUS_PENDING,
@@ -138,7 +144,7 @@ class data_request_test extends data_privacy_testcase {
      *
      * @return      array
      */
-    public function non_resettable_provider(): array {
+    public function non_resettable_provider() : array {
         $states = [];
         foreach ($this->status_state_provider() as $thisstatus) {
             if (!$thisstatus['resettable']) {
@@ -221,7 +227,7 @@ class data_request_test extends data_privacy_testcase {
      * @param   int     $status
      * @return  data_request
      */
-    public function create_request_for_user_with_status(int $userid, int $type, int $status): data_request {
+    public function create_request_for_user_with_status(int $userid, int $type, int $status) : data_request {
         $request = new data_request(0, (object) [
                 'userid' => $userid,
                 'type' => $type,

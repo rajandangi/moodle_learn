@@ -13,5 +13,8 @@ Feature: Manually create a user
     Given the following "users" exist:
       | username  | firstname | lastname | email                 |
       | student1  | Student   | 1        | student1@example.com  |
-    When I am on the "student1" "user > editing" page logged in as "admin"
+    When I log in as "admin"
+    And I navigate to "Users > Accounts > Browse list of users" in site administration
+    And I follow "Student 1"
+    And I follow "Edit profile"
     Then I should not see "Preferred language"

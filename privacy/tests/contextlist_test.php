@@ -111,8 +111,8 @@ class contextlist_test extends advanced_testcase {
         $this->assertCount(2, $cl);
 
         $contexts = $cl->get_contextids();
-        $this->assertContainsEquals(\context_user::instance($user1->id)->id, $contexts);
-        $this->assertContainsEquals(\context_user::instance($user2->id)->id, $contexts);
+        $this->assertContains(\context_user::instance($user1->id)->id, $contexts);
+        $this->assertContains(\context_user::instance($user2->id)->id, $contexts);
     }
 
     /**
@@ -127,6 +127,7 @@ class contextlist_test extends advanced_testcase {
 
         $rc = new \ReflectionClass(contextlist::class);
         $rcm = $rc->getMethod('guess_id_field_from_sql');
+        $rcm->setAccessible(true);
         $actual = $rcm->invoke(new contextlist(), $sql);
 
         $this->assertEquals($expected, $actual, 'Unable to guess context id field in: '.$sql);

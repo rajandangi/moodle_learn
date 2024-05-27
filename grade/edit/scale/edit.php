@@ -36,17 +36,20 @@ navigation_node::override_active_url(new moodle_url('/grade/edit/scale/index.php
     array('id' => $courseid)));
 
 $systemcontext = context_system::instance();
+$heading = '';
 
 // a bit complex access control :-O
 if ($id) {
+    $heading = get_string('editscale', 'grades');
+
     /// editing existing scale
     if (!$scale_rec = $DB->get_record('scale', array('id' => $id))) {
-        throw new \moodle_exception('invalidscaleid');
+        print_error('invalidscaleid');
     }
     if ($scale_rec->courseid) {
         $scale_rec->standard = 0;
         if (!$course = $DB->get_record('course', array('id' => $scale_rec->courseid))) {
-            throw new \moodle_exception('invalidcourseid');
+            print_error('invalidcourseid');
         }
         require_login($course);
         $context = context_course::instance($course->id);
@@ -55,7 +58,7 @@ if ($id) {
     } else {
         if ($courseid) {
             if (!$course = $DB->get_record('course', array('id' => $courseid))) {
-                throw new \moodle_exception('invalidcourseid');
+                print_error('invalidcourseid');
             }
         }
         $scale_rec->standard = 1;
@@ -65,9 +68,10 @@ if ($id) {
     }
 
 } else if ($courseid){
+    $heading = get_string('addscale', 'grades');
     /// adding new scale from course
     if (!$course = $DB->get_record('course', array('id' => $courseid))) {
-        throw new \moodle_exception('invalidcourseid');
+        print_error('invalidcourseid');
     }
     $scale_rec = new stdClass();
     $scale_rec->standard = 0;
@@ -88,7 +92,6 @@ if ($id) {
 if (!$courseid) {
     require_once $CFG->libdir.'/adminlib.php';
     admin_externalpage_setup('scales');
-    $PAGE->set_primary_active_tab('siteadminnode');
 }
 
 // default return url
@@ -144,8 +147,6 @@ if ($mform->is_cancelled()) {
     redirect($returnurl);
 }
 
-$heading = $id ? get_string('editscale', 'grades') : get_string('addscale', 'grades');
-$PAGE->navbar->add($heading);
 print_grade_page_head($COURSE->id, 'scale', null, $heading, false, false, false);
 
 $mform->display();

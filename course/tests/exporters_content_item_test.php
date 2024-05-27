@@ -22,7 +22,7 @@
  * @copyright  2020 Jake Dallimore <jrhdallimore@gmail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-namespace core_course;
+namespace tests\core_course;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -35,7 +35,7 @@ use core_course\local\repository\content_item_readonly_repository;
  * @copyright  2020 Jake Dallimore <jrhdallimore@gmail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class exporters_content_item_test extends \advanced_testcase {
+class exporters_course_content_item_testcase extends \advanced_testcase {
 
     /**
      * Test confirming a content_item can be exported for a course.
@@ -54,26 +54,24 @@ class exporters_content_item_test extends \advanced_testcase {
         $renderer = $PAGE->get_renderer('core');
         $exporteditem = $ciexporter->export($renderer);
 
-        $this->assertObjectHasProperty('id', $exporteditem);
+        $this->assertObjectHasAttribute('id', $exporteditem);
         $this->assertEquals($exporteditem->id, $contentitem->get_id());
-        $this->assertObjectHasProperty('name', $exporteditem);
+        $this->assertObjectHasAttribute('name', $exporteditem);
         $this->assertEquals($exporteditem->name, $contentitem->get_name());
-        $this->assertObjectHasProperty('title', $exporteditem);
+        $this->assertObjectHasAttribute('title', $exporteditem);
         $this->assertEquals($exporteditem->title, $contentitem->get_title()->get_value());
-        $this->assertObjectHasProperty('link', $exporteditem);
+        $this->assertObjectHasAttribute('link', $exporteditem);
         $this->assertEquals($exporteditem->link, $contentitem->get_link()->out(false));
-        $this->assertObjectHasProperty('icon', $exporteditem);
+        $this->assertObjectHasAttribute('icon', $exporteditem);
         $this->assertEquals($exporteditem->icon, $contentitem->get_icon());
-        $this->assertObjectHasProperty('help', $exporteditem);
+        $this->assertObjectHasAttribute('help', $exporteditem);
         $this->assertEquals($exporteditem->help, format_text($contentitem->get_help(), FORMAT_MARKDOWN));
-        $this->assertObjectHasProperty('archetype', $exporteditem);
+        $this->assertObjectHasAttribute('archetype', $exporteditem);
         $this->assertEquals($exporteditem->archetype, $contentitem->get_archetype());
-        $this->assertObjectHasProperty('componentname', $exporteditem);
+        $this->assertObjectHasAttribute('componentname', $exporteditem);
         $this->assertEquals($exporteditem->componentname, $contentitem->get_component_name());
-        $this->assertObjectHasProperty('legacyitem', $exporteditem);
+        $this->assertObjectHasAttribute('legacyitem', $exporteditem);
         $this->assertFalse($exporteditem->legacyitem);
-        $this->assertEquals($exporteditem->purpose, $contentitem->get_purpose());
-        $this->assertEquals($exporteditem->branded, $contentitem->is_branded());
     }
 
     /**
@@ -94,32 +92,31 @@ class exporters_content_item_test extends \advanced_testcase {
             '* First point
             * Another point',
             MOD_ARCHETYPE_OTHER,
-            'core_test',
-            MOD_PURPOSE_CONTENT
+            'core_test'
         );
 
         $ciexporter = new course_content_item_exporter($contentitem, ['context' => \context_course::instance($course->id)]);
         $renderer = $PAGE->get_renderer('core');
         $exporteditem = $ciexporter->export($renderer);
 
-        $this->assertObjectHasProperty('id', $exporteditem);
+        $this->assertObjectHasAttribute('id', $exporteditem);
         $this->assertEquals($exporteditem->id, $contentitem->get_id());
-        $this->assertObjectHasProperty('name', $exporteditem);
+        $this->assertObjectHasAttribute('name', $exporteditem);
         $this->assertEquals($exporteditem->name, $contentitem->get_name());
-        $this->assertObjectHasProperty('title', $exporteditem);
+        $this->assertObjectHasAttribute('title', $exporteditem);
         $this->assertEquals($exporteditem->title, $contentitem->get_title()->get_value());
-        $this->assertObjectHasProperty('link', $exporteditem);
+        $this->assertObjectHasAttribute('link', $exporteditem);
         $this->assertEquals($exporteditem->link, $contentitem->get_link()->out(false));
-        $this->assertObjectHasProperty('icon', $exporteditem);
+        $this->assertObjectHasAttribute('icon', $exporteditem);
         $this->assertEquals($exporteditem->icon, $contentitem->get_icon());
-        $this->assertObjectHasProperty('help', $exporteditem);
+        $this->assertObjectHasAttribute('help', $exporteditem);
         $this->assertEquals($exporteditem->help, format_text($contentitem->get_help(), FORMAT_MARKDOWN));
-        $this->assertObjectHasProperty('archetype', $exporteditem);
+        $this->assertObjectHasAttribute('archetype', $exporteditem);
         $this->assertEquals($exporteditem->archetype, $contentitem->get_archetype());
-        $this->assertObjectHasProperty('componentname', $exporteditem);
+        $this->assertObjectHasAttribute('componentname', $exporteditem);
         $this->assertEquals($exporteditem->componentname, $contentitem->get_component_name());
         // Most important, is this a legacy item?
-        $this->assertObjectHasProperty('legacyitem', $exporteditem);
+        $this->assertObjectHasAttribute('legacyitem', $exporteditem);
         $this->assertTrue($exporteditem->legacyitem);
     }
 }

@@ -42,7 +42,7 @@ class user_profile_set extends \core_analytics\local\indicator\linear {
      *
      * @return \lang_string
      */
-    public static function get_name(): \lang_string {
+    public static function get_name() : \lang_string {
         return new \lang_string('indicator:completeduserprofile');
     }
 
@@ -72,7 +72,8 @@ class user_profile_set extends \core_analytics\local\indicator\linear {
         // Nothing set results in -1.
         $calculatedvalue = self::MIN_VALUE;
 
-        if (\core_user::awaiting_action($user)) {
+        $sitepolicymanager = new \core_privacy\local\sitepolicy\manager();
+        if ($sitepolicymanager->is_defined() && !$user->policyagreed) {
             return self::MIN_VALUE;
         }
 
@@ -89,7 +90,7 @@ class user_profile_set extends \core_analytics\local\indicator\linear {
         }
 
         // 0.2 for any of the following fields being set (some of them may even be compulsory or have a default).
-        $fields = array('institution', 'department', 'address', 'city', 'country');
+        $fields = array('institution', 'department', 'address', 'city', 'country', 'url');
         foreach ($fields as $fieldname) {
             if ($user->{$fieldname} != '') {
                 $calculatedvalue += 0.2;

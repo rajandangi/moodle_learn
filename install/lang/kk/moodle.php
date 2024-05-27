@@ -30,6 +30,5 @@
 defined('MOODLE_INTERNAL') || die();
 
 $string['language'] = 'Тіл';
-$string['moodlelogo'] = 'Moodle логотипі';
 $string['next'] = 'Келесі';
 $string['previous'] = 'Алдыңғы';

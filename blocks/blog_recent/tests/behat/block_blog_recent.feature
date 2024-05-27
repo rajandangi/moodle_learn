@@ -16,12 +16,13 @@ Feature: Feature: Users can use the recent blog entries block to view recent blo
       | teacher1 | C1 | editingteacher |
 
   Scenario: Add the recent blogs block to a course when blogs are disabled
-    Given I log in as "teacher1"
-    And I am on "Course 1" course homepage with editing mode on
-    When I add the "Recent blog entries" block
+    Given I log in as "admin"
     And the following config values are set as admin:
       | enableblogs | 0 |
-    And I reload the page
+    And I log out
+    And I log in as "teacher1"
+    And I am on "Course 1" course homepage with editing mode on
+    When I add the "Recent blog entries" block
     Then I should see "Blogging is disabled!" in the "Recent blog entries" "block"
 
   Scenario: Add the recent blogs block to a course when there are not any blog posts

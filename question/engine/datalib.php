@@ -149,7 +149,6 @@ class question_engine_data_mapper {
 
     /**
      * Helper method used by insert_question_attempt_step and update_question_attempt_step
-     *
      * @param question_attempt_step $step the step to store.
      * @param int $questionattemptid the question attept id this step belongs to.
      * @param int $seq the sequence number of this stop.
@@ -159,7 +158,7 @@ class question_engine_data_mapper {
         $record = new stdClass();
         $record->questionattemptid = $questionattemptid;
         $record->sequencenumber = $seq;
-        $record->state = $step->get_state()?->__toString();
+        $record->state = (string) $step->get_state();
         $record->fraction = $step->get_fraction();
         $record->timecreated = $step->get_timecreated();
         $record->userid = $step->get_user_id();
@@ -561,9 +560,7 @@ ORDER BY
      * @return array of records. See the SQL in this function to see the fields available.
      */
     public function load_questions_usages_latest_steps(qubaid_condition $qubaids, $slots = null, $fields = null) {
-        if ($slots === []) {
-            return [];
-        } else if ($slots !== null) {
+        if ($slots !== null) {
             [$slottest, $params] = $this->db->get_in_or_equal($slots, SQL_PARAMS_NAMED, 'slot');
             $slotwhere = " AND qa.slot {$slottest}";
         } else {
@@ -716,29 +713,24 @@ ORDER BY
      * @param int $limitfrom implements paging of the results.
      *      Ignored if $orderby = random or $limitnum is null.
      * @param int $limitnum implements paging of the results. null = all.
-     * @param string $extraselect anything passed here will be added to the SELECT list, use this to return extra data.
      * @return array with two elements, an array of usage ids, and a count of the total number.
      */
     public function load_questions_usages_where_question_in_state(
             qubaid_condition $qubaids, $summarystate, $slot, $questionid = null,
-            $orderby = 'random', $params = array(), $limitfrom = 0, $limitnum = null, $extraselect = '') {
+            $orderby = 'random', $params = array(), $limitfrom = 0, $limitnum = null) {
 
         $extrawhere = '';
         if ($questionid) {
             $extrawhere .= ' AND qa.questionid = :questionid';
             $params['questionid'] = $questionid;
         }
-        if ($summarystate !== 'all') {
+        if ($summarystate != 'all') {
             list($test, $sparams) = $this->in_summary_state_test($summarystate);
             $extrawhere .= ' AND qas.state ' . $test;
             $params += $sparams;
         }
 
-        if (!empty($extraselect)) {
-            $extraselect = ', ' . $extraselect;
-        }
-
-        if ($orderby === 'random') {
+        if ($orderby == 'random') {
             $sqlorderby = '';
         } else if ($orderby) {
             $sqlorderby = 'ORDER BY ' . $orderby;
@@ -755,24 +747,29 @@ ORDER BY
         $qubaidswhere = $qubaids->where(); // Must call this before params.
         $params += $qubaids->from_where_params();
         $params['slot'] = $slot;
-        $sql = "SELECT qa.questionusageid,
-                       1
-                       $extraselect
-                  FROM {$qubaids->from_question_attempts('qa')}
-                  JOIN {question_attempt_steps} qas ON qas.questionattemptid = qa.id
-                   AND qas.sequencenumber = {$this->latest_step_for_qa_subquery()}
-                  JOIN {question} q ON q.id = qa.questionid
-                 WHERE {$qubaidswhere}
-                   AND qa.slot = :slot
-                       $extrawhere
-                       $sqlorderby";
 
-        $qubaids = $this->db->get_records_sql_menu($sql, $params);
+        $qubaids = $this->db->get_records_sql_menu("
+SELECT
+    qa.questionusageid,
+    1
+
+FROM {$qubaids->from_question_attempts('qa')}
+JOIN {question_attempt_steps} qas ON qas.questionattemptid = qa.id
+        AND qas.sequencenumber = {$this->latest_step_for_qa_subquery()}
+JOIN {question} q ON q.id = qa.questionid
+
+WHERE
+    {$qubaidswhere} AND
+    qa.slot = :slot
+    $extrawhere
+
+$sqlorderby
+        ", $params);
 
         $qubaids = array_keys($qubaids);
         $count = count($qubaids);
 
-        if ($orderby === 'random') {
+        if ($orderby == 'random') {
             shuffle($qubaids);
             $limitfrom = 0;
         }
@@ -941,7 +938,6 @@ ORDER BY
         $record = new stdClass();
         $record->id = $qa->get_database_id();
         $record->slot = $qa->get_slot();
-        $record->questionid = $qa->get_question(false)->id;
         $record->variant = $qa->get_variant();
         $record->maxmark = $qa->get_max_mark();
         $record->minfraction = $qa->get_min_fraction();
@@ -1176,11 +1172,11 @@ ORDER BY
     }
 
     /**
-     * Return a sub-query that computes the sum of the marks for all the questions
-     * in a usage. Which usage to compute the sum for is controlled by the $qubaid
+     * Return a subquery that computes the sum of the marks for all the questions
+     * in a usage. Which useage to compute the sum for is controlled bu the $qubaid
      * parameter.
      *
-     * See {@see \mod_quiz\grade_calculator::recompute_all_attempt_sumgrades()} for an example of the usage of
+     * See {@link quiz_update_all_attempt_sumgrades()} for an example of the usage of
      * this method.
      *
      * This method may be called publicly.
@@ -1213,7 +1209,7 @@ ORDER BY
     /**
      * Get a subquery that returns the latest step of every qa in some qubas.
      * Currently, this is only used by the quiz reports. See
-     * {@see \mod_quiz\local\reports\attempts_report_table::add_latest_state_join()}.
+     * {@link quiz_attempts_report_table::add_latest_state_join()}.
      *
      * This method may be called publicly.
      *
@@ -1252,13 +1248,7 @@ ORDER BY
             ) {$alias}", $qubaids->from_where_params());
     }
 
-    /**
-     * Get the subquery which selects the latest step for each question_attempt.
-     *
-     * @param string $questionattemptid column alias for the column to join on which is question_attempt.id.
-     * @return string SQL fragment to include in the query. Has not placeholders.
-     */
-    public function latest_step_for_qa_subquery($questionattemptid = 'qa.id') {
+    protected function latest_step_for_qa_subquery($questionattemptid = 'qa.id') {
         return "(
                 SELECT MAX(sequencenumber)
                 FROM {question_attempt_steps}
@@ -1683,13 +1673,13 @@ class question_file_saver implements question_response_files {
      *
      * @param int $draftitemid the draft area to save the files from.
      * @param string $component the component for the file area to save into.
-     * @param string $uncleanedfilearea the name of the file area to save into - but before it has been cleaned up.
+     * @param string $filearea the name of the file area to save into.
      * @param string $text optional content containing file links.
      */
-    public function __construct($draftitemid, $component, $uncleanedfilearea, $text = null) {
+    public function __construct($draftitemid, $component, $filearea, $text = null) {
         $this->draftitemid = $draftitemid;
         $this->component = $component;
-        $this->filearea = self::clean_file_area_name($uncleanedfilearea);
+        $this->filearea = $filearea;
         $this->value = $this->compute_value($draftitemid, $text);
     }
 
@@ -1751,29 +1741,6 @@ class question_file_saver implements question_response_files {
     public function save_files($itemid, $context) {
         file_save_draft_area_files($this->draftitemid, $context->id,
                 $this->component, $this->filearea, $itemid);
-    }
-
-    /**
-     * Clean up a possible file area name to ensure that it matches the required rules.
-     *
-     * @param string $uncleanedfilearea the proposed file area name (e.g. 'response_-attachments').
-     * @return string a similar valid file area name. E.g: response_attachments.
-     */
-    public static function clean_file_area_name(string $uncleanedfilearea): string {
-        $filearea = $uncleanedfilearea;
-        if ($filearea !== clean_param($filearea, PARAM_AREA)) {
-            // Only lowercase ascii letters, numbers and underscores are allowed.
-            // Remove the invalid character in the filearea string.
-            $filearea = preg_replace('~[^a-z0-9_]~', '', core_text::strtolower($filearea));
-            // Replace multiple underscore to a single underscore.
-            $filearea = preg_replace('~_+~', '_', $filearea);
-            // If, after attempted cleaning, the filearea is not valid, throw a clear error to avoid subtle bugs.
-            if ($filearea !== clean_param($filearea, PARAM_AREA)) {
-                throw new coding_exception('Name ' . $filearea .
-                    ' cannot be used with question_file_saver because it does not match the rules for file area names');
-            }
-        }
-        return $filearea;
     }
 
     /**
@@ -1906,27 +1873,27 @@ abstract class qubaid_condition {
      * @param string $alias
      * @return string SQL fragment.
      */
-    abstract public function from_question_attempts($alias);
+    public abstract function from_question_attempts($alias);
 
     /** @return string the SQL that needs to go in the where clause. */
-    abstract public function where();
+    public abstract function where();
 
     /**
      * @return array the params needed by a query that uses
      * {@link from_question_attempts()} and {@link where()}.
      */
-    abstract public function from_where_params();
+    public abstract function from_where_params();
 
     /**
      * @return string SQL that can use used in a WHERE qubaid IN (...) query.
      * This method returns the "IN (...)" part.
      */
-    abstract public function usage_id_in();
+    public abstract function usage_id_in();
 
     /**
      * @return array the params needed by a query that uses {@link usage_id_in()}.
      */
-    abstract public function usage_id_in_params();
+    public abstract function usage_id_in_params();
 
     /**
      * @return string 40-character hash code that uniquely identifies the combination of properties and class name of this qubaid

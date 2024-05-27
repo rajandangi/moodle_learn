@@ -32,9 +32,10 @@ use mod_forum\local\entities\post as post_entity;
 use mod_forum\local\factories\legacy_data_mapper as legacy_data_mapper_factory;
 use mod_forum\local\factories\exporter as exporter_factory;
 use mod_forum\local\factories\vault as vault_factory;
-use mod_forum\local\factories\manager as manager_factory;
+use context;
 use core_tag_tag;
 use moodle_exception;
+use rating_manager;
 use renderer_base;
 use stdClass;
 
@@ -71,9 +72,6 @@ class exported_posts {
     /** @var rating_manager $ratingmanager Rating manager */
     private $ratingmanager;
 
-    /** @var manager_factory $managerfactory Manager factory */
-    private $managerfactory;
-
     /**
      * Constructor.
      *
@@ -81,21 +79,20 @@ class exported_posts {
      * @param legacy_data_mapper_factory $legacydatamapperfactory Legacy data mapper factory
      * @param exporter_factory $exporterfactory Exporter factory
      * @param vault_factory $vaultfactory Vault factory
-     * @param manager_factory $managerfactory Manager factory
+     * @param rating_manager $ratingmanager Rating manager
      */
     public function __construct(
         renderer_base $renderer,
         legacy_data_mapper_factory $legacydatamapperfactory,
         exporter_factory $exporterfactory,
         vault_factory $vaultfactory,
-        manager_factory $managerfactory
+        rating_manager $ratingmanager
     ) {
         $this->renderer = $renderer;
         $this->legacydatamapperfactory = $legacydatamapperfactory;
         $this->exporterfactory = $exporterfactory;
         $this->vaultfactory = $vaultfactory;
-        $this->managerfactory = $managerfactory;
-        $this->ratingmanager = $managerfactory->get_rating_manager();
+        $this->ratingmanager = $ratingmanager;
     }
 
     /**
@@ -117,16 +114,14 @@ class exported_posts {
      * @param forum_entity[] $forums A list of all forums that each of the $discussions belong to
      * @param discussion_entity[] $discussions A list of all discussions that each of the $posts belong to
      * @param post_entity[] $posts The list of posts to export.
-     * @param bool $includeinlineattachments Whether inline attachments should be included or not.
      * @return stdClass[] List of exported posts in the same order as the $posts array.
      */
     public function build(
         stdClass $user,
         array $forums,
         array $discussions,
-        array $posts,
-        bool $includeinlineattachments = false
-    ): array {
+        array $posts
+    ) : array {
         // Format the forums and discussion to make them more easily accessed later.
         $forums = array_reduce($forums, function($carry, $forum) {
             $carry[$forum->get_id()] = $forum;
@@ -144,10 +139,6 @@ class exported_posts {
         $authorsbyid = $this->get_authors_for_posts($posts);
         $authorcontextids = $this->get_author_context_ids(array_keys($authorsbyid));
         $attachmentsbypostid = $this->get_attachments_for_posts($groupedposts);
-        $inlineattachments = [];
-        if ($includeinlineattachments) {
-            $inlineattachments = $this->get_inline_attachments_for_posts($groupedposts);
-        }
         $groupsbycourseandauthorid = $this->get_author_groups_from_posts($groupedposts);
         $tagsbypostid = $this->get_tags_from_posts($posts);
         $ratingbypostid = $this->get_ratings_from_posts($user, $groupedposts);
@@ -163,12 +154,6 @@ class exported_posts {
                 'posts' => $groupedposts
             ] = $grouping;
 
-            // Exclude posts the user cannot see, such as certain posts in Q and A forums.
-            $capabilitymanager = $this->managerfactory->get_capability_manager($forum);
-            $groupedposts = array_filter($groupedposts, function($post) use ($capabilitymanager, $user, $discussion) {
-                return $capabilitymanager->can_view_post($user, $discussion, $post);
-            });
-
             $forumid = $forum->get_id();
             $courseid = $forum->get_course_record()->id;
             $postsexporter = $this->exporterfactory->get_posts_exporter(
@@ -183,8 +168,7 @@ class exported_posts {
                 $readreceiptcollectionbyforumid[$forumid] ?? null,
                 $tagsbypostid,
                 $ratingbypostid,
-                true,
-                $inlineattachments
+                true
             );
             ['posts' => $exportedgroupedposts] = (array) $postsexporter->export($this->renderer);
             $exportedposts = array_merge($exportedposts, $exportedgroupedposts);
@@ -225,7 +209,7 @@ class exported_posts {
      * @param post_entity[] $posts The list of posts to process.
      * @return array List of grouped posts. Each group has a discussion, forum, and posts.
      */
-    private function group_posts_by_discussion(array $forums, array $discussions, array $posts): array {
+    private function group_posts_by_discussion(array $forums, array $discussions, array $posts) : array {
         return array_reduce($posts, function($carry, $post) use ($forums, $discussions) {
             $discussionid = $post->get_discussion_id();
             if (!isset($discussions[$discussionid])) {
@@ -261,7 +245,7 @@ class exported_posts {
      * @param post_entity[] $posts The list of posts to process.
      * @return author_entity[]
      */
-    private function get_authors_for_posts(array $posts): array {
+    private function get_authors_for_posts(array $posts) : array {
         $authorvault = $this->vaultfactory->get_author_vault();
         return $authorvault->get_authors_for_posts($posts);
     }
@@ -272,47 +256,9 @@ class exported_posts {
      * @param int[] $authorids The list of author ids to fetch context ids for.
      * @return int[] Context ids indexed by author id
      */
-    private function get_author_context_ids(array $authorids): array {
+    private function get_author_context_ids(array $authorids) : array {
         $authorvault = $this->vaultfactory->get_author_vault();
         return $authorvault->get_context_ids_for_author_ids($authorids);
-    }
-
-    /**
-     * Load the list of all inline attachments for the posts. The list of attachments will be
-     * indexed by the post id.
-     *
-     * @param array $groupedposts List of posts grouped by discussions.
-     * @return stored_file[]
-     */
-    private function get_inline_attachments_for_posts(array $groupedposts): array {
-        $inlineattachmentsbypostid = [];
-        $postattachmentvault = $this->vaultfactory->get_post_attachment_vault();
-        $postsbyforum = array_reduce($groupedposts, function($carry, $grouping) {
-            ['forum' => $forum, 'posts' => $posts] = $grouping;
-
-            $forumid = $forum->get_id();
-            if (!isset($carry[$forumid])) {
-                $carry[$forumid] = [
-                    'forum' => $forum,
-                    'posts' => []
-                ];
-            }
-
-            $carry[$forumid]['posts'] = array_merge($carry[$forumid]['posts'], $posts);
-            return $carry;
-        }, []);
-
-        foreach ($postsbyforum as $grouping) {
-            ['forum' => $forum, 'posts' => $posts] = $grouping;
-            $inlineattachments = $postattachmentvault->get_inline_attachments_for_posts($forum->get_context(), $posts);
-
-            // Have to loop in order to maintain the correct indexes since they are numeric.
-            foreach ($inlineattachments as $postid => $attachment) {
-                $inlineattachmentsbypostid[$postid] = $attachment;
-            }
-        }
-
-        return $inlineattachmentsbypostid;
     }
 
     /**
@@ -322,7 +268,7 @@ class exported_posts {
      * @param array $groupedposts List of posts grouped by discussions.
      * @return stored_file[]
      */
-    private function get_attachments_for_posts(array $groupedposts): array {
+    private function get_attachments_for_posts(array $groupedposts) : array {
         $attachmentsbypostid = [];
         $postattachmentvault = $this->vaultfactory->get_post_attachment_vault();
         $postsbyforum = array_reduce($groupedposts, function($carry, $grouping) {
@@ -363,7 +309,7 @@ class exported_posts {
      * @param array $groupedposts List of posts grouped by discussions.
      * @return array List of groups indexed by forum id and then author id.
      */
-    private function get_author_groups_from_posts(array $groupedposts): array {
+    private function get_author_groups_from_posts(array $groupedposts) : array {
         $groupsbyauthorid = [];
         $authoridsbycourseid = [];
 
@@ -432,7 +378,7 @@ class exported_posts {
      * @param post_entity[] $posts The list of posts to load tags for.
      * @return array Sets of tags indexed by post id.
      */
-    private function get_tags_from_posts(array $posts): array {
+    private function get_tags_from_posts(array $posts) : array {
         $postids = array_map(function($post) {
             return $post->get_id();
         }, $posts);

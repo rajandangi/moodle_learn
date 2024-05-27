@@ -17,6 +17,8 @@
  * Enrolled user selector module.
  *
  * @module     mod_forum/form-user-selector
+ * @class      form-user-selector
+ * @package    mod_forum
  * @copyright  2019 Shamim Rezaie
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -37,7 +39,6 @@ define(['jquery', 'core/ajax', 'core/templates'], function($, Ajax, Templates) {
         transport: function(selector, query, success, failure) {
             var promise;
             var courseid = $(selector).attr('courseid');
-            var contextid = $(selector).attr('data-contextid');
 
             promise = Ajax.call([{
                 methodname: 'core_enrol_search_users',
@@ -46,8 +47,7 @@ define(['jquery', 'core/ajax', 'core/templates'], function($, Ajax, Templates) {
                     search: query,
                     searchanywhere: true,
                     page: 0,
-                    perpage: 30,
-                    contextid: contextid,
+                    perpage: 30
                 }
             }]);
 

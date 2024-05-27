@@ -14,10 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace filter_mathjaxloader;
-
-use filter_mathjaxloader;
-
 defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
@@ -31,7 +27,7 @@ require_once($CFG->dirroot.'/filter/mathjaxloader/filter.php');
  * @copyright 2017 David Mudrak <david@moodle.com>
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class filter_test extends \advanced_testcase {
+class filter_mathjaxloader_filter_testcase extends advanced_testcase {
 
     /**
      * Test the functionality of {@link filter_mathjaxloader::map_language_code()}.
@@ -43,7 +39,7 @@ class filter_test extends \advanced_testcase {
      */
     public function test_map_language_code($moodlelangcode, $mathjaxlangcode) {
 
-        $filter = new filter_mathjaxloader(\context_system::instance(), []);
+        $filter = new filter_mathjaxloader(context_system::instance(), []);
         $this->assertEquals($mathjaxlangcode, $filter->map_language_code($moodlelangcode));
     }
 

@@ -14,7 +14,16 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace core_form;
+/**
+ * Unit tests for MoodleQuickForm_course.
+ *
+ * This file contains unit tests related to course forms element.
+ *
+ * @package     core_form
+ * @category    test
+ * @copyright   2020 Ruslan Kabalin
+ * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -31,7 +40,7 @@ require_once($CFG->libdir . '/form/course.php');
  * @copyright  2020 Ruslan Kabalin
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class course_test extends \basic_testcase {
+class core_form_course_testcase extends basic_testcase {
 
     /**
      * Test constructor supports all declared attributes.
@@ -42,14 +51,14 @@ class course_test extends \basic_testcase {
             'requiredcapabilities' => ['moodle/course:update'],
         ];
 
-        $element = new \MoodleQuickForm_course('testel', null, $attributes);
+        $element = new MoodleQuickForm_course('testel', null, $attributes);
         $html = $element->toHtml();
-        $this->assertStringContainsString('data-exclude="1,2"', $html);
-        $this->assertStringContainsString('data-requiredcapabilities="moodle/course:update"', $html);
-        $this->assertStringContainsString('data-limittoenrolled="0"', $html);
-        $this->assertStringNotContainsString('multiple', $html);
-        $this->assertStringNotContainsString('data-includefrontpage', $html);
-        $this->assertStringNotContainsString('data-onlywithcompletion', $html);
+        $this->assertContains('data-exclude="1,2"', $html);
+        $this->assertContains('data-requiredcapabilities="moodle/course:update"', $html);
+        $this->assertContains('data-limittoenrolled="0"', $html);
+        $this->assertNotContains('multiple', $html);
+        $this->assertNotContains('data-includefrontpage', $html);
+        $this->assertNotContains('data-onlywithcompletion', $html);
 
         // Add more attributes.
         $attributes = [
@@ -58,11 +67,11 @@ class course_test extends \basic_testcase {
             'includefrontpage' => true,
             'onlywithcompletion' => true,
         ];
-        $element = new \MoodleQuickForm_course('testel', null, $attributes);
+        $element = new MoodleQuickForm_course('testel', null, $attributes);
         $html = $element->toHtml();
-        $this->assertStringContainsString('multiple', $html);
-        $this->assertStringContainsString('data-limittoenrolled="1"', $html);
-        $this->assertStringContainsString('data-includefrontpage="' . SITEID . '"', $html);
-        $this->assertStringContainsString('data-onlywithcompletion="1"', $html);
+        $this->assertContains('multiple', $html);
+        $this->assertContains('data-limittoenrolled="1"', $html);
+        $this->assertContains('data-includefrontpage="' . SITEID . '"', $html);
+        $this->assertContains('data-onlywithcompletion="1"', $html);
     }
 }

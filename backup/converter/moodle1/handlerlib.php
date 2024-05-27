@@ -867,9 +867,7 @@ class moodle1_course_outline_handler extends moodle1_xml_handler {
             $plugin->version = null;
             $module = $plugin;
             include($versionfile);
-            // Have to hardcode - since quiz uses some hardcoded version numbers when restoring.
-            // This is the lowest number used minus one.
-            $data['version'] = 2011010099;
+            $data['version'] = $plugin->version;
         } else {
             $data['version'] = null;
         }

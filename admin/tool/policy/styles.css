@@ -9,13 +9,9 @@
     display: none;
     z-index: 9999999;
 }
-.eupopup-container .eupopup-body a {
-    color: #fff;
-    text-decoration: underline;
-}
 
 .behat-site .eupopup-container-bottom {
-    position: absolute;
+    position: relative;
 }
 
 .eupopup-container-bottom {

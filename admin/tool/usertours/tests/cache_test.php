@@ -14,7 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace tool_usertours;
+/**
+ * Tests for cache.
+ *
+ * @package    tool_usertours
+ * @copyright  2016 Andrew Nicols <andrew@nicols.co.uk>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -27,16 +33,15 @@ require_once(__DIR__ . '/helper_trait.php');
  * @package    tool_usertours
  * @copyright  2016 Andrew Nicols <andrew@nicols.co.uk>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers    \tool_usertours\cache
  */
-class cache_test extends \advanced_testcase {
+class cache_testcase extends advanced_testcase {
     // There are shared helpers for these tests in the helper trait.
-    use \tool_usertours_helper_trait;
+    use tool_usertours_helper_trait;
 
     /**
      * Test that get_enabled_tourdata does not return disabled tours.
      */
-    public function test_get_enabled_tourdata_disabled(): void {
+    public function test_get_enabled_tourdata_disabled() {
         $this->resetAfterTest();
 
         $tour = $this->helper_create_tour((object)['enabled' => false]);
@@ -49,7 +54,7 @@ class cache_test extends \advanced_testcase {
     /**
      * Test that get_enabled_tourdata does not return an enabled but empty tour.
      */
-    public function test_get_enabled_tourdata_enabled_no_steps(): void {
+    public function test_get_enabled_tourdata_enabled_no_steps() {
         $this->resetAfterTest();
 
         $this->helper_create_tour();
@@ -61,7 +66,7 @@ class cache_test extends \advanced_testcase {
     /**
      * Test that get_enabled_tourdata returns a tour with steps.
      */
-    public function test_get_enabled_tourdata_enabled(): void {
+    public function test_get_enabled_tourdata_enabled() {
         $this->resetAfterTest();
 
         // Create two tours. Only the second has steps.
@@ -80,7 +85,7 @@ class cache_test extends \advanced_testcase {
     /**
      * Test that get_enabled_tourdata returns tours in the correct sortorder
      */
-    public function test_get_enabled_tourdata_enabled_sortorder(): void {
+    public function test_get_enabled_tourdata_enabled_sortorder() {
         $this->resetAfterTest();
 
         $tour1 = $this->helper_create_tour();
@@ -101,7 +106,7 @@ class cache_test extends \advanced_testcase {
     /**
      * Test that caching prevents additional DB reads.
      */
-    public function test_get_enabled_tourdata_single_fetch(): void {
+    public function test_get_enabled_tourdata_single_fetch() {
         global $DB;
 
         $this->resetAfterTest();
@@ -119,6 +124,7 @@ class cache_test extends \advanced_testcase {
         // No subsequent reads for any further calls.
         $matches = \tool_usertours\cache::get_enabled_tourdata();
         $this->assertEquals(1, $DB->perf_get_reads() - $startreads);
+
     }
 
     /**
@@ -126,31 +132,31 @@ class cache_test extends \advanced_testcase {
      *
      * @return  array
      */
-    public static function get_matching_tourdata_provider(): array {
+    public function get_matching_tourdata_provider() {
         $tourconfigs = [
             (object) [
                 'name' => 'my_exact_1',
-                'pathmatch' => '/my/view.php',
+                'pathmatch' => '/my/view.php'
             ],
             (object) [
                 'name' => 'my_failed_regex',
-                'pathmatch' => '/my/*.php',
+                'pathmatch' => '/my/*.php'
             ],
             (object) [
                 'name' => 'my_glob_1',
-                'pathmatch' => '/my/%',
+                'pathmatch' => '/my/%'
             ],
             (object) [
                 'name' => 'my_glob_2',
-                'pathmatch' => '/my/%',
+                'pathmatch' => '/my/%'
             ],
             (object) [
                 'name' => 'frontpage_only',
-                'pathmatch' => 'FRONTPAGE',
+                'pathmatch' => 'FRONTPAGE'
             ],
             (object) [
                 'name' => 'frontpage_match',
-                'pathmatch' => '/?%',
+                'pathmatch' => '/?%'
             ],
         ];
 
@@ -186,14 +192,14 @@ class cache_test extends \advanced_testcase {
      * @param   string  $targetmatch    The match to be tested
      * @param   array   $expected       An array containing the ordered names of the expected tours
      */
-    public function test_get_matching_tourdata($tourconfigs, $targetmatch, $expected): void {
+    public function test_get_matching_tourdata($tourconfigs, $targetmatch, $expected) {
         $this->resetAfterTest();
         foreach ($tourconfigs as $tourconfig) {
             $tour = $this->helper_create_tour($tourconfig);
             $this->helper_create_step((object) ['tourid' => $tour->get_id()]);
         }
 
-        $matches = \tool_usertours\cache::get_matching_tourdata(new \moodle_url($targetmatch));
+        $matches = \tool_usertours\cache::get_matching_tourdata(new moodle_url($targetmatch));
         $this->assertCount(count($expected), $matches);
 
         for ($i = 0; $i < count($matches); $i++) {
@@ -205,7 +211,7 @@ class cache_test extends \advanced_testcase {
     /**
      * Test that notify_tour_change clears the cache.
      */
-    public function test_notify_tour_change(): void {
+    public function test_notify_tour_change() {
         global $DB;
 
         $this->resetAfterTest();
@@ -236,20 +242,20 @@ class cache_test extends \advanced_testcase {
     /**
      * Test that get_stepdata returns an empty array when no steps were found.
      */
-    public function test_get_stepdata_no_steps(): void {
+    public function test_get_stepdata_no_steps() {
         $this->resetAfterTest();
 
         $tour = $this->helper_create_tour((object)['enabled' => false]);
 
         $data = \tool_usertours\cache::get_stepdata($tour->get_id());
-        $this->assertIsArray($data);
+        $this->assertInternalType('array', $data);
         $this->assertEmpty($data);
     }
 
     /**
      * Test that get_stepdata returns an empty array when no steps were found.
      */
-    public function test_get_stepdata_correct_tour(): void {
+    public function test_get_stepdata_correct_tour() {
         $this->resetAfterTest();
 
         $tour1 = $this->helper_create_tour((object)['enabled' => false]);
@@ -259,11 +265,11 @@ class cache_test extends \advanced_testcase {
         $tour2 = $this->helper_create_tour((object)['enabled' => false]);
 
         $data = \tool_usertours\cache::get_stepdata($tour1->get_id());
-        $this->assertIsArray($data);
+        $this->assertInternalType('array', $data);
         $this->assertCount(3, $data);
 
         $data = \tool_usertours\cache::get_stepdata($tour2->get_id());
-        $this->assertIsArray($data);
+        $this->assertInternalType('array', $data);
         $this->assertEmpty($data);
     }
 
@@ -274,7 +280,7 @@ class cache_test extends \advanced_testcase {
      * This is very difficult to determine because the act of changing the
      * order will likely change the DB natural sorting.
      */
-    public function test_get_stepdata_ordered_steps(): void {
+    public function test_get_stepdata_ordered_steps() {
         $this->resetAfterTest();
 
         $tour = $this->helper_create_tour((object)['enabled' => false]);
@@ -286,11 +292,11 @@ class cache_test extends \advanced_testcase {
         $steps[0]->set_sortorder(10)->persist();
 
         $data = \tool_usertours\cache::get_stepdata($tour->get_id());
-        $this->assertIsArray($data);
+        $this->assertInternalType('array', $data);
         $this->assertCount(4, $data);
 
         // Re-order the steps.
-        usort($steps, function ($a, $b) {
+        usort($steps, function($a, $b) {
             return ($a->get_sortorder() < $b->get_sortorder()) ? -1 : 1;
         });
 
@@ -303,7 +309,7 @@ class cache_test extends \advanced_testcase {
     /**
      * Test that caching prevents additional DB reads.
      */
-    public function test_get_stepdata_single_fetch(): void {
+    public function test_get_stepdata_single_fetch() {
         global $DB;
 
         $this->resetAfterTest();
@@ -324,7 +330,7 @@ class cache_test extends \advanced_testcase {
     /**
      * Test that notify_step_change clears the cache.
      */
-    public function test_notify_step_change(): void {
+    public function test_notify_step_change() {
         global $DB;
 
         $this->resetAfterTest();

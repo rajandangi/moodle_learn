@@ -23,7 +23,6 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @since      Moodle 3.0
  */
-namespace mod_resource;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -37,13 +36,13 @@ defined('MOODLE_INTERNAL') || die();
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @since      Moodle 3.0
  */
-class lib_test extends \advanced_testcase {
+class mod_resource_lib_testcase extends advanced_testcase {
 
     /**
      * Prepares things before this test case is initialised
      * @return void
      */
-    public static function setUpBeforeClass(): void {
+    public static function setUpBeforeClass() {
         global $CFG;
         require_once($CFG->dirroot . '/mod/resource/lib.php');
     }
@@ -63,7 +62,7 @@ class lib_test extends \advanced_testcase {
         $course = $this->getDataGenerator()->create_course(array('enablecompletion' => 1));
         $resource = $this->getDataGenerator()->create_module('resource', array('course' => $course->id),
                                                             array('completion' => 2, 'completionview' => 1));
-        $context = \context_module::instance($resource->cmid);
+        $context = context_module::instance($resource->cmid);
         $cm = get_coursemodule_from_instance('resource', $resource->id);
 
         // Trigger and capture the event.
@@ -85,7 +84,7 @@ class lib_test extends \advanced_testcase {
         $this->assertNotEmpty($event->get_name());
 
         // Check completion status.
-        $completion = new \completion_info($course);
+        $completion = new completion_info($course);
         $completiondata = $completion->get_data($cm);
         $this->assertEquals(1, $completiondata->completionstate);
 
@@ -113,7 +112,7 @@ class lib_test extends \advanced_testcase {
 
         // Create a resource with one file.
         $draftid = file_get_unused_draft_itemid();
-        $contextid = \context_user::instance($USER->id)->id;
+        $contextid = context_user::instance($USER->id)->id;
         $filerecord = array('component' => 'user', 'filearea' => 'draft', 'contextid' => $contextid,
                 'itemid' => $draftid, 'filename' => 'r2.txt', 'filepath' => '/');
         $fs = get_file_storage();
@@ -144,13 +143,13 @@ class lib_test extends \advanced_testcase {
         $info = resource_get_coursemodule_info(
                 $DB->get_record('course_modules', array('id' => $resource2->cmid)));
         $this->assertEquals('R2', $info->name);
-        $this->assertEquals('f/text', $info->icon);
+        $this->assertEquals('f/text-24', $info->icon);
 
         // For third one, it should use the highest sortorder icon.
         $info = resource_get_coursemodule_info(
                 $DB->get_record('course_modules', array('id' => $resource3->cmid)));
         $this->assertEquals('R3', $info->name);
-        $this->assertEquals('f/document', $info->icon);
+        $this->assertEquals('f/document-24', $info->icon);
     }
 
     public function test_resource_core_calendar_provide_event_action() {
@@ -200,7 +199,7 @@ class lib_test extends \advanced_testcase {
             \core_completion\api::COMPLETION_EVENT_TYPE_DATE_COMPLETION_EXPECTED);
 
         // Mark the activity as completed.
-        $completion = new \completion_info($course);
+        $completion = new completion_info($course);
         $completion->set_module_viewed($cm);
 
         // Create an action factory.
@@ -237,7 +236,7 @@ class lib_test extends \advanced_testcase {
             \core_completion\api::COMPLETION_EVENT_TYPE_DATE_COMPLETION_EXPECTED);
 
         // Mark the activity as completed.
-        $completion = new \completion_info($course);
+        $completion = new completion_info($course);
         $completion->set_module_viewed($cm);
 
         // Create an action factory.
@@ -271,7 +270,7 @@ class lib_test extends \advanced_testcase {
      * @return bool|calendar_event
      */
     private function create_action_event($courseid, $instanceid, $eventtype) {
-        $event = new \stdClass();
+        $event = new stdClass();
         $event->name = 'Calendar event';
         $event->modulename  = 'resource';
         $event->courseid = $courseid;
@@ -280,6 +279,6 @@ class lib_test extends \advanced_testcase {
         $event->eventtype = $eventtype;
         $event->timestart = time();
 
-        return \calendar_event::create($event);
+        return calendar_event::create($event);
     }
 }

@@ -14,35 +14,33 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace core;
-
-use core_plugin_manager;
-use testable_core_plugin_manager;
-use testable_plugininfo_base;
-
 /**
  * Unit tests for plugin manager class.
  *
  * @package   core
- * @category  test
+ * @category  phpunit
  * @copyright 2013 Petr Skoda {@link http://skodak.org}
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers \core_plugin_manager
  */
-final class plugin_manager_test extends \advanced_testcase {
-    public static function setUpBeforeClass(): void {
-        global $CFG;
-        require_once($CFG->dirroot . '/lib/tests/fixtures/testable_plugin_manager.php');
-        require_once($CFG->dirroot . '/lib/tests/fixtures/testable_plugininfo_base.php');
-    }
 
-    public function tearDown(): void {
+defined('MOODLE_INTERNAL') || die();
+
+global $CFG;
+require_once($CFG->dirroot.'/lib/tests/fixtures/testable_plugin_manager.php');
+require_once($CFG->dirroot.'/lib/tests/fixtures/testable_plugininfo_base.php');
+
+/**
+ * Tests of the basic API of the plugin manager.
+ */
+class core_plugin_manager_testcase extends advanced_testcase {
+
+    public function tearDown() {
         // The caches of the testable singleton must be reset explicitly. It is
         // safer to kill the whole testable singleton at the end of every test.
         testable_core_plugin_manager::reset_caches();
     }
 
-    public function test_instance(): void {
+    public function test_instance() {
         $pluginman1 = core_plugin_manager::instance();
         $this->assertInstanceOf('core_plugin_manager', $pluginman1);
         $pluginman2 = core_plugin_manager::instance();
@@ -55,7 +53,7 @@ final class plugin_manager_test extends \advanced_testcase {
         $this->assertNotSame($pluginman1, $pluginman3);
     }
 
-    public function test_reset_caches(): void {
+    public function test_reset_caches() {
         // Make sure there are no warnings or errors.
         core_plugin_manager::reset_caches();
         testable_core_plugin_manager::reset_caches();
@@ -64,58 +62,49 @@ final class plugin_manager_test extends \advanced_testcase {
     /**
      * Make sure that the tearDown() really kills the singleton after this test.
      */
-    public function test_teardown_works_precheck(): void {
+    public function test_teardown_works_precheck() {
         $pluginman = testable_core_plugin_manager::instance();
-        $pluginfo = testable_plugininfo_base::fake_plugin_instance(
-            'fake',
-            '/dev/null',
-            'one',
-            '/dev/null/fake',
-            'testable_plugininfo_base',
-            $pluginman
-        );
+        $pluginfo = testable_plugininfo_base::fake_plugin_instance('fake', '/dev/null', 'one', '/dev/null/fake',
+            'testable_plugininfo_base', $pluginman);
         $pluginman->inject_testable_plugininfo('fake', 'one', $pluginfo);
 
         $this->assertInstanceOf('\core\plugininfo\base', $pluginman->get_plugin_info('fake_one'));
         $this->assertNull($pluginman->get_plugin_info('fake_two'));
     }
 
-    public function test_teardown_works_postcheck(): void {
+    public function test_teardown_works_postcheck() {
         $pluginman = testable_core_plugin_manager::instance();
         $this->assertNull($pluginman->get_plugin_info('fake_one'));
         $this->assertNull($pluginman->get_plugin_info('fake_two'));
     }
 
-    public function test_get_plugin_types(): void {
+    public function test_get_plugin_types() {
         // Make sure there are no warnings or errors.
         $types = core_plugin_manager::instance()->get_plugin_types();
-        $this->assertIsArray($types);
+        $this->assertInternalType('array', $types);
         foreach ($types as $type => $fulldir) {
             $this->assertFileExists($fulldir);
         }
     }
 
-    public function test_get_installed_plugins(): void {
+    public function test_get_installed_plugins() {
         $types = core_plugin_manager::instance()->get_plugin_types();
         foreach ($types as $type => $fulldir) {
             $installed = core_plugin_manager::instance()->get_installed_plugins($type);
             foreach ($installed as $plugin => $version) {
-                $this->assertMatchesRegularExpression('/^[a-z]+[a-z0-9_]*$/', $plugin);
-                $this->assertTrue(
-                    is_numeric($version),
-                    'All plugins should have a version, plugin ' . $type . '_' . $plugin . ' does not have version info.'
-                );
+                $this->assertRegExp('/^[a-z]+[a-z0-9_]*$/', $plugin);
+                $this->assertTrue(is_numeric($version), 'All plugins should have a version, plugin '.$type.'_'.$plugin.' does not have version info.');
             }
         }
     }
 
-    public function test_get_enabled_plugins(): void {
+    public function test_get_enabled_plugins() {
         $types = core_plugin_manager::instance()->get_plugin_types();
         foreach ($types as $type => $fulldir) {
             $enabled = core_plugin_manager::instance()->get_enabled_plugins($type);
             if (is_array($enabled)) {
                 foreach ($enabled as $key => $val) {
-                    $this->assertMatchesRegularExpression('/^[a-z]+[a-z0-9_]*$/', $key);
+                    $this->assertRegExp('/^[a-z]+[a-z0-9_]*$/', $key);
                     $this->assertSame($key, $val);
                 }
             } else {
@@ -124,22 +113,15 @@ final class plugin_manager_test extends \advanced_testcase {
         }
     }
 
-    public function test_get_present_plugins(): void {
+    public function test_get_present_plugins() {
         $types = core_plugin_manager::instance()->get_plugin_types();
         foreach ($types as $type => $fulldir) {
             $present = core_plugin_manager::instance()->get_present_plugins($type);
             if (is_array($present)) {
                 foreach ($present as $plugin => $version) {
-                    $this->assertMatchesRegularExpression(
-                        '/^[a-z]+[a-z0-9_]*$/',
-                        $plugin,
-                        'All plugins are supposed to have version.php file.'
-                    );
-                    $this->assertIsObject($version);
-                    $this->assertTrue(
-                        is_numeric($version->version),
-                        'All plugins should have a version, plugin ' . $type . '_' . $plugin . ' does not have version info.'
-                    );
+                    $this->assertRegExp('/^[a-z]+[a-z0-9_]*$/', $plugin, 'All plugins are supposed to have version.php file.');
+                    $this->assertInternalType('object', $version);
+                    $this->assertTrue(is_numeric($version->version), 'All plugins should have a version, plugin '.$type.'_'.$plugin.' does not have version info.');
                 }
             } else {
                 // No plugins of this type exist.
@@ -148,7 +130,7 @@ final class plugin_manager_test extends \advanced_testcase {
         }
     }
 
-    public function test_get_plugins(): void {
+    public function test_get_plugins() {
         $plugininfos1 = core_plugin_manager::instance()->get_plugins();
         foreach ($plugininfos1 as $type => $infos) {
             foreach ($infos as $name => $info) {
@@ -168,7 +150,7 @@ final class plugin_manager_test extends \advanced_testcase {
         $this->assertSame($plugininfos2['mod']['forum'], $plugininfos4['mod']['forum']);
     }
 
-    public function test_plugininfo_back_reference_to_the_plugin_manager(): void {
+    public function test_plugininfo_back_reference_to_the_plugin_manager() {
         $plugman1 = core_plugin_manager::instance();
         $plugman2 = testable_core_plugin_manager::instance();
 
@@ -185,72 +167,72 @@ final class plugin_manager_test extends \advanced_testcase {
         }
     }
 
-    public function test_get_plugins_of_type(): void {
+    public function test_get_plugins_of_type() {
         $plugininfos = core_plugin_manager::instance()->get_plugins();
         foreach ($plugininfos as $type => $infos) {
             $this->assertSame($infos, core_plugin_manager::instance()->get_plugins_of_type($type));
         }
     }
 
-    public function test_get_subplugins_of_plugin(): void {
+    public function test_get_subplugins_of_plugin() {
         global $CFG;
 
         // Any standard plugin with subplugins is suitable.
-        $this->assertFileExists("$CFG->dirroot/lib/editor/tiny", 'TinyMCE is not present.');
+        $this->assertFileExists("$CFG->dirroot/lib/editor/tinymce", 'TinyMCE is not present.');
 
-        $subplugins = core_plugin_manager::instance()->get_subplugins_of_plugin('editor_tiny');
+        $subplugins = core_plugin_manager::instance()->get_subplugins_of_plugin('editor_tinymce');
         foreach ($subplugins as $component => $info) {
             $this->assertInstanceOf('\core\plugininfo\base', $info);
         }
     }
 
-    public function test_get_subplugins(): void {
+    public function test_get_subplugins() {
         // Tested already indirectly from test_get_subplugins_of_plugin().
         $subplugins = core_plugin_manager::instance()->get_subplugins();
-        $this->assertIsArray($subplugins);
+        $this->assertInternalType('array', $subplugins);
     }
 
-    public function test_get_parent_of_subplugin(): void {
+    public function test_get_parent_of_subplugin() {
         global $CFG;
 
         // Any standard plugin with subplugins is suitable.
-        $this->assertFileExists("$CFG->dirroot/lib/editor/tiny", 'TinyMCE is not present.');
+        $this->assertFileExists("$CFG->dirroot/lib/editor/tinymce", 'TinyMCE is not present.');
 
-        $parent = core_plugin_manager::instance()->get_parent_of_subplugin('tiny');
-        $this->assertSame('editor_tiny', $parent);
+        $parent = core_plugin_manager::instance()->get_parent_of_subplugin('tinymce');
+        $this->assertSame('editor_tinymce', $parent);
     }
 
-    public function test_plugin_name(): void {
+    public function test_plugin_name() {
         global $CFG;
 
         // Any standard plugin is suitable.
-        $this->assertFileExists("$CFG->dirroot/lib/editor/tiny", 'TinyMCE is not present.');
+        $this->assertFileExists("$CFG->dirroot/lib/editor/tinymce", 'TinyMCE is not present.');
 
-        $name = core_plugin_manager::instance()->plugin_name('editor_tiny');
-        $this->assertSame(get_string('pluginname', 'editor_tiny'), $name);
+        $name = core_plugin_manager::instance()->plugin_name('editor_tinymce');
+        $this->assertSame(get_string('pluginname', 'editor_tinymce'), $name);
     }
 
-    public function test_plugintype_name(): void {
+    public function test_plugintype_name() {
         $name = core_plugin_manager::instance()->plugintype_name('editor');
         $this->assertSame(get_string('type_editor', 'core_plugin'), $name);
     }
 
-    public function test_plugintype_name_plural(): void {
+    public function test_plugintype_name_plural() {
         $name = core_plugin_manager::instance()->plugintype_name_plural('editor');
         $this->assertSame(get_string('type_editor_plural', 'core_plugin'), $name);
     }
 
-    public function test_get_plugin_info(): void {
+    public function test_get_plugin_info() {
         global $CFG;
 
         // Any standard plugin is suitable.
-        $this->assertFileExists("$CFG->dirroot/lib/editor/tiny", 'TinyMCE is not present.');
+        $this->assertFileExists("$CFG->dirroot/lib/editor/tinymce", 'TinyMCE is not present.');
 
-        $info = core_plugin_manager::instance()->get_plugin_info('editor_tiny');
+        $info = core_plugin_manager::instance()->get_plugin_info('editor_tinymce');
         $this->assertInstanceOf('\core\plugininfo\editor', $info);
     }
 
-    public function test_can_uninstall_plugin(): void {
+    public function test_can_uninstall_plugin() {
         global $CFG;
 
         // Any standard plugin that is required by some other standard plugin is ok.
@@ -261,7 +243,7 @@ final class plugin_manager_test extends \advanced_testcase {
         $this->assertTrue(core_plugin_manager::instance()->can_uninstall_plugin('report_competency'));
     }
 
-    public function test_plugin_states(): void {
+    public function test_plugin_states() {
         global $CFG;
         $this->resetAfterTest();
 
@@ -269,8 +251,8 @@ final class plugin_manager_test extends \advanced_testcase {
         $this->assertFileExists("$CFG->dirroot/mod/assign", 'assign module is not present');
         $this->assertFileExists("$CFG->dirroot/mod/forum", 'forum module is not present');
         $this->assertFileExists("$CFG->dirroot/$CFG->admin/tool/phpunit", 'phpunit tool is not present');
-        $this->assertFileDoesNotExist("$CFG->dirroot/mod/xxxxxxx");
-        $this->assertFileDoesNotExist("$CFG->dirroot/enrol/autorize");
+        $this->assertFileNotExists("$CFG->dirroot/mod/xxxxxxx");
+        $this->assertFileNotExists("$CFG->dirroot/enrol/autorize");
 
         // Ready for upgrade.
         $assignversion = get_config('mod_assign', 'version');
@@ -289,60 +271,30 @@ final class plugin_manager_test extends \advanced_testcase {
 
         $plugininfos = core_plugin_manager::instance()->get_plugins();
         foreach ($plugininfos as $type => $infos) {
-            /** @var \core\plugininfo\base $info */
-            foreach ($infos as $info) {
+            foreach ($infos as $name => $info) {
+                /** @var core\plugininfo\base $info */
                 if ($info->component === 'mod_assign') {
-                    $this->assertSame(
-                        core_plugin_manager::PLUGIN_STATUS_UPGRADE,
-                        $info->get_status(),
-                        'Invalid ' . $info->component . ' state'
-                    );
+                    $this->assertSame(core_plugin_manager::PLUGIN_STATUS_UPGRADE, $info->get_status(), 'Invalid '.$info->component.' state');
                 } else if ($info->component === 'mod_forum') {
-                    $this->assertSame(
-                        core_plugin_manager::PLUGIN_STATUS_DOWNGRADE,
-                        $info->get_status(),
-                        'Invalid ' . $info->component . ' state'
-                    );
+                    $this->assertSame(core_plugin_manager::PLUGIN_STATUS_DOWNGRADE, $info->get_status(), 'Invalid '.$info->component.' state');
                 } else if ($info->component === 'tool_phpunit') {
-                    $this->assertSame(
-                        core_plugin_manager::PLUGIN_STATUS_NEW,
-                        $info->get_status(),
-                        'Invalid ' . $info->component . ' state'
-                    );
+                    $this->assertSame(core_plugin_manager::PLUGIN_STATUS_NEW, $info->get_status(), 'Invalid '.$info->component.' state');
                 } else if ($info->component === 'mod_xxxxxxx') {
-                    $this->assertSame(
-                        core_plugin_manager::PLUGIN_STATUS_MISSING,
-                        $info->get_status(),
-                        'Invalid ' . $info->component . ' state'
-                    );
+                    $this->assertSame(core_plugin_manager::PLUGIN_STATUS_MISSING, $info->get_status(), 'Invalid '.$info->component.' state');
                 } else if ($info->component === 'enrol_authorize') {
-                    $this->assertSame(
-                        core_plugin_manager::PLUGIN_STATUS_DELETE,
-                        $info->get_status(),
-                        'Invalid ' . $info->component . ' state'
-                    );
+                    $this->assertSame(core_plugin_manager::PLUGIN_STATUS_DELETE, $info->get_status(), 'Invalid '.$info->component.' state');
                 } else {
-                    $this->assertSame(
-                        core_plugin_manager::PLUGIN_STATUS_UPTODATE,
-                        $info->get_status(),
-                        'Invalid ' . $info->component . ' state'
-                    );
+                    $this->assertSame(core_plugin_manager::PLUGIN_STATUS_UPTODATE, $info->get_status(), 'Invalid '.$info->component.' state');
                 }
             }
         }
     }
 
-    public function test_plugin_available_updates(): void {
+    public function test_plugin_available_updates() {
         $pluginman = testable_core_plugin_manager::instance();
 
-        $foobar = testable_plugininfo_base::fake_plugin_instance(
-            'foo',
-            '/dev/null',
-            'bar',
-            '/dev/null/fake',
-            'testable_plugininfo_base',
-            $pluginman
-        );
+        $foobar = testable_plugininfo_base::fake_plugin_instance('foo', '/dev/null', 'bar', '/dev/null/fake',
+            'testable_plugininfo_base', $pluginman);
         $foobar->versiondb = 2015092900;
         $foobar->versiondisk = 2015092900;
         $pluginman->inject_testable_plugininfo('foo', 'bar', $foobar);
@@ -368,22 +320,16 @@ final class plugin_manager_test extends \advanced_testcase {
         $this->assertTrue($washere);
     }
 
-    public function test_some_plugins_updatable_none(): void {
+    public function test_some_plugins_updatable_none() {
         $pluginman = testable_core_plugin_manager::instance();
         $this->assertFalse($pluginman->some_plugins_updatable());
     }
 
-    public function test_some_plugins_updatable_some(): void {
+    public function test_some_plugins_updatable_some() {
         $pluginman = testable_core_plugin_manager::instance();
 
-        $foobar = testable_plugininfo_base::fake_plugin_instance(
-            'foo',
-            '/dev/null',
-            'bar',
-            '/dev/null/fake',
-            'testable_plugininfo_base',
-            $pluginman
-        );
+        $foobar = testable_plugininfo_base::fake_plugin_instance('foo', '/dev/null', 'bar', '/dev/null/fake',
+            'testable_plugininfo_base', $pluginman);
         $foobar->versiondb = 2015092900;
         $foobar->versiondisk = 2015092900;
         $pluginman->inject_testable_plugininfo('foo', 'bar', $foobar);
@@ -391,17 +337,11 @@ final class plugin_manager_test extends \advanced_testcase {
         $this->assertTrue($pluginman->some_plugins_updatable());
     }
 
-    public function test_available_updates(): void {
+    public function test_available_updates() {
         $pluginman = testable_core_plugin_manager::instance();
 
-        $foobar = testable_plugininfo_base::fake_plugin_instance(
-            'foo',
-            '/dev/null',
-            'bar',
-            '/dev/null/fake',
-            'testable_plugininfo_base',
-            $pluginman
-        );
+        $foobar = testable_plugininfo_base::fake_plugin_instance('foo', '/dev/null', 'bar', '/dev/null/fake',
+            'testable_plugininfo_base', $pluginman);
         $foobar->versiondb = 2015092900;
         $foobar->versiondisk = 2015092900;
         $pluginman->inject_testable_plugininfo('foo', 'bar', $foobar);
@@ -416,7 +356,7 @@ final class plugin_manager_test extends \advanced_testcase {
         $this->assertEquals(2015100400, $update->version->version);
     }
 
-    public function test_get_remote_plugin_info(): void {
+    public function test_get_remote_plugin_info() {
         $pluginman = testable_core_plugin_manager::instance();
 
         $this->assertFalse($pluginman->get_remote_plugin_info('not_exists', ANY_VERSION, false));
@@ -430,14 +370,15 @@ final class plugin_manager_test extends \advanced_testcase {
 
     /**
      * The combination of ANY_VERSION + $exactmatch is illegal.
+     *
+     * @expectedException moodle_exception
      */
-    public function test_get_remote_plugin_info_exception(): void {
+    public function test_get_remote_plugin_info_exception() {
         $pluginman = testable_core_plugin_manager::instance();
-        $this->expectException(\moodle_exception::class);
         $pluginman->get_remote_plugin_info('any_thing', ANY_VERSION, true);
     }
 
-    public function test_is_remote_plugin_available(): void {
+    public function test_is_remote_plugin_available() {
         $pluginman = testable_core_plugin_manager::instance();
 
         $this->assertFalse($pluginman->is_remote_plugin_available('not_exists', ANY_VERSION, false));
@@ -445,18 +386,12 @@ final class plugin_manager_test extends \advanced_testcase {
         $this->assertFalse($pluginman->is_remote_plugin_available('foo_bar', 2013131313, true));
     }
 
-    public function test_resolve_requirements(): void {
+    public function test_resolve_requirements() {
         $pluginman = testable_core_plugin_manager::instance();
 
         // Prepare a fake pluginfo instance.
-        $pluginfo = testable_plugininfo_base::fake_plugin_instance(
-            'fake',
-            '/dev/null',
-            'one',
-            '/dev/null/fake',
-            'testable_plugininfo_base',
-            $pluginman
-        );
+        $pluginfo = testable_plugininfo_base::fake_plugin_instance('fake', '/dev/null', 'one', '/dev/null/fake',
+            'testable_plugininfo_base', $pluginman);
         $pluginfo->versiondisk = 2015060600;
 
         // Test no $plugin->requires is specified in version.php.
@@ -494,7 +429,7 @@ final class plugin_manager_test extends \advanced_testcase {
         // Test plugin dependencies and their availability.
         // See {@link \core\update\testable_api} class.
 
-        $pluginfo->dependencies = ['foo_bar' => ANY_VERSION, 'not_exists' => ANY_VERSION];
+        $pluginfo->dependencies = array('foo_bar' => ANY_VERSION, 'not_exists' => ANY_VERSION);
         $reqs = $pluginman->resolve_requirements($pluginfo, 2015110900, 30);
         $this->assertNull($reqs['foo_bar']->hasver);
         $this->assertEquals(ANY_VERSION, $reqs['foo_bar']->reqver);
@@ -502,43 +437,31 @@ final class plugin_manager_test extends \advanced_testcase {
         $this->assertEquals($pluginman::REQUIREMENT_AVAILABLE, $reqs['foo_bar']->availability);
         $this->assertEquals($pluginman::REQUIREMENT_UNAVAILABLE, $reqs['not_exists']->availability);
 
-        $pluginfo->dependencies = ['foo_bar' => 2013122400];
+        $pluginfo->dependencies = array('foo_bar' => 2013122400);
         $reqs = $pluginman->resolve_requirements($pluginfo, 2015110900, 30);
         $this->assertEquals($pluginman::REQUIREMENT_AVAILABLE, $reqs['foo_bar']->availability);
 
-        $pluginfo->dependencies = ['foo_bar' => 2015093000];
+        $pluginfo->dependencies = array('foo_bar' => 2015093000);
         $reqs = $pluginman->resolve_requirements($pluginfo, 2015110900, 30);
         $this->assertEquals($pluginman::REQUIREMENT_AVAILABLE, $reqs['foo_bar']->availability);
 
-        $pluginfo->dependencies = ['foo_bar' => 2015100500];
+        $pluginfo->dependencies = array('foo_bar' => 2015100500);
         $reqs = $pluginman->resolve_requirements($pluginfo, 2015110900, 30);
         $this->assertEquals($pluginman::REQUIREMENT_AVAILABLE, $reqs['foo_bar']->availability);
 
-        $pluginfo->dependencies = ['foo_bar' => 2025010100];
+        $pluginfo->dependencies = array('foo_bar' => 2025010100);
         $reqs = $pluginman->resolve_requirements($pluginfo, 2015110900, 30);
         $this->assertEquals($pluginman::REQUIREMENT_UNAVAILABLE, $reqs['foo_bar']->availability);
 
         // Plugin missing from disk - no version.php available.
-        $pluginfo = testable_plugininfo_base::fake_plugin_instance(
-            'fake',
-            '/dev/null',
-            'missing',
-            '/dev/null/fake',
-            'testable_plugininfo_base',
-            $pluginman
-        );
+        $pluginfo = testable_plugininfo_base::fake_plugin_instance('fake', '/dev/null', 'missing', '/dev/null/fake',
+            'testable_plugininfo_base', $pluginman);
         $pluginfo->versiondisk = null;
         $this->assertEmpty($pluginman->resolve_requirements($pluginfo, 2015110900, 30));
 
         // Test plugin fails for incompatible version.
-        $pluginfo = testable_plugininfo_base::fake_plugin_instance(
-            'fake',
-            '/dev/null',
-            'two',
-            '/dev/null/fake',
-            'testable_plugininfo_base',
-            $pluginman
-        );
+        $pluginfo = testable_plugininfo_base::fake_plugin_instance('fake', '/dev/null', 'two', '/dev/null/fake',
+            'testable_plugininfo_base', $pluginman);
         $pluginfo->versiondisk = 2015060600;
         $pluginfo->pluginincompatible = 30;
         $reqs = $pluginman->resolve_requirements($pluginfo, 2015110900, 30);
@@ -550,27 +473,15 @@ final class plugin_manager_test extends \advanced_testcase {
         $this->assertEquals($pluginman::REQUIREMENT_STATUS_OK, $reqs['core']->status);
     }
 
-    public function test_missing_dependencies(): void {
+    public function test_missing_dependencies() {
         $pluginman = testable_core_plugin_manager::instance();
 
-        $one = testable_plugininfo_base::fake_plugin_instance(
-            'fake',
-            '/dev/null',
-            'one',
-            '/dev/null/fake',
-            'testable_plugininfo_base',
-            $pluginman
-        );
+        $one = testable_plugininfo_base::fake_plugin_instance('fake', '/dev/null', 'one', '/dev/null/fake',
+            'testable_plugininfo_base', $pluginman);
         $one->versiondisk = 2015070800;
 
-        $two = testable_plugininfo_base::fake_plugin_instance(
-            'fake',
-            '/dev/null',
-            'two',
-            '/dev/null/fake',
-            'testable_plugininfo_base',
-            $pluginman
-        );
+        $two = testable_plugininfo_base::fake_plugin_instance('fake', '/dev/null', 'two', '/dev/null/fake',
+            'testable_plugininfo_base', $pluginman);
         $two->versiondisk = 2015070900;
 
         $pluginman->inject_testable_plugininfo('fake', 'one', $one);
@@ -578,12 +489,12 @@ final class plugin_manager_test extends \advanced_testcase {
 
         $this->assertEmpty($pluginman->missing_dependencies());
 
-        $one->dependencies = ['foo_bar' => ANY_VERSION];
+        $one->dependencies = array('foo_bar' => ANY_VERSION);
         $misdeps = $pluginman->missing_dependencies();
         $this->assertInstanceOf('\core\update\remote_info', $misdeps['foo_bar']);
         $this->assertEquals(2015100400, $misdeps['foo_bar']->version->version);
 
-        $two->dependencies = ['foo_bar' => 2015100500];
+        $two->dependencies = array('foo_bar' => 2015100500);
         $misdeps = $pluginman->missing_dependencies();
         $this->assertInstanceOf('\core\update\remote_info', $misdeps['foo_bar']);
         $this->assertEquals(2015100500, $misdeps['foo_bar']->version->version);
@@ -625,7 +536,7 @@ final class plugin_manager_test extends \advanced_testcase {
      *
      * @return array
      */
-    public static function check_explicitly_supported_provider(): array {
+    public function check_explicitly_supported_provider(): array {
         return [
             'Range, branch in support, lowest' => [
                 'supported' => [29, 31],
@@ -701,87 +612,5 @@ final class plugin_manager_test extends \advanced_testcase {
                 'expected' => core_plugin_manager::VERSION_NO_SUPPORTS,
             ],
         ];
-    }
-
-    /**
-     * @dataProvider is_deleted_standard_plugin_provider
-     */
-    public function test_is_deleted_standard_plugin(
-        mixed $type,
-        mixed $name,
-        bool $expected,
-    ): void {
-        $this->assertEquals(
-            $expected,
-            \core_plugin_manager::is_deleted_standard_plugin($type, $name),
-        );
-    }
-
-    public static function is_deleted_standard_plugin_provider(): array {
-        return [
-            // Valid deleted plugin.
-            ['h5plib', 'v124', true],
-            // Valid type, but not a valid plugin.
-            ['h5plib', 'v99', false],
-            // Invalid type.
-            ['marmelade', 'paddington', false],
-        ];
-    }
-
-    public function test_get_deleted_plugins(): void {
-        $plugins = core_plugin_manager::get_deleted_plugins();
-        $this->assertIsArray($plugins);
-
-        // Pick a couple we know should be there.
-        $this->assertContains('h5plib_v124', $plugins);
-        $this->assertNotContains('h5plib_v99', $plugins);
-
-        $this->assertContains('editor_tinymce', $plugins);
-        $this->assertNotContains('editor_tiny', $plugins);
-    }
-
-    public function test_standard_plugins_list_no_type(): void {
-        $plugins = core_plugin_manager::standard_plugins_list('typo');
-        $this->assertFalse($plugins);
-    }
-
-    /**
-     * @dataProvider standard_plugins_list_provider
-     */
-    public function test_standard_plugins_list(
-        string $type,
-        array $expectedplugins,
-    ): void {
-        $plugins = core_plugin_manager::standard_plugins_list($type);
-        $this->assertIsArray($plugins);
-        foreach ($expectedplugins as $expected) {
-            $this->assertContains($expected, $plugins);
-        }
-    }
-
-    public static function standard_plugins_list_provider(): array {
-        return [
-            [
-                'mod',
-                ['forum', 'assign', 'book', 'choice'],
-            ],
-            [
-                'block',
-                ['starredcourses', 'badges'],
-            ],
-            [
-                'tiny',
-                ['autosave', 'h5p'],
-            ],
-        ];
-    }
-
-    public function test_get_standard_plugins(): void {
-        $plugins = core_plugin_manager::get_standard_plugins();
-        $this->assertIsArray($plugins);
-
-        $this->assertContains('mod_forum', $plugins);
-        $this->assertContains('block_badges', $plugins);
-        $this->assertNotContains('marmelade_paddington', $plugins);
     }
 }

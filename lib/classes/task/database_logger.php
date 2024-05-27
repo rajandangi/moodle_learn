@@ -44,7 +44,7 @@ class database_logger implements task_logger {
      *
      * @return  bool
      */
-    public static function is_configured(): bool {
+    public static function is_configured() : bool {
         return true;
     }
 
@@ -75,8 +75,6 @@ class database_logger implements task_logger {
             'dbwrites' => $dbwrites,
             'result' => (int) $failed,
             'output' => file_get_contents($logpath),
-            'hostname' => $task->get_hostname(),
-            'pid' => $task->get_pid(),
         ];
 
         if (is_a($task, adhoc_task::class) && $userid = $task->get_userid()) {
@@ -91,7 +89,7 @@ class database_logger implements task_logger {
      *
      * @return  bool
      */
-    public static function has_log_report(): bool {
+    public static function has_log_report() : bool {
         return true;
     }
 
@@ -101,7 +99,7 @@ class database_logger implements task_logger {
      * @param   string      $classname The task class to fetch for
      * @return  \moodle_url
      */
-    public static function get_url_for_task_class(string $classname): \moodle_url {
+    public static function get_url_for_task_class(string $classname) : \moodle_url {
         global $CFG;
 
         return new \moodle_url("/{$CFG->admin}/tasklogs.php", [

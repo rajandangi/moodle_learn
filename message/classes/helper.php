@@ -38,10 +38,82 @@ require_once($CFG->dirroot . '/message/lib.php');
 class helper {
 
     /**
-     * @deprecated since 3.6
+     * Helper function to retrieve the messages between two users
+     *
+     * TODO: This function should be removed once the related web services go through final deprecation.
+     * The related web services are data_for_messagearea_messages AND data_for_messagearea_get_most_recent_message.
+     * Followup: MDL-63261
+     *
+     * @param int $userid the current user
+     * @param int $otheruserid the other user
+     * @param int $timedeleted the time the message was deleted
+     * @param int $limitfrom
+     * @param int $limitnum
+     * @param string $sort
+     * @param int $timefrom the time from the message being sent
+     * @param int $timeto the time up until the message being sent
+     * @return array of messages
      */
-    public static function get_messages() {
-        throw new \coding_exception('\core_message\helper::get_messages has been removed.');
+    public static function get_messages($userid, $otheruserid, $timedeleted = 0, $limitfrom = 0, $limitnum = 0,
+                                        $sort = 'timecreated ASC', $timefrom = 0, $timeto = 0) {
+        global $DB;
+
+        $hash = self::get_conversation_hash([$userid, $otheruserid]);
+
+        $sql = "SELECT m.id, m.useridfrom, m.subject, m.fullmessage, m.fullmessagehtml,
+                       m.fullmessageformat, m.fullmessagetrust, m.smallmessage, m.timecreated,
+                       mc.contextid, muaread.timecreated AS timeread
+                  FROM {message_conversations} mc
+            INNER JOIN {messages} m
+                    ON m.conversationid = mc.id
+             LEFT JOIN {message_user_actions} muaread
+                    ON (muaread.messageid = m.id
+                   AND muaread.userid = :userid1
+                   AND muaread.action = :readaction)";
+        $params = ['userid1' => $userid, 'readaction' => api::MESSAGE_ACTION_READ, 'convhash' => $hash];
+
+        if (empty($timedeleted)) {
+            $sql .= " LEFT JOIN {message_user_actions} mua
+                             ON (mua.messageid = m.id
+                            AND mua.userid = :userid2
+                            AND mua.action = :deleteaction
+                            AND mua.timecreated is NOT NULL)";
+        } else {
+            $sql .= " INNER JOIN {message_user_actions} mua
+                              ON (mua.messageid = m.id
+                             AND mua.userid = :userid2
+                             AND mua.action = :deleteaction
+                             AND mua.timecreated = :timedeleted)";
+            $params['timedeleted'] = $timedeleted;
+        }
+
+        $params['userid2'] = $userid;
+        $params['deleteaction'] = api::MESSAGE_ACTION_DELETED;
+
+        $sql .= " WHERE mc.convhash = :convhash";
+
+        if (!empty($timefrom)) {
+            $sql .= " AND m.timecreated >= :timefrom";
+            $params['timefrom'] = $timefrom;
+        }
+
+        if (!empty($timeto)) {
+            $sql .= " AND m.timecreated <= :timeto";
+            $params['timeto'] = $timeto;
+        }
+
+        if (empty($timedeleted)) {
+            $sql .= " AND mua.id is NULL";
+        }
+
+        $sql .= " ORDER BY m.$sort";
+
+        $messages = $DB->get_records_sql($sql, $params, $limitfrom, $limitnum);
+        foreach ($messages as &$message) {
+            $message->useridto = ($message->useridfrom == $userid) ? $otheruserid : $userid;
+        }
+
+        return $messages;
     }
 
     /**
@@ -59,7 +131,7 @@ class helper {
      */
     public static function get_conversation_messages(int $userid, int $convid, int $timedeleted = 0, int $limitfrom = 0,
                                                      int $limitnum = 0, string $sort = 'timecreated ASC', int $timefrom = 0,
-                                                     int $timeto = 0): array {
+                                                     int $timeto = 0) : array {
         global $DB;
 
         $sql = "SELECT m.id, m.useridfrom, m.subject, m.fullmessage, m.fullmessagehtml,
@@ -124,7 +196,7 @@ class helper {
      * @param array $messages The formated array messages.
      * @return array A conversation array with the messages and the involved members.
      */
-    public static function format_conversation_messages(int $userid, int $convid, array $messages): array {
+    public static function format_conversation_messages(int $userid, int $convid, array $messages) : array {
         global $USER;
 
         // Create the conversation array.
@@ -163,10 +235,55 @@ class helper {
     }
 
     /**
-     * @deprecated since 3.6
+     * Helper function to return an array of messages.
+     *
+     * TODO: This function should be removed once the related web services go through final deprecation.
+     * The related web services are data_for_messagearea_messages AND data_for_messagearea_get_most_recent_message.
+     * Followup: MDL-63261
+     *
+     * @param int $userid
+     * @param array $messages
+     * @return array
      */
-    public static function create_messages() {
-        throw new \coding_exception('\core_message\helper::create_messages has been removed.');
+    public static function create_messages($userid, $messages) {
+        // Store the messages.
+        $arrmessages = array();
+
+        // We always view messages from oldest to newest, ensure we have it in that order.
+        $lastmessage = end($messages);
+        $firstmessage = reset($messages);
+        if ($lastmessage->timecreated < $firstmessage->timecreated) {
+            $messages = array_reverse($messages);
+        }
+
+        // Keeps track of the last day, month and year combo we were viewing.
+        $day = '';
+        $month = '';
+        $year = '';
+        foreach ($messages as $message) {
+            // Check if we are now viewing a different block period.
+            $displayblocktime = false;
+            $date = usergetdate($message->timecreated);
+            if ($day != $date['mday'] || $month != $date['month'] || $year != $date['year']) {
+                $day = $date['mday'];
+                $month = $date['month'];
+                $year = $date['year'];
+                $displayblocktime = true;
+            }
+            // Store the message to pass to the renderable.
+            $msg = new \stdClass();
+            $msg->id = $message->id;
+            $msg->text = message_format_message_text($message);
+            $msg->currentuserid = $userid;
+            $msg->useridfrom = $message->useridfrom;
+            $msg->useridto = $message->useridto;
+            $msg->displayblocktime = $displayblocktime;
+            $msg->timecreated = $message->timecreated;
+            $msg->timeread = $message->timeread;
+            $arrmessages[] = $msg;
+        }
+
+        return $arrmessages;
     }
 
     /**
@@ -270,17 +387,18 @@ class helper {
 
         // Get providers preferences.
         foreach ($providers as $provider) {
-            $linepref = get_user_preferences('message_provider_' . $provider->component . '_' . $provider->name
-                . '_enabled', '', $userid);
-            if ($linepref == '') {
-                continue;
+            foreach (array('loggedin', 'loggedoff') as $state) {
+                $linepref = get_user_preferences('message_provider_' . $provider->component . '_' . $provider->name
+                    . '_' . $state, '', $userid);
+                if ($linepref == '') {
+                    continue;
+                }
+                $lineprefarray = explode(',', $linepref);
+                $preferences->{$provider->component.'_'.$provider->name.'_'.$state} = array();
+                foreach ($lineprefarray as $pref) {
+                    $preferences->{$provider->component.'_'.$provider->name.'_'.$state}[$pref] = 1;
+                }
             }
-            $lineprefarray = explode(',', $linepref);
-            $preferences->{$provider->component.'_'.$provider->name.'_enabled'} = [];
-            foreach ($lineprefarray as $pref) {
-                $preferences->{$provider->component.'_'.$provider->name.'_enabled'}[$pref] = 1;
-            }
-
         }
 
         return $preferences;
@@ -308,16 +426,12 @@ class helper {
      *
      * @param object $user User object.
      * @param bool $iscontact
-     * @param bool $displaytextlabel Instructs whether to display a text label.
      * @return array
      */
-    public static function togglecontact_link_params($user, $iscontact = false, bool $displaytextlabel = true) {
-        global $USER;
+    public static function togglecontact_link_params($user, $iscontact = false) {
         $params = array(
-            'data-currentuserid' => $USER->id,
             'data-userid' => $user->id,
             'data-is-contact' => $iscontact,
-            'data-display-text-label' => $displaytextlabel,
             'id' => 'toggle-contact-button',
             'role' => 'button',
             'class' => 'ajax-contact-button',
@@ -349,7 +463,7 @@ class helper {
      * @param int $useridto
      * @return array
      */
-    public static function messageuser_link_params(int $useridto): array {
+    public static function messageuser_link_params(int $useridto) : array {
         global $USER;
 
         return [
@@ -422,7 +536,7 @@ class helper {
      * @throws \dml_exception
      */
     public static function get_member_info(int $referenceuserid, array $userids, bool $includecontactrequests = false,
-                                           bool $includeprivacyinfo = false): array {
+                                           bool $includeprivacyinfo = false) : array {
         global $DB, $PAGE;
 
         // Prevent exception being thrown when array is empty.
@@ -431,8 +545,7 @@ class helper {
         }
 
         list($useridsql, $usersparams) = $DB->get_in_or_equal($userids);
-        $userfieldsapi = \core_user\fields::for_userpic()->including('lastaccess');
-        $userfields = $userfieldsapi->get_sql('u', false, '', '', false)->selects;
+        $userfields = \user_picture::fields('u', array('lastaccess'));
         $userssql = "SELECT $userfields, u.deleted, mc.id AS contactid, mub.id AS blockedid
                        FROM {user} u
                   LEFT JOIN {message_contacts} mc
@@ -527,11 +640,47 @@ class helper {
 
         return $members;
     }
+
     /**
-     * @deprecated since 3.6
+     * Backwards compatibility formatter, transforming the new output of get_conversations() into the old format.
+     *
+     * TODO: This function should be removed once the related web services go through final deprecation.
+     * The related web services are data_for_messagearea_conversations.
+     * Followup: MDL-63261
+     *
+     * @param array $conversations the array of conversations, which must come from get_conversations().
+     * @return array the array of conversations, formatted in the legacy style.
      */
-    public static function get_conversations_legacy_formatter() {
-        throw new \coding_exception('\core_message\helper::get_conversations_legacy_formatter has been removed.');
+    public static function get_conversations_legacy_formatter(array $conversations) : array {
+        // Transform new data format back into the old format, just for BC during the deprecation life cycle.
+        $tmp = [];
+        foreach ($conversations as $id => $conv) {
+            // Only individual conversations were supported in legacy messaging.
+            if ($conv->type != \core_message\api::MESSAGE_CONVERSATION_TYPE_INDIVIDUAL) {
+                continue;
+            }
+            $data = new \stdClass();
+            // The logic for the 'other user' is as follows:
+            // If a conversation is of type 'individual', the other user is always the member who is not the current user.
+            // If the conversation is of type 'group', the other user is always the sender of the most recent message.
+            // The get_conversations method already follows this logic, so we just need the first member.
+            $otheruser = reset($conv->members);
+            $data->userid = $otheruser->id;
+            $data->useridfrom = $conv->messages[0]->useridfrom ?? null;
+            $data->fullname = $conv->members[$otheruser->id]->fullname;
+            $data->profileimageurl = $conv->members[$otheruser->id]->profileimageurl;
+            $data->profileimageurlsmall = $conv->members[$otheruser->id]->profileimageurlsmall;
+            $data->ismessaging = isset($conv->messages[0]->text) ? true : false;
+            $data->lastmessage = $conv->messages[0]->text ? clean_param($conv->messages[0]->text, PARAM_NOTAGS) : null;
+            $data->lastmessagedate = $conv->messages[0]->timecreated ?? null;
+            $data->messageid = $conv->messages[0]->id ?? null;
+            $data->isonline = $conv->members[$otheruser->id]->isonline ?? null;
+            $data->isblocked = $conv->members[$otheruser->id]->isblocked ?? null;
+            $data->isread = $conv->isread;
+            $data->unreadcount = $conv->unreadcount;
+            $tmp[$data->userid] = $data;
+        }
+        return $tmp;
     }
 
     /**
@@ -552,7 +701,10 @@ class helper {
         global $USER, $CFG, $PAGE;
 
         // Early bail out conditions.
-        if (empty($CFG->messaging) || !isloggedin() || isguestuser() || \core_user::awaiting_action()) {
+        if (empty($CFG->messaging) || !isloggedin() || isguestuser() || user_not_fully_set_up($USER) ||
+            get_user_preferences('auth_forcepasswordchange') ||
+            (!$USER->policyagreed && !is_siteadmin() &&
+                ($manager = new \core_privacy\local\sitepolicy\manager()) && $manager->is_defined())) {
             return '';
         }
 
@@ -624,7 +776,6 @@ class helper {
             'isdrawer' => $isdrawer,
             'showemojipicker' => !empty($CFG->allowemojipicker),
             'messagemaxlength' => api::MESSAGE_MAX_LENGTH,
-            'caneditownmessageprofile' => has_capability('moodle/user:editownmessageprofile', \context_system::instance())
         ];
 
         if ($sendtouser || $conversationid) {
@@ -655,29 +806,21 @@ class helper {
      * If disabled, visibility requires that the user be sharing a course with the searching user, and have a visible profile there.
      * The current user is always returned.
      *
-     * You can use the $userfields parameter to reduce the amount of a user record that is required by the method.
-     * The minimum user fields are:
-     *  * id
-     *  * deleted
-     *  * all potential fullname fields
-     *
      * @param \stdClass $user
-     * @param array $userfields An array of userfields to be returned, the values must be a
-     *                          subset of user_get_default_fields (optional)
      * @return array the array of userdetails, if visible, or an empty array otherwise.
      */
-    public static function search_get_user_details(\stdClass $user, array $userfields = []): array {
+    public static function search_get_user_details(\stdClass $user) : array {
         global $CFG, $USER;
         require_once($CFG->dirroot . '/user/lib.php');
 
         if ($CFG->messagingallusers || $user->id == $USER->id) {
-            return \user_get_user_details_courses($user, $userfields) ?? []; // This checks visibility of site and course profiles.
+            return \user_get_user_details_courses($user) ?? []; // This checks visibility of site and course profiles.
         } else {
             // Messaging specific: user must share a course with the searching user AND have a visible profile there.
             $sharedcourses = enrol_get_shared_courses($USER, $user);
             foreach ($sharedcourses as $course) {
                 if (user_can_view_profile($user, $course)) {
-                    $userdetails = user_get_user_details($user, $course, $userfields);
+                    $userdetails = user_get_user_details($user, $course);
                     if (!is_null($userdetails)) {
                         return $userdetails;
                     }
@@ -697,7 +840,7 @@ class helper {
     public static function prevent_unclosed_html_tags(
         string $message,
         bool $removebody = false
-    ): string {
+    ) : string {
         $html = '';
         if (!empty($message)) {
             $doc = new DOMDocument();

@@ -82,9 +82,7 @@ class enrol_self_enrol_form extends moodleform {
             $mform->addElement('password', 'enrolpassword', get_string('password', 'enrol_self'),
                     array('id' => 'enrolpassword_'.$instance->id));
             $context = context_course::instance($this->instance->courseid);
-            $userfieldsapi = \core_user\fields::for_userpic();
-            $ufields = $userfieldsapi->get_sql('u', false, '', '', false)->selects;
-            $keyholders = get_users_by_capability($context, 'enrol/self:holdkey', $ufields);
+            $keyholders = get_users_by_capability($context, 'enrol/self:holdkey', user_picture::fields('u'));
             $keyholdercount = 0;
             foreach ($keyholders as $keyholder) {
                 $keyholdercount++;

@@ -20,7 +20,7 @@
  * Displays the list of found plagiarism plugins, their version (if found) and
  * a link to uninstall the plagiarism plugin.
  *
- * @see       https://moodledev.io/docs/apis/subsystems/plagiarism
+ * @see       http://docs.moodle.org/dev/Plagiarism_API
  * @package   admin
  * @copyright 2012 Dan Marsden <dan@danmarsden.com>
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later

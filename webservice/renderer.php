@@ -14,9 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-use core_external\external_api;
-use core_external\external_multiple_structure;
-use core_external\external_single_structure;
 
 /**
  * Web service documentation renderer.
@@ -99,7 +96,7 @@ class core_webservice_renderer extends plugin_renderer_base {
     }
 
     /**
-     * Display list of authorised users for the given external service.
+     * Display list of authorised users
      *
      * @param array $users authorised users
      * @param int $serviceid service id
@@ -107,43 +104,25 @@ class core_webservice_renderer extends plugin_renderer_base {
      */
     public function admin_authorised_user_list($users, $serviceid) {
         global $CFG;
-
-        $listitems = [];
-        $extrafields = \core_user\fields::get_identity_fields(context_system::instance());
-
+        $html = $this->output->box_start('generalbox', 'alloweduserlist');
         foreach ($users as $user) {
-            $settingsurl = new moodle_url('/admin/webservice/service_user_settings.php',
-                ['userid' => $user->id, 'serviceid' => $serviceid]);
-
-            $identity = [];
-            foreach ($extrafields as $extrafield) {
-                if (isset($user->{$extrafield})) {
-                    $identity[] = s($user->{$extrafield});
-                }
-            }
-            $identity = $identity ? html_writer::div(implode(', ', $identity), 'small') : '';
-
-            $link = html_writer::link($settingsurl, fullname($user));
-
+            $modifiedauthoriseduserurl = new moodle_url('/' . $CFG->admin . '/webservice/service_user_settings.php',
+                            array('userid' => $user->id, 'serviceid' => $serviceid));
+            $html .= html_writer::tag('a', $user->firstname . " "
+                            . $user->lastname . ", " . s($user->email),
+                            array('href' => $modifiedauthoriseduserurl));
+            //add missing capabilities
             if (!empty($user->missingcapabilities)) {
-                $count = html_writer::span(count($user->missingcapabilities), 'badge bg-danger text-white');
-                $links = array_map(function($capname) {
-                    return get_capability_docs_link((object)['name' => $capname]) . html_writer::div($capname, 'text-muted');
-                }, $user->missingcapabilities);
-                $list = html_writer::alist($links);
-                $help = $this->output->help_icon('missingcaps', 'webservice');
-                $missingcaps = print_collapsible_region(html_writer::div($list . $help, 'missingcaps'), 'small',
-                    html_writer::random_id('usermissingcaps'), get_string('usermissingcaps', 'webservice', $count), '', true, true);
-
+                $html .= html_writer::tag('div',
+                                get_string('usermissingcaps', 'webservice', $user->missingcapabilities)
+                                . '&nbsp;' . $this->output->help_icon('missingcaps', 'webservice'),
+                                array('class' => 'missingcaps', 'id' => 'usermissingcaps'));
+                $html .= html_writer::empty_tag('br');
             } else {
-                $missingcaps = '';
+                $html .= html_writer::empty_tag('br') . html_writer::empty_tag('br');
             }
-
-            $listitems[] = $link . $identity . $missingcaps;
         }
-
-        $html = html_writer::div(html_writer::alist($listitems), 'alloweduserlist');
-
+        $html .= $this->output->box_end();
         return $html;
     }
 
@@ -184,6 +163,29 @@ class core_webservice_renderer extends plugin_renderer_base {
                         new moodle_url($CFG->wwwroot . "/" . $CFG->admin . "/settings.php", $optionsno),
                         get_string('cancel'), 'get');
         return $this->output->confirm(get_string('deleteserviceconfirm', 'webservice', $service->name),
+                $formcontinue, $formcancel);
+    }
+
+    /**
+     * Display a confirmation page to delete a token
+     *
+     * @param stdClass $token Required properties: id (token id), firstname (user firstname), lastname (user lastname), name (service name)
+     * @return string html
+     */
+    public function admin_delete_token_confirmation($token) {
+        global $CFG;
+        $optionsyes = array('tokenid' => $token->id, 'action' => 'delete',
+            'confirm' => 1, 'sesskey' => sesskey());
+        $optionsno = array('section' => 'webservicetokens', 'sesskey' => sesskey());
+        $formcontinue = new single_button(
+                        new moodle_url('/' . $CFG->admin . '/webservice/tokens.php', $optionsyes),
+                        get_string('delete'));
+        $formcancel = new single_button(
+                        new moodle_url('/' . $CFG->admin . '/settings.php', $optionsno),
+                        get_string('cancel'), 'get');
+        return $this->output->confirm(get_string('deletetokenconfirm', 'webservice',
+                        (object) array('user' => $token->firstname . " "
+                            . $token->lastname, 'service' => $token->name)),
                 $formcontinue, $formcancel);
     }
 
@@ -266,10 +268,15 @@ class core_webservice_renderer extends plugin_renderer_base {
      * @return string html
      */
     public function user_reset_token_confirmation($token) {
-        $managetokenurl = '/user/managetoken.php';
-        $optionsyes = ['tokenid' => $token->id, 'action' => 'resetwstoken', 'confirm' => 1];
-        $formcontinue = new single_button(new moodle_url($managetokenurl, $optionsyes), get_string('reset'));
-        $formcancel = new single_button(new moodle_url($managetokenurl), get_string('cancel'), 'get');
+        global $CFG;
+        $managetokenurl = $CFG->wwwroot . "/user/managetoken.php?sesskey=" . sesskey();
+        $optionsyes = array('tokenid' => $token->id, 'action' => 'resetwstoken', 'confirm' => 1,
+            'sesskey' => sesskey());
+        $optionsno = array('section' => 'webservicetokens', 'sesskey' => sesskey());
+        $formcontinue = new single_button(new moodle_url($managetokenurl, $optionsyes),
+                        get_string('reset'));
+        $formcancel = new single_button(new moodle_url($managetokenurl, $optionsno),
+                        get_string('cancel'), 'get');
         $html = $this->output->confirm(get_string('resettokenconfirm', 'webservice',
                                 (object) array('user' => $token->firstname . " " .
                                     $token->lastname, 'service' => $token->name)),
@@ -290,11 +297,11 @@ class core_webservice_renderer extends plugin_renderer_base {
 
         // display strings
         $stroperation = get_string('operation', 'webservice');
-        $strtoken = get_string('tokenname', 'webservice');
+        $strtoken = get_string('key', 'webservice');
         $strservice = get_string('service', 'webservice');
         $strcreator = get_string('tokencreator', 'webservice');
+        $strcontext = get_string('context', 'webservice');
         $strvaliduntil = get_string('validuntil', 'webservice');
-        $strlastaccess = get_string('lastaccess');
 
         $return = $this->output->heading(get_string('securitykeys', 'webservice'), 3, 'main', true);
         $return .= $this->output->box_start('generalbox webservicestokenui');
@@ -302,8 +309,8 @@ class core_webservice_renderer extends plugin_renderer_base {
         $return .= get_string('keyshelp', 'webservice');
 
         $table = new html_table();
-        $table->head = array($strtoken, $strservice, $strvaliduntil, $strlastaccess, $strcreator, $stroperation);
-        $table->align = array('left', 'left', 'left', 'center', 'center', 'left', 'center');
+        $table->head = array($strtoken, $strservice, $strvaliduntil, $strcreator, $stroperation);
+        $table->align = array('left', 'left', 'left', 'center', 'left', 'center');
         $table->width = '100%';
         $table->data = array();
 
@@ -316,10 +323,9 @@ class core_webservice_renderer extends plugin_renderer_base {
             foreach ($tokens as $token) {
 
                 if ($token->creatorid == $userid) {
-                    $reset = html_writer::link(new moodle_url('/user/managetoken.php', [
-                        'action' => 'resetwstoken',
-                        'tokenid' => $token->id,
-                    ]), get_string('reset'));
+                    $reset = "<a href=\"" . $CFG->wwwroot . "/user/managetoken.php?sesskey="
+                            . sesskey() . "&amp;action=resetwstoken&amp;tokenid=" . $token->id . "\">";
+                    $reset .= get_string('reset') . "</a>";
                     $creator = $token->firstname . " " . $token->lastname;
                 } else {
                     //retrieve administrator name
@@ -338,20 +344,15 @@ class core_webservice_renderer extends plugin_renderer_base {
                     $validuntil = userdate($token->validuntil, get_string('strftimedatetime', 'langconfig'));
                 }
 
-                $lastaccess = '';
-                if (!empty($token->lastaccess)) {
-                    $lastaccess = userdate($token->lastaccess, get_string('strftimedatetime', 'langconfig'));
+                $tokenname = $token->name;
+                if (!$token->enabled) { //that is the (1 token-1ws) related ws is not enabled.
+                    $tokenname = '<span class="dimmed_text">'.$token->name.'</span>';
                 }
-
-                $servicename = $token->servicename;
-                if (!$token->enabled) { // That is the (1 token-1ws) related ws is not enabled.
-                    $servicename = '<span class="dimmed_text">'.$token->servicename.'</span>';
-                }
-                $row = array($token->tokenname, $servicename, $validuntil, $lastaccess, $creatoratag, $reset);
+                $row = array($token->token, $tokenname, $validuntil, $creatoratag, $reset);
 
                 if ($documentation) {
                     $doclink = new moodle_url('/webservice/wsdoc.php',
-                            array('id' => $token->id));
+                            array('id' => $token->id, 'sesskey' => sesskey()));
                     $row[] = html_writer::tag('a', get_string('doc', 'webservice'),
                             array('href' => $doclink));
                 }
@@ -505,8 +506,6 @@ EOF;
     /**
      * Create indented XML-RPC  param description
      *
-     * @todo MDL-76078 - Incorrect inter-communication, core cannot have plugin dependencies like this.
-     *
      * @param external_description $paramdescription the description structure of the web service function parameters
      * @param string $indentation Indentation in the generated HTML code; should contain only spaces.
      * @return string the html to diplay
@@ -585,8 +584,6 @@ EOF;
     /**
      * Return indented REST param description
      *
-     * @todo MDL-76078 - Incorrect inter-communication, core cannot have plugin dependencies like this.
-     *
      * @param external_description $paramdescription the description structure of the web service function parameters
      * @param string $paramstring parameter
      * @return string the html to diplay
@@ -632,8 +629,6 @@ EOF;
     /**
      * Displays all the documentation
      *
-     * @todo MDL-76078 - Incorrect inter-communication, core cannot have plugin dependencies like this.
-     *
      * @param array $functions external_description of all the web service functions
      * @param boolean $printableformat true if we want to display the documentation in a printable format
      * @param array $activatedprotocol the currently enabled protocol
@@ -672,21 +667,16 @@ EOF;
         //(opened if printableformat = true)
         foreach ($functions as $functionname => $description) {
 
-            $tags = '';
-            if (!empty($description->deprecated)) {
-                $tags .= ' ' . html_writer::span(get_string('deprecated', 'core_webservice'), 'badge bg-warning text-dark');
-            }
-
             if (empty($printableformat)) {
                 $documentationhtml .= print_collapsible_region_start('',
                                 'aera_' . $functionname,
                                 html_writer::start_tag('strong', array())
-                                . $functionname . html_writer::end_tag('strong') . $tags,
+                                . $functionname . html_writer::end_tag('strong'),
                                 false,
                                 !$printableformat,
                                 true);
             } else {
-                $documentationhtml .= html_writer::tag('strong', $functionname) . $tags;
+                $documentationhtml .= html_writer::tag('strong', $functionname);
                 $documentationhtml .= $br;
             }
 
@@ -741,7 +731,7 @@ EOF;
                     $documentationhtml .= $this->colored_box_with_pre_tag(
                                     get_string('phpparam', 'webservice'),
                                     htmlentities('[' . $paramname . '] =>'
-                                            . $this->xmlrpc_param_description_html($paramdesc), ENT_COMPAT),
+                                            . $this->xmlrpc_param_description_html($paramdesc)),
                                     'DFEEE7');
                 }
                 // POST format for the REST protocol for the argument
@@ -749,7 +739,7 @@ EOF;
                     $documentationhtml .= $this->colored_box_with_pre_tag(
                                     get_string('restparam', 'webservice'),
                                     htmlentities($this->rest_param_description_html(
-                                                    $paramdesc, $paramname), ENT_COMPAT),
+                                                    $paramdesc, $paramname)),
                                     'FEEBE5');
                 }
                 $documentationhtml .= html_writer::end_tag('span');
@@ -779,7 +769,7 @@ EOF;
                     $documentationhtml .= $this->colored_box_with_pre_tag(
                                     get_string('phpresponse', 'webservice'),
                                     htmlentities($this->xmlrpc_param_description_html(
-                                                    $description->returns_desc), ENT_COMPAT),
+                                                    $description->returns_desc)),
                                     'DFEEE7');
                 }
                 // XML response for the REST protocol
@@ -791,7 +781,7 @@ EOF;
                     $restresponse .="</RESPONSE>" . $brakeline;
                     $documentationhtml .= $this->colored_box_with_pre_tag(
                                     get_string('restcode', 'webservice'),
-                                    htmlentities($restresponse, ENT_COMPAT),
+                                    htmlentities($restresponse),
                                     'FEEBE5');
                 }
             }
@@ -815,7 +805,7 @@ EOF;
 EOF;
                 $documentationhtml .= $this->colored_box_with_pre_tag(
                                 get_string('restexception', 'webservice'),
-                                htmlentities($restexceptiontext, ENT_COMPAT),
+                                htmlentities($restexceptiontext),
                                 'FEEBE5');
 
                 $documentationhtml .= html_writer::end_tag('span');

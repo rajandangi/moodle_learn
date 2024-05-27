@@ -38,7 +38,7 @@ $override = null;
 if ($overrideid) {
 
     if (! $override = $DB->get_record('lesson_overrides', array('id' => $overrideid))) {
-        throw new \moodle_exception('invalidoverrideid', 'lesson');
+        print_error('invalidoverrideid', 'lesson');
     }
 
     $lesson = new lesson($DB->get_record('lesson', array('id' => $override->lessonid), '*',  MUST_EXIST));
@@ -50,7 +50,7 @@ if ($overrideid) {
     $lesson = new lesson($DB->get_record('lesson', array('id' => $cm->instance), '*', MUST_EXIST));
 
 } else {
-    throw new \moodle_exception('invalidcoursemodule');
+    print_error('invalidcoursemodule');
 }
 $course = $DB->get_record('course', array('id' => $cm->course), '*', MUST_EXIST);
 
@@ -79,11 +79,11 @@ if ($overrideid) {
 
     if ($override->groupid) {
         if (!groups_group_visible($override->groupid, $course, $cm)) {
-            throw new \moodle_exception('invalidoverrideid', 'lesson');
+            print_error('invalidoverrideid', 'lesson');
         }
     } else {
         if (!groups_user_groups_visible($course, $override->userid, $cm)) {
-            throw new \moodle_exception('invalidoverrideid', 'lesson');
+            print_error('invalidoverrideid', 'lesson');
         }
     }
 } else {
@@ -175,8 +175,6 @@ if ($mform->is_cancelled()) {
     if (!empty($override->id)) {
         $fromform->id = $override->id;
         $DB->update_record('lesson_overrides', $fromform);
-        $cachekey = $groupmode ? "{$fromform->lessonid}_g_{$fromform->groupid}" : "{$fromform->lessonid}_u_{$fromform->userid}";
-        cache::make('mod_lesson', 'overrides')->delete($cachekey);
 
         // Determine which override updated event to fire.
         $params['objectid'] = $override->id;
@@ -193,8 +191,6 @@ if ($mform->is_cancelled()) {
     } else {
         unset($fromform->id);
         $fromform->id = $DB->insert_record('lesson_overrides', $fromform);
-        $cachekey = $groupmode ? "{$fromform->lessonid}_g_{$fromform->groupid}" : "{$fromform->lessonid}_u_{$fromform->userid}";
-        cache::make('mod_lesson', 'overrides')->delete($cachekey);
 
         // Determine which override created event to fire.
         $params['objectid'] = $fromform->id;
@@ -235,8 +231,6 @@ if ($mform->is_cancelled()) {
 $pagetitle = get_string('editoverride', 'lesson');
 $PAGE->navbar->add($pagetitle);
 $PAGE->set_pagelayout('admin');
-$PAGE->set_secondary_active_tab('mod_lesson_useroverrides');
-$PAGE->add_body_class('limitedwidth');
 $PAGE->set_title($pagetitle);
 $PAGE->set_heading($course->fullname);
 echo $OUTPUT->header();

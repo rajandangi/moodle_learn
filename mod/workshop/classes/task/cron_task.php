@@ -53,6 +53,7 @@ class cron_task extends \core\task\scheduled_task {
 
         mtrace(' processing workshop subplugins ...');
 
+        // Now when the scheduled allocator had a chance to do its job.
         // Check if there are some workshops to switch into the assessment phase.
         $workshops = $DB->get_records_select("workshop",
             "phase = 20 AND phaseswitchassessment = 1 AND submissionend > 0 AND submissionend < ?", [$now]);
@@ -71,11 +72,10 @@ class cron_task extends \core\task\scheduled_task {
                     'context' => $workshop->context,
                     'courseid' => $workshop->course->id,
                     'other' => [
-                        'targetworkshopphase' => $workshop->phase,
-                        'previousworkshopphase' => \workshop::PHASE_SUBMISSION,
+                        'workshopphase' => $workshop->phase
                     ]
                 ];
-                $event = \mod_workshop\event\phase_automatically_switched::create($params);
+                $event = \mod_workshop\event\phase_switched::create($params);
                 $event->trigger();
 
                 // Disable the automatic switching now so that it is not executed again by accident.

@@ -13,18 +13,31 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
-
-namespace tool_lp;
-
-use core_competency\api;
-use core_external\external_api;
-use externallib_advanced_testcase;
+/**
+ * External learning plans webservice API tests.
+ *
+ * @package tool_lp
+ * @copyright 2015 Damyon Wiese
+ * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
 defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
 
 require_once($CFG->dirroot . '/webservice/tests/helpers.php');
+
+use core_competency\api;
+use tool_lp\external;
+use core_competency\invalid_persistent_exception;
+use core_competency\plan;
+use core_competency\related_competency;
+use core_competency\user_competency;
+use core_competency\user_competency_plan;
+use core_competency\plan_competency;
+use core_competency\template;
+use core_competency\template_competency;
+use core_competency\course_competency_settings;
 
 /**
  * External learning plans webservice API tests.
@@ -33,24 +46,24 @@ require_once($CFG->dirroot . '/webservice/tests/helpers.php');
  * @copyright 2015 Damyon Wiese
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class externallib_test extends externallib_advanced_testcase {
+class tool_lp_external_testcase extends externallib_advanced_testcase {
 
-    /** @var \stdClass $creator User with enough permissions to create insystem context. */
+    /** @var stdClass $creator User with enough permissions to create insystem context. */
     protected $creator = null;
 
-    /** @var \stdClass $catcreator User with enough permissions to create incategory context. */
+    /** @var stdClass $catcreator User with enough permissions to create incategory context. */
     protected $catcreator = null;
 
-    /** @var \stdClass $category Category */
+    /** @var stdClass $category Category */
     protected $category = null;
 
-    /** @var \stdClass $category Category */
+    /** @var stdClass $category Category */
     protected $othercategory = null;
 
-    /** @var \stdClass $user User with enough permissions to view insystem context */
+    /** @var stdClass $user User with enough permissions to view insystem context */
     protected $user = null;
 
-    /** @var \stdClass $catuser User with enough permissions to view incategory context */
+    /** @var stdClass $catuser User with enough permissions to view incategory context */
     protected $catuser = null;
 
     /** @var int Creator role id */
@@ -62,7 +75,7 @@ class externallib_test extends externallib_advanced_testcase {
     /**
      * Setup function- we will create a course and add an assign instance to it.
      */
-    protected function setUp(): void {
+    protected function setUp() {
         global $DB, $CFG;
 
         $this->resetAfterTest(true);
@@ -74,8 +87,8 @@ class externallib_test extends externallib_advanced_testcase {
         $catcreator = $this->getDataGenerator()->create_user();
         $category = $this->getDataGenerator()->create_category();
         $othercategory = $this->getDataGenerator()->create_category();
-        $syscontext = \context_system::instance();
-        $catcontext = \context_coursecat::instance($category->id);
+        $syscontext = context_system::instance();
+        $catcontext = context_coursecat::instance($category->id);
 
         // Fetching default authenticated user role.
         $authrole = $DB->get_record('role', array('id' => $CFG->defaultuserroleid));
@@ -149,8 +162,8 @@ class externallib_test extends externallib_advanced_testcase {
         $this->assertEquals(0, $result['count']);
 
         // Now we assign a different capability.
-        $usercontext = \context_user::instance($u1->id);
-        $systemcontext = \context_system::instance();
+        $usercontext = context_user::instance($u1->id);
+        $systemcontext = context_system::instance();
         $customrole = $this->assignUserCapability('moodle/competency:planview', $usercontext->id);
 
         $result = external::search_users('yyylan', 'moodle/competency:planmanage');
@@ -159,7 +172,7 @@ class externallib_test extends externallib_advanced_testcase {
         $this->assertEquals(0, $result['count']);
 
         // Now we assign a matching capability in the same role.
-        $usercontext = \context_user::instance($u1->id);
+        $usercontext = context_user::instance($u1->id);
         $this->assignUserCapability('moodle/competency:planmanage', $usercontext->id, $customrole);
 
         $result = external::search_users('yyylan', 'moodle/competency:planmanage');
@@ -224,10 +237,10 @@ class externallib_test extends externallib_advanced_testcase {
         $slave2 = $dg->create_user(array('lastname' => 'MOODLER'));
         $slave3 = $dg->create_user(array('lastname' => 'MOODLER'));
 
-        $syscontext = \context_system::instance();
-        $slave1context = \context_user::instance($slave1->id);
-        $slave2context = \context_user::instance($slave2->id);
-        $slave3context = \context_user::instance($slave3->id);
+        $syscontext = context_system::instance();
+        $slave1context = context_user::instance($slave1->id);
+        $slave2context = context_user::instance($slave2->id);
+        $slave3context = context_user::instance($slave3->id);
 
         // Creating a role giving the site config.
         $roleid = $dg->create_role();
@@ -293,19 +306,19 @@ class externallib_test extends externallib_advanced_testcase {
 
         // We need to give the user the capability we are searching for on each of the test users.
         $this->setAdminUser();
-        $usercontext = \context_user::instance($u1->id);
+        $usercontext = context_user::instance($u1->id);
         $dummyrole = $this->assignUserCapability('moodle/competency:planmanage', $usercontext->id);
-        $usercontext = \context_user::instance($u2->id);
+        $usercontext = context_user::instance($u2->id);
         $this->assignUserCapability('moodle/competency:planmanage', $usercontext->id, $dummyrole);
-        $usercontext = \context_user::instance($u3->id);
+        $usercontext = context_user::instance($u3->id);
         $this->assignUserCapability('moodle/competency:planmanage', $usercontext->id, $dummyrole);
 
         $this->setUser($ux);
-        $usercontext = \context_user::instance($u1->id);
+        $usercontext = context_user::instance($u1->id);
         $this->assignUserCapability('moodle/competency:planmanage', $usercontext->id, $dummyrole);
-        $usercontext = \context_user::instance($u2->id);
+        $usercontext = context_user::instance($u2->id);
         $this->assignUserCapability('moodle/competency:planmanage', $usercontext->id, $dummyrole);
-        $usercontext = \context_user::instance($u3->id);
+        $usercontext = context_user::instance($u3->id);
         $this->assignUserCapability('moodle/competency:planmanage', $usercontext->id, $dummyrole);
 
         $this->setAdminUser();

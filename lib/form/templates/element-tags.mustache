@@ -8,9 +8,6 @@
             {{#error}}
                 autofocus aria-describedby="{{element.iderror}}"
             {{/error}}
-            {{#required}}
-                aria-required="true"
-            {{/required}}
             {{{element.attributes}}} >
             {{#element.options}}
             <option value="{{value}}" {{#selected}}selected{{/selected}}>{{{text}}}</option>
@@ -19,7 +16,7 @@
         {{/element.frozen}}
         {{#element.frozen}}
             {{#element.options}}
-                {{#selected}}<span class="badge bg-info text-white">{{{text}}}</span>{{/selected}}
+                {{#selected}}{{{text}}}{{/selected}}
             {{/element.options}}
         {{/element.frozen}}
         {{#element.managestandardtagsurl}}

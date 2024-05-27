@@ -14,7 +14,8 @@ Feature: Course files
       | legacyfilesaddallowed   | 1 |
     When I log in as "admin"
     And I am on "Course 1" course homepage
-    Then I navigate to "Legacy course files" in current page administration
+    Then "Legacy course files" "link" should exist in current page administration
+    And I navigate to "Legacy course files" in current page administration
     And I press "Edit legacy course files"
     And "Add..." "link" should be visible
     And "Create folder" "link" should be visible
@@ -29,7 +30,8 @@ Feature: Course files
       | legacyfilesaddallowed   | 0 |
     When I log in as "admin"
     And I am on "Course 1" course homepage
-    Then I navigate to "Legacy course files" in current page administration
+    Then "Legacy course files" "link" should exist in current page administration
+    And I navigate to "Legacy course files" in current page administration
     And I press "Edit legacy course files"
     And "Add..." "link" should not be visible
     And "Create folder" "link" should not be visible

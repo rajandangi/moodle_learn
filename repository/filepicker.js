@@ -290,12 +290,6 @@ YUI.add('moodle-core_filepicker', function(Y) {
                 Y.bind(callback, options.callbackcontext)(e, e.node.fileinfo);
                 Y.YUI2.util.Event.stopEvent(e.event)
             });
-            // Simulate click on file not folder.
-            scope.treeview.subscribe('enterKeyPressed', function(node) {
-                if (node.children.length === 0) {
-                    Y.one(node.getContentEl()).one('a').simulate('click');
-                }
-            });
             // TODO MDL-32736 support right click
             /*if (options.rightclickcallback) {
                 scope.treeview.subscribe('dblClickEvent', function(e){
@@ -336,14 +330,16 @@ YUI.add('moodle-core_filepicker', function(Y) {
          */
         var formatCheckbox = function(o) {
             var el = Y.Node.create('<div/>');
-            var parentid = scope.one('.' + classname).get('id');
+
             var checkbox = Y.Node.create('<input/>')
                 .setAttribute('type', 'checkbox')
                 .setAttribute('data-fieldtype', 'checkbox')
                 .setAttribute('data-fullname', o.data.fullname)
                 .setAttribute('data-action', 'toggle')
                 .setAttribute('data-toggle', 'slave')
-                .setAttribute('data-togglegroup', 'file-selections-' + parentid);
+                .setAttribute('data-togglegroup', 'file-selections')
+                .setAttribute('data-toggle-selectall', M.util.get_string('selectall', 'moodle'))
+                .setAttribute('data-toggle-deselectall', M.util.get_string('deselectall', 'moodle'));
 
             var checkboxLabel = Y.Node.create('<label>')
                 .setHTML("Select file '" + o.data.fullname + "'")
@@ -382,13 +378,12 @@ YUI.add('moodle-core_filepicker', function(Y) {
 
             // Generate a checkbox based on toggleall's specification
             var div = Y.Node.create('<div/>');
-            var parentid = scope.one('.' + classname).get('id');
             var checkbox = Y.Node.create('<input/>')
                 .setAttribute('type', 'checkbox')
                 // .setAttribute('title', M.util.get_string('selectallornone', 'form'))
                 .setAttribute('data-action', 'toggle')
                 .setAttribute('data-toggle', 'master')
-                .setAttribute('data-togglegroup', 'file-selections-' + parentid);
+                .setAttribute('data-togglegroup', 'file-selections');
 
             var checkboxLabel = Y.Node.create('<label>')
                 .setHTML(M.util.get_string('selectallornone', 'form'))
@@ -1229,7 +1224,6 @@ M.core_filepicker.init = function(Y, options) {
             var client_id = this.options.client_id;
             var selectnode = this.selectnode;
             var getfile = selectnode.one('.fp-select-confirm');
-            var filePickerHelper = this;
             // bind labels with corresponding inputs
             selectnode.all('.fp-saveas,.fp-linktype-2,.fp-linktype-1,.fp-linktype-4,fp-linktype-8,.fp-setauthor,.fp-setlicense').each(function (node) {
                 node.all('label').set('for', node.one('input,select').generateID());
@@ -1245,28 +1239,6 @@ M.core_filepicker.init = function(Y, options) {
                         node.addClassIf('uneditable', !allowinputs);
                         node.all('input,select').set('disabled', allowinputs?'':'disabled');
                     });
-
-                    // If the link to the file is selected, only then.
-                    // Remember: this is not to be done for all repos.
-                    // Only for those repos where the filereferencewarning is set.
-                    // The value 4 represents FILE_REFERENCE here.
-                    if (e.currentTarget.get('value') === '4') {
-                        var filereferencewarning = filePickerHelper.active_repo.filereferencewarning;
-                        if (filereferencewarning) {
-                            var fileReferenceNode = e.currentTarget.ancestor('.fp-linktype-4');
-                            var fileReferenceWarningNode = Y.Node.create('<div/>').
-                                addClass('alert alert-warning px-3 py-1 my-1 small').
-                                setAttrs({role: 'alert'}).
-                                setContent(filereferencewarning);
-                            fileReferenceNode.append(fileReferenceWarningNode);
-                        }
-                    } else {
-                        var fileReferenceInput = selectnode.one('.fp-linktype-4 input');
-                        var fileReferenceWarningNode = fileReferenceInput.ancestor('.fp-linktype-4').one('.alert-warning');
-                        if (fileReferenceWarningNode) {
-                            fileReferenceWarningNode.remove();
-                        }
-                    }
                 }
             };
             selectnode.all('.fp-linktype-2,.fp-linktype-1,.fp-linktype-4,.fp-linktype-8').each(function (node) {
@@ -1602,8 +1574,6 @@ M.core_filepicker.init = function(Y, options) {
             this.active_repo.message = (data.message || '');
             this.active_repo.help = data.help?data.help:null;
             this.active_repo.manage = data.manage?data.manage:null;
-            // Warning message related to the file reference option, if applicable to the given repository.
-            this.active_repo.filereferencewarning = data.filereferencewarning ? data.filereferencewarning : null;
             this.print_header();
         },
         print_login: function(data) {
@@ -2124,10 +2094,8 @@ M.core_filepicker.init = function(Y, options) {
         },
         set_preference: function(name, value) {
             if (this.options.userprefs[name] != value) {
-                require(['core_user/repository'], function(UserRepository) {
-                    UserRepository.setUserPreference('filepicker_' + name, value);
-                    this.options.userprefs[name] = value;
-                }.bind(this));
+                M.util.set_user_preference('filepicker_' + name, value);
+                this.options.userprefs[name] = value;
             }
         },
         in_iframe: function () {

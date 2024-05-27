@@ -24,7 +24,7 @@
 
 namespace dataformat_json;
 
-use core_text;
+defined('MOODLE_INTERNAL') || die();
 
 /**
  * JSON data format writer
@@ -47,9 +47,6 @@ class writer extends \core\dataformat\base {
     /** @var $sheetdatadded */
     public $sheetdatadded = false;
 
-    /** @var string[] $columns */
-    protected $columns = [];
-
     /**
      * Write the start of the file.
      */
@@ -63,10 +60,6 @@ class writer extends \core\dataformat\base {
      * @param array $columns
      */
     public function start_sheet($columns) {
-        $this->columns = array_map(function($column) {
-            return core_text::strtolower(clean_param($column, PARAM_ALPHANUMEXT));
-        }, $columns);
-
         if ($this->sheetstarted) {
             echo ",";
         } else {
@@ -87,8 +80,6 @@ class writer extends \core\dataformat\base {
             echo ",";
         }
 
-        // Ensure our record is keyed by column names, rather than numerically.
-        $record = array_combine($this->columns, (array) $record);
         echo json_encode($this->format_record($record), JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 
         $this->sheetdatadded = true;

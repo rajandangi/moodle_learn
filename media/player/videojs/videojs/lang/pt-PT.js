@@ -10,7 +10,7 @@ videojs.addLanguage('pt-PT', {
   "Loaded": "Carregado",
   "Progress": "Progresso",
   "Fullscreen": "Ecrã inteiro",
-  "Exit Fullscreen": "Ecrã normal",
+  "Non-Fullscreen": "Ecrã normal",
   "Mute": "Desativar som",
   "Unmute": "Ativar som",
   "Playback Rate": "Velocidade de reprodução",
@@ -37,7 +37,5 @@ videojs.addLanguage('pt-PT', {
   ", opens captions settings dialog": ", abre janela com definições de legendas",
   ", opens subtitles settings dialog": ", abre janela com definições de legendas",
   ", opens descriptions settings dialog": ", abre janela com definições de descrições",
-  ", selected": ", seleccionado",
-  "Skip backward {1} seconds": "Recuar de {1} segundos",
-  "Skip forward {1} seconds": "Avançar de {1} segundos"
+  ", selected": ", seleccionado"
 });

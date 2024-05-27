@@ -14,10 +14,15 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace qtype_calculatedmulti;
+/**
+ * This file contains overall tests of calculated multiple-choice questions.
+ *
+ * @package    qtype
+ * @subpackage calculatedmulti
+ * @copyright  2011 The Open University
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
-use question_hint_with_parts;
-use question_state;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -28,16 +33,15 @@ require_once($CFG->dirroot . '/question/engine/tests/helpers.php');
 /**
  * Unit tests for the calculated multiple-choice question type.
  *
- * @package    qtype_calculatedmulti
  * @copyright  2011 The Open University
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class walkthrough_test extends \qbehaviour_walkthrough_test_base {
+class qtype_calculatedmulti_walkthrough_test extends qbehaviour_walkthrough_test_base {
 
     public function test_interactive_single_response() {
 
         // Create a gapselect question.
-        $q = \test_question_maker::make_question('calculatedmulti', 'singleresponse');
+        $q = test_question_maker::make_question('calculatedmulti', 'singleresponse');
         $q->shuffleanswers = false;
         $q->hints = array(
             new question_hint_with_parts(1, 'This is the first hint.', FORMAT_HTML, true, false),
@@ -101,7 +105,7 @@ class walkthrough_test extends \qbehaviour_walkthrough_test_base {
     public function test_interactive_multi_response() {
 
         // Create a gapselect question.
-        $q = \test_question_maker::make_question('calculatedmulti', 'multiresponse');
+        $q = test_question_maker::make_question('calculatedmulti', 'multiresponse');
         $q->shuffleanswers = false;
         $q->hints = array(
                 new question_hint_with_parts(1, 'This is the first hint.', FORMAT_HTML, true, false),

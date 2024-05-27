@@ -14,20 +14,30 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace core;
+/**
+ * PHPUnit integration tests
+ *
+ * @package    core
+ * @category   phpunit
+ * @copyright  2012 Petr Skoda {@link http://skodak.org}
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+defined('MOODLE_INTERNAL') || die();
+
 
 /**
  * Test basic_testcase extra features and PHPUnit Moodle integration.
  *
  * @package    core
- * @category   test
+ * @category   phpunit
  * @copyright  2012 Petr Skoda {@link http://skodak.org}
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class basic_test extends \basic_testcase {
+class core_phpunit_basic_testcase extends basic_testcase {
     protected $testassertexecuted = false;
 
-    protected function setUp(): void {
+    protected function setUp() {
         parent::setUp();
         if ($this->getName() === 'test_setup_assert') {
             $this->assertTrue(true);
@@ -62,17 +72,17 @@ class basic_test extends \basic_testcase {
         $this->assertNotEquals($a, $b);
         $this->assertNotEquals($a, $d);
         $this->assertEquals($a, $c);
-        $this->assertEqualsCanonicalizing($a, $b);
+        $this->assertEquals($a, $b, '', 0, 10, true);
 
         // Objects.
-        $a = new \stdClass();
+        $a = new stdClass();
         $a->x = 'x';
         $a->y = 'y';
-        $b = new \stdClass(); // Switched order.
+        $b = new stdClass(); // Switched order.
         $b->y = 'y';
         $b->x = 'x';
         $c = $a;
-        $d = new \stdClass();
+        $d = new stdClass();
         $d->x = 'x';
         $d->y = 'y';
         $d->z = 'z';
@@ -86,6 +96,7 @@ class basic_test extends \basic_testcase {
         $this->assertEquals(1, '1');
         $this->assertEquals(null, '');
 
+        $this->assertNotEquals(1, '1 ');
         $this->assertNotEquals(0, '');
         $this->assertNotEquals(null, '0');
         $this->assertNotEquals(array(), '');
@@ -111,7 +122,7 @@ class basic_test extends \basic_testcase {
         $this->assertNotEmpty('0 ');
         $this->assertNotEmpty(true);
         $this->assertNotEmpty(array(null));
-        $this->assertNotEmpty(new \stdClass());
+        $this->assertNotEmpty(new stdClass());
     }
 
     /**
@@ -143,84 +154,6 @@ STRING;
         self::assertTag(['id' => 'testid'], "<div><span id='testid'></span></div>");
         $this->expectException(\PHPUnit\Framework\ExpectationFailedException::class);
         self::assertTag(['id' => 'testid'], "<div><div>");
-    }
-
-    /**
-     * Tests for assertEqualsIgnoringWhitespace.
-     *
-     * @param string $expected
-     * @param string $actual
-     * @param bool $expectationvalid
-     * @dataProvider equals_ignoring_whitespace_provider
-     */
-    public function test_assertEqualsIgnoringWhitespace( // phpcs:ignore
-        string $expected,
-        string $actual,
-        bool $expectationvalid,
-    ): void {
-        if (!$expectationvalid) {
-            $this->expectException(\PHPUnit\Framework\ExpectationFailedException::class);
-        }
-        self::assertEqualsIgnoringWhitespace($expected, $actual);
-    }
-
-    /**
-     * Data provider for assertEqualsIgnoringWhitespace tests
-     *
-     * @return array
-     */
-    public static function equals_ignoring_whitespace_provider(): array {
-        return [
-            'equal' => ['a b c', 'a b c', true],
-            'equal with whitespace' => ["a b c", "a\nb c", true],
-            'equal with extra whitespace' => ["a b c", "a\nb  c", true],
-            'whitespace missing' => ["ab c", "a\nb  c", false],
-            'not equal' => ['a b c', 'a b d', false],
-            'various space types' => [
-                implode(' ', [
-                    '20', // Regular space.
-                    "a0", // No-Break Space (NBSP).
-                    "80", // Ogham Space Mark.
-                    "0", // En Quad.
-                    "1", // Em Quad.
-                    "2", // En Space.
-                    "3", // Em Space.
-                    "4", // Three-Per-Em Space.
-                    "5", // Four-Per-Em Space.
-                    "6", // Six-Per-Em Space.
-                    "7", // Figure Space.
-                    "8", // Punctuation Space.
-                    "9", // Thin Space.
-                    "0a", // Hair Space.
-                    "2f", // Narrow No-Break Space (NNBSP).
-                    "5f", // Medium Mathematical Space.
-                    "3000", // Ideographic Space.
-                    ".",
-                ]),
-                implode('', [
-                    // All space chars taken from https://www.compart.com/en/unicode/category/Zs.
-                    "20\u{0020}", // Regular space.
-                    "a0\u{00a0}", // No-Break Space (NBSP).
-                    "80\u{1680}", // Ogham Space Mark.
-                    "0\u{2000}", // En Quad.
-                    "1\u{2001}", // Em Quad.
-                    "2\u{2002}", // En Space.
-                    "3\u{2003}", // Em Space.
-                    "4\u{2004}", // Three-Per-Em Space.
-                    "5\u{2005}", // Four-Per-Em Space.
-                    "6\u{2006}", // Six-Per-Em Space.
-                    "7\u{2007}", // Figure Space.
-                    "8\u{2008}", // Punctuation Space.
-                    "9\u{2009}", // Thin Space.
-                    "0a\u{200a}", // Hair Space.
-                    "2f\u{202f}", // Narrow No-Break Space (NNBSP).
-                    "5f\u{205f}", // Medium Mathematical Space.
-                    "3000\u{3000}", // Ideographic Space.
-                    ".",
-                ]),
-                true,
-            ],
-        ];
     }
 
     // Uncomment following tests to see logging of unexpected changes in global state and database.

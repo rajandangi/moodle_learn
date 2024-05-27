@@ -30,26 +30,26 @@ $displaymode = optional_param('display', '', PARAM_ALPHA);
 
 if (!empty($id)) {
     if (! $cm = get_coursemodule_from_id('scorm', $id, 0, true)) {
-        throw new \moodle_exception('invalidcoursemodule');
+        print_error('invalidcoursemodule');
     }
     if (! $course = $DB->get_record("course", array("id" => $cm->course))) {
-        throw new \moodle_exception('coursemisconf');
+        print_error('coursemisconf');
     }
     if (! $scorm = $DB->get_record("scorm", array("id" => $cm->instance))) {
-        throw new \moodle_exception('invalidcoursemodule');
+        print_error('invalidcoursemodule');
     }
 } else if (!empty($a)) {
     if (! $scorm = $DB->get_record("scorm", array("id" => $a))) {
-        throw new \moodle_exception('invalidcoursemodule');
+        print_error('invalidcoursemodule');
     }
     if (! $course = $DB->get_record("course", array("id" => $scorm->course))) {
-        throw new \moodle_exception('coursemisconf');
+        print_error('coursemisconf');
     }
     if (! $cm = get_coursemodule_from_instance("scorm", $scorm->id, $course->id, true)) {
-        throw new \moodle_exception('invalidcoursemodule');
+        print_error('invalidcoursemodule');
     }
 } else {
-    throw new \moodle_exception('missingparameter');
+    print_error('missingparameter');
 }
 
 // PARAM_RAW is used for $currentorg, validate it against records stored in the table.
@@ -83,8 +83,6 @@ if ($displaymode !== '') {
     $url->param('display', $displaymode);
 }
 $PAGE->set_url($url);
-$PAGE->set_secondary_active_tab("modulepage");
-
 $forcejs = get_config('scorm', 'forcejavascript');
 if (!empty($forcejs)) {
     $PAGE->add_body_class('forcejavascript');
@@ -160,8 +158,7 @@ $SESSION->scorm->attempt = $attempt;
 $completion = new completion_info($course);
 $completion->set_module_viewed($cm);
 
-// Generate the exit button.
-$exiturl = "";
+// Print the page header.
 if (empty($scorm->popup) || $displaymode == 'popup') {
     if ($course->format == 'singleactivity' && $scorm->skipview == SCORM_SKIPVIEW_ALWAYS
         && !has_capability('mod/scorm:viewreport', context_module::instance($cm->id))) {
@@ -169,11 +166,13 @@ if (empty($scorm->popup) || $displaymode == 'popup') {
         $exiturl = $CFG->wwwroot;
     } else {
         // Redirect back to the correct section if one section per page is being used.
-        $exiturl = course_get_url($course, $cm->sectionnum)->out();
+        $exiturl = course_get_url($course, $cm->sectionnum);
     }
+
+    $exitlink = html_writer::link($exiturl, $strexit, array('title' => $strexit, 'class' => 'btn btn-secondary'));
+    $PAGE->set_button($exitlink);
 }
 
-// Print the page header.
 $PAGE->requires->data_for_js('scormplayerdata', Array('launch' => false,
                                                        'currentorg' => '',
                                                        'sco' => 0,
@@ -190,14 +189,11 @@ if (file_exists($CFG->dirroot.'/mod/scorm/datamodels/'.$scorm->version.'.js')) {
 } else {
     $PAGE->requires->js('/mod/scorm/datamodels/scorm_12.js', true);
 }
-$activityheader = $PAGE->activityheader;
-$headerconfig = [
-    'description' => '',
-    'hidecompletion' => true
-];
 
-$activityheader->set_attrs($headerconfig);
 echo $OUTPUT->header();
+if (!empty($scorm->displayactivityname)) {
+    echo $OUTPUT->heading(format_string($scorm->name));
+}
 
 $PAGE->requires->string_for_js('navigation', 'scorm');
 $PAGE->requires->string_for_js('toc', 'scorm');
@@ -207,22 +203,15 @@ $PAGE->requires->string_for_js('popupsblocked', 'scorm');
 
 $name = false;
 
-// Exit button should ONLY be displayed when in the current window.
-if ($displaymode !== 'popup') {
-    $renderer = $PAGE->get_renderer('mod_scorm');
-    echo $renderer->generate_exitbar($exiturl);
-}
-
 echo html_writer::start_div('', array('id' => 'scormpage'));
 echo html_writer::start_div('', array('id' => 'tocbox'));
 echo html_writer::div(html_writer::tag('script', '', array('id' => 'external-scormapi', 'type' => 'text/JavaScript')), '',
                         array('id' => 'scormapi-parent'));
 
 if ($scorm->hidetoc == SCORM_TOC_POPUP or $mode == 'browse' or $mode == 'review') {
-    echo html_writer::start_div('mb-3', array('id' => 'scormtop'));
-    if ($mode == 'browse' || $mode == 'review') {
-        echo html_writer::div(get_string("{$mode}mode", 'scorm'), 'scorm-left h3', ['id' => 'scormmode']);
-    }
+    echo html_writer::start_div('', array('id' => 'scormtop'));
+    echo $mode == 'browse' ? html_writer::div(get_string('browsemode', 'scorm'), 'scorm-left', array('id' => 'scormmode')) : '';
+    echo $mode == 'review' ? html_writer::div(get_string('reviewmode', 'scorm'), 'scorm-left', array('id' => 'scormmode')) : '';
     if ($scorm->hidetoc == SCORM_TOC_POPUP) {
         echo html_writer::div($result->tocmenu, 'scorm-right', array('id' => 'scormnav'));
     }

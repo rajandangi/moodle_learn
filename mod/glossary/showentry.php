@@ -36,11 +36,10 @@ if ($eid) {
     $entries = glossary_get_entries_search($concept, $courseid);
 
 } else {
-    throw new \moodle_exception('invalidelementid');
+    print_error('invalidelementid');
 }
 
 $PAGE->set_pagelayout('incourse');
-$PAGE->activityheader->disable();
 
 if ($entries) {
     foreach ($entries as $key => $entry) {
@@ -77,12 +76,6 @@ if (!empty($courseid)) {
     echo $OUTPUT->header();
 } else {
     echo $OUTPUT->header();    // Needs to be something here to allow linking back to the whole glossary
-}
-
-if ($glossary) {
-    $url = new moodle_url('view.php', ['id' => $cm->id]);
-    $backlink = html_writer::link($url, get_string('back'), ['class' => 'btn btn-secondary']);
-    echo html_writer::tag('div', $backlink, ['class' => 'tertiary-navigation']);
 }
 
 if ($entries) {

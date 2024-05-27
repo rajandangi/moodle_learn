@@ -29,47 +29,6 @@ Feature: Group assignment submissions
       | Group 1 | C1     | G1       |
 
   @javascript
-  Scenario: Confirm that group submissions are removed from the timeline
-    Given the following "activity" exists:
-      | activity                            | assign               |
-      | course                              | C1                   |
-      | name                                | Test assignment name |
-      | assignsubmission_onlinetext_enabled | 1                    |
-      | teamsubmission                      | 1                    |
-      | duedate                             | ##tomorrow##         |
-      | requiresubmissionstatement          | 1                    |
-    And the following "group members" exist:
-      | user     | group |
-      | student1 | G1    |
-      | student2 | G1    |
-    # Student1 checks the assignment is visible in the timeline
-    When I am on the "Homepage" page logged in as student1
-    Then I should see "Test assignment name" in the "Timeline" "block"
-    # Student2 checks the assignment is visible in the timeline
-    And I am on the "Homepage" page logged in as student2
-    And I should see "Test assignment name" in the "Timeline" "block"
-    # Student2 submits the assignment
-    And I am on the "Test assignment name" Activity page
-    And I press "Add submission"
-    And I set the field "Online text" to "Assignment submission text"
-    And I press "Save changes"
-    And I should see "Draft (not submitted)" in the "Submission status" "table_row"
-    And I press "Submit assignment"
-    And I should see "This submission is the work of my group, except where we have acknowledged the use of the works of other people."
-    And I press "Continue"
-    And I should see "Confirm submission"
-    And I should see "You are required to agree to this statement before you can submit."
-    And I set the field "submissionstatement" to "1"
-    And I press "Continue"
-    And I should see "Submitted for grading" in the "Submission status" "table_row"
-    # Student2 checks the timeline again
-    And I am on the "Homepage" page
-    And I should not see "Test assignment name" in the "Timeline" "block"
-    # Student1 checks the timeline again
-    And I am on the "Homepage" page logged in as student1
-    And I should not see "Test assignment name" in the "Timeline" "block"
-
-  @javascript
   Scenario: Switch between group modes
     Given the following "activity" exists:
       | activity         | assign                      |
@@ -78,7 +37,7 @@ Feature: Group assignment submissions
       | submissiondrafts | 0                           |
       | teamsubmission   | 1                           |
     And I am on the "Test assignment name" Activity page logged in as teacher1
-    When I follow "View all submissions"
+    When I navigate to "View all submissions" in current page administration
     Then I should see "Default group" in the "Student 0" "table_row"
     And I should see "Default group" in the "Student 1" "table_row"
     And I should see "Default group" in the "Student 2" "table_row"
@@ -87,7 +46,7 @@ Feature: Group assignment submissions
     And I set the following fields to these values:
       | Group mode | Separate groups |
     And I press "Save and return to course"
-    And I navigate to "Settings" in current page administration
+    And I navigate to "Edit settings" in current page administration
     And I set the following fields to these values:
       | Group mode | Separate groups |
     And I press "Save and display"
@@ -96,7 +55,7 @@ Feature: Group assignment submissions
       | student0 | G1    |
       | student1 | G1    |
     And I am on the "Test assignment name" "assign activity" page
-    And I follow "View all submissions"
+    And I navigate to "View all submissions" in current page administration
     And I set the field "Separate groups" to "Group 1"
     And I should see "Group 1" in the "Student 0" "table_row"
     And I should see "Group 1" in the "Student 1" "table_row"
@@ -125,7 +84,7 @@ Feature: Group assignment submissions
       | assign                | user      | onlinetext                          |
       | Test assignment name  | student1  | I'm the student's first submission  |
     And I am on the "Test assignment name" Activity page logged in as teacher1
-    When I follow "View all submissions"
+    When I navigate to "View all submissions" in current page administration
     Then "Student 1" row "Status" column of "generaltable" table should contain "Submitted for grading"
     And "Student 2" row "Status" column of "generaltable" table should contain "Submitted for grading"
     And "Student 3" row "Status" column of "generaltable" table should not contain "Submitted for grading"
@@ -134,7 +93,7 @@ Feature: Group assignment submissions
       | assign                | user      | onlinetext                          |
       | Test assignment name  | student3  | I'm the student's first submission  |
     And I am on the "Test assignment name" Activity page
-    And I follow "View all submissions"
+    And I navigate to "View all submissions" in current page administration
     And "Student 1" row "Status" column of "generaltable" table should contain "Submitted for grading"
     And "Student 2" row "Status" column of "generaltable" table should contain "Submitted for grading"
     And "Student 3" row "Status" column of "generaltable" table should contain "Submitted for grading"
@@ -160,17 +119,19 @@ Feature: Group assignment submissions
       | assign                | user      | onlinetext                          |
       | Test assignment name  | student1  | I'm the student's first submission  |
     And I am on the "Test assignment name" Activity page logged in as teacher1
-    And I follow "View all submissions"
+    And I navigate to "View all submissions" in current page administration
     And I click on "Grade" "link" in the "Student 1" "table_row"
     And I set the following fields to these values:
       | Grade out of 100 | 50.0 |
       | Apply grades and feedback to entire group | 1 |
     And I press "Save changes"
+    And I press "OK"
     And I set the following fields to these values:
       | Allow another attempt | 1 |
     And I press "Save changes"
+    And I press "OK"
     When I am on the "Test assignment name" "assign activity" page
-    And I follow "View all submissions"
+    And I navigate to "View all submissions" in current page administration
     Then "Student 1" row "Status" column of "generaltable" table should contain "Reopened"
     And "Student 2" row "Status" column of "generaltable" table should contain "Reopened"
 
@@ -256,7 +217,7 @@ Feature: Group assignment submissions
     And I click on "Assignments" "link" in the "Activities" "block"
     And I should see "Submitted for grading"
     And I am on the "Test assignment name" Activity page logged in as teacher1
-    When I follow "View all submissions"
+    When I navigate to "View all submissions" in current page administration
     Then "Student 1" row "Status" column of "generaltable" table should contain "Submitted for grading"
     And "Student 2" row "Status" column of "generaltable" table should contain "Submitted for grading"
 
@@ -324,21 +285,3 @@ Feature: Group assignment submissions
     And I am on the "Assign 2" "assign activity" page logged in as student2
     And I should see "Submitted for grading" in the "Submission status" "table_row"
     And I should not see "Users who need to submit"
-
-  Scenario: Group submission does not use non-participation groups
-    Given the following "groups" exist:
-      | name    | course | idnumber | participation |
-      | Group A | C1     | CG1      | 0             |
-    And the following "group members" exist:
-      | group  | user     |
-      | CG1    | student1 |
-    And the following "activity" exists:
-      | activity         | assign                      |
-      | course           | C1                          |
-      | name             | Test assignment name        |
-      | submissiondrafts | 0                           |
-      | teamsubmission   | 1                           |
-      | groupmode        | 1                           |
-    When I am on the "Test assignment name" Activity page logged in as student1
-    Then I should see "Default group"
-    And I should not see "Group A"

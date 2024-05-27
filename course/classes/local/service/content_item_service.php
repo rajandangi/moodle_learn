@@ -224,8 +224,11 @@ class content_item_service {
         $exported = $ciexporter->export($PAGE->get_renderer('core'));
 
         // Sort by title for return.
-        \core_collator::asort_objects_by_property($exported->content_items, 'title');
-        return array_values($exported->content_items);
+        usort($exported->content_items, function($a, $b) {
+            return $a->title > $b->title;
+        });
+
+        return $exported->content_items;
     }
 
     /**
@@ -297,9 +300,11 @@ class content_item_service {
         $exported = $ciexporter->export($PAGE->get_renderer('course'));
 
         // Sort by title for return.
-        \core_collator::asort_objects_by_property($exported->content_items, 'title');
+        usort($exported->content_items, function($a, $b) {
+            return $a->title > $b->title;
+        });
 
-        return array_values($exported->content_items);
+        return $exported->content_items;
     }
 
     /**

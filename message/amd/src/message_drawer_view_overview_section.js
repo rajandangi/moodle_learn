@@ -65,7 +65,6 @@ function(
         SECTION_TOTAL_COUNT: '[data-region="section-total-count"]',
         SECTION_TOTAL_COUNT_CONTAINER: '[data-region="section-total-count-container"]',
         SECTION_UNREAD_COUNT: '[data-region="section-unread-count"]',
-        SECTION_UNREAD_COUNT_CONTAINER: '[data-region="section-unread-count-container"]',
         PLACEHOLDER_CONTAINER: '[data-region="placeholder-container"]'
     };
 
@@ -121,7 +120,7 @@ function(
         countElement.text(count);
         container.removeClass('hidden');
         Str.get_string('totalconversations', 'core_message', count).done(function(string) {
-            $('#' + container.attr('aria-labelledby')).text(string);
+            container.attr('aria-label', string);
         });
 
         var numPlaceholders = count > 20 ? 20 : count;
@@ -150,16 +149,15 @@ function(
      * @param {Number} count The unread count
      */
     var renderUnreadCount = function(root, count) {
-        var container = root.find(SELECTORS.SECTION_UNREAD_COUNT_CONTAINER);
-        var countElement = container.find(SELECTORS.SECTION_UNREAD_COUNT);
+        var countElement = root.find(SELECTORS.SECTION_UNREAD_COUNT);
         countElement.text(count);
 
         Str.get_string('unreadconversations', 'core_message', count).done(function(string) {
-            $('#' + container.attr('aria-labelledby')).text(string);
+            countElement.attr('aria-label', string);
         });
 
         if (count > 0) {
-            container.removeClass('hidden');
+            countElement.removeClass('hidden');
         }
     };
 

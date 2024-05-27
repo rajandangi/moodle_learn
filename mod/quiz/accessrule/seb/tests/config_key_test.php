@@ -14,23 +14,32 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace quizaccess_seb;
+/**
+ * PHPUnit Tests for config_key class.
+ *
+ * @package    quizaccess_seb
+ * @author     Andrew Madden <andrewmadden@catalyst-au.net>
+ * @copyright  2019 Catalyst IT
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+use quizaccess_seb\config_key;
+
+defined('MOODLE_INTERNAL') || die();
 
 /**
  * PHPUnit Tests for config_key class.
  *
- * @package   quizaccess_seb
- * @author    Andrew Madden <andrewmadden@catalyst-au.net>
- * @copyright 2020 Catalyst IT
+ * @copyright  2020 Catalyst IT
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class config_key_test extends \advanced_testcase {
+class quizaccess_seb_config_key_testcase extends advanced_testcase {
 
     /**
      * Test that trying to generate the hash key with bad xml will result in an error.
      */
     public function test_config_key_not_generated_with_bad_xml() {
-        $this->expectException(\invalid_parameter_exception::class);
+        $this->expectException(invalid_parameter_exception::class);
         $this->expectExceptionMessage("Invalid a PList XML string, representing SEB config");
         config_key::generate("<?xml This is some bad xml for sure.");
     }
@@ -59,7 +68,7 @@ class config_key_test extends \advanced_testcase {
      *
      * @return array
      */
-    public function real_ck_hash_provider(): array {
+    public function real_ck_hash_provider() : array {
         return [
             'unencrypted_mac2.1.4' => ['unencrypted_mac_001.seb',
                     '4fa9af8ec8759eb7c680752ef4ee5eaf1a860628608fccae2715d519849f9292', ''],

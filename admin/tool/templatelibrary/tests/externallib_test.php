@@ -14,15 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace tool_templatelibrary;
-
-use externallib_advanced_testcase;
-
 defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
 
 require_once($CFG->dirroot . '/webservice/tests/helpers.php');
+
+use tool_templatelibrary\external;
 
 /**
  * External learning plans webservice API tests.
@@ -31,7 +29,7 @@ require_once($CFG->dirroot . '/webservice/tests/helpers.php');
  * @copyright 2015 Damyon Wiese
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class externallib_test extends externallib_advanced_testcase {
+class tool_templatelibrary_external_testcase extends externallib_advanced_testcase {
 
     /**
      * Test list all.
@@ -77,7 +75,7 @@ class externallib_test extends externallib_advanced_testcase {
         $template = external::load_canonical_template('core', 'notification_error');
 
         // Only the base template should contain the docs.
-        $this->assertStringContainsString('@template core/notification_error', $template);
+        $this->assertContains('@template core/notification_error', $template);
 
         // Restore the original theme.
         $CFG->theme = $originaltheme;

@@ -25,13 +25,7 @@
     Example context (json):
     {
         "backpacks": [
-            {
-                "backpackweburl": "http://localhost/",
-                "sitebackpack": true,
-                "cantest": true,
-                "canmoveup": true,
-                "canmovedown": false
-            }
+            {"backpackweburl": "http://localhost/", "sitebackpack": true, "cantest": true}
         ]
     }
 }}
@@ -46,7 +40,7 @@
     <thead>
         <tr>
             <th scope="col">{{#str}}backpackweburl, core_badges{{/str}}</th>
-            <th scope="col">{{#str}}order{{/str}}</th>
+            <th scope="col">{{#str}}sitebackpack, core_badges{{/str}}</th>
             <th scope="col">{{#str}}actions, core_badges{{/str}}</th>
         </tr>
     </thead>
@@ -54,36 +48,14 @@
         {{#backpacks}}
         <tr data-backpackurl="{{{backpackweburl}}}">
             <td> {{{backpackweburl}}} </td>
-            <td>
-                {{#canmoveup}}
-                    <a href="{{baseurl}}?id={{id}}&action=moveup">{{#pix}}t/up, core,{{#str}}moveup{{/str}}{{/pix}}</a>
-                {{/canmoveup}}
-                {{^canmoveup}}
-                    {{#pix}}spacer, moodle{{/pix}}
-                {{/canmoveup}}
-                {{#canmovedown}}
-                    <a href="{{baseurl}}?id={{id}}&action=movedown">{{#pix}}t/down, core,{{#str}}movedown{{/str}}{{/pix}}</a>
-                {{/canmovedown}}
-                {{^canmovedown}}
-                    {{#pix}}spacer, moodle{{/pix}}
-                {{/canmovedown}}
-            </td>
+            <td> {{#sitebackpack}}Yes{{/sitebackpack}} </td>
             <td>
                 <a href="{{baseurl}}?id={{id}}&action=edit">{{#pix}}t/edit, core,{{#str}}editsettings{{/str}}{{/pix}}</a>
-            {{^sitebackpack}}
-                <a {{!
-                    }} href="{{baseurl}}?id={{id}}&action=delete" {{!
-                    }} role="button" {{!
-                    }} data-modal="confirmation" {{!
-                    }} data-modal-type="delete" {{!
-                    }} data-modal-content-str='["delexternalbackpackconfirm", "core_badges", {{#quote}}{{backpackweburl}}{{/quote}}]' {{!
-                    }} data-modal-title-str='["delexternalbackpack", "core_badges"]' {{!
-                    }} data-modal-yes-button-str='["delete", "core"]' {{!
-                    }} data-modal-destination="{{baseurl}}?id={{id}}&action=delete&sesskey={{sesskey}}&confirm=1" {{!
-                }}>
+            {{^iscurrent}}
+                <a href="{{baseurl}}?id={{id}}&action=delete" role="button" data-action="deletebackpack">
                     {{#pix}}t/delete, core,{{#str}}delete{{/str}}{{/pix}}
                 </a>
-            {{/sitebackpack}}
+            {{/iscurrent}}
             {{#cantest}}
                 <a href="{{baseurl}}?id={{id}}&action=test">{{#pix}}t/check, core,{{#str}}testsettings, core_badges{{/str}}{{/pix}}</a>
             {{/cantest}}

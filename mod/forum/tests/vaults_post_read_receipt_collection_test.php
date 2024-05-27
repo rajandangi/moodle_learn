@@ -14,9 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace mod_forum;
-
-use mod_forum_tests_generator_trait;
+/**
+ * The post read receipt collection vault tests.
+ *
+ * @package    mod_forum
+ * @copyright  2019 Ryan Wyllie <ryan@moodle.com>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -29,7 +33,7 @@ require_once(__DIR__ . '/generator_trait.php');
  * @copyright  2019 Ryan Wyllie <ryan@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class vaults_post_read_receipt_collection_test extends \advanced_testcase {
+class mod_forum_vaults_post_read_receipt_collection_testcase extends advanced_testcase {
     // Make use of the test generator trait.
     use mod_forum_tests_generator_trait;
 
@@ -78,9 +82,9 @@ class vaults_post_read_receipt_collection_test extends \advanced_testcase {
             'lastread' => time()
         ]);
 
-        $post1 = $entityfactory->get_post_from_stdClass($post1);
-        $post2 = $entityfactory->get_post_from_stdClass($post2);
-        $post3 = $entityfactory->get_post_from_stdClass($post3);
+        $post1 = $entityfactory->get_post_from_stdclass($post1);
+        $post2 = $entityfactory->get_post_from_stdclass($post2);
+        $post3 = $entityfactory->get_post_from_stdclass($post3);
         $collection = $vault->get_from_user_id_and_post_ids($user->id, [$post1->get_id(), $post2->get_id()]);
 
         // True because there is a read receipt for this user.

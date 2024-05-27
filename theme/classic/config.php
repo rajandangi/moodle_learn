@@ -56,7 +56,7 @@ $THEME->layouts = [
     // Part of course, typical for modules - default page layout if $cm specified in require_login().
     'incourse' => array(
         'file' => 'columns.php',
-        'regions' => array('side-pre', 'side-post'),
+        'regions' => array('side-pre'),
         'defaultregion' => 'side-pre',
     ),
     // The site home page.
@@ -72,18 +72,12 @@ $THEME->layouts = [
         'regions' => array('side-pre'),
         'defaultregion' => 'side-pre',
     ),
-    // My courses page.
-    'mycourses' => array(
-        'file' => 'columns.php',
-        'regions' => ['side-pre', 'side-post'],
-        'defaultregion' => 'side-pre',
-    ),
     // My dashboard page.
     'mydashboard' => array(
         'file' => 'columns.php',
         'regions' => array('side-pre', 'side-post'),
         'defaultregion' => 'side-pre',
-        'options' => array('langmenu' => true),
+        'options' => array('nonavbar' => true, 'langmenu' => true, 'nocontextheader' => true),
     ),
     // My public page.
     'mypublic' => array(
@@ -102,26 +96,13 @@ $THEME->layouts = [
     'popup' => array(
         'file' => 'contentonly.php',
         'regions' => array(),
-        'options' => array(
-            'nofooter' => true,
-            'nonavbar' => true,
-            'activityheader' => [
-                'notitle' => true,
-                'nocompletion' => true,
-                'nodescription' => true
-            ]
-        ),
+        'options' => array('nofooter' => true, 'nonavbar' => true),
     ),
     // No blocks and minimal footer - used for legacy frame layouts only!
     'frametop' => array(
         'file' => 'contentonly.php',
         'regions' => array(),
-        'options' => array(
-            'nofooter' => true,
-            'nocoursefooter' => true,
-            'activityheader' => [
-                'nocompletion' => true
-            ]),
+        'options' => array('nofooter' => true, 'nocoursefooter' => true),
     ),
     // Embeded pages, like iframe/object embeded in moodleform - it needs as much space as possible.
     'embedded' => array(
@@ -141,7 +122,7 @@ $THEME->layouts = [
     'print' => array(
         'file' => 'contentonly.php',
         'regions' => array(),
-        'options' => array('nofooter' => true, 'nonavbar' => false, 'noactivityheader' => true),
+        'options' => array('nofooter' => true, 'nonavbar' => false),
     ),
     // The pagelayout used when a redirection is occuring.
     'redirect' => array(
@@ -176,4 +157,3 @@ $THEME->scss = function($theme) {
 };
 $THEME->usefallback = true;
 $THEME->iconsystem = '\\theme_classic\\output\\icon_system_fontawesome';
-$THEME->haseditswitch = false;

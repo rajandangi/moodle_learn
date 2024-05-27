@@ -38,6 +38,7 @@ $context = context_course::instance($course->id, MUST_EXIST);
 require_login($course);
 $canenrol = has_capability('enrol/manual:enrol', $context);
 $canunenrol = has_capability('enrol/manual:unenrol', $context);
+$viewfullnames = has_capability('moodle/site:viewfullnames', $context);
 
 // Note: manage capability not used here because it is used for editing
 // of existing enrolments which is not possible here.
@@ -63,21 +64,21 @@ if (!$enrol_manual = enrol_get_plugin('manual')) {
     throw new coding_exception('Can not instantiate enrol_manual');
 }
 
-$url = new moodle_url('/enrol/manual/manage.php', ['enrolid' => $instance->id]);
-$title = get_string('managemanualenrolements', 'enrol_manual');
+$instancename = $enrol_manual->get_instance_name($instance);
 
-$PAGE->set_url($url);
+$PAGE->set_url('/enrol/manual/manage.php', array('enrolid'=>$instance->id));
 $PAGE->set_pagelayout('admin');
-$PAGE->set_title($title);
+$PAGE->set_title($enrol_manual->get_instance_name($instance));
 $PAGE->set_heading($course->fullname);
-navigation_node::override_active_url(new moodle_url('/enrol/instances.php', ['id' => $course->id]));
-$PAGE->navbar->add($title, $url);
+navigation_node::override_active_url(new moodle_url('/user/index.php', array('id'=>$course->id)));
 
 // Create the user selector objects.
 $options = array('enrolid' => $enrolid, 'accesscontext' => $context);
 
 $potentialuserselector = new enrol_manual_potential_participant('addselect', $options);
+$potentialuserselector->viewfullnames = $viewfullnames;
 $currentuserselector = new enrol_manual_current_participant('removeselect', $options);
+$currentuserselector->viewfullnames = $viewfullnames;
 
 // Build the list of options for the enrolment period dropdown.
 $unlimitedperiod = get_string('unlimited');
@@ -170,7 +171,7 @@ if ($canunenrol && optional_param('remove', false, PARAM_BOOL) && confirm_sesske
 
 
 echo $OUTPUT->header();
-echo $OUTPUT->heading($title);
+echo $OUTPUT->heading($instancename);
 
 $addenabled = $canenrol ? '' : 'disabled="disabled"';
 $removeenabled = $canunenrol ? '' : 'disabled="disabled"';

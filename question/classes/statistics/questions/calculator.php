@@ -228,9 +228,8 @@ class calculator {
 
                 $this->sumofmarkvariance += $this->stats->for_slot($slot)->markvariance;
 
-                $covariancewithoverallmark = $this->stats->for_slot($slot)->covariancewithoverallmark;
-                if (null !== $covariancewithoverallmark && $covariancewithoverallmark >= 0) {
-                    $sumofcovariancewithoverallmark += sqrt($covariancewithoverallmark);
+                if ($this->stats->for_slot($slot)->covariancewithoverallmark >= 0) {
+                    $sumofcovariancewithoverallmark += sqrt($this->stats->for_slot($slot)->covariancewithoverallmark);
                 }
             }
             $this->progress->end_progress();
@@ -257,9 +256,10 @@ class calculator {
                 }
             }
             $this->stats->cache($qubaids);
+
+            // All finished.
+            $this->progress->end_progress();
         }
-        // All finished.
-        $this->progress->end_progress();
         return $this->stats;
     }
 
@@ -346,21 +346,17 @@ class calculator {
      * @param calculated $stats question stats to update.
      */
     protected function initial_question_walker($stats) {
-        if ($stats->s != 0) {
-            $stats->markaverage = $stats->totalmarks / $stats->s;
-            $stats->othermarkaverage = $stats->totalothermarks / $stats->s;
-            $stats->summarksaverage = $stats->totalsummarks / $stats->s;
-        } else {
-            $stats->markaverage = 0;
-            $stats->othermarkaverage = 0;
-            $stats->summarksaverage = 0;
-        }
+        $stats->markaverage = $stats->totalmarks / $stats->s;
 
         if ($stats->maxmark != 0) {
             $stats->facility = $stats->markaverage / $stats->maxmark;
         } else {
             $stats->facility = null;
         }
+
+        $stats->othermarkaverage = $stats->totalothermarks / $stats->s;
+
+        $stats->summarksaverage = $stats->totalsummarks / $stats->s;
 
         sort($stats->markarray, SORT_NUMERIC);
         sort($stats->othermarksarray, SORT_NUMERIC);

@@ -33,7 +33,7 @@ use core_xapi\local\statement\item_verb;
 use core_xapi\local\statement\item_activity;
 use externallib_advanced_testcase;
 use stdClass;
-use core_external\external_api;
+use external_api;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -48,7 +48,7 @@ require_once($CFG->dirroot . '/webservice/tests/helpers.php');
  * @copyright  2020 Ferran Recio
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class post_statement_test extends externallib_advanced_testcase {
+class post_statement_testcase extends externallib_advanced_testcase {
 
     /** @var test_helper for generating valid xapi statements. */
     private $testhelper;
@@ -64,7 +64,7 @@ class post_statement_test extends externallib_advanced_testcase {
     /**
      * Setup test.
      */
-    public function setUp(): void {
+    public function setUp() {
         global $CFG;
         // We disable group actors on the test xapi_handler.
         $CFG->xapitestforcegroupactors = false;
@@ -187,7 +187,7 @@ class post_statement_test extends externallib_advanced_testcase {
      *
      * @return  array
      */
-    public function components_provider(): array {
+    public function components_provider() : array {
         return [
             'Inexistent component' => [
                 'inexistent_component', []
@@ -233,7 +233,7 @@ class post_statement_test extends externallib_advanced_testcase {
      *
      * @return  array
      */
-    public function invalid_json_provider(): array {
+    public function invalid_json_provider() : array {
         return [
             'Wrong json' => [
                 'This is not { a json object /'
@@ -376,7 +376,7 @@ class post_statement_test extends externallib_advanced_testcase {
      *
      * @return  array
      */
-    public function statement_provider(): array {
+    public function statement_provider() : array {
         return [
             // Single statement with group statements enabled.
             'Single, Valid actor, valid verb' => [
@@ -449,7 +449,7 @@ class post_statement_test extends externallib_advanced_testcase {
      *
      * @return  array
      */
-    public function group_statement_provider(): array {
+    public function group_statement_provider() : array {
         return [
             // Single statement with group statements enabled.
             'Group statement + group statement without group support' => [

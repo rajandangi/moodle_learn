@@ -300,12 +300,18 @@ class manager {
     }
 
     /**
-     * @deprecated since Moodle 3.7 use get_time_splitting_methods_for_evaluation instead
+     * Returns the enabled time splitting methods.
+     *
+     * @deprecated since Moodle 3.7
+     * @todo MDL-65086 This will be deleted in Moodle 4.1
+     * @see \core_analytics\manager::get_time_splitting_methods_for_evaluation
+     * @return \core_analytics\local\time_splitting\base[]
      */
     public static function get_enabled_time_splitting_methods() {
-        throw new coding_exception(__FUNCTION__ . '() has been removed. You can use self::get_time_splitting_methods_for_evaluation if ' .
+        debugging('This function has been deprecated. You can use self::get_time_splitting_methods_for_evaluation if ' .
             'you want to get the default time splitting methods for evaluation, or you can use self::get_all_time_splittings if ' .
             'you want to get all the time splitting methods available on this site.');
+        return self::get_time_splitting_methods_for_evaluation();
     }
 
     /**
@@ -357,7 +363,7 @@ class manager {
      *
      * @return \core_analytics\local\target\base[]
      */
-    public static function get_all_targets(): array {
+    public static function get_all_targets() : array {
         if (self::$alltargets !== null) {
             return self::$alltargets;
         }
@@ -598,13 +604,13 @@ class manager {
      * Used to be used to add models included with the Moodle core.
      *
      * @deprecated Deprecated since Moodle 3.7 (MDL-61667) - Use lib/db/analytics.php instead.
-     * @todo Remove this method in Moodle 3.11 (MDL-65186).
+     * @todo Remove this method in Moodle 4.1 (MDL-65186).
      * @return void
      */
     public static function add_builtin_models() {
 
-        throw new \coding_exception('core_analytics\manager::add_builtin_models() has been removed. Core models ' .
-                        'are now automatically updated according to their declaration in the lib/db/analytics.php file.');
+        debugging('core_analytics\manager::add_builtin_models() has been deprecated. Core models are now automatically '.
+            'updated according to their declaration in the lib/db/analytics.php file.', DEBUG_DEVELOPER);
     }
 
     /**
@@ -687,13 +693,6 @@ class manager {
                 $DB->delete_records_select('analytics_used_analysables', "modelid = :modelid AND analysableid $idssql",
                     $param + $idsparams);
             }
-        }
-
-        // Clean up calculations table.
-        $calclifetime = get_config('analytics', 'calclifetime');
-        if (!empty($calclifetime)) {
-            $lifetime = time() - ($calclifetime * DAYSECS); // Value in days.
-            $DB->delete_records_select('analytics_indicator_calc', 'timecreated < ?', [$lifetime]);
         }
     }
 
@@ -909,7 +908,7 @@ class manager {
      * @param array $model Model declaration
      * @return string complying with PARAM_ALPHANUM rules and starting with an 'id' prefix
      */
-    public static function model_declaration_identifier(array $model): string {
+    public static function model_declaration_identifier(array $model) : string {
         return 'id'.sha1(serialize($model));
     }
 

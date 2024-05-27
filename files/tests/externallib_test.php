@@ -14,19 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace core_files;
-
-use core_external\external_api;
-use core_files\external\delete\draft;
-use core_files\external\get\unused_draft;
-use core_files_external;
-
-defined('MOODLE_INTERNAL') || die();
-
-global $CFG;
-
-require_once($CFG->dirroot . '/webservice/tests/helpers.php');
-require_once($CFG->dirroot . '/files/externallib.php');
 
 /**
  * PHPunit tests for external files API.
@@ -37,7 +24,14 @@ require_once($CFG->dirroot . '/files/externallib.php');
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @since Moodle 2.6
  */
-class externallib_test extends \advanced_testcase {
+defined('MOODLE_INTERNAL') || die();
+
+global $CFG;
+
+require_once($CFG->dirroot . '/webservice/tests/helpers.php');
+require_once($CFG->dirroot . '/files/externallib.php');
+
+class core_files_externallib_testcase extends advanced_testcase {
 
     /*
      * Test core_files_external::upload().
@@ -48,7 +42,7 @@ class externallib_test extends \advanced_testcase {
 
         $this->resetAfterTest();
         $this->setAdminUser();
-        $context = \context_user::instance($USER->id);
+        $context = context_user::instance($USER->id);
         $contextid = $context->id;
         $component = "user";
         $filearea = "draft";
@@ -114,7 +108,7 @@ class externallib_test extends \advanced_testcase {
 
         $this->resetAfterTest();
         $this->setAdminUser();
-        $context = \context_user::instance($USER->id);
+        $context = context_user::instance($USER->id);
         $contextid = $context->id;
         $component = "backup";
         $filearea = "draft";
@@ -139,7 +133,7 @@ class externallib_test extends \advanced_testcase {
 
         $this->resetAfterTest();
         $this->setAdminUser();
-        $context = \context_user::instance($USER->id);
+        $context = context_user::instance($USER->id);
         $contextid = $context->id;
         $component = "user";
         $filearea = "draft";
@@ -173,7 +167,7 @@ class externallib_test extends \advanced_testcase {
 
         // Create a course.
         $course = $this->getDataGenerator()->create_course();
-        $record = new \stdClass();
+        $record = new stdClass();
         $record->course = $course->id;
         $record->name = "Mod data upload test";
         $record->intro = "Some intro of some sort";
@@ -184,7 +178,7 @@ class externallib_test extends \advanced_testcase {
         // Create a new field in the database activity.
         $field = data_get_field_new('file', $module);
         // Add more detail about the field.
-        $fielddetail = new \stdClass();
+        $fielddetail = new stdClass();
         $fielddetail->d = $module->id;
         $fielddetail->mode = 'add';
         $fielddetail->type = 'file';
@@ -206,8 +200,8 @@ class externallib_test extends \advanced_testcase {
         // Insert the information about the file.
         $contentid = $DB->insert_record('data_content', $datacontent);
         // Required information for uploading a file.
-        $context = \context_module::instance($module->cmid);
-        $usercontext = \context_user::instance($USER->id);
+        $context = context_module::instance($module->cmid);
+        $usercontext = context_user::instance($USER->id);
         $component = 'mod_data';
         $filearea = 'content';
         $itemid = $contentid;
@@ -237,7 +231,7 @@ class externallib_test extends \advanced_testcase {
         $testfilelisting = external_api::clean_returnvalue(core_files_external::get_files_returns(), $testfilelisting);
 
         // With the information that we have provided we should get an object exactly like the one below.
-        $coursecontext = \context_course::instance($course->id);
+        $coursecontext = context_course::instance($course->id);
         $testdata = array();
         $testdata['parents'] = array();
         $testdata['parents']['0'] = array('contextid' => 1,
@@ -251,7 +245,7 @@ class externallib_test extends \advanced_testcase {
                                           'filearea' => null,
                                           'itemid' => null,
                                           'filepath' => null,
-                                          'filename' => get_string('defaultcategoryname'));
+                                          'filename' => 'Miscellaneous');
         $testdata['parents']['2'] = array('contextid' => $coursecontext->id,
                                           'component' => null,
                                           'filearea' => null,
@@ -298,95 +292,5 @@ class externallib_test extends \advanced_testcase {
         $testfilelisting = external_api::clean_returnvalue(core_files_external::get_files_returns(), $testfilelisting);
 
         $this->assertEquals($testfilelisting, $testdata);
-    }
-
-    /**
-     * Test delete draft files
-     */
-    public function test_delete_draft_files() {
-        global $USER;
-
-        $this->resetAfterTest();
-        $this->setAdminUser();
-
-        // Add files to user draft area.
-        $draftitemid = file_get_unused_draft_itemid();
-        $context = \context_user::instance($USER->id);
-        $filerecordinline = array(
-            'contextid' => $context->id,
-            'component' => 'user',
-            'filearea'  => 'draft',
-            'itemid'    => $draftitemid,
-            'filepath'  => '/',
-            'filename'  => 'faketxt.txt',
-        );
-        $fs = get_file_storage();
-        $fs->create_file_from_string($filerecordinline, 'fake txt contents 1.');
-
-        // Now create a folder with a file inside.
-        $fs->create_directory($context->id, 'user', 'draft', $draftitemid, '/fakefolder/');
-        $filerecordinline['filepath'] = '/fakefolder/';
-        $filerecordinline['filename'] = 'fakeimage.png';
-        $fs->create_file_from_string($filerecordinline, 'img...');
-
-        // Check two files were created (one file and one directory).
-        $files = core_files_external::get_files($context->id, 'user', 'draft', $draftitemid, '/', '');
-        $files = external_api::clean_returnvalue(core_files_external::get_files_returns(), $files);
-        $this->assertCount(2, $files['files']);
-
-        // Check the folder has one file.
-        $files = core_files_external::get_files($context->id, 'user', 'draft', $draftitemid, '/fakefolder/', '');
-        $files = external_api::clean_returnvalue(core_files_external::get_files_returns(), $files);
-        $this->assertCount(1, $files['files']);
-
-        // Delete a file and a folder.
-        $filestodelete = [
-            ['filepath' => '/', 'filename' => 'faketxt.txt'],
-            ['filepath' => '/fakefolder/', 'filename' => ''],
-        ];
-        $paths = draft::execute($draftitemid, $filestodelete);
-        $paths = external_api::clean_returnvalue(draft::execute_returns(), $paths);
-
-        // Check everything was deleted.
-        $files = core_files_external::get_files($context->id, 'user', 'draft', $draftitemid, '/', '');
-        $files = external_api::clean_returnvalue(core_files_external::get_files_returns(), $files);
-        $this->assertCount(0, $files['files']);
-    }
-
-    /**
-     * Test get_unused_draft_itemid.
-     */
-    public function test_get_unused_draft_itemid() {
-        global $USER;
-
-        $this->resetAfterTest();
-        $this->setAdminUser();
-
-        // Add files to user draft area.
-        $result = unused_draft::execute();
-        $result = external_api::clean_returnvalue(unused_draft::execute_returns(), $result);
-
-        $filerecordinline = [
-            'contextid' => $result['contextid'],
-            'component' => $result['component'],
-            'filearea'  => $result['filearea'],
-            'itemid'    => $result['itemid'],
-            'filepath'  => '/',
-            'filename'  => 'faketxt.txt',
-        ];
-        $fs = get_file_storage();
-        $fs->create_file_from_string($filerecordinline, 'fake txt contents 1.');
-
-        // Now create a folder with a file inside.
-        $fs->create_directory($result['contextid'], $result['component'], $result['filearea'], $result['itemid'], '/fakefolder/');
-        $filerecordinline['filepath'] = '/fakefolder/';
-        $filerecordinline['filename'] = 'fakeimage.png';
-        $fs->create_file_from_string($filerecordinline, 'img...');
-
-        $context = \context_user::instance($USER->id);
-        // Check two files were created (one file and one directory).
-        $files = core_files_external::get_files($context->id, 'user', 'draft', $result['itemid'], '/', '');
-        $files = external_api::clean_returnvalue(core_files_external::get_files_returns(), $files);
-        $this->assertCount(2, $files['files']);
     }
 }

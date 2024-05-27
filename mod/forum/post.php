@@ -81,13 +81,13 @@ if (!isloggedin() or isguestuser()) {
         // User is starting a new discussion in a forum.
         $forumentity = $forumvault->get_from_id($forum);
         if (empty($forumentity)) {
-            throw new \moodle_exception('invalidforumid', 'forum');
+            print_error('invalidforumid', 'forum');
         }
     } else if (!empty($reply)) {
         // User is writing a new reply.
         $forumentity = $forumvault->get_from_post_id($reply);
         if (empty($forumentity)) {
-            throw new \moodle_exception('invalidparentpostid', 'forum');
+            print_error('invalidparentpostid', 'forum');
         }
     }
 
@@ -95,7 +95,7 @@ if (!isloggedin() or isguestuser()) {
     $modcontext = $forumentity->get_context();
     $course = $forumentity->get_course_record();
     if (!$cm = get_coursemodule_from_instance("forum", $forum->id, $course->id)) {
-        throw new \moodle_exception("invalidcoursemodule");
+        print_error("invalidcoursemodule");
     }
 
     $PAGE->set_cm($cm, $course, $forum);
@@ -105,10 +105,7 @@ if (!isloggedin() or isguestuser()) {
     $referer = get_local_referer(false);
 
     echo $OUTPUT->header();
-    echo $OUTPUT->confirm(get_string('noguestpost', 'forum'), get_login_url(), $referer, [
-        'confirmtitle' => get_string('noguestpost:title', 'forum'),
-        'continuestr' => get_string('login')
-    ]);
+    echo $OUTPUT->confirm(get_string('noguestpost', 'forum').'<br /><br />'.get_string('liketologin'), get_login_url(), $referer);
     echo $OUTPUT->footer();
     exit;
 }
@@ -121,14 +118,14 @@ if (!empty($forum)) {
     // User is starting a new discussion in a forum.
     $forumentity = $forumvault->get_from_id($forum);
     if (empty($forumentity)) {
-        throw new \moodle_exception('invalidforumid', 'forum');
+        print_error('invalidforumid', 'forum');
     }
 
     $capabilitymanager = $managerfactory->get_capability_manager($forumentity);
     $forum = $forumdatamapper->to_legacy_object($forumentity);
     $course = $forumentity->get_course_record();
     if (!$cm = get_coursemodule_from_instance("forum", $forum->id, $course->id)) {
-        throw new \moodle_exception("invalidcoursemodule");
+        print_error("invalidcoursemodule");
     }
 
     // Retrieve the contexts.
@@ -151,7 +148,7 @@ if (!empty($forum)) {
                 }
             }
         }
-        throw new \moodle_exception('nopostforum', 'forum');
+        print_error('nopostforum', 'forum');
     }
 
     if (!$cm->visible and !has_capability('moodle/course:viewhiddenactivities', $modcontext)) {
@@ -162,6 +159,8 @@ if (!empty($forum)) {
                 \core\output\notification::NOTIFY_ERROR
             );
     }
+
+    $SESSION->fromurl = get_local_referer(false);
 
     // Load up the $post variable.
 
@@ -185,17 +184,17 @@ if (!empty($forum)) {
 
     $parententity = $postvault->get_from_id($reply);
     if (empty($parententity)) {
-        throw new \moodle_exception('invalidparentpostid', 'forum');
+        print_error('invalidparentpostid', 'forum');
     }
 
     $discussionentity = $discussionvault->get_from_id($parententity->get_discussion_id());
     if (empty($discussionentity)) {
-        throw new \moodle_exception('notpartofdiscussion', 'forum');
+        print_error('notpartofdiscussion', 'forum');
     }
 
     $forumentity = $forumvault->get_from_id($discussionentity->get_forum_id());
     if (empty($forumentity)) {
-        throw new \moodle_exception('invalidforumid', 'forum');
+        print_error('invalidforumid', 'forum');
     }
 
     $capabilitymanager = $managerfactory->get_capability_manager($forumentity);
@@ -207,7 +206,7 @@ if (!empty($forum)) {
     $coursecontext = context_course::instance($course->id);
 
     if (!$cm = get_coursemodule_from_instance("forum", $forum->id, $course->id)) {
-        throw new \moodle_exception('invalidcoursemodule');
+        print_error('invalidcoursemodule');
     }
 
     // Ensure lang, theme, etc. is set up properly. MDL-6926.
@@ -228,7 +227,7 @@ if (!empty($forum)) {
                 redirect(new moodle_url('/mod/forum/discuss.php', array('d' => $discussion->id)));
             }
         }
-        throw new \moodle_exception('nopostforum', 'forum');
+        print_error('nopostforum', 'forum');
     }
 
     // Make sure user can post here.
@@ -239,20 +238,20 @@ if (!empty($forum)) {
     }
     if ($groupmode == SEPARATEGROUPS and !has_capability('moodle/site:accessallgroups', $modcontext)) {
         if ($discussion->groupid == -1) {
-            throw new \moodle_exception('nopostforum', 'forum');
+            print_error('nopostforum', 'forum');
         } else {
             if (!groups_is_member($discussion->groupid)) {
-                throw new \moodle_exception('nopostforum', 'forum');
+                print_error('nopostforum', 'forum');
             }
         }
     }
 
     if (!$cm->visible and !has_capability('moodle/course:viewhiddenactivities', $modcontext)) {
-        throw new \moodle_exception("activityiscurrentlyhidden");
+        print_error("activityiscurrentlyhidden");
     }
 
     if ($parententity->is_private_reply()) {
-        throw new \moodle_exception('cannotreplytoprivatereply', 'forum');
+        print_error('cannotreplytoprivatereply', 'forum');
     }
 
     // We always are going to honor the preferred format. We are creating a new post.
@@ -295,7 +294,7 @@ if (!empty($forum)) {
 
     $postentity = $postvault->get_from_id($edit);
     if (empty($postentity)) {
-        throw new \moodle_exception('invalidpostid', 'forum');
+        print_error('invalidpostid', 'forum');
     }
     if ($postentity->has_parent()) {
         $parententity = $postvault->get_from_id($postentity->get_parent_id());
@@ -304,12 +303,12 @@ if (!empty($forum)) {
 
     $discussionentity = $discussionvault->get_from_id($postentity->get_discussion_id());
     if (empty($discussionentity)) {
-        throw new \moodle_exception('notpartofdiscussion', 'forum');
+        print_error('notpartofdiscussion', 'forum');
     }
 
     $forumentity = $forumvault->get_from_id($discussionentity->get_forum_id());
     if (empty($forumentity)) {
-        throw new \moodle_exception('invalidforumid', 'forum');
+        print_error('invalidforumid', 'forum');
     }
 
     $capabilitymanager = $managerfactory->get_capability_manager($forumentity);
@@ -321,7 +320,7 @@ if (!empty($forum)) {
     $coursecontext = context_course::instance($course->id);
 
     if (!$cm = get_coursemodule_from_instance("forum", $forum->id, $course->id)) {
-        throw new \moodle_exception('invalidcoursemodule');
+        print_error('invalidcoursemodule');
     }
 
     $PAGE->set_cm($cm, $course, $forum);
@@ -329,12 +328,12 @@ if (!empty($forum)) {
     if (!($forum->type == 'news' && !$post->parent && $discussion->timestart > time())) {
         if (((time() - $post->created) > $CFG->maxeditingtime) and
             !has_capability('mod/forum:editanypost', $modcontext)) {
-            throw new \moodle_exception('maxtimehaspassed', 'forum', '', format_time($CFG->maxeditingtime));
+            print_error('maxtimehaspassed', 'forum', '', format_time($CFG->maxeditingtime));
         }
     }
     if (($post->userid <> $USER->id) and
         !has_capability('mod/forum:editanypost', $modcontext)) {
-        throw new \moodle_exception('cannoteditposts', 'forum');
+        print_error('cannoteditposts', 'forum');
     }
 
     // Load up the $post variable.
@@ -356,17 +355,17 @@ if (!empty($forum)) {
 
     $postentity = $postvault->get_from_id($delete);
     if (empty($postentity)) {
-        throw new \moodle_exception('invalidpostid', 'forum');
+        print_error('invalidpostid', 'forum');
     }
 
     $discussionentity = $discussionvault->get_from_id($postentity->get_discussion_id());
     if (empty($discussionentity)) {
-        throw new \moodle_exception('notpartofdiscussion', 'forum');
+        print_error('notpartofdiscussion', 'forum');
     }
 
     $forumentity = $forumvault->get_from_id($discussionentity->get_forum_id());
     if (empty($forumentity)) {
-        throw new \moodle_exception('invalidforumid', 'forum');
+        print_error('invalidforumid', 'forum');
     }
 
     $capabilitymanager = $managerfactory->get_capability_manager($forumentity);
@@ -453,8 +452,6 @@ if (!empty($forum)) {
         $PAGE->navbar->add(get_string('delete', 'forum'));
         $PAGE->set_title($course->shortname);
         $PAGE->set_heading($course->fullname);
-        $PAGE->set_secondary_active_tab('modulepage');
-        $PAGE->activityheader->disable();
 
         if ($replycount) {
             if (!has_capability('mod/forum:deleteanypost', $modcontext)) {
@@ -467,9 +464,7 @@ if (!empty($forum)) {
             }
 
             echo $OUTPUT->header();
-            if (!$PAGE->has_secondary_navigation()) {
-                echo $OUTPUT->heading(format_string($forum->name), 2);
-            }
+            echo $OUTPUT->heading(format_string($forum->name), 2);
             echo $OUTPUT->confirm(get_string("deletesureplural", "forum", $replycount + 1),
                 "post.php?delete=$delete&confirm=$delete",
                 $CFG->wwwroot.'/mod/forum/discuss.php?d='.$post->discussion.'#p'.$post->id);
@@ -492,9 +487,7 @@ if (!empty($forum)) {
             echo $postsrenderer->render($USER, [$forumentity], [$discussionentity], $postentities);
         } else {
             echo $OUTPUT->header();
-            if (!$PAGE->has_secondary_navigation()) {
-                echo $OUTPUT->heading(format_string($forum->name), 2);
-            }
+            echo $OUTPUT->heading(format_string($forum->name), 2);
             echo $OUTPUT->confirm(get_string("deletesure", "forum", $replycount),
                 "post.php?delete=$delete&confirm=$delete",
                 $CFG->wwwroot.'/mod/forum/discuss.php?d='.$post->discussion.'#p'.$post->id);
@@ -513,17 +506,17 @@ if (!empty($forum)) {
 
     $postentity = $postvault->get_from_id($prune);
     if (empty($postentity)) {
-        throw new \moodle_exception('invalidpostid', 'forum');
+        print_error('invalidpostid', 'forum');
     }
 
     $discussionentity = $discussionvault->get_from_id($postentity->get_discussion_id());
     if (empty($discussionentity)) {
-        throw new \moodle_exception('notpartofdiscussion', 'forum');
+        print_error('notpartofdiscussion', 'forum');
     }
 
     $forumentity = $forumvault->get_from_id($discussionentity->get_forum_id());
     if (empty($forumentity)) {
-        throw new \moodle_exception('invalidforumid', 'forum');
+        print_error('invalidforumid', 'forum');
     }
 
     $capabilitymanager = $managerfactory->get_capability_manager($forumentity);
@@ -535,7 +528,7 @@ if (!empty($forum)) {
     $coursecontext = context_course::instance($course->id);
 
     if (!$cm = get_coursemodule_from_instance("forum", $forum->id, $course->id)) {
-        throw new \moodle_exception('invalidcoursemodule');
+        print_error('invalidcoursemodule');
     }
 
     if (!$postentity->has_parent()) {
@@ -557,8 +550,6 @@ if (!empty($forum)) {
 
     $PAGE->set_cm($cm);
     $PAGE->set_context($modcontext);
-    $PAGE->set_secondary_active_tab('modulepage');
-    $PAGE->activityheader->disable();
 
     $prunemform = new mod_forum_prune_form(null, array('prune' => $prune, 'confirm' => $prune));
 
@@ -639,13 +630,11 @@ if (!empty($forum)) {
         $course = $DB->get_record('course', array('id' => $forum->course));
         $subjectstr = format_string($post->subject, true);
         $PAGE->navbar->add($subjectstr, new moodle_url('/mod/forum/discuss.php', array('d' => $discussion->id)));
-        $PAGE->navbar->add(get_string("prunediscussion", "forum"));
+        $PAGE->navbar->add(get_string("prune", "forum"));
         $PAGE->set_title(format_string($discussion->name).": ".format_string($post->subject));
         $PAGE->set_heading($course->fullname);
         echo $OUTPUT->header();
-        if (!$PAGE->has_secondary_navigation()) {
-            echo $OUTPUT->heading(format_string($forum->name), 2);
-        }
+        echo $OUTPUT->heading(format_string($forum->name), 2);
         echo $OUTPUT->heading(get_string('pruneheading', 'forum'), 3);
 
         $prunemform->display();
@@ -661,7 +650,7 @@ if (!empty($forum)) {
     echo $OUTPUT->footer();
     die;
 } else {
-    throw new \moodle_exception('unknowaction');
+    print_error('unknowaction');
 
 }
 
@@ -671,7 +660,7 @@ require_login($course, false, $cm);
 
 if (isguestuser()) {
     // Just in case.
-    throw new \moodle_exception('noguest');
+    print_error('noguest');
 }
 
 $thresholdwarning = forum_check_throttling($forum, $cm);
@@ -791,7 +780,11 @@ if ($mformpost->is_cancelled()) {
     }
 } else if ($mformpost->is_submitted() && !$mformpost->no_submit_button_pressed() && $fromform = $mformpost->get_data()) {
 
-    $errordestination = get_local_referer(false) ?: $urlfactory->get_forum_view_url_from_forum($forumentity);
+    if (empty($SESSION->fromurl)) {
+        $errordestination = $urlfactory->get_forum_view_url_from_forum($forumentity);
+    } else {
+        $errordestination = $SESSION->fromurl;
+    }
 
     $fromform->itemid        = $fromform->message['itemid'];
     $fromform->messageformat = $fromform->message['format'];
@@ -799,8 +792,8 @@ if ($mformpost->is_cancelled()) {
     // WARNING: the $fromform->message array has been overwritten, do not use it anymore!
     $fromform->messagetrust  = trusttext_trusted($modcontext);
 
-    // Do not clean text here, text cleaning can be done only after conversion to HTML.
-    // Word counting now uses text formatting, there is no need to abuse trusttext_pre_edit() here.
+    // Clean message text.
+    $fromform = trusttext_pre_edit($fromform, 'message', $modcontext);
 
     if ($fromform->edit) {
         // Updating a post.
@@ -850,7 +843,7 @@ if ($mformpost->is_cancelled()) {
         $updatepost = $fromform;
         $updatepost->forum = $forum->id;
         if (!forum_update_post($updatepost, $mformpost)) {
-            throw new \moodle_exception("couldnotupdate", "forum", $errordestination);
+            print_error("couldnotupdate", "forum", $errordestination);
         }
 
         forum_trigger_post_updated_event($post, $discussion, $modcontext, $forum);
@@ -936,7 +929,7 @@ if ($mformpost->is_cancelled()) {
             );
 
         } else {
-            throw new \moodle_exception("couldnotadd", "forum", $errordestination);
+            print_error("couldnotadd", "forum", $errordestination);
         }
         exit;
 
@@ -995,8 +988,8 @@ if ($mformpost->is_cancelled()) {
         forum_check_blocking_threshold($thresholdwarning);
 
         foreach ($groupstopostto as $group) {
-            if (!$capabilitymanager->can_create_discussions($USER, $group)) {
-                throw new \moodle_exception('cannotcreatediscussion', 'forum');
+            if (!$capabilitymanager->can_create_discussions($USER, $groupid)) {
+                print_error('cannotcreatediscussion', 'forum');
             }
 
             $discussion->groupid = $group;
@@ -1023,7 +1016,7 @@ if ($mformpost->is_cancelled()) {
 
                 $subscribemessage = forum_post_subscription($fromform, $forum, $discussion);
             } else {
-                throw new \moodle_exception("couldnotadd", "forum", $errordestination);
+                print_error("couldnotadd", "forum", $errordestination);
             }
         }
 
@@ -1084,39 +1077,27 @@ if (!empty($discussion->id)) {
     $PAGE->navbar->add($titlesubject, $urlfactory->get_discussion_view_url_from_discussion($discussionentity));
 }
 
+if ($post->parent) {
+    $PAGE->navbar->add(get_string('reply', 'forum'));
+}
+
 if ($edit) {
-    $PAGE->navbar->add(get_string('editdiscussiontopic', 'forum'), $PAGE->url);
-} else if ($reply) {
-    $PAGE->navbar->add(get_string('addreply', 'forum'));
-} else {
-    $PAGE->navbar->add(get_string('addanewdiscussion', 'forum'), $PAGE->url);
+    $PAGE->navbar->add(get_string('edit', 'forum'));
 }
 
 $PAGE->set_title("{$course->shortname}: {$strdiscussionname}{$titlesubject}");
 $PAGE->set_heading($course->fullname);
-$PAGE->set_secondary_active_tab("modulepage");
-$activityheaderconfig['hidecompletion'] = true;
-$activityheaderconfig['description'] = '';
 
-// Remove the activity description.
-$PAGE->activityheader->set_attrs($activityheaderconfig);
 echo $OUTPUT->header();
-
-if ($edit) {
-    echo $OUTPUT->heading(get_string('editdiscussiontopic', 'forum'), 2);
-} else if ($reply) {
-    echo $OUTPUT->heading(get_string('replypostdiscussion', 'forum'), 2);
-} else {
-    echo $OUTPUT->heading(get_string('addanewdiscussion', 'forum'), 2);
-}
+echo $OUTPUT->heading(format_string($forum->name), 2);
 
 // Checkup.
 if (!empty($parententity) && !$capabilitymanager->can_view_post($USER, $discussionentity, $parententity)) {
-    throw new \moodle_exception('cannotreply', 'forum');
+    print_error('cannotreply', 'forum');
 }
 
 if (empty($parententity) && empty($edit) && !$capabilitymanager->can_create_discussions($USER, $groupid)) {
-    throw new \moodle_exception('cannotcreatediscussion', 'forum');
+    print_error('cannotcreatediscussion', 'forum');
 }
 
 if (!empty($discussionentity) && 'qanda' == $forumentity->get_type()) {
@@ -1151,6 +1132,10 @@ if (!empty($parententity)) {
     $rendererfactory = mod_forum\local\container::get_renderer_factory();
     $postsrenderer = $rendererfactory->get_single_discussion_posts_renderer(FORUM_MODE_THREADED, true);
     echo $postsrenderer->render($USER, [$forumentity], [$discussionentity], $postentities);
+} else {
+    if (!empty($forum->intro)) {
+        echo $OUTPUT->box(format_module_intro('forum', $forum, $cm->id), 'generalbox', 'intro');
+    }
 }
 
 // Call print disclosure for enabled plagiarism plugins.

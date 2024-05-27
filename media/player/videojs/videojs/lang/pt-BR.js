@@ -14,9 +14,9 @@ videojs.addLanguage('pt-BR', {
   "Progress Bar": "Barra de progresso",
   "progress bar timing: currentTime={1} duration={2}": "{1} de {2}",
   "Fullscreen": "Tela Cheia",
-  "Exit Fullscreen": "Tela Normal",
+  "Non-Fullscreen": "Tela Normal",
   "Mute": "Mudo",
-  "Unmute": "Ativar o som",
+  "Unmute": "Habilitar Som",
   "Playback Rate": "Velocidade",
   "Subtitles": "Legendas",
   "subtitles off": "Sem Legendas",
@@ -66,7 +66,7 @@ videojs.addLanguage('pt-BR', {
   "Raised": "Elevado",
   "Depressed": "Acachapado",
   "Uniform": "Uniforme",
-  "Drop shadow": "Sombra de projeção",
+  "Dropshadow": "Sombra de projeção",
   "Font Family": "Família da Fonte",
   "Proportional Sans-Serif": "Sans-Serif(Sem serifa) Proporcional",
   "Monospace Sans-Serif": "Sans-Serif(Sem serifa) Monoespaçada",
@@ -81,7 +81,5 @@ videojs.addLanguage('pt-BR', {
   "Caption Settings Dialog": "Caíxa-de-Diálogo das configurações de Legendas",
   "Beginning of dialog window. Escape will cancel and close the window.": "Iniciando a Janela-de-Diálogo. Pressionar Escape irá cancelar e fechar a janela.",
   "End of dialog window.": "Fim da Janela-de-Diálogo",
-  "{1} is loading.": "{1} está carregando.",
-  "Exit Picture-in-Picture": "Sair de Picture-in-Picture",
-  "Picture-in-Picture": "Picture-in-Picture"
+  "{1} is loading.": "{1} está carregando."
 });

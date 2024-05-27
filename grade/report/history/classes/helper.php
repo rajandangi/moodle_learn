@@ -129,27 +129,23 @@ class helper {
      */
     protected static function get_users_sql_and_params($context, $search = '', $count = false) {
         global $DB, $USER;
-        $userfieldsapi = \core_user\fields::for_identity($context)->with_userpic()->including('username');
-        $userfieldssql = $userfieldsapi->get_sql('u', true, '', '', false);
+
         // Fields we need from the user table.
-        $extrafields = [];
-        foreach ($userfieldsapi->get_required_fields([\core_user\fields::PURPOSE_IDENTITY]) as $field) {
-            $extrafields[$field] = $userfieldssql->mappings[$field];
-        }
+        $extrafields = get_extra_user_fields($context);
         $params = array();
         if (!empty($search)) {
-            list($filtersql, $params) = users_search_sql($search, 'u', USER_SEARCH_CONTAINS, $extrafields);
+            list($filtersql, $params) = users_search_sql($search, 'u', true, $extrafields);
             $filtersql .= ' AND ';
         } else {
             $filtersql = '';
         }
 
-        $userfieldjoinssql = $userfieldssql->joins;
+        $ufields = \user_picture::fields('u', $extrafields).',u.username';
         if ($count) {
             $select = "SELECT COUNT(DISTINCT u.id) ";
             $orderby = "";
         } else {
-            $select = "SELECT DISTINCT $userfieldssql->selects ";
+            $select = "SELECT DISTINCT $ufields ";
             $orderby = " ORDER BY u.lastname ASC, u.firstname ASC";
         }
 
@@ -163,6 +159,7 @@ class helper {
         if ($groupmode == SEPARATEGROUPS && !has_capability('moodle/site:accessallgroups', $context)) {
             // Fetch the groups that the user can see.
             $groups = groups_get_all_groups($courseid, $USER->id, 0, 'g.id');
+
             // Add join condition to include users that only belong to the same group as the user.
             list($insql, $inparams) = $DB->get_in_or_equal(array_keys($groups), SQL_PARAMS_NAMED, 'gid', true, 0);
             $groupjoinsql = " JOIN {groups_members} gm ON gm.userid = u.id ";
@@ -174,12 +171,11 @@ class helper {
                  FROM {user} u
                  JOIN {grade_grades_history} ggh ON u.id = ggh.userid
                  JOIN {grade_items} gi ON gi.id = ggh.itemid
-                 $userfieldjoinssql
                  $groupjoinsql
                 WHERE $filtersql gi.courseid = :courseid $groupwheresql";
         $sql .= $orderby;
         $params['courseid'] = $courseid;
-        $params = array_merge($userfieldssql->params, $params);
+
         return array($sql, $params);
     }
 
@@ -205,8 +201,7 @@ class helper {
             $groupwheresql = " AND gm.groupid $insql ";
         }
 
-        $userfieldsapi = \core_user\fields::for_name();
-        $ufields = $userfieldsapi->get_sql('u', false, '', '', false)->selects;
+        $ufields = get_all_user_name_fields(true, 'u');
         $sql = "SELECT u.id, $ufields
                   FROM {user} u
                   JOIN {grade_grades_history} ggh ON ggh.usermodified = u.id

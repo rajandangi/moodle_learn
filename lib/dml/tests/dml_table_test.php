@@ -14,28 +14,34 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace core;
+/**
+ * DML Table tests.
+ *
+ * @package    core_dml
+ * @category   phpunit
+ * @copyright  2019 Andrew Nicols <andrew@nicols.co.uk>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
-use core\dml\table;
-use xmldb_table;
+defined('MOODLE_INTERNAL') || die();
+
+use \core\dml\table;
 
 /**
  * DML Table tests.
  *
- * @package    core
- * @category   test
  * @copyright  2019 Andrew Nicols <andrew@nicols.co.uk>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @coversDefaultClass \core\dml\table
  */
-class dml_table_test extends \database_driver_testcase {
+class core_dml_table_testcase extends database_driver_testcase {
 
     /**
      * Data provider for various \core\dml\table method tests.
      *
      * @return  array
      */
-    public function get_field_select_provider(): array {
+    public function get_field_select_provider() : array {
         return [
             'single field' => [
                 'tablename' => 'test_table_single',
@@ -102,7 +108,7 @@ class dml_table_test extends \database_driver_testcase {
      *
      * @return  array
      */
-    public function extract_from_result_provider(): array {
+    public function extract_from_result_provider() : array {
         return [
             'single table' => [
                 'fieldlist' => [
@@ -156,15 +162,15 @@ class dml_table_test extends \database_driver_testcase {
      * @param   array       $fieldlist The list of fields
      * @param   string      $primarykey The name of the primary key
      * @param   string      $fieldprefix The prefix to use for each field
-     * @param   \stdClass $result The result of the get_records_sql
-     * @param   \stdClass $expected The expected output
+     * @param   stdClass    $result The result of the get_records_sql
+     * @param   stdClass    $expected The expected output
      */
     public function test_extract_fields_from_result(
         array $fieldlist,
         string $primarykey,
         string $fieldprefix,
-        \stdClass $result,
-        \stdClass $expected
+        stdClass $result,
+        stdClass $expected
     ) {
         $dbman = $this->tdb->get_manager();
 

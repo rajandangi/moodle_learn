@@ -188,16 +188,6 @@ class mod_glossary_generator extends testing_module_generator {
             $DB->insert_record('glossary_entries_categories', ['entryid' => $id, 'categoryid' => $categoryid]);
         }
 
-        $entries =  $DB->get_record('glossary_entries', ['id' => $id], '*', MUST_EXIST);
-
-        if (isset($record['tags'])) {
-            $cm = get_coursemodule_from_instance('glossary', $glossary->id);
-            $tags = is_array($record['tags']) ? $record['tags'] : explode(',', $record['tags']);
-
-            core_tag_tag::set_item_tags('mod_glossary', 'glossary_entries', $id,
-                context_module::instance($cm->id), $tags);
-        }
-
-        return $entries;
+        return $DB->get_record('glossary_entries', array('id' => $id), '*', MUST_EXIST);
     }
 }

@@ -110,11 +110,6 @@ class post extends exporter {
                 'default' => null,
                 'null' => NULL_ALLOWED
             ],
-            'timemodified' => [
-                'type' => PARAM_INT,
-                'default' => null,
-                'null' => NULL_ALLOWED
-            ],
             'unread' => [
                 'type' => PARAM_BOOL,
                 'optional' => true,
@@ -273,11 +268,6 @@ class post extends exporter {
                 'multiple' => true,
                 'type' => $attachmentdefinition
             ],
-            'messageinlinefiles' => [
-                'optional' => true,
-                'multiple' => true,
-                'type' => stored_file_exporter::read_properties_definition(),
-            ],
             'tags' => [
                 'optional' => true,
                 'default' => null,
@@ -371,7 +361,6 @@ class post extends exporter {
         $rating = $this->related['rating'];
         $tags = $this->related['tags'];
         $attachments = $this->related['attachments'];
-        $inlineattachments = $this->related['messageinlinefiles'];
         $includehtml = $this->related['includehtml'];
         $isdeleted = $post->is_deleted();
         $isprivatereply = $post->is_private_reply();
@@ -415,7 +404,6 @@ class post extends exporter {
         // Only bother loading the content if the user can see it.
         $loadcontent = $canview && !$isdeleted;
         $exportattachments = $loadcontent && !empty($attachments);
-        $exportinlineattachments = $loadcontent && !empty($inlineattachments);
 
         if ($loadcontent) {
             $subject = $post->get_subject();
@@ -453,7 +441,6 @@ class post extends exporter {
             'hasparent' => $post->has_parent(),
             'parentid' => $post->has_parent() ? $post->get_parent_id() : null,
             'timecreated' => $timecreated,
-            'timemodified' => $post->get_time_modified(),
             'unread' => ($loadcontent && $readreceiptcollection) ? !$readreceiptcollection->has_user_read_post($user, $post) : null,
             'isdeleted' => $isdeleted,
             'isprivatereply' => $isprivatereply,
@@ -485,8 +472,6 @@ class post extends exporter {
                 'discuss' => $discussurl ? $discussurl->out(false) : null,
             ],
             'attachments' => ($exportattachments) ? $this->export_attachments($attachments, $post, $output, $canexport) : [],
-            'messageinlinefiles' => ($exportinlineattachments) ? $this->export_inline_attachments($inlineattachments,
-                $post, $output) : [],
             'tags' => ($loadcontent && $hastags) ? $this->export_tags($tags) : [],
             'html' => $includehtml ? [
                 'rating' => ($loadcontent && $hasrating) ? $output->render($rating) : null,
@@ -514,7 +499,6 @@ class post extends exporter {
             'context' => 'context',
             'authorgroups' => 'stdClass[]',
             'attachments' => '\stored_file[]?',
-            'messageinlinefiles' => '\stored_file[]?',
             'tags' => '\core_tag_tag[]?',
             'rating' => 'rating?',
             'includehtml' => 'bool'
@@ -523,7 +507,7 @@ class post extends exporter {
 
     /**
      * This method returns the parameters for the post's message to
-     * use with the function \core_external\util::format_text().
+     * use with the function external_format_text().
      *
      * @return array
      */
@@ -545,7 +529,7 @@ class post extends exporter {
      * @param post_entity $post The post
      * @return string
      */
-    private function get_message(post_entity $post): string {
+    private function get_message(post_entity $post) : string {
         global $CFG;
 
         $message = $post->get_message();
@@ -574,7 +558,7 @@ class post extends exporter {
      * @param bool $canexport If the user can export the post (relates to portfolios not exporters like this class)
      * @return array
      */
-    private function export_attachments(array $attachments, post_entity $post, renderer_base $output, bool $canexport): array {
+    private function export_attachments(array $attachments, post_entity $post, renderer_base $output, bool $canexport) : array {
         global $CFG;
 
         $urlfactory = $this->related['urlfactory'];
@@ -623,31 +607,12 @@ class post extends exporter {
     }
 
     /**
-     * Get the exported inline attachments for a post.
-     *
-     * @param array $inlineattachments The list of inline attachments for the post
-     * @param post_entity $post The post being exported
-     * @param renderer_base $output Renderer base
-     * @return array
-     */
-    private function export_inline_attachments(array $inlineattachments, post_entity $post, renderer_base $output): array {
-
-        return array_map(function($attachment) use (
-            $output,
-            $post
-        ) {
-            $exporter = new stored_file_exporter($attachment, ['context' => $this->related['context']]);
-            return $exporter->export($output);;
-        }, $inlineattachments);
-    }
-
-    /**
      * Export the list of tags.
      *
      * @param core_tag_tag[] $tags List of tags to export
      * @return array
      */
-    private function export_tags(array $tags): array {
+    private function export_tags(array $tags) : array {
         $user = $this->related['user'];
         $context = $this->related['context'];
         $capabilitymanager = $this->related['capabilitymanager'];
@@ -675,7 +640,7 @@ class post extends exporter {
      * @param int $timecreated The post time created timestamp if it's to be displayed
      * @return string
      */
-    private function get_author_subheading_html(stdClass $exportedauthor, int $timecreated): string {
+    private function get_author_subheading_html(stdClass $exportedauthor, int $timecreated) : string {
         $fullname = $exportedauthor->fullname;
         $profileurl = $exportedauthor->urls['profile'] ?? null;
         $name = $profileurl ? "<a href=\"{$profileurl}\">{$fullname}</a>" : $fullname;

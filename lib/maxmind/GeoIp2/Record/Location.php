@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 namespace GeoIp2\Record;
 
 /**
@@ -39,8 +37,6 @@ class Location extends AbstractRecord
 {
     /**
      * @ignore
-     *
-     * @var array<string>
      */
     protected $validAttributes = [
         'averageIncome',

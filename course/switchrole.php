@@ -36,6 +36,16 @@ $id         = required_param('id', PARAM_INT);
 $switchrole = optional_param('switchrole', -1, PARAM_INT);
 $returnurl  = optional_param('returnurl', '', PARAM_LOCALURL);
 
+if (strpos($returnurl, '?') === false) {
+    // Looks like somebody did not set proper page url, better go to course page.
+    $returnurl = new moodle_url('/course/view.php', array('id' => $id));
+} else {
+    if (strpos($returnurl, $CFG->wwwroot) !== 0) {
+        $returnurl = $CFG->wwwroot.$returnurl;
+    }
+    $returnurl  = clean_param($returnurl, PARAM_LOCALURL);
+}
+
 $PAGE->set_url('/course/switchrole.php', array('id'=>$id, 'switchrole'=>$switchrole));
 
 if ($switchrole >= 0) {
@@ -78,7 +88,7 @@ if ($switchrole > 0 && has_capability('moodle/role:switchroles', $context)) {
         $roles[0] = get_string('switchrolereturn');
         $assumedrole = $USER->access['rsw'][$context->path];
     }
-    $availableroles = get_switchable_roles($context, ROLENAME_BOTH);
+    $availableroles = get_switchable_roles($context);
     if (is_array($availableroles)) {
         foreach ($availableroles as $key => $role) {
             if ($assumedrole == (int)$key) {
@@ -92,7 +102,7 @@ if ($switchrole > 0 && has_capability('moodle/role:switchroles', $context)) {
     foreach ($roles as $key => $role) {
         $url = new moodle_url('/course/switchrole.php', array('id' => $id, 'switchrole' => $key, 'returnurl' => $returnurl));
         // Button encodes special characters, apply htmlspecialchars_decode() to avoid double escaping.
-        echo $OUTPUT->container($OUTPUT->single_button($url, htmlspecialchars_decode($role, ENT_COMPAT)), 'mx-3 mb-1');
+        echo $OUTPUT->container($OUTPUT->single_button($url, htmlspecialchars_decode($role)), 'mx-3 mb-1');
     }
 
     $url = new moodle_url($returnurl);
@@ -102,4 +112,4 @@ if ($switchrole > 0 && has_capability('moodle/role:switchroles', $context)) {
     exit;
 }
 
-redirect(new moodle_url($returnurl));
+redirect($returnurl);

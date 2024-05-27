@@ -85,13 +85,13 @@ class builder {
      *
      * @return exported_posts_builder
      */
-    public function get_exported_posts_builder(): exported_posts_builder {
+    public function get_exported_posts_builder() : exported_posts_builder {
         return new exported_posts_builder(
             $this->rendererbase,
             $this->legacydatamapperfactory,
             $this->exporterfactory,
             $this->vaultfactory,
-            $this->managerfactory
+            $this->managerfactory->get_rating_manager()
         );
     }
 
@@ -100,7 +100,7 @@ class builder {
      *
      * @return exported_discussion_summaries_builder
      */
-    public function get_exported_discussion_summaries_builder(): exported_discussion_summaries_builder {
+    public function get_exported_discussion_summaries_builder() : exported_discussion_summaries_builder {
         return new exported_discussion_summaries_builder(
             $this->rendererbase,
             $this->legacydatamapperfactory,
@@ -115,7 +115,7 @@ class builder {
      *
      * @return exported_discussion_summaries_builder
      */
-    public function get_exported_discussion_builder(): exported_discussion_builder {
+    public function get_exported_discussion_builder() : exported_discussion_builder {
         return new exported_discussion_builder(
             $this->rendererbase,
             $this->legacydatamapperfactory,

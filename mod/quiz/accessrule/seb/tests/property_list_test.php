@@ -14,17 +14,26 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace quizaccess_seb;
+/**
+ * PHPUnit for property_list class.
+ *
+ * @package    quizaccess_seb
+ * @author     Andrew Madden <andrewmadden@catalyst-au.net>
+ * @copyright  2019 Catalyst IT
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+use quizaccess_seb\property_list;
+
+defined('MOODLE_INTERNAL') || die();
 
 /**
  * PHPUnit for property_list class.
  *
- * @package   quizaccess_seb
- * @author    Andrew Madden <andrewmadden@catalyst-au.net>
- * @copyright 2020 Catalyst IT
+ * @copyright  2020 Catalyst IT
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class property_list_test extends \advanced_testcase {
+class quizaccess_seb_property_list_testcase extends advanced_testcase {
 
     /**
      * Test that an empty PList with a root dictionary is created.
@@ -135,7 +144,7 @@ class property_list_test extends \advanced_testcase {
             . $this->get_plist_xml_footer();
         $plist = new property_list($xml);
 
-        $this->expectException(\invalid_parameter_exception::class);
+        $this->expectException(invalid_parameter_exception::class);
         $this->expectExceptionMessage($exceptionmessage);
 
         $plist->update_element_value($key, $value);
@@ -172,7 +181,7 @@ class property_list_test extends \advanced_testcase {
             . $this->get_plist_xml_footer();
         $plist = new property_list($xml);
 
-        $this->expectException(\invalid_parameter_exception::class);
+        $this->expectException(invalid_parameter_exception::class);
         $this->expectExceptionMessage('New array must only contain CFType objects.');
 
         $plist->update_element_array('testDict', [false]);
@@ -272,7 +281,7 @@ class property_list_test extends \advanced_testcase {
         $this->assertEquals(42, $plist->get_element_value('number'));
 
         // Type exception.
-        $this->expectException(\TypeError::class);
+        $this->expectException(TypeError::class);
         $plist->set_or_update_value('someKey', 'We really need to pass in CFTypes here');
     }
 
@@ -281,7 +290,7 @@ class property_list_test extends \advanced_testcase {
      *
      * @return string
      */
-    private function get_plist_xml_header(): string {
+    private function get_plist_xml_header() : string {
         return "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
                 . "<!DOCTYPE plist PUBLIC \"-//Apple Computer//DTD PLIST 1.0//EN\" "
                 . "\"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n"
@@ -294,7 +303,7 @@ class property_list_test extends \advanced_testcase {
      *
      * @return string
      */
-    private function get_plist_xml_footer(): string {
+    private function get_plist_xml_footer() : string {
         return "  </dict>\n"
                 . "</plist>";
     }
@@ -304,7 +313,7 @@ class property_list_test extends \advanced_testcase {
      *
      * @return array Array with test data.
      */
-    public function good_update_data_provider(): array {
+    public function good_update_data_provider() : array {
         return [
             'Update string' => ['<key>testKey</key><string>testValue</string>', 'testKey', 'newValue'],
             'Update bool' => ['<key>testKey</key><true/>', 'testKey', false],
@@ -317,7 +326,7 @@ class property_list_test extends \advanced_testcase {
      *
      * @return array Array with test data.
      */
-    public function bad_update_data_provider(): array {
+    public function bad_update_data_provider() : array {
 
         return [
             'Update string with bool' => ['<key>testKey</key><string>testValue</string>', 'testKey', true, 'testValue',
@@ -379,7 +388,7 @@ class property_list_test extends \advanced_testcase {
      *
      * @return array
      */
-    public function json_data_provider(): array {
+    public function json_data_provider() : array {
         $data = "blahblah";
         $base64data = base64_encode($data);
 

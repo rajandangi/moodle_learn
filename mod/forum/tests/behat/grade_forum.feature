@@ -1,4 +1,4 @@
-@mod @mod_forum @core_grades @javascript
+@mod @mod_forum @core_grades
 Feature: I can grade a students interaction across a forum
   In order to assess a student's contributions
   As a teacher
@@ -32,6 +32,7 @@ Feature: I can grade a students interaction across a forum
     And I change window size to "large"
     And I am on "Course 1" course homepage with editing mode on
 
+  @javascript
   Scenario: Ensure that forum grade settings do not leak to Ratings
     Given I am on the "Test Forum 1" "forum activity editing" page
     And I expand all fieldsets
@@ -60,19 +61,20 @@ Feature: I can grade a students interaction across a forum
     And I set the field "Whole forum grading > Grade to pass" to "4"
     When I press "Save and return to course"
     And I navigate to "View > Grader report" in the course gradebook
+    And I turn editing mode on
 
     # There shouldn't be any Ratings grade item.
     Then I should see "Test Forum 1 whole forum"
     But I should not see "Test Forum 1 rating"
 
     # The values saved should be reflected here.
-    And I click on grade item menu "Test Forum 1 whole forum" of type "gradeitem" on "grader" page
-    And I choose "Edit grade item" in the open action menu
-    When I click on "Show more..." "link" in the ".modal-dialog" "css_element"
+    Given I click on "Edit  forum Test Forum 1 whole forum" "link"
+    When I expand all fieldsets
     Then the field "Maximum grade" matches value "10"
     Then the field "Grade to pass" matches value "4"
     And I should see "Tutor" in the "Parent category" "fieldset"
 
+  @javascript
   Scenario: Ensure that Ratings settings do not leak to Forum grading
     Given I am on the "Test Forum 1" "forum activity editing" page
     And I expand all fieldsets
@@ -113,22 +115,21 @@ Feature: I can grade a students interaction across a forum
     And I set the field "Ratings > Grade to pass" to "4"
     When I press "Save and return to course"
     And I navigate to "View > Grader report" in the course gradebook
+    And I turn editing mode on
 
     # There shouldn't be any Whole forum grade gradeitem.
     Then I should see "Test Forum 1 rating"
     But I should not see "Test Forum 1 whole forum"
 
     # The values saved should be reflected here.
-    And I click on grade item menu "Test Forum 1 rating" of type "gradeitem" on "grader" page
-    And I choose "Edit grade item" in the open action menu
-    When I click on "Show more..." "link" in the ".modal-dialog" "css_element"
+    Given I click on "Edit  forum Test Forum 1 rating" "link"
+    When I expand all fieldsets
     Then the field "Maximum grade" matches value "10"
     Then the field "Grade to pass" matches value "4"
     And I should see "Tutor" in the "Parent category" "fieldset"
 
   Scenario: Setting both a rating and a whole forum grade does not bleed
     Given I am on the "Test Forum 1" "forum activity editing" page
-    And I expand all fieldsets
 
     And I set the field "Ratings > Aggregate type" to "Count of ratings"
     And I set the field "Ratings > Type" to "Point"
@@ -141,38 +142,22 @@ Feature: I can grade a students interaction across a forum
     And I set the field "Whole forum grading > Grade to pass" to "4"
     And I press "Save and return to course"
     And I navigate to "View > Grader report" in the course gradebook
+    And I turn editing mode on
 
     # There shouldn't be any Whole forum grade gradeitem.
     Then I should see "Test Forum 1 rating"
     And I should see "Test Forum 1 whole forum"
 
     # The values saved should be reflected here.
-    And I click on grade item menu "Test Forum 1 rating" of type "gradeitem" on "grader" page
-    And I choose "Edit grade item" in the open action menu
-    When I click on "Show more..." "link" in the ".modal-dialog" "css_element"
+    Given I click on "Edit  forum Test Forum 1 rating" "link"
+    When I expand all fieldsets
     Then the field "Maximum grade" matches value "100"
     Then the field "Grade to pass" matches value "40"
     And I should see "Peers" in the "Parent category" "fieldset"
-    And I press "Cancel"
+    And I press "cancel"
 
-    And I click on grade item menu "Test Forum 1 whole forum" of type "gradeitem" on "grader" page
-    And I choose "Edit grade item" in the open action menu
-    When I click on "Show more..." "link" in the ".modal-dialog" "css_element"
+    Given I click on "Edit  forum Test Forum 1 whole forum" "link"
+    When I expand all fieldsets
     Then the field "Maximum grade" matches value "10"
     Then the field "Grade to pass" matches value "4"
     And I should see "Tutor" in the "Parent category" "fieldset"
-
-  Scenario: Ensure that only gradable users are available in forum grading interface
-    Given I am on the "Test Forum 1" "forum activity editing" page logged in as "admin"
-    And I expand all fieldsets
-    When I set the field "Whole forum grading > Type" to "Point"
-    And I set the field "Whole forum grading > Maximum grade" to "10"
-    And I set the field "Whole forum grading > Grade to pass" to "4"
-    And I press "Save and display"
-    And I press "Grade users"
-    Then I should see "1 out of 1"
-    And I should see "Student 1"
-    And I should not see "Teacher 1"
-    And I press "Save changes and proceed to the next user"
-    And I should see "Student 1"
-    And I should not see "Teacher 1"

@@ -56,8 +56,6 @@ Options:
 --agree-license       Indicates agreement with software license.
 --fullname=STRING     Name of the site
 --shortname=STRING    Name of the site
---summary=STRING      The summary to be displayed on the front page
---supportemail=STRING Email address for support and help.
 -h, --help            Print out this help
 
 Example:
@@ -98,8 +96,6 @@ list($options, $unrecognized) = cli_get_params(
         'adminemail'        => '',
         'fullname'          => '',
         'shortname'         => '',
-        'summary'           => '',
-        'supportemail'      => '',
         'agree-license'     => false,
         'help'              => false
     ),
@@ -107,11 +103,6 @@ list($options, $unrecognized) = cli_get_params(
         'h' => 'help'
     )
 );
-
-if ($unrecognized) {
-    $unrecognized = implode("\n  ", $unrecognized);
-    cli_error(get_string('cliunknowoption', 'admin', $unrecognized));
-}
 
 // We show help text even if tables are installed.
 if ($options['help']) {
@@ -135,15 +126,6 @@ if ($options['adminpass'] === true or $options['adminpass'] === '') {
 // Validate that the address provided was an e-mail address.
 if (!empty($options['adminemail']) && !validate_email($options['adminemail'])) {
     $a = (object) array('option' => 'adminemail', 'value' => $options['adminemail']);
-    cli_error(get_string('cliincorrectvalueerror', 'admin', $a));
-}
-
-// Validate that the supportemail provided was an e-mail address.
-if (!empty($options['supportemail']) && !validate_email($options['supportemail'])) {
-    $a = (object) [
-        'option' => 'supportemail',
-        'value' => $options['supportemail']
-    ];
     cli_error(get_string('cliincorrectvalueerror', 'admin', $a));
 }
 

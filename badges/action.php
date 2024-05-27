@@ -42,14 +42,11 @@ $navurl = new moodle_url('/badges/index.php', array('type' => $badge->type));
 
 if ($badge->type == BADGE_TYPE_COURSE) {
     require_login($badge->courseid);
-    $course = get_course($badge->courseid);
-    $heading = format_string($course->fullname, true, ['context' => $context]);
     $navurl = new moodle_url('/badges/index.php', array('type' => $badge->type, 'id' => $badge->courseid));
     $PAGE->set_pagelayout('standard');
     navigation_node::override_active_url($navurl);
 } else {
     $PAGE->set_pagelayout('admin');
-    $heading = get_string('administrationsite');
     navigation_node::override_active_url($navurl, true);
 }
 
@@ -110,7 +107,7 @@ if ($activate) {
     $strheading = get_string('reviewbadge', 'badges');
     $PAGE->navbar->add($strheading);
     $PAGE->set_title($strheading);
-    $PAGE->set_heading($heading);
+    $PAGE->set_heading($badge->name);
     echo $OUTPUT->header();
     echo $OUTPUT->heading($strheading);
 

@@ -27,9 +27,7 @@ defined('MOODLE_INTERNAL') || die;
 if ($ADMIN->fulltree) {
 
     if (!function_exists('ldap_connect')) {
-        $notify = new \core\output\notification(get_string('auth_ldap_noextension', 'auth_ldap'),
-            \core\output\notification::NOTIFY_WARNING);
-        $settings->add(new admin_setting_heading('auth_ldap_noextension', '', $OUTPUT->render($notify)));
+        $settings->add(new admin_setting_heading('auth_ldap_noextension', '', get_string('auth_ldap_noextension', 'auth_ldap')));
     } else {
 
         // We use a couple of custom admin settings since we need to massage the data before it is inserted into the DB.
@@ -288,11 +286,6 @@ if ($ADMIN->fulltree) {
         $settings->add(new admin_setting_configselect('auth_ldap/sync_suspended',
                 new lang_string('auth_sync_suspended_key', 'auth'),
                 new lang_string('auth_sync_suspended', 'auth'), 0 , $yesno));
-
-        // Sync update users chunk size.
-        $settings->add(new admin_setting_configtext('auth_ldap/sync_updateuserchunk',
-                new lang_string('sync_updateuserchunk_key', 'auth_ldap'),
-                new lang_string('sync_updateuserchunk', 'auth_ldap'), 1000, PARAM_INT));
 
         // NTLM SSO Header.
         $settings->add(new admin_setting_heading('auth_ldap/ntlm',

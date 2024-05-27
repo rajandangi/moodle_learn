@@ -31,6 +31,5 @@ if ($ADMIN->fulltree) {
 
     $authplugin = get_auth_plugin('oauth2');
     display_auth_lock_options($settings, $authplugin->authtype, $authplugin->userfields,
-        get_string('auth_fieldlocks_help', 'auth'), false, false,
-        $authplugin->customfields);
+            get_string('auth_fieldlocks_help', 'auth'), false, false);
 }

@@ -14,9 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace portfolio_googledocs;
-
-use portfolio_admin_form;
+/**
+ * Googledocs portfolio functional test.
+ *
+ * @package    portfolio_googledocs
+ * @category   tests
+ * @copyright  2016 Marina Glancy
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -32,7 +37,7 @@ require_once($CFG->libdir . '/portfolio/forms.php');
  * @copyright  2016 Marina Glancy
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class plugin_test extends \advanced_testcase {
+class portfolio_googledocs_plugin_testcase extends advanced_testcase {
 
     /** @var string name of the portfolio plugin */
     protected $pluginname = 'googledocs';
@@ -41,13 +46,13 @@ class plugin_test extends \advanced_testcase {
      * Creates a new instance of the portfolio plugin
      *
      * @param string $name name of the instance
-     * @param \stdClass $data config data for the instance
+     * @param stdClass $data config data for the instance
      * @return portfolio_plugin_base
      */
     protected function enable_plugin($name = 'Instance name', $data = null) {
-        $data = $data ?: new \stdClass();
+        $data = $data ?: new stdClass();
         $instance = portfolio_static_function($this->pluginname, 'create_instance', $this->pluginname, $name, $data);
-        \core_plugin_manager::reset_caches();
+        core_plugin_manager::reset_caches();
         return $instance;
     }
 

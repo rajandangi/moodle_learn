@@ -14,7 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace core_user;
+/**
+ * Unit tests for user/lib.php.
+ *
+ * @package    core_user
+ * @category   phpunit
+ * @copyright  2013 Rajesh Taneja <rajesh@moodle.com>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -25,11 +32,11 @@ require_once($CFG->dirroot.'/user/lib.php');
  * Unit tests for user lib api.
  *
  * @package    core_user
- * @category   test
+ * @category   phpunit
  * @copyright  2013 Rajesh Taneja <rajesh@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class userlib_test extends \advanced_testcase {
+class core_userliblib_testcase extends advanced_testcase {
     /**
      * Test user_get_user_details_courses
      */
@@ -44,7 +51,7 @@ class userlib_test extends \advanced_testcase {
         $user3 = $this->getDataGenerator()->create_user();
 
         $course1 = $this->getDataGenerator()->create_course();
-        $coursecontext = \context_course::instance($course1->id);
+        $coursecontext = context_course::instance($course1->id);
         $teacherrole = $DB->get_record('role', array('shortname' => 'teacher'));
         $this->getDataGenerator()->enrol_user($user1->id, $course1->id);
         $this->getDataGenerator()->enrol_user($user2->id, $course1->id);
@@ -88,7 +95,7 @@ class userlib_test extends \advanced_testcase {
 
         $this->setUser($user1);
         $userdetails = user_get_user_details_courses($user2);
-        $this->assertIsArray($userdetails);
+        $this->assertInternalType('array', $userdetails);
         $this->assertEquals($user2->id, $userdetails['id']);
     }
 
@@ -126,51 +133,8 @@ class userlib_test extends \advanced_testcase {
 
         $this->setUser($user1);
         $userdetails = user_get_user_details_courses($user2);
-        $this->assertIsArray($userdetails);
+        $this->assertInternalType('array', $userdetails);
         $this->assertEquals($user2->id, $userdetails['id']);
-    }
-
-    /**
-     * Tests that the user fields returned by the method can be limited.
-     *
-     * @covers ::user_get_user_details_courses
-     */
-    public function test_user_get_user_details_courses_limit_return() {
-        $this->resetAfterTest();
-
-        // Setup some data.
-        $user1 = $this->getDataGenerator()->create_user();
-        $user2 = $this->getDataGenerator()->create_user();
-        $course = $this->getDataGenerator()->create_course();
-        $this->getDataGenerator()->enrol_user($user1->id, $course->id);
-        $this->getDataGenerator()->enrol_user($user2->id, $course->id);
-
-        // Calculate the minimum fields that can be returned.
-        $namefields = \core_user\fields::for_name()->get_required_fields();
-        $fields = array_intersect($namefields, user_get_default_fields());
-
-        $minimaluser = (object) [
-            'id' => $user2->id,
-            'deleted' => $user2->deleted,
-        ];
-
-        foreach ($namefields as $field) {
-            $minimaluser->$field = $user2->$field;
-        }
-
-        $this->setUser($user1);
-        $fulldetails = user_get_user_details_courses($user2);
-        $limiteddetails = user_get_user_details_courses($minimaluser, $fields);
-        $this->assertIsArray($fulldetails);
-        $this->assertIsArray($limiteddetails);
-        $this->assertEquals($user2->id, $fulldetails['id']);
-        $this->assertEquals($user2->id, $limiteddetails['id']);
-
-        // Test that less data was returned when using a filter.
-        $fullcount = count($fulldetails);
-        $limitedcount = count($limiteddetails);
-        $this->assertLessThan($fullcount, $limitedcount);
-        $this->assertNotEquals($fulldetails, $limiteddetails);
     }
 
     /**
@@ -201,7 +165,11 @@ class userlib_test extends \advanced_testcase {
         // Test event.
         $this->assertInstanceOf('\core\event\user_updated', $event);
         $this->assertSame($user->id, $event->objectid);
-        $this->assertEquals(\context_user::instance($user->id), $event->get_context());
+        $this->assertSame('user_updated', $event->get_legacy_eventname());
+        $this->assertEventLegacyData($dbuser, $event);
+        $this->assertEquals(context_user::instance($user->id), $event->get_context());
+        $expectedlogdata = array(SITEID, 'user', 'update', 'view.php?id='.$user->id, '');
+        $this->assertEventLegacyLogData($expectedlogdata, $event);
 
         // Update user with no password update.
         $password = $user->password = hash_internal_user_password('M00dLe@T');
@@ -232,9 +200,10 @@ class userlib_test extends \advanced_testcase {
         $user->lang = 'xy';
         $user->theme = 'somewrongthemename';
         $user->timezone = '30.5';
+        $user->url = 'wwww.somewrong@#$url.com.aus';
         $debugmessages = $this->getDebuggingMessages();
         user_update_user($user, true, false);
-        $this->assertDebuggingCalledCount(5, $debugmessages);
+        $this->assertDebuggingCalledCount(6, $debugmessages);
 
         // Now, with valid user data.
         $user->username = 'johndoe321';
@@ -243,6 +212,7 @@ class userlib_test extends \advanced_testcase {
         $user->lang = 'en';
         $user->theme = 'classic';
         $user->timezone = 'Australia/Perth';
+        $user->url = 'www.moodle.org';
         user_update_user($user, true, false);
         $this->assertDebuggingNotCalled();
     }
@@ -292,7 +262,11 @@ class userlib_test extends \advanced_testcase {
         // Test event.
         $this->assertInstanceOf('\core\event\user_created', $event);
         $this->assertEquals($user['id'], $event->objectid);
-        $this->assertEquals(\context_user::instance($user['id']), $event->get_context());
+        $this->assertEquals('user_created', $event->get_legacy_eventname());
+        $this->assertEquals(context_user::instance($user['id']), $event->get_context());
+        $this->assertEventLegacyData($dbuser, $event);
+        $expectedlogdata = array(SITEID, 'user', 'add', '/view.php?id='.$event->objectid, fullname($dbuser));
+        $this->assertEventLegacyLogData($expectedlogdata, $event);
 
         // Verify event is not triggred by user_create_user when needed.
         $user = array('username' => 'usernametest2'); // Create another user.
@@ -309,9 +283,10 @@ class userlib_test extends \advanced_testcase {
         $user['lang'] = 'xy';
         $user['theme'] = 'somewrongthemename';
         $user['timezone'] = '-30.5';
+        $user['url'] = 'wwww.somewrong@#$url.com.aus';
         $debugmessages = $this->getDebuggingMessages();
         $user['id'] = user_create_user($user, true, false);
-        $this->assertDebuggingCalledCount(5, $debugmessages);
+        $this->assertDebuggingCalledCount(6, $debugmessages);
         $dbuser = $DB->get_record('user', array('id' => $user['id']));
         $this->assertEquals($dbuser->country, 0);
         $this->assertEquals($dbuser->lang, 'en');
@@ -324,38 +299,9 @@ class userlib_test extends \advanced_testcase {
         $user['lang'] = 'en';
         $user['theme'] = 'classic';
         $user['timezone'] = 'Australia/Perth';
+        $user['url'] = 'www.moodle.org';
         user_create_user($user, true, false);
         $this->assertDebuggingNotCalled();
-    }
-
-    /**
-     * Test that creating users populates default values
-     *
-     * @covers ::user_create_user
-     */
-    public function test_user_create_user_default_values(): void {
-        global $CFG;
-
-        $this->resetAfterTest();
-
-        // Update default values for city/country (both initially empty).
-        set_config('defaultcity', 'Nadi');
-        set_config('country', 'FJ');
-
-        $userid = user_create_user((object) [
-            'username' => 'newuser',
-        ], false, false);
-
-        $user = \core_user::get_user($userid);
-        $this->assertEquals($CFG->calendartype, $user->calendartype);
-        $this->assertEquals($CFG->defaultpreference_maildisplay, $user->maildisplay);
-        $this->assertEquals($CFG->defaultpreference_mailformat, $user->mailformat);
-        $this->assertEquals($CFG->defaultpreference_maildigest, $user->maildigest);
-        $this->assertEquals($CFG->defaultpreference_autosubscribe, $user->autosubscribe);
-        $this->assertEquals($CFG->defaultpreference_trackforums, $user->trackforums);
-        $this->assertEquals($CFG->lang, $user->lang);
-        $this->assertEquals($CFG->defaultcity, $user->city);
-        $this->assertEquals($CFG->country, $user->country);
     }
 
     /**
@@ -610,7 +556,7 @@ class userlib_test extends \advanced_testcase {
 
         // Course without sections.
         $course = $this->getDataGenerator()->create_course();
-        $context = \context_course::instance($course->id);
+        $context = context_course::instance($course->id);
 
         $this->setAdminUser();
 
@@ -641,13 +587,15 @@ class userlib_test extends \advanced_testcase {
 
         $PAGE->set_url('/');
         $user = $this->getDataGenerator()->create_user();
-        $this->setUser($user);
         $opts = user_get_user_navigation_info($user, $PAGE, array('avatarsize' => $testsize));
         $avatarhtml = $opts->metadata['useravatar'];
 
         $matches = [];
-        preg_match('/size-100/', $avatarhtml, $matches);
-        $this->assertCount(1, $matches);
+        preg_match('/(?:.*width=")(\d*)(?:" height=")(\d*)(?:".*\/>)/', $avatarhtml, $matches);
+        $this->assertCount(3, $matches);
+
+        $this->assertEquals(intval($matches[1]), $testsize);
+        $this->assertEquals(intval($matches[2]), $testsize);
     }
 
     /**
@@ -678,9 +626,9 @@ class userlib_test extends \advanced_testcase {
          // Create two courses.
         $course1 = $this->getDataGenerator()->create_course();
         $course2 = $this->getDataGenerator()->create_course();
-        $coursecontext = \context_course::instance($course2->id);
+        $coursecontext = context_course::instance($course2->id);
         // Prepare another course with separate groups and groupmodeforce set to true.
-        $record = new \stdClass();
+        $record = new stdClass();
         $record->groupmode = 1;
         $record->groupmodeforce = 1;
         $course3 = $this->getDataGenerator()->create_course($record);
@@ -747,7 +695,7 @@ class userlib_test extends \advanced_testcase {
         // Test the user:viewalldetails cap check using the course creator role which, by default, can't see student profiles.
         $this->setUser($user7);
         $this->assertFalse(user_can_view_profile($user4));
-        assign_capability('moodle/user:viewalldetails', CAP_ALLOW, $coursecreatorrole->id, \context_system::instance()->id, true);
+        assign_capability('moodle/user:viewalldetails', CAP_ALLOW, $coursecreatorrole->id, context_system::instance()->id, true);
         reload_all_capabilities();
         $this->assertTrue(user_can_view_profile($user4));
         unassign_capability('moodle/user:viewalldetails', $coursecreatorrole->id, $coursecontext->id);
@@ -769,7 +717,7 @@ class userlib_test extends \advanced_testcase {
 
         // Even with cap, still guests should not be allowed in.
         $guestrole = $DB->get_records_menu('role', array('shortname' => 'guest'), 'id', 'archetype, id');
-        assign_capability('moodle/user:viewdetails', CAP_ALLOW, $guestrole['guest'], \context_system::instance()->id, true);
+        assign_capability('moodle/user:viewdetails', CAP_ALLOW, $guestrole['guest'], context_system::instance()->id, true);
         reload_all_capabilities();
         foreach ($users as $user) {
             $this->assertFalse(user_can_view_profile($user));
@@ -803,18 +751,18 @@ class userlib_test extends \advanced_testcase {
         $this->getDataGenerator()->role_assign($managerrole->id, $user9->id);
 
         // Make sure viewalldetails and viewdetails are overridden to 'prevent' (i.e. can be overridden at a lower context).
-        $systemcontext = \context_system::instance();
+        $systemcontext = context_system::instance();
         assign_capability('moodle/user:viewdetails', CAP_PREVENT, $managerrole->id, $systemcontext, true);
         assign_capability('moodle/user:viewalldetails', CAP_PREVENT, $managerrole->id, $systemcontext, true);
 
         // And override these to 'Allow' in a specific course.
-        $course4context = \context_course::instance($course4->id);
+        $course4context = context_course::instance($course4->id);
         assign_capability('moodle/user:viewalldetails', CAP_ALLOW, $managerrole->id, $course4context, true);
         assign_capability('moodle/user:viewdetails', CAP_ALLOW, $managerrole->id, $course4context, true);
 
         // The manager now shouldn't have viewdetails in the system or user context.
         $this->setUser($user9);
-        $user1context = \context_user::instance($user1->id);
+        $user1context = context_user::instance($user1->id);
         $this->assertFalse(has_capability('moodle/user:viewdetails', $systemcontext));
         $this->assertFalse(has_capability('moodle/user:viewdetails', $user1context));
 
@@ -839,7 +787,7 @@ class userlib_test extends \advanced_testcase {
         $studentfullname = fullname($student);
 
         $course1 = $this->getDataGenerator()->create_course();
-        $coursecontext = \context_course::instance($course1->id);
+        $coursecontext = context_course::instance($course1->id);
         $teacherrole = $DB->get_record('role', array('shortname' => 'teacher'));
         $studentrole = $DB->get_record('role', array('shortname' => 'student'));
         $this->getDataGenerator()->enrol_user($teacher->id, $course1->id);
@@ -892,7 +840,6 @@ class userlib_test extends \advanced_testcase {
                                                           'theme'      => $CFG->theme,
                                                           'timezone'   => '5',
                                                           'mailformat' => '0',
-                                                          'trackforums' => '1',
                                                       ]);
 
         // Fields that should get by default.
@@ -904,145 +851,5 @@ class userlib_test extends \advanced_testcase {
         self::assertSame($CFG->theme, $got['theme']);
         self::assertSame('5', $got['timezone']);
         self::assertSame('0', $got['mailformat']);
-        self::assertSame('1', $got['trackforums']);
-    }
-
-    /**
-     * Test user_get_user_details_permissions.
-     * @covers ::user_get_user_details
-     */
-    public function test_user_get_user_details_permissions() {
-        global $CFG;
-
-        $this->resetAfterTest();
-
-        // Create user and modify user profile.
-        $teacher = $this->getDataGenerator()->create_user();
-        $student1 = $this->getDataGenerator()->create_user(['idnumber' => 'user1id', 'city' => 'Barcelona', 'address' => 'BCN 1B']);
-        $student2 = $this->getDataGenerator()->create_user();
-        $student1fullname = fullname($student1);
-
-        $course = $this->getDataGenerator()->create_course();
-        $coursecontext = \context_course::instance($course->id);
-        $this->getDataGenerator()->enrol_user($teacher->id, $course->id);
-        $this->getDataGenerator()->enrol_user($student1->id, $course->id);
-        $this->getDataGenerator()->enrol_user($student2->id, $course->id);
-        $this->getDataGenerator()->role_assign('teacher', $teacher->id, $coursecontext->id);
-        $this->getDataGenerator()->role_assign('student', $student1->id, $coursecontext->id);
-        $this->getDataGenerator()->role_assign('student', $student2->id, $coursecontext->id);
-
-        accesslib_clear_all_caches_for_unit_testing();
-
-        // Get student details as a user with super system capabilities.
-        $result = user_get_user_details($student1, $course);
-        $this->assertEquals($student1->id, $result['id']);
-        $this->assertEquals($student1fullname, $result['fullname']);
-        $this->assertEquals($course->id, $result['enrolledcourses'][0]['id']);
-
-        $this->setUser($student2);
-
-        // Get student details with required fields.
-        $result = user_get_user_details($student1, $course, array('id', 'fullname', 'timezone', 'city', 'address', 'idnumber'));
-        $this->assertCount(4, $result); // Ensure address (never returned), idnumber (identity field) are not returned here.
-        $this->assertEquals($student1->id, $result['id']);
-        $this->assertEquals($student1fullname, $result['fullname']);
-        $this->assertEquals($student1->timezone, $result['timezone']);
-        $this->assertEquals($student1->city, $result['city']);
-
-        // Set new identity fields and hidden fields and try to retrieve them without permission.
-        $CFG->showuseridentity = $CFG->showuseridentity . ',idnumber';
-        $CFG->hiddenuserfields = 'city';
-        $result = user_get_user_details($student1, $course, array('id', 'fullname', 'timezone', 'city', 'address', 'idnumber'));
-        $this->assertCount(3, $result); // Ensure address, city and idnumber are not returned here.
-        $this->assertEquals($student1->id, $result['id']);
-        $this->assertEquals($student1fullname, $result['fullname']);
-        $this->assertEquals($student1->timezone, $result['timezone']);
-
-        // Now, teacher should have permission to see the idnumber and city fields.
-        $this->setUser($teacher);
-        $result = user_get_user_details($student1, $course, array('id', 'fullname', 'timezone', 'city', 'address', 'idnumber'));
-        $this->assertCount(5, $result); // Ensure address is not returned here.
-        $this->assertEquals($student1->id, $result['id']);
-        $this->assertEquals($student1fullname, $result['fullname']);
-        $this->assertEquals($student1->timezone, $result['timezone']);
-        $this->assertEquals($student1->idnumber, $result['idnumber']);
-        $this->assertEquals($student1->city, $result['city']);
-
-        // And admins can see anything.
-        $this->setAdminUser();
-        $result = user_get_user_details($student1, $course, array('id', 'fullname', 'timezone', 'city', 'address', 'idnumber'));
-        $this->assertCount(6, $result);
-        $this->assertEquals($student1->id, $result['id']);
-        $this->assertEquals($student1fullname, $result['fullname']);
-        $this->assertEquals($student1->timezone, $result['timezone']);
-        $this->assertEquals($student1->idnumber, $result['idnumber']);
-        $this->assertEquals($student1->city, $result['city']);
-        $this->assertEquals($student1->address, $result['address']);
-    }
-
-    /**
-     * Test user_get_user_details_groups.
-     * @covers ::user_get_user_details
-     */
-    public function test_user_get_user_details_groups() {
-        $this->resetAfterTest();
-
-        // Create user and modify user profile.
-        $teacher = $this->getDataGenerator()->create_user();
-        $student1 = $this->getDataGenerator()->create_user(['idnumber' => 'user1id', 'city' => 'Barcelona', 'address' => 'BCN 1B']);
-        $student2 = $this->getDataGenerator()->create_user();
-
-        $course = $this->getDataGenerator()->create_course();
-        $coursecontext = \context_course::instance($course->id);
-        $this->getDataGenerator()->enrol_user($teacher->id, $course->id);
-        $this->getDataGenerator()->enrol_user($student1->id, $course->id);
-        $this->getDataGenerator()->enrol_user($student2->id, $course->id);
-        $this->getDataGenerator()->role_assign('teacher', $teacher->id, $coursecontext->id);
-        $this->getDataGenerator()->role_assign('student', $student1->id, $coursecontext->id);
-        $this->getDataGenerator()->role_assign('student', $student2->id, $coursecontext->id);
-
-        $group1 = $this->getDataGenerator()->create_group(['courseid' => $course->id, 'name' => 'G1']);
-        $group2 = $this->getDataGenerator()->create_group(['courseid' => $course->id, 'name' => 'G2']);
-
-        // Each student in one group but teacher in two.
-        groups_add_member($group1->id, $student1->id);
-        groups_add_member($group1->id, $teacher->id);
-        groups_add_member($group2->id, $student2->id);
-        groups_add_member($group2->id, $teacher->id);
-
-        accesslib_clear_all_caches_for_unit_testing();
-
-        // A student can see other users groups when separate groups are not forced.
-        $this->setUser($student2);
-
-        // Get student details with groups.
-        $result = user_get_user_details($student1, $course, array('id', 'fullname', 'groups'));
-        $this->assertCount(3, $result);
-        $this->assertEquals($group1->id, $result['groups'][0]['id']);
-
-        // Teacher is in two different groups.
-        $result = user_get_user_details($teacher, $course, array('id', 'fullname', 'groups'));
-
-        // Order by group id.
-        usort($result['groups'], function($a, $b) {
-            return $a['id'] - $b['id'];
-        });
-
-        $this->assertCount(3, $result);
-        $this->assertCount(2, $result['groups']);
-        $this->assertEquals($group1->id, $result['groups'][0]['id']);
-        $this->assertEquals($group2->id, $result['groups'][1]['id']);
-
-        // Change to separate groups.
-        $course->groupmode = SEPARATEGROUPS;
-        $course->groupmodeforce = true;
-        update_course($course);
-
-        // Teacher is in two groups but I can only see the one shared with me.
-        $result = user_get_user_details($teacher, $course, array('id', 'fullname', 'groups'));
-
-        $this->assertCount(3, $result);
-        $this->assertCount(1, $result['groups']);
-        $this->assertEquals($group2->id, $result['groups'][0]['id']);
     }
 }

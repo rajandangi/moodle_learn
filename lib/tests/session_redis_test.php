@@ -14,13 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace core;
-
-use Redis;
-use RedisException;
-
 /**
- * Unit tests for classes/session/redis.php.
+ * Redis session tests.
  *
  * NOTE: in order to execute this test you need to set up
  *       Redis server and add configuration a constant
@@ -29,27 +24,30 @@ use RedisException;
  * define('TEST_SESSION_REDIS_HOST', '127.0.0.1');
  *
  * @package   core
- * @covers    \core\session\redis
  * @author    Russell Smith <mr-russ@smith2001.net>
  * @copyright 2016 Russell Smith
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+defined('MOODLE_INTERNAL') || die();
+
+/**
+ * Unit tests for classes/session/redis.php.
+ *
+ * @package   core
+ * @author    Russell Smith <mr-russ@smith2001.net>
+ * @copyright 2016 Russell Smith
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @runClassInSeparateProcess
  */
-class session_redis_test extends \advanced_testcase {
+class core_session_redis_testcase extends advanced_testcase {
 
     /** @var $keyprefix This key prefix used when testing Redis */
     protected $keyprefix = null;
     /** @var $redis The current testing redis connection */
     protected $redis = null;
-    /** @var bool $encrypted Is the current testing redis connection encrypted*/
-    protected $encrypted = false;
-    /** @var int $acquiretimeout how long we wait for session lock in seconds when testing Redis */
-    protected $acquiretimeout = 1;
-    /** @var int $lockexpire how long to wait in seconds before expiring the lock when testing Redis */
-    protected $lockexpire = 70;
 
-
-    public function setUp(): void {
+    public function setUp() {
         global $CFG;
 
         if (!extension_loaded('redis')) {
@@ -70,34 +68,18 @@ class session_redis_test extends \advanced_testcase {
         $this->keyprefix = 'phpunit'.rand(1, 100000);
 
         $CFG->session_redis_host = TEST_SESSION_REDIS_HOST;
-        if (strpos(TEST_SESSION_REDIS_HOST, ':')) {
-            list($server, $port) = explode(':', TEST_SESSION_REDIS_HOST);
-        } else {
-            $server = TEST_SESSION_REDIS_HOST;
-            $port = 6379;
-        }
-
-        $opts = [];
-        if (defined('TEST_SESSION_REDIS_ENCRYPT') && TEST_SESSION_REDIS_ENCRYPT) {
-            $this->encrypted = true;
-            $sslopts = $CFG->session_redis_encrypt = ['verify_peer' => false, 'verify_peer_name' => false];
-            $opts['stream'] = $sslopts;
-        }
         $CFG->session_redis_prefix = $this->keyprefix;
 
         // Set a very short lock timeout to ensure tests run quickly.  We are running single threaded,
         // so unless we lock and expect it to be there, we will always see a lock.
-        $CFG->session_redis_acquire_lock_timeout = $this->acquiretimeout;
-        $CFG->session_redis_lock_expire = $this->lockexpire;
+        $CFG->session_redis_acquire_lock_timeout = 1;
+        $CFG->session_redis_lock_expire = 70;
 
         $this->redis = new Redis();
-        $this->redis->connect($server, $port, 1, null, 1, 0, $opts);
-        if (!$this->redis->ping()) {
-            $this->markTestSkipped("Redis ping failed");
-        }
+        $this->redis->connect(TEST_SESSION_REDIS_HOST);
     }
 
-    public function tearDown(): void {
+    public function tearDown() {
         if (!extension_loaded('redis') || !defined('TEST_SESSION_REDIS_HOST')) {
             return;
         }
@@ -113,85 +95,59 @@ class session_redis_test extends \advanced_testcase {
         $sess = new \core\session\redis();
         $sess->set_requires_write_lock(false);
         $sess->init();
-        $this->assertSame('', $sess->read('sess1'));
-        $this->assertTrue($sess->close());
+        $this->assertSame('', $sess->handler_read('sess1'));
+        $this->assertTrue($sess->handler_close());
     }
 
     public function test_normal_session_start_stop_works() {
         $sess = new \core\session\redis();
         $sess->init();
         $sess->set_requires_write_lock(true);
-        $this->assertTrue($sess->open('Not used', 'Not used'));
-        $this->assertSame('', $sess->read('sess1'));
-        $this->assertTrue($sess->write('sess1', 'DATA'));
-        $this->assertTrue($sess->close());
+        $this->assertTrue($sess->handler_open('Not used', 'Not used'));
+        $this->assertSame('', $sess->handler_read('sess1'));
+        $this->assertTrue($sess->handler_write('sess1', 'DATA'));
+        $this->assertTrue($sess->handler_close());
 
         // Read the session again to ensure locking did what it should.
-        $this->assertTrue($sess->open('Not used', 'Not used'));
-        $this->assertSame('DATA', $sess->read('sess1'));
-        $this->assertTrue($sess->write('sess1', 'DATA-new'));
-        $this->assertTrue($sess->close());
+        $this->assertTrue($sess->handler_open('Not used', 'Not used'));
+        $this->assertSame('DATA', $sess->handler_read('sess1'));
+        $this->assertTrue($sess->handler_write('sess1', 'DATA-new'));
+        $this->assertTrue($sess->handler_close());
         $this->assertSessionNoLocks();
-    }
-
-    public function test_compression_read_and_write_works() {
-        global $CFG;
-
-        $CFG->session_redis_compressor = \core\session\redis::COMPRESSION_GZIP;
-
-        $sess = new \core\session\redis();
-        $sess->init();
-        $this->assertTrue($sess->write('sess1', 'DATA'));
-        $this->assertSame('DATA', $sess->read('sess1'));
-        $this->assertTrue($sess->close());
-
-        if (extension_loaded('zstd')) {
-            $CFG->session_redis_compressor = \core\session\redis::COMPRESSION_ZSTD;
-
-            $sess = new \core\session\redis();
-            $sess->init();
-            $this->assertTrue($sess->write('sess2', 'DATA'));
-            $this->assertSame('DATA', $sess->read('sess2'));
-            $this->assertTrue($sess->close());
-        }
-
-        $CFG->session_redis_compressor = \core\session\redis::COMPRESSION_NONE;
     }
 
     public function test_session_blocks_with_existing_session() {
         $sess = new \core\session\redis();
         $sess->init();
         $sess->set_requires_write_lock(true);
-        $this->assertTrue($sess->open('Not used', 'Not used'));
-        $this->assertSame('', $sess->read('sess1'));
-        $this->assertTrue($sess->write('sess1', 'DATA'));
-        $this->assertTrue($sess->close());
+        $this->assertTrue($sess->handler_open('Not used', 'Not used'));
+        $this->assertSame('', $sess->handler_read('sess1'));
+        $this->assertTrue($sess->handler_write('sess1', 'DATA'));
+        $this->assertTrue($sess->handler_close());
 
         // Sessions are not locked until they have been saved once.
-        $this->assertTrue($sess->open('Not used', 'Not used'));
-        $this->assertSame('DATA', $sess->read('sess1'));
+        $this->assertTrue($sess->handler_open('Not used', 'Not used'));
+        $this->assertSame('DATA', $sess->handler_read('sess1'));
 
         $sessblocked = new \core\session\redis();
         $sessblocked->init();
         $sessblocked->set_requires_write_lock(true);
-        $this->assertTrue($sessblocked->open('Not used', 'Not used'));
+        $this->assertTrue($sessblocked->handler_open('Not used', 'Not used'));
 
         // Trap the error log and send it to stdOut so we can expect output at the right times.
         $errorlog = tempnam(sys_get_temp_dir(), "rediserrorlog");
         $this->iniSet('error_log', $errorlog);
         try {
-            $sessblocked->read('sess1');
+            $sessblocked->handler_read('sess1');
             $this->fail('Session lock must fail to be obtained.');
         } catch (\core\session\exception $e) {
-            $this->assertStringContainsString("Unable to obtain lock for session id sess1", $e->getMessage());
-            $this->assertStringContainsString('within 1 sec.', $e->getMessage());
-            $this->assertStringContainsString('session lock timeout (1 min 10 secs) ', $e->getMessage());
-            $this->assertStringContainsString('Cannot obtain session lock for sid: sess1', file_get_contents($errorlog));
+            $this->assertContains("Unable to obtain session lock", $e->getMessage());
+            $this->assertContains('Cannot obtain session lock for sid: sess1', file_get_contents($errorlog));
         }
 
-        $this->assertTrue($sessblocked->close());
-        $this->assertTrue($sess->write('sess1', 'DATA-new'));
-        $this->assertTrue($sess->close());
+        $this->assertTrue($sessblocked->handler_close());
+        $this->assertTrue($sess->handler_write('sess1', 'DATA-new'));
+        $this->assertTrue($sess->handler_close());
         $this->assertSessionNoLocks();
     }
 
@@ -199,8 +155,8 @@ class session_redis_test extends \advanced_testcase {
         $sess = new \core\session\redis();
         $sess->init();
         $sess->set_requires_write_lock(true);
-        $this->assertTrue($sess->open('Not used', 'Not used'));
-        $this->assertTrue($sess->destroy('sess-destroy'));
+        $this->assertTrue($sess->handler_open('Not used', 'Not used'));
+        $this->assertTrue($sess->handler_destroy('sess-destroy'));
         $this->assertSessionNoLocks();
     }
 
@@ -208,10 +164,10 @@ class session_redis_test extends \advanced_testcase {
         $sess = new \core\session\redis();
         $sess->init();
         $sess->set_requires_write_lock(true);
-        $this->assertTrue($sess->open('Not used', 'Not used'));
-        $this->assertSame('', $sess->read('sess-destroy'));
-        $this->assertTrue($sess->destroy('sess-destroy'));
-        $this->assertTrue($sess->close());
+        $this->assertTrue($sess->handler_open('Not used', 'Not used'));
+        $this->assertSame('', $sess->handler_read('sess-destroy'));
+        $this->assertTrue($sess->handler_destroy('sess-destroy'));
+        $this->assertTrue($sess->handler_close());
         $this->assertSessionNoLocks();
     }
 
@@ -224,36 +180,36 @@ class session_redis_test extends \advanced_testcase {
         $sess2->init();
 
         // Initialize session 1.
-        $this->assertTrue($sess1->open('Not used', 'Not used'));
-        $this->assertSame('', $sess1->read('sess1'));
-        $this->assertTrue($sess1->write('sess1', 'DATA'));
-        $this->assertTrue($sess1->close());
+        $this->assertTrue($sess1->handler_open('Not used', 'Not used'));
+        $this->assertSame('', $sess1->handler_read('sess1'));
+        $this->assertTrue($sess1->handler_write('sess1', 'DATA'));
+        $this->assertTrue($sess1->handler_close());
 
         // Initialize session 2.
-        $this->assertTrue($sess2->open('Not used', 'Not used'));
-        $this->assertSame('', $sess2->read('sess2'));
-        $this->assertTrue($sess2->write('sess2', 'DATA2'));
-        $this->assertTrue($sess2->close());
+        $this->assertTrue($sess2->handler_open('Not used', 'Not used'));
+        $this->assertSame('', $sess2->handler_read('sess2'));
+        $this->assertTrue($sess2->handler_write('sess2', 'DATA2'));
+        $this->assertTrue($sess2->handler_close());
 
         // Open and read session 1 and 2.
-        $this->assertTrue($sess1->open('Not used', 'Not used'));
-        $this->assertSame('DATA', $sess1->read('sess1'));
-        $this->assertTrue($sess2->open('Not used', 'Not used'));
-        $this->assertSame('DATA2', $sess2->read('sess2'));
+        $this->assertTrue($sess1->handler_open('Not used', 'Not used'));
+        $this->assertSame('DATA', $sess1->handler_read('sess1'));
+        $this->assertTrue($sess2->handler_open('Not used', 'Not used'));
+        $this->assertSame('DATA2', $sess2->handler_read('sess2'));
 
         // Write both sessions.
-        $this->assertTrue($sess1->write('sess1', 'DATAX'));
-        $this->assertTrue($sess2->write('sess2', 'DATA2X'));
+        $this->assertTrue($sess1->handler_write('sess1', 'DATAX'));
+        $this->assertTrue($sess2->handler_write('sess2', 'DATA2X'));
 
         // Read both sessions.
-        $this->assertTrue($sess1->open('Not used', 'Not used'));
-        $this->assertTrue($sess2->open('Not used', 'Not used'));
-        $this->assertEquals('DATAX', $sess1->read('sess1'));
-        $this->assertEquals('DATA2X', $sess2->read('sess2'));
+        $this->assertTrue($sess1->handler_open('Not used', 'Not used'));
+        $this->assertTrue($sess2->handler_open('Not used', 'Not used'));
+        $this->assertEquals('DATAX', $sess1->handler_read('sess1'));
+        $this->assertEquals('DATA2X', $sess2->handler_read('sess2'));
 
         // Close both sessions
-        $this->assertTrue($sess1->close());
-        $this->assertTrue($sess2->close());
+        $this->assertTrue($sess1->handler_close());
+        $this->assertTrue($sess2->handler_close());
 
         // Read the session again to ensure locking did what it should.
         $this->assertSessionNoLocks();
@@ -265,19 +221,19 @@ class session_redis_test extends \advanced_testcase {
         $sess->set_requires_write_lock(true);
 
         // Initialize session 1.
-        $this->assertTrue($sess->open('Not used', 'Not used'));
-        $this->assertSame('', $sess->read('sess1'));
-        $this->assertTrue($sess->write('sess1', 'DATA'));
-        $this->assertSame('', $sess->read('sess2'));
-        $this->assertTrue($sess->write('sess2', 'DATA2'));
-        $this->assertSame('DATA', $sess->read('sess1'));
-        $this->assertSame('DATA2', $sess->read('sess2'));
-        $this->assertTrue($sess->destroy('sess2'));
+        $this->assertTrue($sess->handler_open('Not used', 'Not used'));
+        $this->assertSame('', $sess->handler_read('sess1'));
+        $this->assertTrue($sess->handler_write('sess1', 'DATA'));
+        $this->assertSame('', $sess->handler_read('sess2'));
+        $this->assertTrue($sess->handler_write('sess2', 'DATA2'));
+        $this->assertSame('DATA', $sess->handler_read('sess1'));
+        $this->assertSame('DATA2', $sess->handler_read('sess2'));
+        $this->assertTrue($sess->handler_destroy('sess2'));
 
-        $this->assertTrue($sess->close());
+        $this->assertTrue($sess->handler_close());
         $this->assertSessionNoLocks();
 
-        $this->assertTrue($sess->close());
+        $this->assertTrue($sess->handler_close());
     }
 
     public function test_session_exists_returns_valid_values() {
@@ -285,13 +241,13 @@ class session_redis_test extends \advanced_testcase {
         $sess->init();
         $sess->set_requires_write_lock(true);
 
-        $this->assertTrue($sess->open('Not used', 'Not used'));
-        $this->assertSame('', $sess->read('sess1'));
+        $this->assertTrue($sess->handler_open('Not used', 'Not used'));
+        $this->assertSame('', $sess->handler_read('sess1'));
 
         $this->assertFalse($sess->session_exists('sess1'), 'Session must not exist yet, it has not been saved');
-        $this->assertTrue($sess->write('sess1', 'DATA'));
+        $this->assertTrue($sess->handler_write('sess1', 'DATA'));
         $this->assertTrue($sess->session_exists('sess1'), 'Session must exist now.');
-        $this->assertTrue($sess->destroy('sess1'));
+        $this->assertTrue($sess->handler_destroy('sess1'));
         $this->assertFalse($sess->session_exists('sess1'), 'Session should be destroyed.');
     }
 
@@ -301,10 +257,10 @@ class session_redis_test extends \advanced_testcase {
         $sess = new \core\session\redis();
         $sess->init();
 
-        $this->assertTrue($sess->open('Not used', 'Not used'));
-        $this->assertTrue($sess->write('sess1', 'DATA'));
-        $this->assertTrue($sess->write('sess2', 'DATA'));
-        $this->assertTrue($sess->write('sess3', 'DATA'));
+        $this->assertTrue($sess->handler_open('Not used', 'Not used'));
+        $this->assertTrue($sess->handler_write('sess1', 'DATA'));
+        $this->assertTrue($sess->handler_write('sess2', 'DATA'));
+        $this->assertTrue($sess->handler_write('sess3', 'DATA'));
 
         $sessiondata = new \stdClass();
         $sessiondata->userid = 2;
@@ -318,9 +274,9 @@ class session_redis_test extends \advanced_testcase {
         $sessiondata->sid = 'sess3';
         $DB->insert_record('sessions', $sessiondata);
 
-        $this->assertNotEquals('', $sess->read('sess1'));
+        $this->assertNotEquals('', $sess->handler_read('sess1'));
         $sess->kill_session('sess1');
-        $this->assertEquals('', $sess->read('sess1'));
+        $this->assertEquals('', $sess->handler_read('sess1'));
 
         $this->assertEmpty($this->redis->keys($this->keyprefix.'sess1.lock'));
 
@@ -344,13 +300,9 @@ class session_redis_test extends \advanced_testcase {
             $actual = $e->getMessage();
         }
 
-        $host = TEST_SESSION_REDIS_HOST;
-        if ($this->encrypted) {
-            $host = "tls://$host";
-        }
-        $expected = "Failed to connect (try 5 out of 5) to Redis at $host:111111";
+        $expected = 'Failed to connect (try 5 out of 5) to redis at ' . TEST_SESSION_REDIS_HOST . ':111111';
         $this->assertDebuggingCalledCount(5);
-        $this->assertStringContainsString($expected, $actual);
+        $this->assertContains($expected, $actual);
     }
 
     /**
@@ -358,16 +310,5 @@ class session_redis_test extends \advanced_testcase {
      */
     protected function assertSessionNoLocks() {
         $this->assertEmpty($this->redis->keys($this->keyprefix.'*.lock'));
-    }
-
-    public function test_session_redis_encrypt() {
-        global $CFG;
-
-        $CFG->session_redis_encrypt = ['verify_peer' => false, 'verify_peer_name' => false];
-
-        $sess = new \core\session\redis();
-
-        $prop = new \ReflectionProperty(\core\session\redis::class, 'host');
-        $this->assertEquals('tls://' . TEST_SESSION_REDIS_HOST, $prop->getValue($sess)[0]);
     }
 }

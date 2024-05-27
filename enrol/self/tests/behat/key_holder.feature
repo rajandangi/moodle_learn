@@ -28,7 +28,8 @@ Feature: Users can be defined as key holders in courses where self enrolment is 
   @javascript
   Scenario: The key holder name is displayed on site home page
     Given I log in as "admin"
-    When I add "Self enrolment" enrolment method in "Course 1" with:
+    And I am on "Course 1" course homepage
+    When I add "Self enrolment" enrolment method with:
       | Custom instance name | Test student enrolment |
       | Enrolment key | moodle_rules |
     And I log out
@@ -39,6 +40,6 @@ Feature: Users can be defined as key holders in courses where self enrolment is 
     And I set the following fields to these values:
       | Enrolment key | moodle_rules |
     And I press "Enrol me"
-    Then I should see "New section"
+    Then I should see "Topic 1"
     And I should not see "Enrolment options"
     And I should not see "Enrol me in this course"

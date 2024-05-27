@@ -31,8 +31,7 @@ $context = context_system::instance();
 $PAGE->set_context($context);
 $adminroot = admin_get_root(false, false); // settings not required - only pages
 
-// We clean section with safe path here for compatibility with external pages that include a slash in their name.
-if ($section = optional_param('section', '', PARAM_SAFEPATH) and confirm_sesskey()) {
+if ($section = optional_param('section', '', PARAM_SAFEDIR) and confirm_sesskey()) {
 
     if (get_user_preferences('admin_bookmarks')) {
 
@@ -41,7 +40,7 @@ if ($section = optional_param('section', '', PARAM_SAFEPATH) and confirm_sesskey
         $key = array_search($section, $bookmarks);
 
         if ($key === false) {
-            throw new \moodle_exception('nonexistentbookmark', 'admin');
+            print_error('nonexistentbookmark','admin');
             die;
         }
 
@@ -65,11 +64,11 @@ if ($section = optional_param('section', '', PARAM_SAFEPATH) and confirm_sesskey
 
     }
 
-    throw new \moodle_exception('nobookmarksforuser', 'admin');
+    print_error('nobookmarksforuser','admin');
     die;
 
 } else {
-    throw new \moodle_exception('invalidsection', 'admin');
+    print_error('invalidsection', 'admin');
     die;
 }
 

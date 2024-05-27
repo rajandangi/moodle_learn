@@ -22,9 +22,10 @@
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace enrol_lti;
-
 use core\session\manager;
+use enrol_lti\data_connector;
+use enrol_lti\helper;
+use enrol_lti\tool_provider;
 use IMSGlobal\LTI\HTTPMessage;
 use IMSGlobal\LTI\ToolProvider\ResourceLink;
 use IMSGlobal\LTI\ToolProvider\ToolConsumer;
@@ -40,10 +41,10 @@ defined('MOODLE_INTERNAL') || die();
  * @copyright 2016 Jun Pataleta <jun@moodle.com>
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class tool_provider_test extends \advanced_testcase {
+class tool_provider_testcase extends advanced_testcase {
 
     /**
-     * @var \stdClass $tool The LTI tool.
+     * @var stdClass $tool The LTI tool.
      */
     protected $tool;
 
@@ -52,7 +53,7 @@ class tool_provider_test extends \advanced_testcase {
      *
      * This is executed before running any tests in this file.
      */
-    public function setUp(): void {
+    public function setUp() {
         global $SESSION;
         $this->resetAfterTest();
 
@@ -61,7 +62,7 @@ class tool_provider_test extends \advanced_testcase {
         // Set this user as the admin.
         $this->setAdminUser();
 
-        $data = new \stdClass();
+        $data = new stdClass();
         $data->enrolstartdate = time();
         $data->secret = 'secret';
         $toolrecord = $this->getDataGenerator()->create_lti_tool($data);
@@ -147,7 +148,7 @@ class tool_provider_test extends \advanced_testcase {
         $tp->message = $message;
         $tp->onError();
         $errormessage = get_string('failedrequest', 'enrol_lti', ['reason' => $message]);
-        $this->assertStringContainsString($errormessage, $tp->get_error_output());
+        $this->assertContains($errormessage, $tp->get_error_output());
     }
 
     /**
@@ -255,8 +256,8 @@ class tool_provider_test extends \advanced_testcase {
         $successmessage = get_string('successfulregistration', 'enrol_lti');
 
         // Check output contents. Confirm that it has the success message and return URL.
-        $this->assertStringContainsString($successmessage, $output);
-        $this->assertStringContainsString($tp->returnUrl, $output);
+        $this->assertContains($successmessage, $output);
+        $this->assertContains($tp->returnUrl, $output);
 
         // The OK flag will be true on successful registration.
         $this->assertTrue($tp->ok);
@@ -284,7 +285,7 @@ class tool_provider_test extends \advanced_testcase {
         @$tp->onLaunch();
         $output = ob_get_clean();
 
-        $this->assertStringContainsString(get_string('frameembeddingnotenabled', 'enrol_lti'), $output);
+        $this->assertContains(get_string('frameembeddingnotenabled', 'enrol_lti'), $output);
     }
 
     /**
@@ -372,7 +373,7 @@ class tool_provider_test extends \advanced_testcase {
 
         $this->assertTrue($tp->ok);
         $this->assertEquals(get_string('success'), $tp->message);
-        $this->assertStringContainsString(get_string('frameembeddingnotenabled', 'enrol_lti'), $output);
+        $this->assertContains(get_string('frameembeddingnotenabled', 'enrol_lti'), $output);
     }
 
     /**
@@ -523,7 +524,7 @@ class tool_provider_test extends \advanced_testcase {
      * Builds a dummy tool provider object.
      *
      * @param string $secret Consumer secret.
-     * @param array|\stdClass $proxy Tool proxy data.
+     * @param array|stdClass $proxy Tool proxy data.
      * @param null $resourcelinksettings Key-value array for resource link settings.
      * @return dummy_tool_provider
      */

@@ -104,7 +104,7 @@ class feedback_item_multichoice extends feedback_item_base {
      * @param stdClass $item the db-object from feedback_item
      * @param int $groupid
      * @param int $courseid
-     * @return array|null
+     * @return array
      */
     protected function get_analysed($item, $groupid = false, $courseid = false) {
         $info = $this->get_info($item);
@@ -209,14 +209,14 @@ class feedback_item_multichoice extends feedback_item_base {
         if ($analysed_item) {
             $itemname = $analysed_item[1];
             echo "<table class=\"analysis itemtype_{$item->typ}\">";
-            echo '<tr><th class="text-left">';
+            echo '<tr><th colspan="2" align="left">';
             echo $itemnr . ' ';
             if (strval($item->label) !== '') {
                 echo '('. format_string($item->label).') ';
             }
             echo format_string($itemname);
             echo '</th></tr>';
-
+            echo "</table>";
             $analysed_vals = $analysed_item[2];
             $count = 0;
             $data = [];
@@ -241,8 +241,7 @@ class feedback_item_multichoice extends feedback_item_base {
             $chart->add_series($series);
             $chart->set_labels($data['labels']);
 
-            echo '<tr><td>'. $OUTPUT->render($chart) . '</td></tr>';
-            echo "</table>";
+            echo $OUTPUT->render($chart);
         }
     }
 
@@ -251,9 +250,6 @@ class feedback_item_multichoice extends feedback_item_base {
                              $groupid, $courseid = false) {
 
         $analysed_item = $this->get_analysed($item, $groupid, $courseid);
-        if (!$analysed_item) {
-            return $row_offset;
-        }
 
         $data = $analysed_item[2];
 
@@ -441,20 +437,14 @@ class feedback_item_multichoice extends feedback_item_base {
         $info->horizontal = false;
 
         $parts = explode(FEEDBACK_MULTICHOICE_TYPE_SEP, $item->presentation);
-        $info->subtype = $parts[0];
-        if (count($parts) > 1) {
-            $info->presentation = $parts[1];
-        }
+        @list($info->subtype, $info->presentation) = $parts;
         if (!isset($info->subtype)) {
             $info->subtype = 'r';
         }
 
         if ($info->subtype != 'd') {
             $parts = explode(FEEDBACK_MULTICHOICE_ADJUST_SEP, $info->presentation);
-            $info->presentation = $parts[0];
-            if (count($parts) > 1) {
-                $info->horizontal = $parts[1];
-            }
+            @list($info->presentation, $info->horizontal) = $parts;
             if (isset($info->horizontal) AND $info->horizontal == 1) {
                 $info->horizontal = true;
             } else {
@@ -506,7 +496,7 @@ class feedback_item_multichoice extends feedback_item_base {
         $externaldata = array();
         $data = $this->get_analysed($item, $groupid, $courseid);
 
-        if ($data && !empty($data[2]) && is_array($data[2])) {
+        if (!empty($data[2]) && is_array($data[2])) {
             foreach ($data[2] as $d) {
                 $externaldata[] = json_encode($d);
             }

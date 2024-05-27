@@ -61,19 +61,6 @@ class oauth_helper {
     protected $http;
     /** @var array options to pass to the next curl request */
     protected $http_options;
-    /** @var moodle_url oauth callback URL. */
-    protected $oauth_callback;
-     /** @var string access token. */
-    protected $access_token;
-    /** @var  string access secret token. */
-    protected $access_token_secret;
-    /** @var  string sign secret. */
-    protected $sign_secret;
-    /** @var  string nonce. */
-    protected $nonce;
-    /** @var  int timestamp. */
-    protected $timestamp;
-
 
     /**
      * Contructor for oauth_helper.
@@ -462,7 +449,7 @@ abstract class oauth2_client extends curl {
     public function is_logged_in() {
         // Has the token expired?
         if (isset($this->accesstoken->expires) && time() >= $this->accesstoken->expires) {
-            $this->store_token(null);
+            $this->log_out();
             return false;
         }
 
@@ -589,8 +576,7 @@ abstract class oauth2_client extends curl {
         }
 
         if ($this->info['http_code'] !== 200) {
-            $debuginfo = !empty($this->error) ? $this->error : $response;
-            throw new moodle_exception('oauth2upgradetokenerror', 'core_error', '', $this->info['http_code'], $debuginfo);
+            throw new moodle_exception('Could not upgrade oauth token');
         }
 
         $r = json_decode($response);
@@ -639,7 +625,7 @@ abstract class oauth2_client extends curl {
      * @param string $url The URL to request
      * @param array $options
      * @param mixed $acceptheader mimetype (as string) or false to skip sending an accept header.
-     * @return string
+     * @return bool
      */
     protected function request($url, $options = array(), $acceptheader = 'application/json') {
         $murl = new moodle_url($url);
@@ -739,11 +725,11 @@ abstract class oauth2_client extends curl {
     }
 
     /**
-     * Get access token object.
+     * Get access token.
      *
      * This is just a getter to read the private property.
      *
-     * @return stdClass
+     * @return string
      */
     public function get_accesstoken() {
         return $this->accesstoken;

@@ -225,7 +225,12 @@ class lesson_page_type_truefalse extends lesson_page {
     }
 
     public function stats(array &$pagestats, $tries) {
-        $temp = $this->lesson->get_last_attempt($tries);
+        if(count($tries) > $this->lesson->maxattempts) { // if there are more tries than the max that is allowed, grab the last "legal" attempt
+            $temp = $tries[$this->lesson->maxattempts - 1];
+        } else {
+            // else, user attempted the question less than the max, so grab the last one
+            $temp = end($tries);
+        }
         if ($this->properties->qoption) {
             $userresponse = explode(",", $temp->useranswer);
             foreach ($userresponse as $response) {
@@ -259,8 +264,6 @@ class lesson_page_type_truefalse extends lesson_page {
 
         foreach ($answers as $answer) {
             $answer = parent::rewrite_answers_urls($answer);
-            $answertext = format_text($answer->answer, $answer->answerformat, $formattextdefoptions);
-            $correctresponsetext = html_writer::div(get_string('correctresponse', 'lesson'), 'badge bg-success text-white');
             if ($this->properties->qoption) {
                 if ($useranswer == null) {
                     $userresponse = array();
@@ -269,7 +272,7 @@ class lesson_page_type_truefalse extends lesson_page {
                 }
                 if (in_array($answer->id, $userresponse)) {
                     // make checked
-                    $checkboxelement = "<input readonly=\"readonly\" disabled=\"disabled\" name=\"answer[$i]\" checked=\"checked\" type=\"checkbox\" value=\"1\" />";
+                    $data = "<input  readonly=\"readonly\" disabled=\"disabled\" name=\"answer[$i]\" checked=\"checked\" type=\"checkbox\" value=\"1\" />";
                     if (!isset($answerdata->response)) {
                         if ($answer->response == null) {
                             if ($useranswer->correct) {
@@ -292,18 +295,17 @@ class lesson_page_type_truefalse extends lesson_page {
                     }
                 } else {
                     // unchecked
-                    $checkboxelement = "<input type=\"checkbox\" readonly=\"readonly\" name=\"answer[$i]\" value=\"0\" disabled=\"disabled\" />";
+                    $data = "<input type=\"checkbox\" readonly=\"readonly\" name=\"answer[$i]\" value=\"0\" disabled=\"disabled\" />";
                 }
-                $answercontent = html_writer::label($checkboxelement . ' ' . $answertext, null);
                 if (($answer->score > 0 && $this->lesson->custom) || ($this->lesson->jumpto_is_correct($this->properties->id, $answer->jumpto) && !$this->lesson->custom)) {
-                    $data = html_writer::div($answercontent, 'text-success') . $correctresponsetext;
+                    $data .= "<div class=highlight>".format_text($answer->answer, $answer->answerformat, $formattextdefoptions)."</div>";
                 } else {
-                    $data = $answercontent;
+                    $data .= format_text($answer->answer, $answer->answerformat, $formattextdefoptions);
                 }
             } else {
                 if ($useranswer != null and $answer->id == $useranswer->answerid) {
                     // make checked
-                    $checkboxelement = "<input  readonly=\"readonly\" disabled=\"disabled\" name=\"answer[$i]\" checked=\"checked\" type=\"checkbox\" value=\"1\" />";
+                    $data = "<input  readonly=\"readonly\" disabled=\"disabled\" name=\"answer[$i]\" checked=\"checked\" type=\"checkbox\" value=\"1\" />";
                     if ($answer->response == null) {
                         if ($useranswer->correct) {
                             $answerdata->response = get_string("thatsthecorrectanswer", "lesson");
@@ -322,13 +324,12 @@ class lesson_page_type_truefalse extends lesson_page {
                     }
                 } else {
                     // unchecked
-                    $checkboxelement = "<input type=\"checkbox\" readonly=\"readonly\" name=\"answer[$i]\" value=\"0\" disabled=\"disabled\" />";
+                    $data = "<input type=\"checkbox\" readonly=\"readonly\" name=\"answer[$i]\" value=\"0\" disabled=\"disabled\" />";
                 }
-                $answercontent = html_writer::label($checkboxelement . ' ' . $answertext, null);
                 if (($answer->score > 0 && $this->lesson->custom) || ($this->lesson->jumpto_is_correct($this->properties->id, $answer->jumpto) && !$this->lesson->custom)) {
-                    $data = html_writer::div($answercontent, 'text-success') . $correctresponsetext;
+                    $data .= "<div class=\"highlight\">".format_text($answer->answer, $answer->answerformat, $formattextdefoptions)."</div>";
                 } else {
-                    $data = $answercontent;
+                    $data .= format_text($answer->answer, $answer->answerformat, $formattextdefoptions);
                 }
             }
             if (isset($pagestats[$this->properties->id][$answer->id])) {

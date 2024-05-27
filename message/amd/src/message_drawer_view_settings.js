@@ -144,7 +144,11 @@ function(
             var newValue = values.length ? values.join(',') : 'none';
             var preferences = [
                 {
-                    type: 'message_provider_moodle_instantmessage_enabled',
+                    type: 'message_provider_moodle_instantmessage_loggedoff',
+                    value: newValue
+                },
+                {
+                    type: 'message_provider_moodle_instantmessage_loggedin',
                     value: newValue
                 }
             ];
@@ -215,7 +219,7 @@ function(
                                     // Consider the the processor enabled if either preference is set. This is
                                     // for backwards compatibility. Going forward they will be treated as one
                                     // setting.
-                                    var checked = processor.enabled;
+                                    var checked = processor.loggedin.checked || processor.loggedoff.checked;
                                     return {
                                         displayname: processor.displayname,
                                         name: processor.name,

@@ -14,7 +14,15 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace qtype_description;
+/**
+ * This file contains tests that walks a description question through its interaction model.
+ *
+ * @package    qtype
+ * @subpackage description
+ * @copyright  2011 The Open University
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -22,19 +30,13 @@ global $CFG;
 require_once($CFG->libdir . '/questionlib.php');
 require_once($CFG->dirroot . '/question/engine/tests/helpers.php');
 
-/**
- * This file contains tests that walks a description question through its interaction model.
- *
- * @package    qtype_description
- * @copyright  2011 The Open University
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-class walkthrough_test extends \qbehaviour_walkthrough_test_base {
+
+class qtype_description_walkthrough_test extends qbehaviour_walkthrough_test_base {
 
     public function test_informationitem_feedback_description() {
 
         // Create a description question.
-        $description = \test_question_maker::make_question('description');
+        $description = test_question_maker::make_question('description');
         $this->start_attempt_at_question($description, 'deferredfeedback');
 
         // Check the initial state.
@@ -42,7 +44,7 @@ class walkthrough_test extends \qbehaviour_walkthrough_test_base {
                 $this->quba->get_question_attempt($this->slot)->get_behaviour_name());
 
         $this->check_current_output(
-                new \question_contains_tag_with_contents('h4', get_string('informationtext', 'qtype_description'))
+                new question_contains_tag_with_contents('h4', get_string('informationtext', 'qtype_description'))
         );
 
         // Further tests of the description qtype are in

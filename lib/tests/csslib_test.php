@@ -14,22 +14,30 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace core;
+/**
+ * This file contains the unittests for the css optimiser in csslib.php
+ *
+ * @package   core_css
+ * @category  phpunit
+ * @copyright 2012 Sam Hemelryk
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
 defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
 require_once($CFG->libdir . '/csslib.php');
 
+
 /**
  * CSS optimiser test class.
  *
- * @package core
- * @category test
+ * @package core_css
+ * @category phpunit
  * @copyright 2012 Sam Hemelryk
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class csslib_test extends \advanced_testcase {
+class core_csslib_testcase extends advanced_testcase {
 
     /**
      * Test that css_is_colour function throws an exception.

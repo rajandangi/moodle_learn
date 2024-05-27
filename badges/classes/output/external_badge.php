@@ -31,8 +31,6 @@ defined('MOODLE_INTERNAL') || die();
 require_once($CFG->libdir . '/badgeslib.php');
 
 use renderable;
-use renderer_base;
-use stdClass;
 
 /**
  * An external badges for external.php page
@@ -41,27 +39,26 @@ use stdClass;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class external_badge implements renderable {
-    /** @var stdClass Issued badge */
+    /** @var issued badge */
     public $issued;
 
-    /** @var int User ID */
+    /** @var User ID */
     public $recipient;
 
-    /** @var bool Validation of external badge */
+    /** @var validation of external badge */
     public $valid = true;
 
     /**
      * Initializes the badge to display
      *
-     * @param stdClass $badge External badge information.
+     * @param object $badge External badge information.
      * @param int $recipient User id.
      */
     public function __construct($badge, $recipient) {
         global $DB;
         // At this point a user has connected a backpack. So, we are going to get
         // their backpack email rather than their account email.
-        $userfieldsapi = \core_user\fields::for_name();
-        $namefields = $userfieldsapi->get_sql('u', false, '', '', false)->selects;
+        $namefields = get_all_user_name_fields(true, 'u');
         $user = $DB->get_record_sql("SELECT {$namefields}, b.email
                     FROM {user} u INNER JOIN {badge_backpack} b ON u.id = b.userid
                     WHERE b.userid = :userid", array('userid' => $recipient), IGNORE_MISSING);
@@ -99,89 +96,5 @@ class external_badge implements renderable {
             $this->valid = false;
         }
     }
-
-    /**
-     * Export this data so it can be used as the context for a mustache template.
-     *
-     * @param renderer_base $output Renderer base.
-     * @return stdClass
-     */
-    public function export_for_template(renderer_base $output): stdClass {
-        $data = new stdClass();
-
-        $now = time();
-        if (isset($this->issued->assertion->expires)) {
-            if (!is_numeric($this->issued->assertion->expires)) {
-                $this->issued->assertion->expires = strtotime($this->issued->assertion->expires);
-            }
-            $expiration = $this->issued->assertion->expires;
-        } else {
-            $expiration = $now + 86400;
-        }
-
-        // Field: Image.
-        if (isset($this->issued->imageUrl)) {
-            $this->issued->image = $this->issued->imageUrl;
-        }
-        $data->badgeimage = $this->issued->image;
-        if (is_object($data->badgeimage)) {
-            if (!empty($data->badgeimage->author)) {
-                $data->hasotherfields = true;
-                $data->imageauthorname = $data->badgeimage->author;
-            }
-            if (!empty($data->badgeimage->caption)) {
-                $data->hasotherfields = true;
-                $data->imagecaption = $data->badgeimage->caption;
-            }
-            $data->badgeimage = $data->badgeimage->id;
-        }
-
-        // Field: Expiration date.
-        if (isset($this->issued->assertion->expires)) {
-            if ($expiration < $now) {
-                $data->expireddate = $this->issued->assertion->expires;
-                $data->expireddateformatted = userdate(
-                    $this->issued->assertion->expires,
-                    get_string('strftimedatetime', 'langconfig')
-                );
-            } else {
-                $data->expiredate = $this->issued->assertion->expires;
-            }
-        }
-
-        // Fields: Name, description, issuedOn.
-        $data->badgename = $this->issued->assertion->badge->name;
-        $data->badgedescription = $this->issued->assertion->badge->description;
-        if (isset($this->issued->assertion->issued_on)) {
-            if (!is_numeric($this->issued->assertion->issued_on)) {
-                $this->issued->assertion->issued_on = strtotime($this->issued->assertion->issued_on);
-            }
-            $data->badgeissuedon = $this->issued->assertion->issued_on;
-        }
-
-        // Field: Recipient (the badge was awarded to this person).
-        $data->recipientname = fullname($this->recipient);
-        if (!$this->valid) {
-            $data->recipientnotification = new stdClass();
-            $data->recipientnotification->message = get_string('recipientvalidationproblem', 'badges');
-        }
-
-        // Field: Criteria.
-        if (isset($this->issued->assertion->badgeclass->criteria->narrative)) {
-            $data->criteria = $this->issued->assertion->badgeclass->criteria->narrative;
-        }
-
-        // Field: Issuer.
-        $data->issuedby = $this->issued->issuer->name;
-        if (isset($this->issued->issuer->contact) && !empty($this->issued->issuer->contact)) {
-            $data->issuedbyemailobfuscated = obfuscate_mailto($this->issued->issuer->contact, $data->issuedby);
-        }
-
-        // Field: Hosted URL.
-        if (isset($this->issued->hostedUrl) && !empty($this->issued->hostedUrl)) {
-            $data->hostedurl = $this->issued->hostedUrl;
-        }
-
-        return $data;
-    }
 }
+

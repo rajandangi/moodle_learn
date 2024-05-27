@@ -23,9 +23,6 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-use core\di;
-use core\hook;
-
 require_once(__DIR__.'/../../testing/classes/util.php');
 require_once(__DIR__ . "/coverage_info.php");
 
@@ -106,9 +103,6 @@ class phpunit_util extends testing_util {
      */
     public static function reset_all_data($detectchanges = false) {
         global $DB, $CFG, $USER, $SITE, $COURSE, $PAGE, $OUTPUT, $SESSION, $FULLME, $FILTERLIB_PRIVATE;
-
-        // Stop all hook redirections.
-        di::get(hook\manager::class)->phpunit_stop_redirections();
 
         // Stop any message redirection.
         self::stop_message_redirection();
@@ -209,9 +203,6 @@ class phpunit_util extends testing_util {
         $ME = null;
         $SCRIPT = null;
         $FILTERLIB_PRIVATE = null;
-        if (!empty($SESSION->notifications)) {
-            $SESSION->notifications = [];
-        }
 
         // Empty sessison and set fresh new not-logged-in user.
         \core\session\manager::init_empty_session();
@@ -222,6 +213,7 @@ class phpunit_util extends testing_util {
         accesslib_reset_role_cache();
         get_string_manager()->reset_caches(true);
         reset_text_filters_cache(true);
+        core_text::reset_caches();
         get_message_processors(false, true, true);
         filter_manager::reset_caches();
         core_filetypes::reset_caches();
@@ -248,7 +240,10 @@ class phpunit_util extends testing_util {
         //TODO MDL-25290: add more resets here and probably refactor them to new core function
 
         // Reset course and module caches.
-        core_courseformat\base::reset_course_cache(0);
+        if (class_exists('format_base')) {
+            // If file containing class is not loaded, there is no cache there anyway.
+            format_base::reset_course_cache(0);
+        }
         get_fast_modinfo(0, 0, true);
 
         // Reset other singletons.
@@ -260,18 +255,6 @@ class phpunit_util extends testing_util {
         }
         if (class_exists('\core_course\customfield\course_handler')) {
             \core_course\customfield\course_handler::reset_caches();
-        }
-        if (class_exists('\core_reportbuilder\manager')) {
-            \core_reportbuilder\manager::reset_caches();
-        }
-        if (class_exists('\core_cohort\customfield\cohort_handler')) {
-            \core_cohort\customfield\cohort_handler::reset_caches();
-        }
-        if (class_exists('\core_group\customfield\group_handler')) {
-            \core_group\customfield\group_handler::reset_caches();
-        }
-        if (class_exists('\core_group\customfield\grouping_handler')) {
-            \core_group\customfield\grouping_handler::reset_caches();
         }
 
         // Clear static cache within restore.
@@ -303,9 +286,6 @@ class phpunit_util extends testing_util {
         // Reset user agent.
         core_useragent::instance(true, null);
 
-        // Reset the DI container.
-        \core\di::reset_container();
-
         // verify db writes just in case something goes wrong in reset
         if (self::$lastdbwrites != $DB->perf_get_writes()) {
             error_log('Unexpected DB writes in phpunit_util::reset_all_data()');
@@ -326,13 +306,7 @@ class phpunit_util extends testing_util {
     public static function reset_database() {
         global $DB;
 
-        if (defined('PHPUNIT_ISOLATED_TEST') && PHPUNIT_ISOLATED_TEST && self::$lastdbwrites === null) {
-            // This is an isolated test and the lastdbwrites has not yet been initialised.
-            // Isolated test runs are reset by the test runner before the run starts.
-            self::$lastdbwrites = $DB->perf_get_writes();
-        }
-
-        if (!is_null(self::$lastdbwrites) && self::$lastdbwrites == $DB->perf_get_writes()) {
+        if (!is_null(self::$lastdbwrites) and self::$lastdbwrites == $DB->perf_get_writes()) {
             return false;
         }
 
@@ -497,16 +471,6 @@ class phpunit_util extends testing_util {
         // Disable all logging for performance and sanity reasons.
         set_config('enabled_stores', '', 'tool_log');
 
-        // Remove any default blocked hosts and port restrictions, to avoid blocking tests (eg those using local files).
-        set_config('curlsecurityblockedhosts', '');
-        set_config('curlsecurityallowedport', '');
-
-        // Execute all the adhoc tasks.
-        while ($task = \core\task\manager::get_next_adhoc_task(time())) {
-            $task->execute();
-            \core\task\manager::adhoc_task_complete($task);
-        }
-
         // We need to keep the installed dataroot filedir files.
         // So each time we reset the dataroot before running a test, the default files are still installed.
         self::save_original_data_files();
@@ -526,16 +490,18 @@ class phpunit_util extends testing_util {
     public static function build_config_file() {
         global $CFG;
 
-        $template = <<<EOF
-            <testsuite name="@component@_testsuite">
-              <directory suffix="_test.php">@dir@</directory>
-            </testsuite>
-
-        EOF;
+        $template = '
+        <testsuite name="@component@_testsuite">
+            <directory suffix="_test.php">@dir@</directory>
+        </testsuite>';
+        $filtertemplate = '
+        <testsuite name="@component@_testsuite">
+            <directory suffix="_test.php">@dir@</directory>
+        </testsuite>';
         $data = file_get_contents("$CFG->dirroot/phpunit.xml.dist");
 
         $suites = '';
-        $includelists = [];
+        $whitelists = [];
         $excludelists = [];
 
         $subsystems = core_component::get_core_subsystems();
@@ -551,7 +517,7 @@ class phpunit_util extends testing_util {
 
             $dir = substr($fulldir, strlen($CFG->dirroot) + 1);
             if ($coverageinfo = self::get_coverage_info($fulldir)) {
-                $includelists = array_merge($includelists, $coverageinfo->get_includelists($dir));
+                $whitelists = array_merge($whitelists, $coverageinfo->get_whitelists($dir));
                 $excludelists = array_merge($excludelists, $coverageinfo->get_excludelists($dir));
             }
         }
@@ -578,7 +544,7 @@ class phpunit_util extends testing_util {
 
                 if ($coverageinfo = self::get_coverage_info($plugindir)) {
 
-                    $includelists = array_merge($includelists, $coverageinfo->get_includelists($dir));
+                    $whitelists = array_merge($whitelists, $coverageinfo->get_whitelists($dir));
                     $excludelists = array_merge($excludelists, $coverageinfo->get_excludelists($dir));
                 }
             }
@@ -589,14 +555,14 @@ class phpunit_util extends testing_util {
         // end up being placed in phpunit or behat test code.
         $sequencestart = 100000 + mt_rand(0, 99) * 1000;
 
-        $data = preg_replace('| *<!--@plugin_suites_start@-->.*<!--@plugin_suites_end@-->|s', trim($suites, "\n"), $data, 1);
+        $data = preg_replace('|<!--@plugin_suites_start@-->.*<!--@plugin_suites_end@-->|s', $suites, $data, 1);
         $data = str_replace(
             '<const name="PHPUNIT_SEQUENCE_START" value=""/>',
             '<const name="PHPUNIT_SEQUENCE_START" value="' . $sequencestart . '"/>',
             $data);
 
-        $coverages = self::get_coverage_config($includelists, $excludelists);
-        $data = preg_replace('| *<!--@coveragelist@-->|s', trim($coverages, "\n"), $data);
+        $filters = self::get_filter_config($whitelists, $excludelists);
+        $data = str_replace('<!--@filterlist@-->', $filters, $data);
 
         $result = false;
         if (is_writable($CFG->dirroot)) {
@@ -617,21 +583,19 @@ class phpunit_util extends testing_util {
     public static function build_component_config_files() {
         global $CFG;
 
-        $template = <<<EOT
-            <testsuites>
-              <testsuite name="@component@_testsuite">
-                <directory suffix="_test.php">.</directory>
-              </testsuite>
-            </testsuites>
-          EOT;
-        $coveragedefault = <<<EOT
-            <include>
-              <directory suffix=".php">.</directory>
-            </include>
-            <exclude>
-              <directory suffix="_test.php">.</directory>
-            </exclude>
-        EOT;
+        $template = '
+    <testsuites>
+        <testsuite name="@component@_testsuite">
+            <directory suffix="_test.php">.</directory>
+        </testsuite>
+    </testsuites>';
+        $filterdefault = '
+            <whitelist processUncoveredFilesFromWhitelist="false">
+                <directory suffix=".php">.</directory>
+                <exclude>
+                    <directory suffix="_test.php">.</directory>
+                </exclude>
+            </whitelist>';
 
         // Start a sequence between 100000 and 199000 to ensure each call to init produces
         // different ids in the database.  This reduces the risk that hard coded values will
@@ -640,7 +604,7 @@ class phpunit_util extends testing_util {
 
         // Use the upstream file as source for the distributed configurations
         $ftemplate = file_get_contents("$CFG->dirroot/phpunit.xml.dist");
-        $ftemplate = preg_replace('| *<!--All core suites.*</testsuites>|s', '<!--@component_suite@-->', $ftemplate);
+        $ftemplate = preg_replace('|<!--All core suites.*</testsuites>|s', '<!--@component_suite@-->', $ftemplate);
 
         // Gets all the components with tests
         $components = tests_finder::get_components_with_tests('phpunit');
@@ -653,13 +617,13 @@ class phpunit_util extends testing_util {
 
             $fcontents = str_replace('<!--@component_suite@-->', $ctemplate, $ftemplate);
 
-            // Check for coverage configurations.
+            // Check for filter configurations.
             if ($coverageinfo = self::get_coverage_info($cpath)) {
-                $coverages = self::get_coverage_config($coverageinfo->get_includelists(''), $coverageinfo->get_excludelists(''));
+                $filters = self::get_filter_config($coverageinfo->get_whitelists(''), $coverageinfo->get_excludelists(''));
             } else {
-                $coverages = $coveragedefault;
+                $filters = $filterdefault;
             }
-            $fcontents = preg_replace('| *<!--@coveragelist@-->|s', trim($coverages, "\n"), $fcontents);
+            $fcontents = str_replace('<!--@filterlist@-->', $filters, $fcontents);
 
             // Apply it to the file template.
             $fcontents = str_replace(
@@ -696,29 +660,8 @@ class phpunit_util extends testing_util {
         // we need normal debugging outside of tests to find problems in our phpunit integration.
         $backtrace = debug_backtrace();
 
-        // Only for advanced_testcase, database_driver_testcase (and descendants). Others aren't
-        // able to manage the debugging sink, so any debugging has to be output normally and, hopefully,
-        // PHPUnit execution will catch that unexpected output properly.
-        $sinksupport = false;
         foreach ($backtrace as $bt) {
-            if (isset($bt['object']) && is_object($bt['object'])
-                && (
-                    $bt['object'] instanceof advanced_testcase ||
-                    $bt['object'] instanceof database_driver_testcase)
-            ) {
-                $sinksupport = true;
-                break;
-            }
-        }
-        if (!$sinksupport) {
-            return false;
-        }
-
-        // Verify that we are inside a PHPUnit test (little bit redundant, because
-        // we already have checked above that this is an advanced/database_driver
-        // testcase, but let's keep things double safe for now).
-        foreach ($backtrace as $bt) {
-            if (isset($bt['object']) && is_object($bt['object'])
+            if (isset($bt['object']) and is_object($bt['object'])
                     && $bt['object'] instanceof PHPUnit\Framework\TestCase) {
                 $debug = new stdClass();
                 $debug->message = $message;
@@ -973,9 +916,10 @@ class phpunit_util extends testing_util {
      *        or the name of the static class when calling a static method.
      * @return mixed the respective return value of the method.
      */
-    public static function call_internal_method($object, $methodname, array $params, $classname) {
+    public static function call_internal_method($object, $methodname, array $params = array(), $classname) {
         $reflection = new \ReflectionClass($classname);
         $method = $reflection->getMethod($methodname);
+        $method->setAccessible(true);
         return $method->invokeArgs($object, $params);
     }
 
@@ -986,45 +930,35 @@ class phpunit_util extends testing_util {
      * @param   int     $level The number of levels of indentation to pad
      * @return  string
      */
-    protected static function pad(string $string, int $level): string {
-        return str_repeat(" ", $level * 2) . "{$string}\n";
+    protected static function pad(string $string, int $level) : string {
+        return str_repeat(" ", $level * 4) . "{$string}\n";
     }
 
     /**
-     * Normalise any text to always use unix line endings (line-feeds).
+     * Get the filter config for the supplied whitelist and excludelist configuration.
      *
-     * @param   string  $text The text to normalize
+     * @param   array[] $whitelists The list of files/folders in the whitelist.
+     * @param   array[] $excludelists The list of files/folders in the excludelist.
      * @return  string
      */
-    public static function normalise_line_endings(string $text): string {
-        return str_replace(["\r\n", "\r"], "\n", $text);
-    }
-
-    /**
-     * Get the coverage config for the supplied includelist and excludelist configuration.
-     *
-     * @param   string[] $includelists The list of files/folders in the includelist.
-     * @param   string[] $excludelists The list of files/folders in the excludelist.
-     * @return  string
-     */
-    protected static function get_coverage_config(array $includelists, array $excludelists): string {
-        $coverages = '';
-        if (!empty($includelists)) {
-            $coverages .= self::pad("<include>", 2);
-            foreach ($includelists as $line) {
-                $coverages .= self::pad($line, 3);
+    protected static function get_filter_config(array $whitelists, array $excludelists) : string {
+        $filters = '';
+        if (!empty($whitelists)) {
+            $filters .= self::pad("<whitelist>", 2);
+            foreach ($whitelists as $line) {
+                $filters .= self::pad($line, 3);
             }
-            $coverages .= self::pad("</include>", 2);
             if (!empty($excludelists)) {
-                $coverages .= self::pad("<exclude>", 2);
+                $filters .= self::pad("<exclude>", 3);
                 foreach ($excludelists as $line) {
-                    $coverages .= self::pad($line, 3);
+                    $filters .= self::pad($line, 4);
                 }
-                $coverages .= self::pad("</exclude>", 2);
+                $filters .= self::pad("</exclude>", 3);
             }
+            $filters .= self::pad("</whitelist>", 2);
         }
 
-        return $coverages;
+        return $filters;
     }
 
     /**
@@ -1033,7 +967,7 @@ class phpunit_util extends testing_util {
      * @param   string  $fulldir The directory to find the coverage info file in.
      * @return  phpunit_coverage_info
      */
-    protected static function get_coverage_info(string $fulldir): phpunit_coverage_info {
+    protected static function get_coverage_info(string $fulldir): ?phpunit_coverage_info {
         $coverageconfig = "{$fulldir}/tests/coverage.php";
         if (file_exists($coverageconfig)) {
             $coverageinfo = require($coverageconfig);
@@ -1044,7 +978,7 @@ class phpunit_util extends testing_util {
             return $coverageinfo;
         }
 
-        return new phpunit_coverage_info();;
+        return null;
     }
 
     /**

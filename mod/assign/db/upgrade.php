@@ -22,48 +22,44 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+defined('MOODLE_INTERNAL') || die();
+
 /**
  * upgrade this assignment instance - this function could be skipped but it will be needed later
  * @param int $oldversion The old version of the assign module
  * @return bool
  */
 function xmldb_assign_upgrade($oldversion) {
-    global $DB;
+    global $CFG, $DB;
 
-    // Automatically generated Moodle v4.1.0 release upgrade line.
+    $dbman = $DB->get_manager();
+
+    // Automatically generated Moodle v3.5.0 release upgrade line.
     // Put any upgrade step following this.
 
-    // Automatically generated Moodle v4.2.0 release upgrade line.
+    // Automatically generated Moodle v3.6.0 release upgrade line.
     // Put any upgrade step following this.
 
-    // Automatically generated Moodle v4.3.0 release upgrade line.
-    // Put any upgrade step following this.
-
-    $dbman = $DB->get_manager(); // Loads ddl manager and xmldb classes.
-
-    if ($oldversion < 2023103000) {
-        // Define field activity to be added to assign.
+    if ($oldversion < 2018120500) {
+        // Define field hidegrader to be added to assign.
         $table = new xmldb_table('assign');
-        $field = new xmldb_field(
-            'markinganonymous',
-            XMLDB_TYPE_INTEGER,
-            '2',
-            null,
-            XMLDB_NOTNULL,
-            null,
-            '0',
-            'markingallocation'
-        );
-        // Conditionally launch add field activity.
+        $field = new xmldb_field('hidegrader', XMLDB_TYPE_INTEGER, '2', null, XMLDB_NOTNULL, null, '0', 'blindmarking');
+
         if (!$dbman->field_exists($table, $field)) {
             $dbman->add_field($table, $field);
         }
 
-        // Assign savepoint reached.
-        upgrade_mod_savepoint(true, 2023103000, 'assign');
+        // Assignment savepoint reached.
+        upgrade_mod_savepoint(true, 2018120500, 'assign');
     }
 
-    // Automatically generated Moodle v4.4.0 release upgrade line.
+    // Automatically generated Moodle v3.7.0 release upgrade line.
+    // Put any upgrade step following this.
+
+    // Automatically generated Moodle v3.8.0 release upgrade line.
+    // Put any upgrade step following this.
+
+    // Automatically generated Moodle v3.9.0 release upgrade line.
     // Put any upgrade step following this.
 
     return true;

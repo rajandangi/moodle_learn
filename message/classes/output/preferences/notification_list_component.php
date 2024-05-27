@@ -127,7 +127,6 @@ class notification_list_component implements templatable, renderable {
 
         $context = [
             'displayname' => $componentname,
-            'colspan' => count($processors) + 1,
             'notifications' => [],
         ];
 
@@ -160,8 +159,6 @@ class notification_list_component implements templatable, renderable {
 
             $context['notifications'][] = $notificationcontext;
         }
-
-        $context['hasnotifications'] = (count($context['notifications']) > 0);
 
         return $context;
     }

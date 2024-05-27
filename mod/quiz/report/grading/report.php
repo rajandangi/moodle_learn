@@ -14,12 +14,19 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-use mod_quiz\local\reports\report_base;
-use mod_quiz\quiz_attempt;
+/**
+ * This file defines the quiz manual grading report class.
+ *
+ * @package   quiz_grading
+ * @copyright 2006 Gustav Delius
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
 
 defined('MOODLE_INTERNAL') || die();
 
 require_once($CFG->dirroot . '/mod/quiz/report/grading/gradingsettings_form.php');
+
 
 /**
  * Quiz report to help teachers manually grade questions that need it.
@@ -31,12 +38,9 @@ require_once($CFG->dirroot . '/mod/quiz/report/grading/gradingsettings_form.php'
  * @copyright 2006 Gustav Delius
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class quiz_grading_report extends report_base {
+class quiz_grading_report extends quiz_default_report {
     const DEFAULT_PAGE_SIZE = 5;
     const DEFAULT_ORDER = 'random';
-
-    /** @var string Positive integer regular expression. */
-    const REGEX_POSITIVE_INT = '/^[1-9]\d*$/';
 
     /** @var array URL parameters for what is being displayed when grading. */
     protected $viewoptions = [];
@@ -65,9 +69,6 @@ class quiz_grading_report extends report_base {
     /** @var string fragment of SQL code to restrict to the relevant users. */
     protected $userssql;
 
-    /** @var array extra user fields. */
-    protected $extrauserfields = [];
-
     public function display($quiz, $cm, $course) {
 
         $this->quiz = $quiz;
@@ -80,7 +81,7 @@ class quiz_grading_report extends report_base {
         $grade = optional_param('grade', null, PARAM_ALPHA);
 
         $includeauto = optional_param('includeauto', false, PARAM_BOOL);
-        if (!in_array($grade, ['all', 'needsgrading', 'autograded', 'manuallygraded'])) {
+        if (!in_array($grade, array('all', 'needsgrading', 'autograded', 'manuallygraded'))) {
             $grade = null;
         }
         $pagesize = optional_param('pagesize',
@@ -89,18 +90,14 @@ class quiz_grading_report extends report_base {
         $page = optional_param('page', 0, PARAM_INT);
         $order = optional_param('order',
                 get_user_preferences('quiz_grading_order', self::DEFAULT_ORDER),
-                PARAM_ALPHAEXT);
+                PARAM_ALPHA);
 
         // Assemble the options required to reload this page.
-        $optparams = ['includeauto', 'page'];
+        $optparams = array('includeauto', 'page');
         foreach ($optparams as $param) {
             if ($$param) {
                 $this->viewoptions[$param] = $$param;
             }
-        }
-        if (!data_submitted() && !preg_match(self::REGEX_POSITIVE_INT, $pagesize)) {
-            // We only validate if the user accesses the page via a cleaned-up GET URL here.
-            throw new moodle_exception('invalidpagesize');
         }
         if ($pagesize != self::DEFAULT_PAGE_SIZE) {
             $this->viewoptions['pagesize'] = $pagesize;
@@ -113,20 +110,14 @@ class quiz_grading_report extends report_base {
         $this->context = context_module::instance($this->cm->id);
         require_capability('mod/quiz:grade', $this->context);
         $shownames = has_capability('quiz/grading:viewstudentnames', $this->context);
-        // Whether the current user can see custom user fields.
-        $showcustomfields = has_capability('quiz/grading:viewidnumber', $this->context);
-        $userfieldsapi = \core_user\fields::for_identity($this->context)->with_name();
-        $customfields = [];
-        foreach ($userfieldsapi->get_required_fields([\core_user\fields::PURPOSE_IDENTITY]) as $field) {
-            $customfields[] = $field;
-        }
+        $showidnumbers = has_capability('quiz/grading:viewidnumber', $this->context);
+
         // Validate order.
-        $orderoptions = array_merge(['random', 'date', 'studentfirstname', 'studentlastname'], $customfields);
-        if (!in_array($order, $orderoptions)) {
+        if (!in_array($order, array('random', 'date', 'studentfirstname', 'studentlastname', 'idnumber'))) {
             $order = self::DEFAULT_ORDER;
         } else if (!$shownames && ($order == 'studentfirstname' || $order == 'studentlastname')) {
             $order = self::DEFAULT_ORDER;
-        } else if (!$showcustomfields && in_array($order, $customfields)) {
+        } else if (!$showidnumbers && $order == 'idnumber') {
             $order = self::DEFAULT_ORDER;
         }
         if ($order == 'random') {
@@ -141,25 +132,18 @@ class quiz_grading_report extends report_base {
 
         // Process any submitted data.
         if ($data = data_submitted() && confirm_sesskey() && $this->validate_submitted_marks()) {
-            // Changes done to handle attempts being missed from grading due to redirecting to new page.
-            $attemptsgraded = $this->process_submitted_data();
+            $this->process_submitted_data();
 
-            $nextpagenumber = $page + 1;
-            // If attempts need grading and one or more have now been graded, then page number should remain the same.
-            if ($grade == 'needsgrading' && $attemptsgraded) {
-                $nextpagenumber = $page;
-            }
-
-            redirect($this->grade_question_url($slot, $questionid, $grade, $nextpagenumber));
+            redirect($this->grade_question_url($slot, $questionid, $grade, $page + 1));
         }
 
         // Get the group, and the list of significant users.
         $this->currentgroup = $this->get_current_group($cm, $course, $this->context);
         if ($this->currentgroup == self::NO_GROUPS_ALLOWED) {
-            $this->userssql = [];
+            $this->userssql = array();
         } else {
             $this->userssql = get_enrolled_sql($this->context,
-                    ['mod/quiz:reviewmyattempts', 'mod/quiz:attempt'], $this->currentgroup);
+                    array('mod/quiz:reviewmyattempts', 'mod/quiz:attempt'), $this->currentgroup);
         }
 
         $hasquestions = quiz_has_questions($this->quiz->id);
@@ -192,7 +176,7 @@ class quiz_grading_report extends report_base {
         }
 
         $this->display_grading_interface($slot, $questionid, $grade,
-                $pagesize, $page, $shownames, $showcustomfields, $order, $counts);
+                $pagesize, $page, $shownames, $showidnumbers, $order, $counts);
         return true;
     }
 
@@ -206,15 +190,15 @@ class quiz_grading_report extends report_base {
         $where = "quiza.quiz = :mangrquizid AND
                 quiza.preview = 0 AND
                 quiza.state = :statefinished";
-        $params = ['mangrquizid' => $this->cm->instance, 'statefinished' => quiz_attempt::FINISHED];
+        $params = array('mangrquizid' => $this->cm->instance, 'statefinished' => quiz_attempt::FINISHED);
 
         $usersjoin = '';
         $currentgroup = groups_get_activity_group($this->cm, true);
         $enrolleduserscount = count_enrolled_users($this->context,
-                ['mod/quiz:reviewmyattempts', 'mod/quiz:attempt'], $currentgroup);
+                array('mod/quiz:reviewmyattempts', 'mod/quiz:attempt'), $currentgroup);
         if ($currentgroup) {
             $userssql = get_enrolled_sql($this->context,
-                    ['mod/quiz:reviewmyattempts', 'mod/quiz:attempt'], $currentgroup);
+                    array('mod/quiz:reviewmyattempts', 'mod/quiz:attempt'), $currentgroup);
             if ($enrolleduserscount < 1) {
                 $where .= ' AND quiza.userid = 0';
             } else {
@@ -239,23 +223,16 @@ class quiz_grading_report extends report_base {
         $params[] = quiz_attempt::FINISHED;
         $params[] = $this->quiz->id;
 
-        $fields = 'quiza.*, ';
-        $userfieldsapi = \core_user\fields::for_identity($this->context)->with_name();
-        $userfieldssql = $userfieldsapi->get_sql('u', false, '', 'userid', false);
-        $fields .= $userfieldssql->selects;
-        foreach ($userfieldsapi->get_required_fields([\core_user\fields::PURPOSE_IDENTITY]) as $userfield) {
-            $this->extrauserfields[] = s($userfield);
-        }
-        $params = array_merge($userfieldssql->params, $params);
+        $fields = 'quiza.*, u.idnumber, ';
+        $fields .= get_all_user_name_fields(true, 'u');
         $attemptsbyid = $DB->get_records_sql("
                 SELECT $fields
                 FROM {quiz_attempts} quiza
                 JOIN {user} u ON u.id = quiza.userid
-                {$userfieldssql->joins}
                 WHERE quiza.uniqueid $asql AND quiza.state = ? AND quiza.quiz = ?",
                 $params);
 
-        $attempts = [];
+        $attempts = array();
         foreach ($attemptsbyid as $attempt) {
             $attempts[$attempt->uniqueid] = $attempt;
         }
@@ -320,15 +297,14 @@ class quiz_grading_report extends report_base {
      *
      * @param stdClass $counts counts of different types of attempt for this slot.
      * @param string $type the type of count to format.
-     * @param string $string get_string identifier for the grading link text, if required.
-     * @param string $component get_string component identifier for the grading link text, if required.
+     * @param string $gradestring get_string identifier for the grading link text, if required.
      * @return string HTML.
      */
-    protected function format_count_for_table($counts, $type, $string, $component) {
+    protected function format_count_for_table($counts, $type, $gradestring) {
         $result = $counts->$type;
         if ($counts->$type > 0) {
             $gradeurl = $this->grade_question_url($counts->slot, $counts->questionid, $type);
-            $result .= $this->renderer->render_grade_link($counts, $type, $string, $component, $gradeurl);
+            $result .= $this->renderer->render_grade_link($counts, $type, $gradestring, $gradeurl);
         }
         return $result;
     }
@@ -339,19 +315,13 @@ class quiz_grading_report extends report_base {
      * @param bool $includeauto whether to show automatically-graded questions.
      */
     protected function display_index($includeauto) {
-        global $PAGE, $OUTPUT;
+        global $PAGE;
 
         $this->print_header_and_tabs($this->cm, $this->course, $this->quiz, 'grading');
 
         if ($groupmode = groups_get_activity_groupmode($this->cm)) {
             // Groups is being used.
             groups_print_activity_menu($this->cm, $this->list_questions_url());
-        }
-        // Get the current group for the user looking at the report.
-        $currentgroup = $this->get_current_group($this->cm, $this->course, $this->context);
-        if ($currentgroup == self::NO_GROUPS_ALLOWED) {
-            echo $OUTPUT->notification(get_string('notingroup'));
-            return;
         }
         $statecounts = $this->get_question_state_summary(array_keys($this->questions));
         if ($includeauto) {
@@ -385,19 +355,19 @@ class quiz_grading_report extends report_base {
 
             $row[] = $this->questions[$counts->slot]->number;
 
-            $row[] = $PAGE->get_renderer('question', 'bank')->qtype_icon($this->questions[$counts->slot]->qtype);
+            $row[] = $PAGE->get_renderer('question', 'bank')->qtype_icon($this->questions[$counts->slot]->type);
 
             $row[] = format_string($counts->name);
 
-            $row[] = $this->format_count_for_table($counts, 'needsgrading', 'gradeverb', 'moodle');
+            $row[] = $this->format_count_for_table($counts, 'needsgrading', 'grade');
 
-            $row[] = $this->format_count_for_table($counts, 'manuallygraded', 'updategrade', 'quiz_grading');
+            $row[] = $this->format_count_for_table($counts, 'manuallygraded', 'updategrade');
 
             if ($includeauto) {
-                $row[] = $this->format_count_for_table($counts, 'autograded', 'updategrade', 'quiz_grading');
+                $row[] = $this->format_count_for_table($counts, 'autograded', 'updategrade');
             }
 
-            $row[] = $this->format_count_for_table($counts, 'all', 'gradeall', 'quiz_grading');
+            $row[] = $this->format_count_for_table($counts, 'all', 'gradeall');
 
             $data[] = $row;
         }
@@ -413,12 +383,12 @@ class quiz_grading_report extends report_base {
      * @param int $pagesize number of questions to show per page.
      * @param int $page current page number.
      * @param bool $shownames whether student names should be shown.
-     * @param bool $showcustomfields whether custom field values should be shown.
+     * @param bool $showidnumbers wither student idnumbers should be shown.
      * @param string $order preferred order of attempts.
      * @param stdClass $counts object that stores the number of each type of attempt.
      */
     protected function display_grading_interface($slot, $questionid, $grade,
-            $pagesize, $page, $shownames, $showcustomfields, $order, $counts) {
+            $pagesize, $page, $shownames, $showidnumbers, $order, $counts) {
 
         if ($pagesize * $page >= $counts->$grade) {
             $page = 0;
@@ -435,7 +405,7 @@ class quiz_grading_report extends report_base {
         if (array_key_exists('includeauto', $this->viewoptions)) {
             $hidden['includeauto'] = $this->viewoptions['includeauto'];
         }
-        $mform = new quiz_grading_settings_form($hidden, $counts, $shownames, $showcustomfields, $this->context);
+        $mform = new quiz_grading_settings_form($hidden, $counts, $shownames, $showidnumbers);
 
         // Tell the form the current settings.
         $settings = new stdClass();
@@ -444,18 +414,12 @@ class quiz_grading_report extends report_base {
         $settings->order = $order;
         $mform->set_data($settings);
 
-        if ($mform->is_submitted()) {
-            if ($mform->is_validated()) {
-                // If the form was submitted and validated, save the user preferences, and
-                // redirect to a cleaned-up GET URL.
-                set_user_preference('quiz_grading_pagesize', $pagesize);
-                set_user_preference('quiz_grading_order', $order);
-                redirect($this->grade_question_url($slot, $questionid, $grade, $page));
-            } else {
-                // Set the pagesize back to the previous value, so the report page can continue the render
-                // and the form can show the validation.
-                $pagesize = get_user_preferences('quiz_grading_pagesize', self::DEFAULT_PAGE_SIZE);
-            }
+        // If the form was submitted, save the user preferences, and
+        // redirect to a cleaned-up GET URL.
+        if ($mform->get_data()) {
+            set_user_preference('quiz_grading_pagesize', $pagesize);
+            set_user_preference('quiz_grading_order', $order);
+            redirect($this->grade_question_url($slot, $questionid, $grade, $page));
         }
 
         list($qubaids, $count) = $this->get_usage_ids_where_question_in_state(
@@ -481,7 +445,8 @@ class quiz_grading_report extends report_base {
             $attempt = $attempts[$qubaid];
             $quba = question_engine::load_questions_usage_by_activity($qubaid);
             $displayoptions = quiz_get_review_options($this->quiz, $attempt, $this->context);
-            $displayoptions->generalfeedback = question_display_options::HIDDEN;
+            $displayoptions->hide_all_feedback();
+            $displayoptions->rightanswer = question_display_options::VISIBLE;
             $displayoptions->history = question_display_options::HIDDEN;
             $displayoptions->manualcomment = question_display_options::EDITABLE;
 
@@ -490,7 +455,7 @@ class quiz_grading_report extends report_base {
                     $slot,
                     $displayoptions,
                     $this->questions[$slot]->number,
-                    $this->get_question_heading($attempt, $shownames, $showcustomfields)
+                    $this->get_question_heading($attempt, $shownames, $showidnumbers)
             );
         }
 
@@ -553,17 +518,15 @@ class quiz_grading_report extends report_base {
 
     /**
      * Save all submitted marks to the database.
-     *
-     * @return bool returns true if some attempts or all are graded. False, if none of the attempts are graded.
      */
-    protected function process_submitted_data(): bool {
+    protected function process_submitted_data() {
         global $DB;
 
         $qubaids = optional_param('qubaids', null, PARAM_SEQUENCE);
         $assumedslotforevents = optional_param('slot', null, PARAM_INT);
 
         if (!$qubaids) {
-            return false;
+            return;
         }
 
         $qubaids = clean_param_array(explode(',', $qubaids), PARAM_INT);
@@ -571,23 +534,10 @@ class quiz_grading_report extends report_base {
         $events = [];
 
         $transaction = $DB->start_delegated_transaction();
-        $attemptsgraded = false;
         foreach ($qubaids as $qubaid) {
             $attempt = $attempts[$qubaid];
             $attemptobj = new quiz_attempt($attempt, $this->quiz, $this->cm, $this->course);
-
-            // State of the attempt before grades are changed.
-            $attemptoldtstate = $attemptobj->get_question_state($assumedslotforevents);
-
             $attemptobj->process_submitted_actions(time());
-
-            // Get attempt state after grades are changed.
-            $attemptnewtstate = $attemptobj->get_question_state($assumedslotforevents);
-
-            // Check if any attempts are graded.
-            if (!$attemptsgraded && $attemptoldtstate->is_graded() != $attemptnewtstate->is_graded()) {
-                $attemptsgraded = true;
-            }
 
             // Add the event we will trigger later.
             $params = [
@@ -608,8 +558,6 @@ class quiz_grading_report extends report_base {
         foreach ($events as $event) {
             $event->trigger();
         }
-
-        return $attemptsgraded;
     }
 
     /**
@@ -650,7 +598,7 @@ class quiz_grading_report extends report_base {
     protected function get_usage_ids_where_question_in_state($summarystate, $slot,
             $questionid = null, $orderby = 'random', $page = 0, $pagesize = null) {
         $dm = new question_engine_data_mapper();
-        $extraselect = '';
+
         if ($pagesize && $orderby != 'random') {
             $limitfrom = $page * $pagesize;
         } else {
@@ -660,46 +608,42 @@ class quiz_grading_report extends report_base {
         $qubaids = $this->get_qubaids_condition();
 
         $params = [];
-        $userfieldsapi = \core_user\fields::for_identity($this->context)->with_name();
-        $userfieldssql = $userfieldsapi->get_sql('u', true, '', 'userid', true);
-        $params = array_merge($params, $userfieldssql->params);
-        $customfields = [];
-        foreach ($userfieldsapi->get_required_fields([\core_user\fields::PURPOSE_IDENTITY]) as $field) {
-            $customfields[] = $field;
-        }
-        if ($orderby === 'date') {
+        if ($orderby == 'date') {
             list($statetest, $params) = $dm->in_summary_state_test(
                     'manuallygraded', false, 'mangrstate');
-            $extraselect = "(
+            $orderby = "(
                     SELECT MAX(sortqas.timecreated)
                     FROM {question_attempt_steps} sortqas
                     WHERE sortqas.questionattemptid = qa.id
                         AND sortqas.state $statetest
-                    ) as tcreated";
-            $orderby = "tcreated";
-        } else if ($orderby === 'studentfirstname' || $orderby === 'studentlastname' || in_array($orderby, $customfields)) {
-            $qubaids->from .= " JOIN {user} u ON quiza.userid = u.id {$userfieldssql->joins}";
+                    )";
+        } else if ($orderby == 'studentfirstname' || $orderby == 'studentlastname' || $orderby == 'idnumber') {
+            $qubaids->from .= " JOIN {user} u ON quiza.userid = u.id ";
             // For name sorting, map orderby form value to
             // actual column names; 'idnumber' maps naturally.
-            if ($orderby === "studentlastname") {
-                $orderby = "u.lastname, u.firstname";
-            } else if ($orderby === "studentfirstname") {
-                $orderby = "u.firstname, u.lastname";
-            } else if (in_array($orderby, $customfields)) { // Sort order by current custom user field.
-                $orderby = $userfieldssql->mappings[$orderby];
+            switch ($orderby) {
+                case "studentlastname":
+                    $orderby = "u.lastname, u.firstname";
+                    break;
+                case "studentfirstname":
+                    $orderby = "u.firstname, u.lastname";
+                    break;
+                case "idnumber":
+                    $orderby = "u.idnumber";
+                    break;
             }
         }
 
         return $dm->load_questions_usages_where_question_in_state($qubaids, $summarystate,
-                $slot, $questionid, $orderby, $params, $limitfrom, $pagesize, $extraselect);
+                $slot, $questionid, $orderby, $params, $limitfrom, $pagesize);
     }
 
     /**
      * Initialise some parts of $PAGE and start output.
      *
-     * @param stdClass $cm the course_module information.
-     * @param stdClass $course the course settings.
-     * @param stdClass $quiz the quiz settings.
+     * @param object $cm the course_module information.
+     * @param object $course the course settings.
+     * @param object $quiz the quiz settings.
      * @param string $reportmode the report name.
      */
     public function print_header_and_tabs($cm, $course, $quiz, $reportmode = 'overview') {
@@ -711,32 +655,26 @@ class quiz_grading_report extends report_base {
     /**
      * Get question heading.
      *
-     * @param stdClass $attempt An instance of quiz_attempt.
-     * @param bool $shownames True to show the student first/lastnames.
-     * @param bool $showcustomfields Whether custom field values should be shown.
+     * @param object $attempt an instance of quiz_attempt.
+     * @param bool $shownames True to show the question name.
+     * @param bool $showidnumbers True to show the question id number.
      * @return string The string text for the question heading.
+     * @throws coding_exception
      */
-    protected function get_question_heading(stdClass $attempt, bool $shownames, bool $showcustomfields): string {
-        global $DB;
+    protected function get_question_heading($attempt, $shownames, $showidnumbers) {
         $a = new stdClass();
         $a->attempt = $attempt->attempt;
         $a->fullname = fullname($attempt);
+        $a->idnumber = s($attempt->idnumber);
 
-        $customfields = [];
-        foreach ($this->extrauserfields as $field) {
-            if (strval($attempt->{$field}) !== '') {
-                $customfields[] = s($attempt->{$field});
-            }
-        }
+        $showidnumbers = $showidnumbers && !empty($attempt->idnumber);
 
-        $a->customfields = implode(', ', $customfields);
-
-        if ($shownames && $showcustomfields) {
-            return get_string('gradingattemptwithcustomfields', 'quiz_grading', $a);
+        if ($shownames && $showidnumbers) {
+            return get_string('gradingattemptwithidnumber', 'quiz_grading', $a);
         } else if ($shownames) {
             return get_string('gradingattempt', 'quiz_grading', $a);
-        } else if ($showcustomfields) {
-            $a->fullname = $a->customfields;
+        } else if ($showidnumbers) {
+            $a->fullname = $attempt->idnumber;
             return get_string('gradingattempt', 'quiz_grading', $a);
         } else {
             return '';

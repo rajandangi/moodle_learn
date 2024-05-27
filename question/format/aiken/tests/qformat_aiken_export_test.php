@@ -44,10 +44,8 @@ class qformat_aiken_export_test extends advanced_testcase {
      * @param   string    $text The actual string.
      */
     public function assert_same_aiken($expectedtext, $text) {
-        $this->assertEquals(
-            phpunit_util::normalise_line_endings($expectedtext),
-            phpunit_util::normalise_line_endings($text)
-        );
+        $this->assertEquals(str_replace("\r\n", "\n", $expectedtext),
+                str_replace("\r\n", "\n", $text));
     }
 
     public function test_export_questions() {

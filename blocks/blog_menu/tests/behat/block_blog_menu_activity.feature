@@ -175,7 +175,7 @@ Feature: Enable Block blog menu in an activity
     And I should see "My course blog is better!"
     And I should see "Associated Assignment: Test assignment 1"
     When I am on the "Test assignment 1" "assign activity" page logged in as teacher1
-    And I set the field "Search" to "First"
+    And I set the field "blogsearchquery" to "First"
     And I press "Search"
     Then I should see "S1 First Blog"
     And I should see "S2 First Blog"

@@ -22,13 +22,17 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @author     Yuliya Bozhko <yuliya.bozhko@totaralms.com>
  */
+
+defined('MOODLE_INTERNAL') || die();
+
+require_once($CFG->libdir . "/badgeslib.php");
+
+/**
+ * Displays recent badges
+ */
 class block_badges extends block_base {
 
     public function init() {
-        global $CFG;
-
-        require_once($CFG->libdir . "/badgeslib.php");
-
         $this->title = get_string('pluginname', 'block_badges');
     }
 
@@ -100,17 +104,5 @@ class block_badges extends block_base {
         }
 
         return $this->content;
-    }
-
-    /**
-     * This block shouldn't be added to a page if the badges advanced feature is disabled.
-     *
-     * @param moodle_page $page
-     * @return bool
-     */
-    public function can_block_be_added(moodle_page $page): bool {
-        global $CFG;
-
-        return $CFG->enablebadges;
     }
 }

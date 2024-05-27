@@ -15,17 +15,13 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Test case for sqlsrv dml support.
+ * Test sqlsrv dml support.
  *
  * @package    core
- * @category   test
+ * @category   dml
  * @copyright  2017 John Okely
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
-namespace core;
-
-use sqlsrv_native_moodle_database;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -36,13 +32,13 @@ require_once($CFG->dirroot.'/lib/dml/sqlsrv_native_moodle_database.php');
  * Test case for sqlsrv dml support.
  *
  * @package    core
- * @category   test
+ * @category   dml
  * @copyright  2017 John Okely
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class sqlsrv_native_moodle_database_test extends \advanced_testcase {
+class sqlsrv_native_moodle_database_testcase extends advanced_testcase {
 
-    public function setUp(): void {
+    public function setUp() {
         parent::setUp();
         $this->resetAfterTest();
     }
@@ -122,11 +118,13 @@ class sqlsrv_native_moodle_database_test extends \advanced_testcase {
     public function test_add_no_lock_to_temp_tables($input, $expected) {
         $sqlsrv = new sqlsrv_native_moodle_database();
 
-        $reflector = new \ReflectionObject($sqlsrv);
+        $reflector = new ReflectionObject($sqlsrv);
 
         $method = $reflector->getMethod('add_no_lock_to_temp_tables');
+        $method->setAccessible(true);
 
         $temptablesproperty = $reflector->getProperty('temptables');
+        $temptablesproperty->setAccessible(true);
         $temptables = new temptables_tester();
 
         $temptablesproperty->setValue($sqlsrv, $temptables);
@@ -249,7 +247,8 @@ EOT
         $this->assertSame($expectedmainquery, $mainquery);
 
         // The has_query_order_by static method is protected. Use Reflection to call the method.
-        $method = new \ReflectionMethod('sqlsrv_native_moodle_database', 'has_query_order_by');
+        $method = new ReflectionMethod('sqlsrv_native_moodle_database', 'has_query_order_by');
+        $method->setAccessible(true);
         $result = $method->invoke(null, $sql);
         $this->assertSame($expectedresult, $result);
     }

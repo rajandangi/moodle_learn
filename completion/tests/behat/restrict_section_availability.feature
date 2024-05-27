@@ -6,11 +6,11 @@ Feature: Restrict sections availability through completion or grade conditions
 
   Background:
     Given the following "courses" exist:
-      | fullname | shortname | category | enablecompletion |
-      | Course 1 | C1        | 0        | 1                |
+      | fullname | shortname | category |
+      | Course 1 | C1        | 0        |
     And the following "users" exist:
       | username | firstname | lastname | email                |
-      | teacher1 | Teacher   | First    | teacher1@example.com |
+      | teacher1 | Teacher   | Frist    | teacher1@example.com |
       | student1 | Student   | First    | student1@example.com |
     And the following "course enrolments" exist:
       | user     | course | role           |
@@ -23,11 +23,15 @@ Feature: Restrict sections availability through completion or grade conditions
 
   @javascript
   Scenario: Show section greyed-out to student when completion condition is not satisfied
-    Given the following "activities" exist:
+    Given I log in as "teacher1"
+    And I am on "Course 1" course homepage with editing mode on
+    And I navigate to "Edit settings" in current page administration
+    And I set the following fields to these values:
+      | Enable completion tracking | Yes |
+    And I press "Save and display"
+    And the following "activities" exist:
       | activity | course | section | intro      | completion | idnumber |
       | label    | C1     | 1       | Test label | 1          | 1        |
-    And I log in as "teacher1"
-    And I am on "Course 1" course homepage with editing mode on
     When I edit the section "2"
     And I expand all fieldsets
     And I click on "Add restriction..." "button"
@@ -39,7 +43,7 @@ Feature: Restrict sections availability through completion or grade conditions
     And I am on the "Course 1" course page logged in as "student1"
     Then I should see "Not available unless: The activity Test label is marked complete"
     And I should not see "Test page name"
-    And I toggle the manual completion state of "Test label"
+    And I click on "Not completed: Test label. Select to mark as complete." "icon"
     And I should see "Test page name"
     And I should not see "Not available unless: The activity Test label is marked complete"
 
@@ -57,7 +61,7 @@ Feature: Restrict sections availability through completion or grade conditions
       | minval | 20               |
     And I press "Save changes"
     When I am on the "Course 1" course page logged in as "student1"
-    Then I should see "Not available unless: You achieve higher than a certain score in Grade assignment"
+    Then I should see "Not available unless: You achieve a required score in Grade assignment"
     And "Test page name" activity should be hidden
     And I am on the "Grade assignment" "assign activity" page
     And I press "Add submission"
@@ -67,12 +71,13 @@ Feature: Restrict sections availability through completion or grade conditions
     And I should see "Submitted for grading"
     And I log out
     And I am on the "Grade assignment" "assign activity" page logged in as teacher1
-    And I follow "View all submissions"
+    And I navigate to "View all submissions" in current page administration
     And I click on "Grade" "link" in the "Student First" "table_row"
     And I set the following fields to these values:
       | Grade | 21 |
     And I press "Save changes"
+    And I press "OK"
     And I follow "Edit settings"
     And I am on the "Course 1" Course page logged in as student1
     And "Test page name" activity should be visible
-    And I should not see "Not available unless: You achieve higher than a certain score in Grade assignment"
+    And I should not see "Not available unless: You achieve a required score in Grade assignment"

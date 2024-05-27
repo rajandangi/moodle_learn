@@ -104,7 +104,7 @@ class tablelog extends \table_sql implements \renderable {
         $this->context = $context;
         $this->courseid = $this->context->instanceid;
         $this->pagesize = $perpage;
-        $this->currpage = $page;
+        $this->page = $page;
         $this->gradeitems = \grade_item::fetch_all(array('courseid' => $this->courseid));
         $this->cms = get_fast_modinfo($this->courseid);
         $this->useridfield = 'userid';
@@ -178,7 +178,7 @@ class tablelog extends \table_sql implements \renderable {
      * Setup the headers for the html table.
      */
     protected function define_table_columns() {
-        $extrafields = \core_user\fields::get_identity_fields($this->context);
+        $extrafields = get_extra_user_fields($this->context);
 
         // Define headers and columns.
         $cols = array(
@@ -191,7 +191,7 @@ class tablelog extends \table_sql implements \renderable {
             if (get_string_manager()->string_exists($field, 'moodle')) {
                 $cols[$field] = get_string($field);
             } else {
-                $cols[$field] = \core_user\fields::get_display_name($field);
+                $cols[$field] = $field;
             }
         }
 
@@ -431,29 +431,18 @@ class tablelog extends \table_sql implements \renderable {
                    ggh.source, ggh.overridden, ggh.locked, ggh.excluded, ggh.feedback, ggh.feedbackformat,
                    gi.itemtype, gi.itemmodule, gi.iteminstance, gi.itemnumber, ';
 
-        $userfieldsapi = \core_user\fields::for_identity($this->context);
-        $userfieldssql = $userfieldsapi->get_sql('u', true, '', '', true);
-        $userfieldsselects = '';
-        $userfieldsjoins = '';
-        $userfieldsparams = [];
-        if (!$count) {
-            $userfieldsselects = $userfieldssql->selects;
-            $userfieldsjoins = $userfieldssql->joins;
-            $userfieldsparams = $userfieldssql->params;
-        }
-
         // Add extra user fields that we need for the graded user.
-        $extrafields = [];
-        foreach ($userfieldsapi->get_required_fields([\core_user\fields::PURPOSE_IDENTITY]) as $field) {
-            $extrafields[$field] = $userfieldssql->mappings[$field];
+        $extrafields = get_extra_user_fields($this->context);
+        foreach ($extrafields as $field) {
+            $fields .= 'u.' . $field . ', ';
         }
-        $userfieldsapi = \core_user\fields::for_name();
-        $fields .= $userfieldsapi->get_sql('u', false, '', '', false)->selects . ', ';
+        $gradeduserfields = get_all_user_name_fields(true, 'u');
+        $fields .= $gradeduserfields . ', ';
         $groupby = $fields;
 
         // Add extra user fields that we need for the grader user.
-        $fields .= $userfieldsapi->get_sql('ug', false, 'grader', '', false)->selects;
-        $groupby .= $userfieldsapi->get_sql('ug', false, '', '', false)->selects;
+        $fields .= get_all_user_name_fields(true, 'ug', '', 'grader');
+        $groupby .= get_all_user_name_fields(true, 'ug');
 
         // Filtering on revised grades only.
         $revisedonly = !empty($this->filters->revisedonly);
@@ -483,14 +472,12 @@ class tablelog extends \table_sql implements \renderable {
 
         list($where, $params) = $this->get_filters_sql_and_params();
 
-        $sql = " SELECT $select $userfieldsselects
+        $sql =  "SELECT $select
                    FROM {grade_grades_history} ggh
                    JOIN {grade_items} gi ON gi.id = ggh.itemid
                    JOIN {user} u ON u.id = ggh.userid
-                        $userfieldsjoins
               LEFT JOIN {user} ug ON ug.id = ggh.usermodified
                   WHERE $where";
-        $params = array_merge($userfieldsparams, $params);
 
         // As prevgrade is a dynamic field, we need to wrap the query. This is the only filtering
         // that should be defined outside the method self::get_filters_sql_and_params().
@@ -544,7 +531,7 @@ class tablelog extends \table_sql implements \renderable {
         if ($this->is_downloading()) {
             $histories = $DB->get_records_sql($sql, $params);
         } else {
-            $histories = $DB->get_records_sql($sql, $params, $this->pagesize * $this->currpage, $this->pagesize);
+            $histories = $DB->get_records_sql($sql, $params, $this->pagesize * $this->page, $this->pagesize);
         }
         foreach ($histories as $history) {
             $this->rawdata[] = $history;

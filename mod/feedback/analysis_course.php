@@ -53,7 +53,7 @@ require_course_login($course, true, $cm);
 $feedback = $PAGE->activityrecord;
 
 if (!($feedback->publish_stats OR has_capability('mod/feedback:viewreports', $context))) {
-    throw new \moodle_exception('error');
+    print_error('error');
 }
 
 $feedbackstructure = new mod_feedback_structure($feedback, $PAGE->cm, $courseid);
@@ -71,9 +71,10 @@ $strfeedback  = get_string("modulename", "feedback");
 $PAGE->set_heading($course->fullname);
 $PAGE->set_title($feedback->name);
 echo $OUTPUT->header();
-if (!$PAGE->has_secondary_navigation()) {
-    echo $OUTPUT->heading(format_string($feedback->name));
-}
+echo $OUTPUT->heading(format_string($feedback->name));
+
+/// print the tabs
+require('tabs.php');
 
 //get the groupid
 //lstgroupid is the choosen id
@@ -118,7 +119,7 @@ if ($courseitemfilter > 0) {
 
             echo '<tr>';
             echo '<td>'.$shortname.'</td>';
-            echo '<td class="text-right">';
+            echo '<td align="right">';
             echo format_float(($c->sumvalue / $c->countvalue), 2);
             echo '</td>';
             echo '</tr>';

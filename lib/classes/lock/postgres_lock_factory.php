@@ -14,9 +14,18 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+/**
+ * Postgres advisory locking factory.
+ *
+ * @package    core
+ * @category   lock
+ * @copyright  Damyon Wiese 2013
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
 namespace core\lock;
 
-use coding_exception;
+defined('MOODLE_INTERNAL') || die();
 
 /**
  * Postgres advisory locking factory.
@@ -109,10 +118,11 @@ class postgres_lock_factory implements lock_factory {
     }
 
     /**
-     * @deprecated since Moodle 3.10.
+     * Multiple locks for the same resource can be held by a single process.
+     * @return boolean - Defer to the DB driver.
      */
     public function supports_recursion() {
-        throw new coding_exception('The function supports_recursion() has been removed, please do not use it anymore.');
+        return true;
     }
 
     /**
@@ -135,7 +145,6 @@ class postgres_lock_factory implements lock_factory {
 
     /**
      * Create and get a lock
-     *
      * @param string $resource - The identifier for the lock. Should use frankenstyle prefix.
      * @param int $timeout - The number of seconds to wait for a lock before giving up.
      * @param int $maxlifetime - Unused by this lock type.
@@ -146,14 +155,8 @@ class postgres_lock_factory implements lock_factory {
 
         $token = $this->get_index_from_key($this->type . '_' . $resource);
 
-        if (isset($this->openlocks[$token])) {
-            return false;
-        }
-
-        $params = [
-            'locktype' => $this->dblockid,
-            'token' => $token
-        ];
+        $params = array('locktype' => $this->dblockid,
+                        'token' => $token);
 
         $locked = false;
 
@@ -190,10 +193,14 @@ class postgres_lock_factory implements lock_factory {
     }
 
     /**
-     * @deprecated since Moodle 3.10.
+     * Extend a lock that was previously obtained with @lock.
+     * @param lock $lock - a lock obtained from this factory.
+     * @param int $maxlifetime - the new lifetime for the lock (in seconds).
+     * @return boolean - true if the lock was extended.
      */
-    public function extend_lock() {
-        throw new coding_exception('The function extend_lock() has been removed, please do not use it anymore.');
+    public function extend_lock(lock $lock, $maxlifetime = 86400) {
+        // Not supported by this factory.
+        return false;
     }
 
     /**

@@ -29,7 +29,6 @@ require_once($CFG->libdir.'/tablelib.php');
 $id = required_param('id', PARAM_INT); // Course Module ID.
 $userid = required_param('user', PARAM_INT); // User ID.
 $scoid = required_param('scoid', PARAM_INT); // SCO ID.
-$mode = required_param('mode', PARAM_ALPHA); // Scorm mode.
 $attempt = optional_param('attempt', 1, PARAM_INT); // attempt number.
 $download = optional_param('download', '', PARAM_ALPHA);
 
@@ -37,12 +36,11 @@ $download = optional_param('download', '', PARAM_ALPHA);
 $url = new moodle_url('/mod/scorm/report/userreporttracks.php', array('id' => $id,
     'user' => $userid,
     'attempt' => $attempt,
-    'scoid' => $scoid,
-    'mode' => $mode));
+    'scoid' => $scoid));
 $cm = get_coursemodule_from_id('scorm', $id, 0, false, MUST_EXIST);
 $course = get_course($cm->course);
 $scorm = $DB->get_record('scorm', array('id' => $cm->instance), '*', MUST_EXIST);
-$user = $DB->get_record('user', array('id' => $userid), implode(',', \core_user\fields::get_picture_fields()), MUST_EXIST);
+$user = $DB->get_record('user', array('id' => $userid), user_picture::fields(), MUST_EXIST);
 $selsco = $DB->get_record('scorm_scoes', array('id' => $scoid), '*', MUST_EXIST);
 
 $PAGE->set_url($url);
@@ -62,7 +60,7 @@ if (!groups_user_groups_visible($course, $userid, $cm)) {
 $event = \mod_scorm\event\tracks_viewed::create(array(
     'context' => $contextmodule,
     'relateduserid' => $userid,
-    'other' => array('attemptid' => $attempt, 'instanceid' => $scorm->id, 'scoid' => $scoid, 'mode' => $mode)
+    'other' => array('attemptid' => $attempt, 'instanceid' => $scorm->id, 'scoid' => $scoid)
 ));
 $event->add_record_snapshot('course_modules', $cm);
 $event->add_record_snapshot('scorm', $scorm);
@@ -78,7 +76,6 @@ $PAGE->navbar->add($strreport, new moodle_url('/mod/scorm/report.php', array('id
 $PAGE->navbar->add("$strattempt $attempt - ".fullname($user),
     new moodle_url('/mod/scorm/report/userreport.php', array('id' => $id, 'user' => $userid, 'attempt' => $attempt)));
 $PAGE->navbar->add($selsco->title . ' - '. get_string('details', 'scorm'));
-$PAGE->set_secondary_active_tab('scormreport');
 
 if ($trackdata = scorm_get_tracks($selsco->id, $userid, $attempt)) {
     if ($trackdata->status == '') {
@@ -97,15 +94,10 @@ $exportfilename = $courseshortname . '-' . format_string($scorm->name, true) . '
 $table = new flexible_table('mod_scorm-userreporttracks');
 
 if (!$table->is_downloading($download, $exportfilename)) {
-    $PAGE->activityheader->set_attrs([
-        'hidecompletion' => true,
-        'description' => ''
-    ]);
     echo $OUTPUT->header();
+    echo $OUTPUT->heading(format_string($scorm->name));
     $currenttab = '';
-    $renderer = $PAGE->get_renderer('mod_scorm');
-    $useractionreport = new \mod_scorm\output\userreportsactionbar($id, $userid, $attempt, 'attempt', $mode, $scoid);
-    echo $renderer->user_report_actionbar($useractionreport);
+    require($CFG->dirroot . '/mod/scorm/report/userreporttabs.php');
     echo $OUTPUT->box_start('generalbox boxaligncenter');
     echo $OUTPUT->heading("$strattempt $attempt - ". fullname($user).': '.
     format_string($selsco->title). ' - '. get_string('details', 'scorm'), 3);

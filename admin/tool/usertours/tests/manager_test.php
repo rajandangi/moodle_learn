@@ -14,7 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace tool_usertours;
+/**
+ * Tests for manager.
+ *
+ * @package    tool_usertours
+ * @copyright  2016 Andrew Nicols <andrew@nicols.co.uk>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -28,11 +34,10 @@ require_once(__DIR__ . '/helper_trait.php');
  * @package    tool_usertours
  * @copyright  2016 Andrew Nicols <andrew@nicols.co.uk>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers \tool_usertours\manager
  */
-class manager_test extends \advanced_testcase {
+class tool_usertours_manager_testcase extends advanced_testcase {
     // There are shared helpers for these tests in the helper trait.
-    use \tool_usertours_helper_trait;
+    use tool_usertours_helper_trait;
 
     /**
      * @var moodle_database
@@ -42,7 +47,7 @@ class manager_test extends \advanced_testcase {
     /**
      * Setup to store the DB reference.
      */
-    public function setUp(): void {
+    public function setUp() {
         global $DB;
 
         $this->db = $DB;
@@ -51,7 +56,7 @@ class manager_test extends \advanced_testcase {
     /**
      * Tear down to restore the original DB reference.
      */
-    public function tearDown(): void {
+    public function tearDown() {
         global $DB;
 
         $DB = $this->db;
@@ -75,28 +80,28 @@ class manager_test extends \advanced_testcase {
      *
      * @return array
      */
-    public static function sesskey_required_provider(): array {
+    public function sesskey_required_provider() {
         $tourid = rand(1, 100);
         $stepid = rand(1, 100);
 
         return [
-            'Tour removal' => [
-                'delete_tour',
-                [$tourid],
-            ],
-            'Step removal' => [
-                'delete_step',
-                [$stepid],
-            ],
-            'Tour visibility' => [
-                'show_hide_tour',
-                [$tourid, true],
-            ],
-            'Move step' => [
-                'move_step',
-                [$stepid],
-            ],
-        ];
+                'Tour removal' => [
+                        'delete_tour',
+                        [$tourid],
+                    ],
+                'Step removal' => [
+                        'delete_step',
+                        [$stepid],
+                    ],
+                'Tour visibility' => [
+                        'show_hide_tour',
+                        [$tourid, true],
+                    ],
+                'Move step' => [
+                        'move_step',
+                        [$stepid],
+                    ],
+            ];
     }
 
     /**
@@ -106,11 +111,12 @@ class manager_test extends \advanced_testcase {
      * @param   string  $function   The function to test
      * @param   array   $arguments  The arguments to pass with it
      */
-    public function test_sesskey_required($function, $arguments): void {
+    public function test_sesskey_required($function, $arguments) {
         $manager = new \tool_usertours\manager();
 
         $rc = new \ReflectionClass('\tool_usertours\manager');
         $rcm = $rc->getMethod($function);
+        $rcm->setAccessible(true);
 
         $this->expectException('moodle_exception');
         $rcm->invokeArgs($manager, $arguments);
@@ -121,7 +127,7 @@ class manager_test extends \advanced_testcase {
      *
      * @return array
      */
-    public static function move_tour_provider(): array {
+    public function move_tour_provider() {
         $alltours = [
             ['name' => 'Tour 1'],
             ['name' => 'Tour 2'],
@@ -167,7 +173,7 @@ class manager_test extends \advanced_testcase {
      * @param int $expectedsortorder
      * @return void
      */
-    public function test_move_tour($alltours, $movetourname, $direction, $expectedsortorder): void {
+    public function test_move_tour($alltours, $movetourname, $direction, $expectedsortorder) {
         global $DB;
 
         $this->resetAfterTest();
@@ -184,8 +190,9 @@ class manager_test extends \advanced_testcase {
         $tour = \tool_usertours\tour::load_from_record($record);
 
         // Call protected method via reflection.
-        $class = new \ReflectionClass(\tool_usertours\manager::class);
+        $class = new ReflectionClass(\tool_usertours\manager::class);
         $method = $class->getMethod('_move_tour');
+        $method->setAccessible(true);
         $method->invokeArgs(null, [$tour, $direction]);
 
         // Assert expected sortorder.
@@ -197,169 +204,131 @@ class manager_test extends \advanced_testcase {
      *
      * @return array
      */
-    public static function get_matching_tours_provider(): array {
+    public function get_matching_tours_provider() {
         global $CFG;
 
         $alltours = [
             [
-                'pathmatch'     => '/my/%',
-                'enabled'       => false,
-                'name'          => 'Failure',
-                'description'   => '',
-                'configdata'    => '',
-            ],
+                    'pathmatch'     => '/my/%',
+                    'enabled'       => false,
+                    'name'          => 'Failure',
+                    'description'   => '',
+                    'configdata'    => '',
+                ],
             [
-                'pathmatch'     => '/my/%',
-                'enabled'       => true,
-                'name'          => 'My tour enabled',
-                'description'   => '',
-                'configdata'    => '',
-            ],
+                    'pathmatch'     => '/my/%',
+                    'enabled'       => true,
+                    'name'          => 'My tour enabled',
+                    'description'   => '',
+                    'configdata'    => '',
+                ],
             [
-                'pathmatch'     => '/my/%',
-                'enabled'       => true,
-                'name'          => 'My tour enabled 2',
-                'description'   => '',
-                'configdata'    => '',
-            ],
+                    'pathmatch'     => '/my/%',
+                    'enabled'       => false,
+                    'name'          => 'Failure',
+                    'description'   => '',
+                    'configdata'    => '',
+                ],
             [
-                'pathmatch'     => '/my/%',
-                'enabled'       => false,
-                'name'          => 'Failure',
-                'description'   => '',
-                'configdata'    => '',
-            ],
+                    'pathmatch'     => '/course/?id=%foo=bar',
+                    'enabled'       => false,
+                    'name'          => 'Failure',
+                    'description'   => '',
+                    'configdata'    => '',
+                ],
             [
-                'pathmatch'     => '/course/?id=%foo=bar',
-                'enabled'       => false,
-                'name'          => 'Failure',
-                'description'   => '',
-                'configdata'    => '',
-            ],
+                    'pathmatch'     => '/course/?id=%foo=bar',
+                    'enabled'       => true,
+                    'name'          => 'course tour with additional params enabled',
+                    'description'   => '',
+                    'configdata'    => '',
+                ],
             [
-                'pathmatch'     => '/course/?id=%foo=bar',
-                'enabled'       => true,
-                'name'          => 'course tour with additional params enabled',
-                'description'   => '',
-                'configdata'    => '',
-            ],
+                    'pathmatch'     => '/course/?id=%foo=bar',
+                    'enabled'       => false,
+                    'name'          => 'Failure',
+                    'description'   => '',
+                    'configdata'    => '',
+                ],
             [
-                'pathmatch'     => '/course/?id=%foo=bar',
-                'enabled'       => false,
-                'name'          => 'Failure',
-                'description'   => '',
-                'configdata'    => '',
-            ],
+                    'pathmatch'     => '/course/?id=%',
+                    'enabled'       => false,
+                    'name'          => 'Failure',
+                    'description'   => '',
+                    'configdata'    => '',
+                ],
             [
-                'pathmatch'     => '/course/?id=%',
-                'enabled'       => false,
-                'name'          => 'Failure',
-                'description'   => '',
-                'configdata'    => '',
-            ],
+                    'pathmatch'     => '/course/?id=%',
+                    'enabled'       => true,
+                    'name'          => 'course tour enabled',
+                    'description'   => '',
+                    'configdata'    => '',
+                ],
             [
-                'pathmatch'     => '/course/?id=%',
-                'enabled'       => true,
-                'name'          => 'course tour enabled',
-                'description'   => '',
-                'configdata'    => '',
-            ],
-            [
-                'pathmatch'     => '/course/?id=%',
-                'enabled'       => false,
-                'name'          => 'Failure',
-                'description'   => '',
-                'configdata'    => '',
-            ],
+                    'pathmatch'     => '/course/?id=%',
+                    'enabled'       => false,
+                    'name'          => 'Failure',
+                    'description'   => '',
+                    'configdata'    => '',
+                ],
         ];
 
-        return
-        [
-            'No matches found' => [
-                $alltours,
-                $CFG->wwwroot . '/some/invalid/value',
-                [],
-            ],
-            'Never return a disabled tour' => [
-                $alltours,
-                $CFG->wwwroot . '/my/index.php',
-                ['My tour enabled', 'My tour enabled 2'],
-            ],
-            'My not course' => [
-                $alltours,
-                $CFG->wwwroot . '/my/index.php',
-                ['My tour enabled', 'My tour enabled 2'],
-            ],
-            'My with params' => [
-                $alltours,
-                $CFG->wwwroot . '/my/index.php?id=42',
-                ['My tour enabled', 'My tour enabled 2'],
-            ],
-            'Course with params' => [
-                $alltours,
-                $CFG->wwwroot . '/course/?id=42',
-                ['course tour enabled'],
-            ],
-            'Course with params and trailing content' => [
-                $alltours,
-                $CFG->wwwroot . '/course/?id=42&foo=bar',
-                ['course tour with additional params enabled', 'course tour enabled'],
-            ],
-        ];
+        return [
+                'No matches found' => [
+                        $alltours,
+                        $CFG->wwwroot . '/some/invalid/value',
+                        null,
+                    ],
+                'Never return a disabled tour' => [
+                        $alltours,
+                        $CFG->wwwroot . '/my/index.php',
+                        'My tour enabled',
+                    ],
+                'My not course' => [
+                        $alltours,
+                        $CFG->wwwroot . '/my/index.php',
+                        'My tour enabled',
+                    ],
+                'My with params' => [
+                        $alltours,
+                        $CFG->wwwroot . '/my/index.php?id=42',
+                        'My tour enabled',
+                    ],
+                'Course with params' => [
+                        $alltours,
+                        $CFG->wwwroot . '/course/?id=42',
+                        'course tour enabled',
+                    ],
+                'Course with params and trailing content' => [
+                        $alltours,
+                        $CFG->wwwroot . '/course/?id=42&foo=bar',
+                        'course tour with additional params enabled',
+                    ],
+            ];
     }
 
     /**
      * Tests for the get_matching_tours function.
      *
      * @dataProvider get_matching_tours_provider
-     * @param   array   $alltours   The list of tours to insert.
-     * @param   string  $url        The URL to test.
-     * @param   array   $expected   List of names of the expected matching tours.
+     * @param   array   $alltours   The list of tours to insert
+     * @param   string  $url        The URL to test
+     * @param   string  $expected   The name of the expected matching tour
      */
-    public function test_get_matching_tours(array $alltours, string $url, array $expected): void {
+    public function test_get_matching_tours($alltours, $url, $expected) {
         $this->resetAfterTest();
-
-        $this->setGuestUser();
 
         foreach ($alltours as $tourconfig) {
             $tour = $this->helper_create_tour((object) $tourconfig);
             $this->helper_create_step((object) ['tourid' => $tour->get_id()]);
         }
 
-        $matches = \tool_usertours\manager::get_matching_tours(new \moodle_url($url));
-        $this->assertEquals(count($expected), count($matches));
-        for ($i = 0; $i < count($matches); $i++) {
-            $this->assertEquals($expected[$i], $matches[$i]->get_name());
+        $match = \tool_usertours\manager::get_matching_tours(new moodle_url($url));
+        if ($expected === null) {
+            $this->assertNull($match);
+        } else {
+            $this->assertNotNull($match);
+            $this->assertEquals($expected, $match->get_name());
         }
-    }
-
-    /**
-     * Test that no matching tours are returned if there is pending site policy agreement.
-     */
-    public function test_get_matching_tours_for_user_without_site_policy_agreed(): void {
-        global $CFG;
-
-        $this->resetAfterTest();
-        $this->setGuestUser();
-
-        $tour = $this->helper_create_tour((object) [
-            'pathmatch' => '/%',
-            'enabled' => true,
-            'name' => 'Test tour',
-            'description' => '',
-            'configdata' => '',
-        ]);
-
-        $this->helper_create_step((object) [
-            'tourid' => $tour->get_id(),
-        ]);
-
-        $matches = \tool_usertours\manager::get_matching_tours(new \moodle_url('/'));
-        $this->assertEquals(1, count($matches));
-
-        $CFG->sitepolicyguest = 'https://example.com';
-
-        $matches = \tool_usertours\manager::get_matching_tours(new \moodle_url('/'));
-        $this->assertEmpty($matches);
     }
 }

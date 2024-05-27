@@ -14,16 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace core;
-
-use cache;
-use coding_exception;
-use core_component;
-use moodle_exception;
-use moodle_url;
-use progress_trace;
-use stdClass;
-
 /**
  * Defines classes used for plugins management
  *
@@ -35,7 +25,14 @@ use stdClass;
  * @copyright  2011 David Mudrak <david@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class plugin_manager {
+
+defined('MOODLE_INTERNAL') || die();
+
+/**
+ * Singleton class providing general plugins management functionality.
+ */
+class core_plugin_manager {
+
     /** the plugin is shipped with standard Moodle distribution */
     const PLUGIN_SOURCE_STANDARD    = 'std';
     /** the plugin is added extension */
@@ -77,10 +74,8 @@ class plugin_manager {
     /** the plugin does not specify supports */
     const VERSION_NO_SUPPORTS = 'nosupports';
 
-    /** @var plugin_manager holds the singleton instance */
+    /** @var core_plugin_manager holds the singleton instance */
     protected static $singletoninstance;
-    /** @var stdClass cache of standard plugins */
-    protected static ?stdClass $standardplugincache = null;
     /** @var array of raw plugins information */
     protected $pluginsinfo = null;
     /** @var array of raw subplugins information */
@@ -117,7 +112,7 @@ class plugin_manager {
     /**
      * Factory method for this class
      *
-     * @return static the singleton instance
+     * @return core_plugin_manager the singleton instance
      */
     public static function instance() {
         if (is_null(static::$singletoninstance)) {
@@ -131,7 +126,6 @@ class plugin_manager {
      * @param bool $phpunitreset
      */
     public static function reset_caches($phpunitreset = false) {
-        static::$standardplugincache = null;
         if ($phpunitreset) {
             static::$singletoninstance = null;
         } else {
@@ -187,7 +181,7 @@ class plugin_manager {
 
         if (empty($CFG->version)) {
             // Nothing installed yet.
-            $this->installedplugins = [];
+            $this->installedplugins = array();
             return;
         }
 
@@ -199,9 +193,9 @@ class plugin_manager {
             return;
         }
 
-        $this->installedplugins = [];
+        $this->installedplugins = array();
 
-        $versions = $DB->get_records('config_plugins', ['name' => 'version']);
+        $versions = $DB->get_records('config_plugins', array('name'=>'version'));
         foreach ($versions as $version) {
             $parts = explode('_', $version->plugin, 2);
             if (!isset($parts[1])) {
@@ -229,7 +223,7 @@ class plugin_manager {
         if (isset($this->installedplugins[$type])) {
             return $this->installedplugins[$type];
         }
-        return [];
+        return array();
     }
 
     /**
@@ -246,7 +240,7 @@ class plugin_manager {
         }
 
         if (empty($CFG->version)) {
-            $this->enabledplugins = [];
+            $this->enabledplugins = array();
             return;
         }
 
@@ -258,9 +252,9 @@ class plugin_manager {
             return;
         }
 
-        $this->enabledplugins = [];
+        $this->enabledplugins = array();
 
-        require_once($CFG->libdir . '/adminlib.php');
+        require_once($CFG->libdir.'/adminlib.php');
 
         $plugintypes = core_component::get_plugin_types();
         foreach ($plugintypes as $plugintype => $fulldir) {
@@ -308,7 +302,7 @@ class plugin_manager {
             return;
         }
 
-        $this->presentplugins = [];
+        $this->presentplugins = array();
 
         $plugintypes = core_component::get_plugin_types();
         foreach ($plugintypes as $type => $typedir) {
@@ -317,17 +311,17 @@ class plugin_manager {
                 $module = new stdClass();
                 $plugin = new stdClass();
                 $plugin->version = null;
-                include($fullplug . '/version.php');
+                include($fullplug.'/version.php');
 
                 // Check if the legacy $module syntax is still used.
-                if (!is_object($module) || (count((array)$module) > 0)) {
-                    debugging('Unsupported $module syntax detected in version.php of the ' . $type . '_' . $plug . ' plugin.');
+                if (!is_object($module) or (count((array)$module) > 0)) {
+                    debugging('Unsupported $module syntax detected in version.php of the '.$type.'_'.$plug.' plugin.');
                     $skipcache = true;
                 }
 
                 // Check if the component is properly declared.
-                if (empty($plugin->component) || ($plugin->component !== $type . '_' . $plug)) {
-                    debugging('Plugin ' . $type . '_' . $plug . ' does not declare valid $plugin->component in its version.php.');
+                if (empty($plugin->component) or ($plugin->component !== $type.'_'.$plug)) {
+                    debugging('Plugin '.$type.'_'.$plug.' does not declare valid $plugin->component in its version.php.');
                     $skipcache = true;
                 }
 
@@ -338,20 +332,6 @@ class plugin_manager {
         if (empty($skipcache)) {
             $cache->set('present', $this->presentplugins);
         }
-    }
-
-    /**
-     * Load the standard plugin data from the plugins.json file.
-     *
-     * @return stdClass
-     */
-    protected static function load_standard_plugins(): stdClass {
-        if (static::$standardplugincache === null) {
-            $data = file_get_contents(dirname(__DIR__) . '/plugins.json');
-            static::$standardplugincache = json_decode($data, false);
-        }
-
-        return static::$standardplugincache;
     }
 
     /**
@@ -395,7 +375,7 @@ class plugin_manager {
      * If the given type is not known, empty array is returned.
      *
      * @param string $type plugin type, e.g. 'mod' or 'workshopallocation'
-     * @return \core\plugininfo\base[] (string) plugin name => corresponding subclass of {@link \core\plugininfo\base}
+     * @return \core\plugininfo\base[] (string)plugin name (e.g. 'workshop') => corresponding subclass of {@link \core\plugininfo\base}
      */
     public function get_plugins_of_type($type) {
         global $CFG;
@@ -403,7 +383,7 @@ class plugin_manager {
         $this->init_pluginsinfo_property();
 
         if (!array_key_exists($type, $this->pluginsinfo)) {
-            return [];
+            return array();
         }
 
         if (is_array($this->pluginsinfo[$type])) {
@@ -419,6 +399,7 @@ class plugin_manager {
             return $this->pluginsinfo[$type];
         }
 
+        /** @var \core\plugininfo\base $plugintypeclass */
         $plugintypeclass = static::resolve_plugininfo_class($type);
         $plugins = $plugintypeclass::get_plugins($type, $types[$type], $plugintypeclass, $this);
         $this->pluginsinfo[$type] = $plugins;
@@ -433,7 +414,7 @@ class plugin_manager {
         if (is_array($this->pluginsinfo)) {
             return;
         }
-        $this->pluginsinfo = [];
+        $this->pluginsinfo = array();
 
         $plugintypes = $this->get_plugin_types();
 
@@ -465,7 +446,7 @@ class plugin_manager {
         $parent = core_component::get_subtype_parent($type);
 
         if ($parent) {
-            $class = '\\' . $parent . '\plugininfo\\' . $type;
+            $class = '\\'.$parent.'\plugininfo\\' . $type;
             if (class_exists($class)) {
                 $plugintypeclass = $class;
             } else {
@@ -477,9 +458,9 @@ class plugin_manager {
                     }
                     if (class_exists('plugininfo_' . $type)) {
                         $plugintypeclass = 'plugininfo_' . $type;
-                        debugging('Class "' . $plugintypeclass . '" is deprecated, migrate to "' . $class . '"', DEBUG_DEVELOPER);
+                        debugging('Class "'.$plugintypeclass.'" is deprecated, migrate to "'.$class.'"', DEBUG_DEVELOPER);
                     } else {
-                        debugging('Subplugin type "' . $type . '" should define class "' . $class . '"', DEBUG_DEVELOPER);
+                        debugging('Subplugin type "'.$type.'" should define class "'.$class.'"', DEBUG_DEVELOPER);
                         $plugintypeclass = '\core\plugininfo\general';
                     }
                 } else {
@@ -491,7 +472,7 @@ class plugin_manager {
             if (class_exists($class)) {
                 $plugintypeclass = $class;
             } else {
-                debugging('All standard types including "' . $type . '" should have plugininfo class!', DEBUG_DEVELOPER);
+                debugging('All standard types including "'.$type.'" should have plugininfo class!', DEBUG_DEVELOPER);
                 $plugintypeclass = '\core\plugininfo\general';
             }
         }
@@ -517,16 +498,16 @@ class plugin_manager {
         $pluginfo = $this->get_plugin_info($component);
 
         if (is_null($pluginfo)) {
-            return [];
+            return array();
         }
 
         $subplugins = $this->get_subplugins();
 
         if (!isset($subplugins[$pluginfo->component])) {
-            return [];
+            return array();
         }
 
-        $list = [];
+        $list = array();
 
         foreach ($subplugins[$pluginfo->component] as $subdata) {
             foreach ($this->get_plugins_of_type($subdata->type) as $subpluginfo) {
@@ -552,15 +533,15 @@ class plugin_manager {
 
         $plugintypes = core_component::get_plugin_types();
 
-        $this->subpluginsinfo = [];
+        $this->subpluginsinfo = array();
         foreach (core_component::get_plugin_types_with_subplugins() as $type => $ignored) {
             foreach (core_component::get_plugin_list($type) as $plugin => $componentdir) {
-                $component = $type . '_' . $plugin;
+                $component = $type.'_'.$plugin;
                 $subplugins = core_component::get_subplugins($component);
                 if (!$subplugins) {
                     continue;
                 }
-                $this->subpluginsinfo[$component] = [];
+                $this->subpluginsinfo[$component] = array();
                 foreach ($subplugins as $subplugintype => $ignored) {
                     $subplugin = new stdClass();
                     $subplugin->type = $subplugintype;
@@ -599,7 +580,7 @@ class plugin_manager {
         $pluginfo = $this->get_plugin_info($component);
 
         if (is_null($pluginfo)) {
-            throw new moodle_exception('err_unknown_plugin', 'core_plugin', '', ['plugin' => $component]);
+            throw new moodle_exception('err_unknown_plugin', 'core_plugin', '', array('plugin' => $component));
         }
 
         return $pluginfo->displayname;
@@ -616,12 +597,19 @@ class plugin_manager {
      * @return string
      */
     public function plugintype_name($type) {
+
         if (get_string_manager()->string_exists('type_' . $type, 'core_plugin')) {
             // For most plugin types, their names are defined in core_plugin lang file.
             return get_string('type_' . $type, 'core_plugin');
+
         } else if ($parent = $this->get_parent_of_subplugin($type)) {
             // If this is a subplugin, try to ask the parent plugin for the name.
-            return $this->plugin_name($parent) . ' / ' . get_string('subplugintype_' . $type, $parent);
+            if (get_string_manager()->string_exists('subplugintype_' . $type, $parent)) {
+                return $this->plugin_name($parent) . ' / ' . get_string('subplugintype_' . $type, $parent);
+            } else {
+                return $this->plugin_name($parent) . ' / ' . $type;
+            }
+
         } else {
             return $type;
         }
@@ -638,12 +626,19 @@ class plugin_manager {
      * @return string
      */
     public function plugintype_name_plural($type) {
+
         if (get_string_manager()->string_exists('type_' . $type . '_plural', 'core_plugin')) {
             // For most plugin types, their names are defined in core_plugin lang file.
             return get_string('type_' . $type . '_plural', 'core_plugin');
+
         } else if ($parent = $this->get_parent_of_subplugin($type)) {
             // If this is a subplugin, try to ask the parent plugin for the name.
-            return $this->plugin_name($parent) . ' / ' . get_string('subplugintype_' . $type . '_plural', $parent);
+            if (get_string_manager()->string_exists('subplugintype_' . $type . '_plural', $parent)) {
+                return $this->plugin_name($parent) . ' / ' . get_string('subplugintype_' . $type . '_plural', $parent);
+            } else {
+                return $this->plugin_name($parent) . ' / ' . $type;
+            }
+
         } else {
             return $type;
         }
@@ -656,7 +651,7 @@ class plugin_manager {
      * @return \core\plugininfo\base|null the corresponding plugin information.
      */
     public function get_plugin_info($component) {
-        [$type, $name] = core_component::normalize_component($component);
+        list($type, $name) = core_component::normalize_component($component);
         $plugins = $this->get_plugins_of_type($type);
         if (isset($plugins[$name])) {
             return $plugins[$name];
@@ -681,23 +676,23 @@ class plugin_manager {
 
         $pluginroot = $plugininfo->rootdir;
 
-        if (is_dir($pluginroot . '/.git')) {
+        if (is_dir($pluginroot.'/.git')) {
             return 'git';
         }
 
-        if (is_file($pluginroot . '/.git')) {
+        if (is_file($pluginroot.'/.git')) {
             return 'git-submodule';
         }
 
-        if (is_dir($pluginroot . '/CVS')) {
+        if (is_dir($pluginroot.'/CVS')) {
             return 'cvs';
         }
 
-        if (is_dir($pluginroot . '/.svn')) {
+        if (is_dir($pluginroot.'/.svn')) {
             return 'svn';
         }
 
-        if (is_dir($pluginroot . '/.hg')) {
+        if (is_dir($pluginroot.'/.hg')) {
             return 'mercurial';
         }
 
@@ -710,7 +705,7 @@ class plugin_manager {
      * @return array of frankensyle component names that require this one.
      */
     public function other_plugins_that_require($component) {
-        $others = [];
+        $others = array();
         foreach ($this->get_plugins() as $type => $plugins) {
             foreach ($plugins as $plugin) {
                 $required = $plugin->get_other_required_plugins();
@@ -734,7 +729,7 @@ class plugin_manager {
                 return false;
             }
 
-            if ($requiredversion != ANY_VERSION && $otherplugin->versiondisk < $requiredversion) {
+            if ($requiredversion != ANY_VERSION and $otherplugin->versiondisk < $requiredversion) {
                 return false;
             }
         }
@@ -754,7 +749,7 @@ class plugin_manager {
      * @param int $branch the current moodle branch, null if not provided
      * @return bool true if all the dependencies are satisfied for all plugins.
      */
-    public function all_plugins_ok($moodleversion, &$failedplugins = [], $branch = null) {
+    public function all_plugins_ok($moodleversion, &$failedplugins = array(), $branch = null) {
         global $CFG;
         if (empty($branch)) {
             $branch = $CFG->branch ?? '';
@@ -769,6 +764,7 @@ class plugin_manager {
         $return = true;
         foreach ($this->get_plugins() as $type => $plugins) {
             foreach ($plugins as $plugin) {
+
                 if (!$plugin->is_core_dependency_satisfied($moodleversion)) {
                     $return = false;
                     $failedplugins[] = $plugin->component;
@@ -806,12 +802,12 @@ class plugin_manager {
      * @param null|string|int $moodlebranch explicit moodle core branch to check against, defaults to $CFG->branch
      * @return array of objects
      */
-    public function resolve_requirements(\core\plugininfo\base $plugin, $moodleversion = null, $moodlebranch = null) {
+    public function resolve_requirements(\core\plugininfo\base $plugin, $moodleversion=null, $moodlebranch=null) {
         global $CFG;
 
         if ($plugin->versiondisk === null) {
             // Missing from disk, we have no version.php to read from.
-            return [];
+            return array();
         }
 
         if ($moodleversion === null) {
@@ -822,7 +818,7 @@ class plugin_manager {
             $moodlebranch = $CFG->branch;
         }
 
-        $reqs = [];
+        $reqs = array();
         $reqcore = $this->resolve_core_requirements($plugin, $moodleversion, $moodlebranch);
 
         if (!empty($reqcore)) {
@@ -841,15 +837,16 @@ class plugin_manager {
      *
      * @param \core\plugininfo\base $plugin the plugin we are checking
      * @param string|int|double $moodleversion moodle core branch to check against
-     * @return stdClass
+     * @return stdObject
      */
     protected function resolve_core_requirements(\core\plugininfo\base $plugin, $moodleversion, $moodlebranch) {
-        $reqs = (object)[
+
+        $reqs = (object)array(
             'hasver' => null,
             'reqver' => null,
             'status' => null,
             'availability' => null,
-        ];
+        );
         $reqs->hasver = $moodleversion;
 
         if (empty($plugin->versionrequires)) {
@@ -867,6 +864,7 @@ class plugin_manager {
         // Now check if there is an explicit incompatible, supersedes requires.
         if (isset($plugin->pluginincompatible) && $plugin->pluginincompatible != null) {
             if (!$plugin->is_core_compatible_satisfied($moodlebranch)) {
+
                 $reqs->status = self::REQUIREMENT_STATUS_NEWER;
             }
         }
@@ -883,19 +881,15 @@ class plugin_manager {
      * @param string|int $moodlebranch explicit moodle core branch to check against, defaults to $CFG->branch
      * @return stdClass
      */
-    protected function resolve_dependency_requirements(
-        \core\plugininfo\base $plugin,
-        $otherpluginname,
-        $requiredversion,
-        $moodlebranch
-    ) {
+    protected function resolve_dependency_requirements(\core\plugininfo\base $plugin, $otherpluginname,
+            $requiredversion, $moodlebranch) {
 
-        $reqs = (object)[
+        $reqs = (object)array(
             'hasver' => null,
             'reqver' => null,
             'status' => null,
             'availability' => null,
-        ];
+        );
 
         $otherplugin = $this->get_plugin_info($otherpluginname);
 
@@ -904,11 +898,12 @@ class plugin_manager {
             $reqs->hasver = $otherplugin->versiondisk;
             $reqs->reqver = $requiredversion;
             // Check it has sufficient version.
-            if ($requiredversion == ANY_VERSION || $otherplugin->versiondisk >= $requiredversion) {
+            if ($requiredversion == ANY_VERSION or $otherplugin->versiondisk >= $requiredversion) {
                 $reqs->status = self::REQUIREMENT_STATUS_OK;
             } else {
                 $reqs->status = self::REQUIREMENT_STATUS_OUTDATED;
             }
+
         } else {
             // The required plugin is not installed.
             $reqs->hasver = null;
@@ -934,7 +929,7 @@ class plugin_manager {
      * @param int $branch the moodle branch to check support for
      * @return string
      */
-    public function check_explicitly_supported($plugin, $branch): string {
+    public function check_explicitly_supported($plugin, $branch) : string {
         // Check for correctly formed supported.
         if (isset($plugin->pluginsupported)) {
             // Broken apart for readability.
@@ -1026,7 +1021,7 @@ class plugin_manager {
         }
 
         // Make sure the plugin type root directory is writable.
-        [$plugintype, $pluginname] = core_component::normalize_component($component);
+        list($plugintype, $pluginname) = core_component::normalize_component($component);
         if (!$this->is_plugintype_writable($plugintype)) {
             $reason = 'notwritableplugintype';
             return false;
@@ -1074,12 +1069,12 @@ class plugin_manager {
         global $CFG;
 
         if (!empty($CFG->disableupdateautodeploy)) {
-            return [];
+            return array();
         }
         if (empty($remoteinfos)) {
-            return [];
+            return array();
         }
-        $installable = [];
+        $installable = array();
         foreach ($remoteinfos as $index => $remoteinfo) {
             if ($this->is_remote_plugin_installable($remoteinfo->component, $remoteinfo->version->version)) {
                 $installable[$index] = $remoteinfo;
@@ -1114,7 +1109,8 @@ class plugin_manager {
      * @return \core\update\remote_info|bool
      */
     public function get_remote_plugin_info($component, $version, $exactmatch) {
-        if ($exactmatch && $version == ANY_VERSION) {
+
+        if ($exactmatch and $version == ANY_VERSION) {
             throw new coding_exception('Invalid request for exactly any version, it does not make sense.');
         }
 
@@ -1126,6 +1122,7 @@ class plugin_manager {
                 $this->remotepluginsinfoexact[$component][$version] = $client->get_plugin_info($component, $version);
             }
             return $this->remotepluginsinfoexact[$component][$version];
+
         } else {
             // Use client's find_plugin() method.
             if (!isset($this->remotepluginsinfoatleast[$component][$version])) {
@@ -1195,9 +1192,9 @@ class plugin_manager {
      * @param bool $availableonly return only available missing dependencies
      * @return array of \core\update\remote_info|bool indexed by the component name
      */
-    public function missing_dependencies($availableonly = false) {
+    public function missing_dependencies($availableonly=false) {
 
-        $dependencies = [];
+        $dependencies = array();
 
         foreach ($this->get_plugins() as $plugintype => $pluginfos) {
             foreach ($pluginfos as $pluginname => $pluginfo) {
@@ -1220,6 +1217,7 @@ class plugin_manager {
                                     $dependencies[$reqname] = $remoteinfo;
                                 }
                             }
+
                         } else {
                             if (!isset($dependencies[$reqname])) {
                                 // Unable to find a plugin fulfilling the requirements.
@@ -1233,7 +1231,7 @@ class plugin_manager {
 
         if ($availableonly) {
             foreach ($dependencies as $component => $info) {
-                if (empty($info) || empty($info->version)) {
+                if (empty($info) or empty($info->version)) {
                     unset($dependencies[$component]);
                 }
             }
@@ -1273,7 +1271,7 @@ class plugin_manager {
             foreach ($this->other_plugins_that_require($subpluginfo->component) as $requiresme) {
                 $ismyparent = ($pluginfo->component === $requiresme);
                 $ismysibling = in_array($requiresme, array_keys($subplugins));
-                if (!$ismyparent && !$ismysibling) {
+                if (!$ismyparent and !$ismysibling) {
                     return false;
                 }
             }
@@ -1322,46 +1320,44 @@ class plugin_manager {
             return false;
         }
 
-        $ok = get_string('statusok', 'core');
+        $ok = get_string('ok', 'core');
 
         // Let admins know they can expect more verbose output.
-        $silent || $this->mtrace(get_string('packagesdebug', 'core_plugin'), PHP_EOL, DEBUG_NORMAL);
+        $silent or $this->mtrace(get_string('packagesdebug', 'core_plugin'), PHP_EOL, DEBUG_NORMAL);
 
         // Download all ZIP packages if we do not have them yet.
-        $zips = [];
+        $zips = array();
         foreach ($plugins as $plugin) {
             if ($plugin instanceof \core\update\remote_info) {
-                $zips[$plugin->component] = $this->get_remote_plugin_zip(
-                    $plugin->version->downloadurl,
-                    $plugin->version->downloadmd5
-                );
-                $silent || $this->mtrace(get_string('packagesdownloading', 'core_plugin', $plugin->component), ' ... ');
-                $silent || $this->mtrace(PHP_EOL . ' <- ' . $plugin->version->downloadurl, '', DEBUG_DEVELOPER);
-                $silent || $this->mtrace(PHP_EOL . ' -> ' . $zips[$plugin->component], ' ... ', DEBUG_DEVELOPER);
+                $zips[$plugin->component] = $this->get_remote_plugin_zip($plugin->version->downloadurl,
+                    $plugin->version->downloadmd5);
+                $silent or $this->mtrace(get_string('packagesdownloading', 'core_plugin', $plugin->component), ' ... ');
+                $silent or $this->mtrace(PHP_EOL.' <- '.$plugin->version->downloadurl, '', DEBUG_DEVELOPER);
+                $silent or $this->mtrace(PHP_EOL.' -> '.$zips[$plugin->component], ' ... ', DEBUG_DEVELOPER);
                 if (!$zips[$plugin->component]) {
-                    $silent || $this->mtrace(get_string('error'));
+                    $silent or $this->mtrace(get_string('error'));
                     return false;
                 }
-                $silent || $this->mtrace($ok);
+                $silent or $this->mtrace($ok);
             } else {
                 if (empty($plugin->zipfilepath)) {
                     throw new coding_exception('Unexpected data structure provided');
                 }
                 $zips[$plugin->component] = $plugin->zipfilepath;
-                $silent || $this->mtrace('ZIP ' . $plugin->zipfilepath, PHP_EOL, DEBUG_DEVELOPER);
+                $silent or $this->mtrace('ZIP '.$plugin->zipfilepath, PHP_EOL, DEBUG_DEVELOPER);
             }
         }
 
         // Validate all downloaded packages.
         foreach ($plugins as $plugin) {
             $zipfile = $zips[$plugin->component];
-            $silent || $this->mtrace(get_string('packagesvalidating', 'core_plugin', $plugin->component), ' ... ');
-            [$plugintype, $pluginname] = core_component::normalize_component($plugin->component);
+            $silent or $this->mtrace(get_string('packagesvalidating', 'core_plugin', $plugin->component), ' ... ');
+            list($plugintype, $pluginname) = core_component::normalize_component($plugin->component);
             $tmp = make_request_directory();
             $zipcontents = $this->unzip_plugin_file($zipfile, $tmp, $pluginname);
             if (empty($zipcontents)) {
-                $silent || $this->mtrace(get_string('error'));
-                $silent || $this->mtrace('Unable to unzip ' . $zipfile, PHP_EOL, DEBUG_DEVELOPER);
+                $silent or $this->mtrace(get_string('error'));
+                $silent or $this->mtrace('Unable to unzip '.$zipfile, PHP_EOL, DEBUG_DEVELOPER);
                 return false;
             }
 
@@ -1383,24 +1379,24 @@ class plugin_manager {
                         // Display [Warning] and [Error] always.
                         $level = null;
                     }
-                    if ($message->level === $validator::WARNING && !CLI_SCRIPT) {
-                        $this->mtrace('  <strong>[' . $validator->message_level_name($message->level) . ']</strong>', ' ', $level);
+                    if ($message->level === $validator::WARNING and !CLI_SCRIPT) {
+                        $this->mtrace('  <strong>['.$validator->message_level_name($message->level).']</strong>', ' ', $level);
                     } else {
-                        $this->mtrace('  [' . $validator->message_level_name($message->level) . ']', ' ', $level);
+                        $this->mtrace('  ['.$validator->message_level_name($message->level).']', ' ', $level);
                     }
                     $this->mtrace($validator->message_code_name($message->msgcode), ' ', $level);
                     $info = $validator->message_code_info($message->msgcode, $message->addinfo);
                     if ($info) {
-                        $this->mtrace('[' . s($info) . ']', ' ', $level);
+                        $this->mtrace('['.s($info).']', ' ', $level);
                     } else if (is_string($message->addinfo)) {
-                        $this->mtrace('[' . s($message->addinfo, true) . ']', ' ', $level);
+                        $this->mtrace('['.s($message->addinfo, true).']', ' ', $level);
                     } else {
-                        $this->mtrace('[' . s(json_encode($message->addinfo, true)) . ']', ' ', $level);
+                        $this->mtrace('['.s(json_encode($message->addinfo, true)).']', ' ', $level);
                     }
                     if ($icon = $validator->message_help_icon($message->msgcode)) {
                         if (CLI_SCRIPT) {
-                            $this->mtrace(PHP_EOL . '  ^^^ ' . get_string('help') . ': ' .
-                                get_string($icon->identifier . '_help', $icon->component), '', $level);
+                            $this->mtrace(PHP_EOL.'  ^^^ '.get_string('help').': '.
+                                get_string($icon->identifier.'_help', $icon->component), '', $level);
                         } else {
                             $this->mtrace($OUTPUT->render($icon), ' ', $level);
                         }
@@ -1409,11 +1405,11 @@ class plugin_manager {
                 }
             }
             if (!$result) {
-                $silent || $this->mtrace(get_string('packagesvalidatingfailed', 'core_plugin'));
+                $silent or $this->mtrace(get_string('packagesvalidatingfailed', 'core_plugin'));
                 return false;
             }
         }
-        $silent || $this->mtrace(PHP_EOL . get_string('packagesvalidatingok', 'core_plugin'));
+        $silent or $this->mtrace(PHP_EOL.get_string('packagesvalidatingok', 'core_plugin'));
 
         if (!$confirmed) {
             return true;
@@ -1421,22 +1417,22 @@ class plugin_manager {
 
         // Extract all ZIP packs do the dirroot.
         foreach ($plugins as $plugin) {
-            $silent || $this->mtrace(get_string('packagesextracting', 'core_plugin', $plugin->component), ' ... ');
+            $silent or $this->mtrace(get_string('packagesextracting', 'core_plugin', $plugin->component), ' ... ');
             $zipfile = $zips[$plugin->component];
-            [$plugintype, $pluginname] = core_component::normalize_component($plugin->component);
+            list($plugintype, $pluginname) = core_component::normalize_component($plugin->component);
             $target = $this->get_plugintype_root($plugintype);
-            if (file_exists($target . '/' . $pluginname)) {
+            if (file_exists($target.'/'.$pluginname)) {
                 $this->remove_plugin_folder($this->get_plugin_info($plugin->component));
             }
             if (!$this->unzip_plugin_file($zipfile, $target, $pluginname)) {
-                $silent || $this->mtrace(get_string('error'));
-                $silent || $this->mtrace('Unable to unzip ' . $zipfile, PHP_EOL, DEBUG_DEVELOPER);
+                $silent or $this->mtrace(get_string('error'));
+                $silent or $this->mtrace('Unable to unzip '.$zipfile, PHP_EOL, DEBUG_DEVELOPER);
                 if (function_exists('opcache_reset')) {
                     opcache_reset();
                 }
                 return false;
             }
-            $silent || $this->mtrace($ok);
+            $silent or $this->mtrace($ok);
         }
         if (function_exists('opcache_reset')) {
             opcache_reset();
@@ -1456,10 +1452,10 @@ class plugin_manager {
      * @param string $eol end of line
      * @param null|int $debug null to display always, int only on given debug level
      */
-    protected function mtrace($msg, $eol = PHP_EOL, $debug = null) {
+    protected function mtrace($msg, $eol=PHP_EOL, $debug=null) {
         global $CFG;
 
-        if ($debug !== null && !debugging(null, $debug)) {
+        if ($debug !== null and !debugging(null, $debug)) {
             return;
         }
 
@@ -1471,7 +1467,7 @@ class plugin_manager {
      *
      * @param string $component
      * @param string $return either 'overview' or 'manage'
-     * @return null|moodle_url uninstall URL, null if uninstall not supported
+     * @return moodle_url uninstall URL, null if uninstall not supported
      */
     public function get_uninstall_url($component, $return = 'overview') {
         if (!$this->can_uninstall_plugin($component)) {
@@ -1485,10 +1481,7 @@ class plugin_manager {
         }
 
         if (method_exists($pluginfo, 'get_uninstall_url')) {
-            debugging(
-                'plugininfo method get_uninstall_url() is deprecated, all plugins should be uninstalled via standard URL only.',
-                DEBUG_DEVELOPER
-            );
+            debugging('plugininfo method get_uninstall_url() is deprecated, all plugins should be uninstalled via standard URL only.');
             return $pluginfo->get_uninstall_url($return);
         }
 
@@ -1563,7 +1556,7 @@ class plugin_manager {
 
         $provider = \core\update\checker::instance();
 
-        if (!$provider->enabled() || $component === '' || during_initial_install()) {
+        if (!$provider->enabled() or during_initial_install()) {
             return null;
         }
 
@@ -1574,7 +1567,7 @@ class plugin_manager {
             $minmaturity = MATURITY_STABLE;
         }
 
-        return $provider->get_update_info($component, ['minmaturity' => $minmaturity]);
+        return $provider->get_update_info($component, array('minmaturity' => $minmaturity));
     }
 
     /**
@@ -1595,7 +1588,7 @@ class plugin_manager {
      */
     public function available_updates() {
 
-        $updates = [];
+        $updates = array();
 
         foreach ($this->get_plugins() as $type => $plugins) {
             foreach ($plugins as $plugin) {
@@ -1633,7 +1626,7 @@ class plugin_manager {
 
         foreach ($updates as $component => $update) {
             $remoteinfo = $this->get_remote_plugin_info($component, $update->version, true);
-            if (empty($remoteinfo) || empty($remoteinfo->version)) {
+            if (empty($remoteinfo) or empty($remoteinfo->version)) {
                 unset($updates[$component]);
             } else {
                 $updates[$component] = $remoteinfo;
@@ -1658,7 +1651,7 @@ class plugin_manager {
         }
 
         // To be able to remove the plugin folder, its parent must be writable, too.
-        if (!isset($pluginfo->rootdir) || !is_writable(dirname($pluginfo->rootdir))) {
+        if (!is_writable(dirname($pluginfo->rootdir))) {
             return false;
         }
 
@@ -1678,11 +1671,11 @@ class plugin_manager {
         $plugintypepath = $this->get_plugintype_root($plugintype);
 
         if (is_null($plugintypepath)) {
-            throw new coding_exception('Unknown plugin type: ' . $plugintype);
+            throw new coding_exception('Unknown plugin type: '.$plugintype);
         }
 
         if ($plugintypepath === false) {
-            throw new coding_exception('Plugin type location does not exist: ' . $plugintype);
+            throw new coding_exception('Plugin type location does not exist: '.$plugintype);
         }
 
         return is_writable($plugintypepath);
@@ -1727,76 +1720,320 @@ class plugin_manager {
      * @param string $name plugin name
      * @return bool
      */
-    public static function is_deleted_standard_plugin(
-        string $type,
-        string $name,
-    ): bool {
+    public static function is_deleted_standard_plugin($type, $name) {
         // Do not include plugins that were removed during upgrades to versions that are
         // not supported as source versions for upgrade any more. For example, at MOODLE_23_STABLE
         // branch, listed should be no plugins that were removed at 1.9.x - 2.1.x versions as
         // Moodle 2.3 supports upgrades from 2.2.x only.
-        $plugins = static::load_standard_plugins()->deleted;
+        $plugins = array(
+            'qformat' => array('blackboard', 'learnwise'),
+            'auth' => array('radius', 'fc', 'nntp', 'pam', 'pop3', 'imap'),
+            'block' => array('course_overview', 'messages', 'community', 'participants'),
+            'cachestore' => array('memcache'),
+            'enrol' => array('authorize'),
+            'quizaccess' => array('safebrowser'),
+            'report' => array('search'),
+            'repository' => array('alfresco'),
+            'tinymce' => array('dragmath'),
+            'tool' => array('bloglevelupgrade', 'qeupgradehelper', 'timezoneimport', 'assignmentupgrade'),
+            'theme' => array('bootstrapbase', 'clean', 'more', 'afterburner', 'anomaly', 'arialist', 'base',
+                'binarius', 'boxxie', 'brick', 'canvas', 'formal_white', 'formfactor', 'fusion', 'leatherbound',
+                'magazine', 'mymobile', 'nimble', 'nonzero', 'overlay', 'serenity', 'sky_high', 'splash',
+                'standard', 'standardold'),
+            'webservice' => array('amf'),
+        );
 
-        if (property_exists($plugins, $type)) {
-            return in_array($name, $plugins->$type);
+        if (!isset($plugins[$type])) {
+            return false;
         }
-
-        return false;
+        return in_array($name, $plugins[$type]);
     }
 
     /**
-     * Fetches a list of all plugins shipped in the standard Moodle distribution.
+     * Defines a white list of all plugins shipped in the standard Moodle distribution
      *
-     * If a type is specified but does not exist, a false value is returned.
-     * Otherwise an array of the plugins of the specified type is returned.
-     *
-     * @param null|string $type
+     * @param string $type
      * @return false|array array of standard plugins or false if the type is unknown
      */
-    public static function standard_plugins_list(string $type): array|false {
-        $plugins = static::load_standard_plugins()->standard;
+    public static function standard_plugins_list($type) {
 
-        if (property_exists($plugins, $type)) {
-            return (array) $plugins->$type;
+        $standard_plugins = array(
+
+            'antivirus' => array(
+                'clamav'
+            ),
+
+            'atto' => array(
+                'accessibilitychecker', 'accessibilityhelper', 'align',
+                'backcolor', 'bold', 'charmap', 'clear', 'collapse', 'emoticon',
+                'equation', 'fontcolor', 'html', 'image', 'indent', 'italic',
+                'link', 'managefiles', 'media', 'noautolink', 'orderedlist',
+                'recordrtc', 'rtl', 'strike', 'subscript', 'superscript', 'table',
+                'title', 'underline', 'undo', 'unorderedlist', 'h5p', 'emojipicker',
+            ),
+
+            'assignment' => array(
+                'offline', 'online', 'upload', 'uploadsingle'
+            ),
+
+            'assignsubmission' => array(
+                'comments', 'file', 'onlinetext'
+            ),
+
+            'assignfeedback' => array(
+                'comments', 'file', 'offline', 'editpdf'
+            ),
+
+            'auth' => array(
+                'cas', 'db', 'email', 'ldap', 'lti', 'manual', 'mnet',
+                'nologin', 'none', 'oauth2', 'shibboleth', 'webservice'
+            ),
+
+            'availability' => array(
+                'completion', 'date', 'grade', 'group', 'grouping', 'profile'
+            ),
+
+            'block' => array(
+                'activity_modules', 'activity_results', 'admin_bookmarks', 'badges',
+                'blog_menu', 'blog_recent', 'blog_tags', 'calendar_month',
+                'calendar_upcoming', 'comments',
+                'completionstatus', 'course_list', 'course_summary',
+                'feedback', 'globalsearch', 'glossary_random', 'html',
+                'login', 'lp', 'mentees', 'mnet_hosts', 'myoverview', 'myprofile',
+                'navigation', 'news_items', 'online_users',
+                'private_files', 'quiz_results', 'recent_activity', 'recentlyaccesseditems',
+                'recentlyaccessedcourses', 'rss_client', 'search_forums', 'section_links',
+                'selfcompletion', 'settings', 'site_main_menu',
+                'social_activities', 'starredcourses', 'tag_flickr', 'tag_youtube', 'tags', 'timeline'
+            ),
+
+            'booktool' => array(
+                'exportimscp', 'importhtml', 'print'
+            ),
+
+            'cachelock' => array(
+                'file'
+            ),
+
+            'cachestore' => array(
+                'file', 'memcached', 'mongodb', 'session', 'static', 'apcu', 'redis'
+            ),
+
+            'calendartype' => array(
+                'gregorian'
+            ),
+
+            'contenttype' => array(
+                'h5p'
+            ),
+
+            'customfield' => array(
+                'checkbox', 'date', 'select', 'text', 'textarea'
+            ),
+
+            'coursereport' => array(
+                // Deprecated!
+            ),
+
+            'datafield' => array(
+                'checkbox', 'date', 'file', 'latlong', 'menu', 'multimenu',
+                'number', 'picture', 'radiobutton', 'text', 'textarea', 'url'
+            ),
+
+            'dataformat' => array(
+                'html', 'csv', 'json', 'excel', 'ods', 'pdf',
+            ),
+
+            'datapreset' => array(
+                'imagegallery'
+            ),
+
+            'fileconverter' => array(
+                'unoconv', 'googledrive'
+            ),
+
+            'editor' => array(
+                'atto', 'textarea', 'tinymce'
+            ),
+
+            'enrol' => array(
+                'category', 'cohort', 'database', 'flatfile',
+                'guest', 'imsenterprise', 'ldap', 'lti', 'manual', 'meta', 'mnet',
+                'paypal', 'self'
+            ),
+
+            'filter' => array(
+                'activitynames', 'algebra', 'censor', 'emailprotect',
+                'emoticon', 'displayh5p', 'mathjaxloader', 'mediaplugin', 'multilang', 'tex', 'tidy',
+                'urltolink', 'data', 'glossary'
+            ),
+
+            'format' => array(
+                'singleactivity', 'social', 'topics', 'weeks'
+            ),
+
+            'forumreport' => array(
+                'summary',
+            ),
+
+            'gradeexport' => array(
+                'ods', 'txt', 'xls', 'xml'
+            ),
+
+            'gradeimport' => array(
+                'csv', 'direct', 'xml'
+            ),
+
+            'gradereport' => array(
+                'grader', 'history', 'outcomes', 'overview', 'user', 'singleview'
+            ),
+
+            'gradingform' => array(
+                'rubric', 'guide'
+            ),
+
+            'h5plib' => array(
+                'v124'
+            ),
+
+            'local' => array(
+            ),
+
+            'logstore' => array(
+                'database', 'legacy', 'standard',
+            ),
+
+            'ltiservice' => array(
+                'gradebookservices', 'memberships', 'profile', 'toolproxy', 'toolsettings', 'basicoutcomes'
+            ),
+
+            'mlbackend' => array(
+                'php', 'python'
+            ),
+
+            'media' => array(
+                'html5audio', 'html5video', 'swf', 'videojs', 'vimeo', 'youtube'
+            ),
+
+            'message' => array(
+                'airnotifier', 'email', 'jabber', 'popup'
+            ),
+
+            'mnetservice' => array(
+                'enrol'
+            ),
+
+            'mod' => array(
+                'assign', 'assignment', 'book', 'chat', 'choice', 'data', 'feedback', 'folder',
+                'forum', 'glossary', 'h5pactivity', 'imscp', 'label', 'lesson', 'lti', 'page',
+                'quiz', 'resource', 'scorm', 'survey', 'url', 'wiki', 'workshop'
+            ),
+
+            'plagiarism' => array(
+            ),
+
+            'portfolio' => array(
+                'boxnet', 'download', 'flickr', 'googledocs', 'mahara', 'picasa'
+            ),
+
+            'profilefield' => array(
+                'checkbox', 'datetime', 'menu', 'text', 'textarea'
+            ),
+
+            'qbehaviour' => array(
+                'adaptive', 'adaptivenopenalty', 'deferredcbm',
+                'deferredfeedback', 'immediatecbm', 'immediatefeedback',
+                'informationitem', 'interactive', 'interactivecountback',
+                'manualgraded', 'missing'
+            ),
+
+            'qformat' => array(
+                'aiken', 'blackboard_six', 'examview', 'gift',
+                'missingword', 'multianswer', 'webct',
+                'xhtml', 'xml'
+            ),
+
+            'qtype' => array(
+                'calculated', 'calculatedmulti', 'calculatedsimple',
+                'ddimageortext', 'ddmarker', 'ddwtos', 'description',
+                'essay', 'gapselect', 'match', 'missingtype', 'multianswer',
+                'multichoice', 'numerical', 'random', 'randomsamatch',
+                'shortanswer', 'truefalse'
+            ),
+
+            'quiz' => array(
+                'grading', 'overview', 'responses', 'statistics'
+            ),
+
+            'quizaccess' => array(
+                'delaybetweenattempts', 'ipaddress', 'numattempts', 'offlineattempts', 'openclosedate',
+                'password', 'seb', 'securewindow', 'timelimit'
+            ),
+
+            'report' => array(
+                'backups', 'competency', 'completion', 'configlog', 'courseoverview', 'eventlist',
+                'insights', 'log', 'loglive', 'outline', 'participation', 'progress', 'questioninstances',
+                'security', 'stats', 'status', 'performance', 'usersessions'
+            ),
+
+            'repository' => array(
+                'areafiles', 'boxnet', 'contentbank', 'coursefiles', 'dropbox', 'equella', 'filesystem',
+                'flickr', 'flickr_public', 'googledocs', 'local', 'merlot', 'nextcloud',
+                'onedrive', 'picasa', 'recent', 'skydrive', 's3', 'upload', 'url', 'user', 'webdav',
+                'wikimedia', 'youtube'
+            ),
+
+            'search' => array(
+                'simpledb', 'solr'
+            ),
+
+            'scormreport' => array(
+                'basic',
+                'interactions',
+                'graphs',
+                'objectives'
+            ),
+
+            'tinymce' => array(
+                'ctrlhelp', 'managefiles', 'moodleemoticon', 'moodleimage',
+                'moodlemedia', 'moodlenolink', 'pdw', 'spellchecker', 'wrap'
+            ),
+
+            'theme' => array(
+                'boost', 'classic'
+            ),
+
+            'tool' => array(
+                'analytics', 'availabilityconditions', 'behat', 'capability', 'cohortroles', 'customlang',
+                'dataprivacy', 'dbtransfer', 'filetypes', 'generator', 'health', 'httpsreplace', 'innodb',
+                'installaddon', 'langimport', 'licensemanager', 'log', 'lp', 'lpimportcsv', 'lpmigrate', 'messageinbound',
+                'mobile', 'moodlenet', 'multilangupgrade', 'monitor', 'oauth2', 'phpunit', 'policy', 'profiling', 'recyclebin',
+                'replace', 'spamcleaner', 'task', 'templatelibrary', 'uploadcourse', 'uploaduser', 'unsuproles',
+                'usertours', 'xmldb'
+            ),
+
+            'webservice' => array(
+                'rest', 'soap', 'xmlrpc'
+            ),
+
+            'workshopallocation' => array(
+                'manual', 'random', 'scheduled'
+            ),
+
+            'workshopeval' => array(
+                'best'
+            ),
+
+            'workshopform' => array(
+                'accumulative', 'comments', 'numerrors', 'rubric'
+            )
+        );
+
+        if (isset($standard_plugins[$type])) {
+            return $standard_plugins[$type];
         } else {
             return false;
         }
-    }
-
-    /**
-     * Get all standard plugins by their component name.
-     *
-     * @return array
-     */
-    public static function get_standard_plugins(): array {
-        $plugins = static::load_standard_plugins()->standard;
-
-        $result = [];
-        foreach ($plugins as $type => $list) {
-            foreach ($list as $plugin) {
-                $result[] = "{$type}_{$plugin}";
-            }
-        }
-
-        return $result;
-    }
-
-    /**
-     * Get all deleted standard plugins by their component name.
-     *
-     * @return array
-     */
-    public static function get_deleted_plugins(): array {
-        $plugins = static::load_standard_plugins()->deleted;
-
-        $result = [];
-        foreach ($plugins as $type => $list) {
-            foreach ($list as $plugin) {
-                $result[] = "{$type}_{$plugin}";
-            }
-        }
-
-        return $result;
     }
 
     /**
@@ -1814,16 +2051,12 @@ class plugin_manager {
     public function remove_plugin_folder(\core\plugininfo\base $plugin) {
 
         if (!$this->is_plugin_folder_removable($plugin->component)) {
-            throw new moodle_exception(
-                'err_removing_unremovable_folder',
-                'core_plugin',
-                '',
-                ['plugin' => $plugin->component, 'rootdir' => $plugin->rootdir],
-                'plugin root folder is not removable as expected'
-            );
+            throw new moodle_exception('err_removing_unremovable_folder', 'core_plugin', '',
+                array('plugin' => $plugin->component, 'rootdir' => $plugin->rootdir),
+                'plugin root folder is not removable as expected');
         }
 
-        if ($plugin->get_status() === self::PLUGIN_STATUS_UPTODATE || $plugin->get_status() === self::PLUGIN_STATUS_NEW) {
+        if ($plugin->get_status() === self::PLUGIN_STATUS_UPTODATE or $plugin->get_status() === self::PLUGIN_STATUS_NEW) {
             $this->archive_plugin_version($plugin);
         }
 
@@ -1851,12 +2084,8 @@ class plugin_manager {
             return false;
         }
 
-        if (
-            empty($plugin)
-            || $plugin->is_standard()
-            || $plugin->is_subplugin()
-            || !$this->is_plugin_folder_removable($plugin->component)
-        ) {
+        if (empty($plugin) or $plugin->is_standard() or $plugin->is_subplugin()
+                or !$this->is_plugin_folder_removable($plugin->component)) {
             return false;
         }
 
@@ -1886,12 +2115,8 @@ class plugin_manager {
             return false;
         }
 
-        if (
-            empty($plugin)
-            || $plugin->is_standard()
-            || $plugin->is_subplugin()
-            || !$this->is_plugin_folder_removable($plugin->component)
-        ) {
+        if (empty($plugin) or $plugin->is_standard() or $plugin->is_subplugin()
+                or !$this->is_plugin_folder_removable($plugin->component)) {
             return false;
         }
 
@@ -1938,10 +2163,10 @@ class plugin_manager {
         global $CFG;
 
         if (!empty($CFG->disableupdateautodeploy)) {
-            return [];
+            return array();
         }
 
-        $cancellable = [];
+        $cancellable = array();
         foreach ($this->get_plugins() as $type => $plugins) {
             foreach ($plugins as $plugin) {
                 if ($this->can_cancel_plugin_installation($plugin)) {
@@ -1956,7 +2181,7 @@ class plugin_manager {
     /**
      * Archive the current on-disk plugin code.
      *
-     * @param \core\plugininfo\base $plugin
+     * @param \core\plugiinfo\base $plugin
      * @return bool
      */
     public function archive_plugin_version(\core\plugininfo\base $plugin) {
@@ -1976,14 +2201,14 @@ class plugin_manager {
         }
 
         $codeman = $this->get_code_manager();
-        $restorable = [];
+        $restorable = array();
         foreach ($this->get_plugins() as $type => $plugins) {
             foreach ($plugins as $plugin) {
                 if ($this->can_cancel_plugin_upgrade($plugin)) {
-                    $restorable[$plugin->component] = (object)[
+                    $restorable[$plugin->component] = (object)array(
                         'component' => $plugin->component,
-                        'zipfilepath' => $codeman->get_archived_plugin_version($plugin->component, $plugin->versiondb),
-                    ];
+                        'zipfilepath' => $codeman->get_archived_plugin_version($plugin->component, $plugin->versiondb)
+                    );
                 }
             }
         }
@@ -2005,9 +2230,9 @@ class plugin_manager {
      * @return array same array with altered order of items
      */
     protected function reorder_plugin_types(array $types) {
-        $fix = ['mod' => $types['mod']];
+        $fix = array('mod' => $types['mod']);
         foreach (core_component::get_plugin_list('mod') as $plugin => $fulldir) {
-            if (!$subtypes = core_component::get_subplugins('mod_' . $plugin)) {
+            if (!$subtypes = core_component::get_subplugins('mod_'.$plugin)) {
                 continue;
             }
             foreach ($subtypes as $subtype => $ignored) {
@@ -2018,14 +2243,13 @@ class plugin_manager {
         $fix['mod']        = $types['mod'];
         $fix['block']      = $types['block'];
         $fix['qtype']      = $types['qtype'];
-        $fix['qbank']      = $types['qbank'];
         $fix['qbehaviour'] = $types['qbehaviour'];
         $fix['qformat']    = $types['qformat'];
         $fix['filter']     = $types['filter'];
 
         $fix['editor']     = $types['editor'];
         foreach (core_component::get_plugin_list('editor') as $plugin => $fulldir) {
-            if (!$subtypes = core_component::get_subplugins('editor_' . $plugin)) {
+            if (!$subtypes = core_component::get_subplugins('editor_'.$plugin)) {
                 continue;
             }
             foreach ($subtypes as $subtype => $ignored) {
@@ -2037,7 +2261,7 @@ class plugin_manager {
         $fix['auth']  = $types['auth'];
         $fix['tool']  = $types['tool'];
         foreach (core_component::get_plugin_list('tool') as $plugin => $fulldir) {
-            if (!$subtypes = core_component::get_subplugins('tool_' . $plugin)) {
+            if (!$subtypes = core_component::get_subplugins('tool_'.$plugin)) {
                 continue;
             }
             foreach ($subtypes as $subtype => $ignored) {
@@ -2077,14 +2301,16 @@ class plugin_manager {
         $result = true;
 
         while ($filename = readdir($handle)) {
-            if ($filename === '.' || $filename === '..') {
+
+            if ($filename === '.' or $filename === '..') {
                 continue;
             }
 
-            $subfilepath = $fullpath . '/' . $filename;
+            $subfilepath = $fullpath.'/'.$filename;
 
             if (is_dir($subfilepath)) {
                 $result = $result && $this->is_directory_removable($subfilepath);
+
             } else {
                 $result = $result && is_writable($subfilepath);
             }
@@ -2119,13 +2345,10 @@ class plugin_manager {
             return false;
         }
 
-        if (method_exists($pluginfo, 'get_uninstall_url') && is_null($pluginfo->get_uninstall_url())) {
+        if (method_exists($pluginfo, 'get_uninstall_url') and is_null($pluginfo->get_uninstall_url())) {
             // Backwards compatibility.
-            debugging(
-                '\core\plugininfo\base subclasses should use is_uninstall_allowed() ' .
-                    'instead of returning null in get_uninstall_url()',
-                DEBUG_DEVELOPER
-            );
+            debugging('\core\plugininfo\base subclasses should use is_uninstall_allowed() instead of returning null in get_uninstall_url()',
+                DEBUG_DEVELOPER);
             return false;
         }
 
@@ -2160,5 +2383,3 @@ class plugin_manager {
         return $this->updateapiclient;
     }
 }
-
-class_alias(plugin_manager::class, 'core_plugin_manager');

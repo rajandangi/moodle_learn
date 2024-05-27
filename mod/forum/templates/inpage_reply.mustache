@@ -30,17 +30,11 @@
         "postid": 0,
         "reply_url": "",
         "sesskey": "",
-        "parentsubject": "",
-        "throttlingwarningmsg": "You are approaching the posting threshold. You have posted 3 times in the last 1 week and the limit is 4 posts."
+        "parentsubject": ""
     }
 }}
 <div class="row" data-content="inpage-reply-content" style="display: none;">
     <div class="card card-body">
-        {{#throttlingwarningmsg}}
-            <div class="alert alert-danger alert-block fade in " role="alert">
-                {{throttlingwarningmsg}}
-            </div>
-        {{/throttlingwarningmsg}}
         <form data-post-id="{{postid}}" id="inpage-reply-{{postid}}" data-content="inpage-reply-form" action="{{{reply_url}}}">
             <div class="row pb-1">
                 <span>
@@ -56,7 +50,7 @@
                     <span data-region="submit-text">{{#str}} posttoforum, mod_forum {{/str}}</span>
                     <span data-region="loading-icon-container" class="hidden">{{> core/loading }}</span>
                 </button>
-                <button class="btn btn-secondary" data-action="collapsible-link" name="cancelbtn">
+                <button class="btn btn-secondary" data-action="collapsible-link">
                     {{#str}} cancel, core {{/str}}
                 </button>
                 {{#canreplyprivately}}

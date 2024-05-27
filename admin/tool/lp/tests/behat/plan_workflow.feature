@@ -144,6 +144,7 @@ Feature: Manage plan workflow
     And I am on the "user1" "user > profile" page logged in as "manager1"
     And I follow "Learning plans"
     And I should see "List of learning plans"
+    And I follow "Learning plans"
     When I click on "Send back to draft" of edit menu in the "Test-Plan3" row
     And I follow "Test-Plan4"
     And I follow "Send back to draft"
@@ -160,6 +161,7 @@ Feature: Manage plan workflow
     And I am on the "user1" "user > profile" page logged in as "manager1"
     And I follow "Learning plans"
     And I should see "List of learning plans"
+    And I follow "Learning plans"
     When I click on "Complete this learning plan" of edit menu in the "Test-Plan3" row
     And I click on "Complete this learning plan" "button" in the "Confirm" "dialogue"
     And I wait until the page is ready
@@ -179,6 +181,7 @@ Feature: Manage plan workflow
     And I am on the "user1" "user > profile" page logged in as "manager1"
     And I follow "Learning plans"
     And I should see "List of learning plans"
+    And I follow "Learning plans"
     When I click on "Reopen this learning plan" of edit menu in the "Test-Plan3" row
     And I click on "Reopen this learning plan" "button" in the "Confirm" "dialogue"
     And I follow "Test-Plan4"

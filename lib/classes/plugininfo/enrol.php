@@ -23,21 +23,15 @@
  */
 namespace core\plugininfo;
 
-use admin_settingpage;
-use moodle_url;
-use part_of_admin_tree;
+use moodle_url, part_of_admin_tree, admin_settingpage, admin_externalpage;
+
+defined('MOODLE_INTERNAL') || die();
 
 /**
  * Class for enrolment plugins
  */
 class enrol extends base {
-
-    public static function plugintype_supports_disabling(): bool {
-        return true;
-    }
-
     /**
-     *
      * Finds all enabled plugins, the result may include missing plugins.
      * @return array|null of enabled plugins $pluginname=>$pluginname, null means unknown
      */
@@ -52,37 +46,6 @@ class enrol extends base {
         return $enabled;
     }
 
-    public static function enable_plugin(string $pluginname, int $enabled): bool {
-        global $CFG;
-
-        $haschanged = false;
-        $plugins = [];
-        if (!empty($CFG->enrol_plugins_enabled)) {
-            $plugins = array_flip(explode(',', $CFG->enrol_plugins_enabled));
-        }
-        // Only set visibility if it's different from the current value.
-        if ($enabled && !array_key_exists($pluginname, $plugins)) {
-            $plugins[$pluginname] = $pluginname;
-            $haschanged = true;
-        } else if (!$enabled && array_key_exists($pluginname, $plugins)) {
-            unset($plugins[$pluginname]);
-            $haschanged = true;
-        }
-
-        if ($haschanged) {
-            $new = implode(',', array_flip($plugins));
-            add_to_config_log('enrol_plugins_enabled', !$enabled, $enabled, $pluginname);
-            set_config('enrol_plugins_enabled', $new);
-            // Reset caches.
-            \core_plugin_manager::reset_caches();
-            // Resets all enrol caches.
-            $syscontext = \context_system::instance();
-            $syscontext->mark_dirty();
-        }
-
-        return $haschanged;
-    }
-
     public function get_settings_section_name() {
         if (file_exists($this->full_path('settings.php'))) {
             return 'enrolsettings' . $this->name;
@@ -93,7 +56,6 @@ class enrol extends base {
 
     public function load_settings(part_of_admin_tree $adminroot, $parentnodename, $hassiteconfig) {
         global $CFG, $USER, $DB, $OUTPUT, $PAGE; // In case settings.php wants to refer to them.
-        /** @var \admin_root $ADMIN */
         $ADMIN = $adminroot; // May be used in settings.php.
         $plugininfo = $this; // Also can be used inside settings.php.
         $enrol = $this;      // Also can be used inside settings.php.

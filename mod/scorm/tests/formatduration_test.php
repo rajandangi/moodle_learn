@@ -14,23 +14,23 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace mod_scorm;
-
 defined('MOODLE_INTERNAL') || die;
+
+/*
+ * Unit tests for scorm_formatduration function from locallib.php
+ *
+ * @package    mod_scorm
+ * @category   phpunit
+ * @copyright  2009 Dan Marsden
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
 // Make sure the code being tested is accessible.
 global $CFG;
 require_once($CFG->dirroot . '/mod/scorm/locallib.php'); // Include the code to test.
 
-/**
- * Unit tests for scorm_formatduration function from locallib.php
- *
- * @package    mod_scorm
- * @category   test
- * @copyright  2009 Dan Marsden
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-class formatduration_test extends \basic_testcase {
+
+class mod_scorm_formatduration_testcase extends basic_testcase {
     public function test_scorm2004_format() {
         $stryears = get_string('years');
         $strmonths = trim(get_string('nummonths'));

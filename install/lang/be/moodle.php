@@ -30,7 +30,5 @@
 defined('MOODLE_INTERNAL') || die();
 
 $string['language'] = 'Мова';
-$string['moodlelogo'] = 'Лагатып Moodle';
 $string['next'] = 'Далей';
 $string['previous'] = 'Папярэдні';
-$string['reload'] = 'Перазагрузіць';

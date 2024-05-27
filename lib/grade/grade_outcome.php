@@ -94,9 +94,6 @@ class grade_outcome extends grade_object {
      */
     public $usermodified;
 
-    /** @var int Identifier of the text format to be used. */
-    public $descriptionformat = FORMAT_MOODLE;
-
     /**
      * Deletes this outcome from the database.
      *
@@ -126,10 +123,9 @@ class grade_outcome extends grade_object {
      * in object properties.
      *
      * @param string $source from where was the object inserted (mod/forum, manual, etc.)
-     * @param bool $isbulkupdate If bulk grade update is happening.
      * @return int PK ID if successful, false otherwise
      */
-    public function insert($source = null, $isbulkupdate = false) {
+    public function insert($source=null) {
         global $DB;
 
         $this->timecreated = $this->timemodified = time();
@@ -149,10 +145,9 @@ class grade_outcome extends grade_object {
      * In addition to update() it also updates grade_outcomes_courses if needed
      *
      * @param string $source from where was the object inserted
-     * @param bool $isbulkupdate If bulk grade update is happening.
      * @return bool success
      */
-    public function update($source = null, $isbulkupdate = false) {
+    public function update($source=null) {
         $this->timemodified = time();
 
         if ($result = parent::update($source)) {

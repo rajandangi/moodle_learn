@@ -44,8 +44,7 @@ class qtype_numerical_question extends question_graded_automatically {
     public $unitgradingtype;
     /** @var number the penalty for a missing or unrecognised unit. */
     public $unitpenalty;
-    /** @var boolean whether the units come before or after the number */
-    public $unitsleft;
+
     /** @var qtype_numerical_answer_processor */
     public $ap;
 
@@ -207,30 +206,15 @@ class qtype_numerical_question extends question_graded_automatically {
         }
         foreach ($this->answers as $answer) {
             if ($answer->within_tolerance($scaledvalue)) {
+                $answer->unitisright = !is_null($multiplier);
                 return $answer;
             } else if ($answer->within_tolerance($value)) {
+                $answer->unitisright = false;
                 return $answer;
             }
         }
 
         return null;
-    }
-
-    /**
-     * Checks if the provided $multiplier is appropriate for the unit of the given $value,
-     * ensuring that multiplying $value by the $multiplier yields the expected $answer.
-     *
-     * @param qtype_numerical_answer $answer The expected result when multiplying $value by the appropriate $multiplier.
-     * @param float $value The provided value
-     * @param float|null $multiplier The multiplier value for the unit of $value.
-     * @return bool Returns true if the $multiplier is correct for the unit of $value, false otherwise.
-     */
-    public function is_unit_right(qtype_numerical_answer $answer, float $value, ?float $multiplier): bool {
-        if (is_null($multiplier)) {
-            return false;
-        }
-
-        return $answer->within_tolerance($multiplier * $value);
     }
 
     public function get_correct_answer() {
@@ -271,14 +255,12 @@ class qtype_numerical_question extends question_graded_automatically {
         list($value, $unit, $multiplier) = $this->ap->apply_units(
                 $response['answer'], $selectedunit);
 
-        /** @var qtype_numerical_answer $answer */
         $answer = $this->get_matching_answer($value, $multiplier);
         if (!$answer) {
             return array(0, question_state::$gradedwrong);
         }
 
-        $unitisright = $this->is_unit_right($answer, $value, $multiplier);
-        $fraction = $this->apply_unit_penalty($answer->fraction, $unitisright);
+        $fraction = $this->apply_unit_penalty($answer->fraction, $answer->unitisright);
         return array($fraction, question_state::graded_state_for_fraction($fraction));
     }
 
@@ -293,7 +275,6 @@ class qtype_numerical_question extends question_graded_automatically {
             $selectedunit = null;
         }
         list($value, $unit, $multiplier) = $this->ap->apply_units($response['answer'], $selectedunit);
-        /** @var qtype_numerical_answer $ans */
         $ans = $this->get_matching_answer($value, $multiplier);
 
         $resp = $response['answer'];
@@ -309,10 +290,9 @@ class qtype_numerical_question extends question_graded_automatically {
             return array($this->id => new question_classified_response(0, $resp, 0));
         }
 
-        $unitisright = $this->is_unit_right($ans, $value, $multiplier);
-        return [
-            $this->id => new question_classified_response($ans->id, $resp, $this->apply_unit_penalty($ans->fraction, $unitisright))
-        ];
+        return array($this->id => new question_classified_response($ans->id,
+                $resp,
+                $this->apply_unit_penalty($ans->fraction, $ans->unitisright)));
     }
 
     public function check_file_access($qa, $options, $component, $filearea, $args,
@@ -338,26 +318,6 @@ class qtype_numerical_question extends question_graded_automatically {
                     $args, $forcedownload);
         }
     }
-
-    /**
-     * Return the question settings that define this question as structured data.
-     *
-     * @param question_attempt $qa the current attempt for which we are exporting the settings.
-     * @param question_display_options $options the question display options which say which aspects of the question
-     * should be visible.
-     * @return mixed structure representing the question settings. In web services, this will be JSON-encoded.
-     */
-    public function get_question_definition_for_external_rendering(question_attempt $qa, question_display_options $options) {
-        // This is a partial implementation, returning only the most relevant question settings for now,
-        // ideally, we should return as much as settings as possible (depending on the state and display options).
-
-        return [
-            'unitgradingtype' => $this->unitgradingtype,
-            'unitpenalty' => $this->unitpenalty,
-            'unitdisplay' => $this->unitdisplay,
-            'unitsleft' => $this->unitsleft,
-        ];
-    }
 }
 
 
@@ -376,7 +336,7 @@ class qtype_numerical_answer extends question_answer {
 
     public function __construct($id, $answer, $fraction, $feedback, $feedbackformat, $tolerance) {
         parent::__construct($id, $answer, $fraction, $feedback, $feedbackformat);
-        $this->tolerance = abs((float)$tolerance);
+        $this->tolerance = abs($tolerance);
     }
 
     public function get_tolerance_interval() {
@@ -403,9 +363,6 @@ class qtype_numerical_answer extends question_answer {
 
             case 3: case 'geometric':
                 $quotient = 1 + abs($tolerance);
-                if ($this->answer < 0) {
-                    return array($this->answer * $quotient, $this->answer / $quotient);
-                }
                 return array($this->answer / $quotient, $this->answer * $quotient);
 
             default:

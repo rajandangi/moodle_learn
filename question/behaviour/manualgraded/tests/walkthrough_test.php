@@ -14,10 +14,15 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace qbehaviour_manualgraded;
+/**
+ * This file contains tests that walks a question through the manual graded
+ * behaviour.
+ *
+ * @package    qbehaviour_manualgraded
+ * @copyright  2009 The Open University
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
-use question_display_options;
-use question_state;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -29,11 +34,10 @@ require_once(__DIR__ . '/../../../engine/tests/helpers.php');
 /**
  * Unit tests for the manual graded behaviour.
  *
- * @package    qbehaviour_manualgraded
  * @copyright  2009 The Open University
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class walkthrough_test extends \qbehaviour_walkthrough_test_base {
+class qbehaviour_manualgraded_walkthrough_testcase extends qbehaviour_walkthrough_test_base {
     public function test_manual_graded_essay() {
         global $PAGE;
 
@@ -43,7 +47,7 @@ class walkthrough_test extends \qbehaviour_walkthrough_test_base {
         $PAGE->set_url('/');
 
         // Create an essay question.
-        $essay = \test_question_maker::make_an_essay_question();
+        $essay = test_question_maker::make_an_essay_question();
         $this->start_attempt_at_question($essay, 'deferredfeedback', 10);
 
         // Check the right model is being used.
@@ -63,7 +67,7 @@ class walkthrough_test extends \qbehaviour_walkthrough_test_base {
         $this->check_current_state(question_state::$complete);
         $this->check_current_mark(null);
         $this->check_current_output(
-                new \question_contains_tag_with_attribute('textarea', 'name',
+                new question_contains_tag_with_attribute('textarea', 'name',
                 $this->quba->get_question_attempt($this->slot)->get_qt_field_name('answer')),
                 $this->get_does_not_contain_feedback_expectation());
 
@@ -97,7 +101,7 @@ class walkthrough_test extends \qbehaviour_walkthrough_test_base {
         $this->check_current_state(question_state::$mangrright);
         $this->check_current_mark(10);
         $this->check_current_output(
-                new \question_pattern_expectation('/' . preg_quote('Not good enough!', '/') . '/'));
+                new question_pattern_expectation('/' . preg_quote('Not good enough!', '/') . '/'));
 
         // Now change the max mark for the question and regrade.
         $this->quba->regrade_question($this->slot, true, 1);
@@ -116,7 +120,7 @@ class walkthrough_test extends \qbehaviour_walkthrough_test_base {
         $PAGE->set_url('/');
 
         // Create an essay question.
-        $essay = \test_question_maker::make_an_essay_question();
+        $essay = test_question_maker::make_an_essay_question();
         $this->start_attempt_at_question($essay, 'deferredfeedback', 10);
 
         // Check the right model is being used.
@@ -145,7 +149,7 @@ class walkthrough_test extends \qbehaviour_walkthrough_test_base {
         $this->check_current_state(question_state::$mangrpartial);
         $this->check_current_mark(1);
         $this->check_current_output(
-                new \question_pattern_expectation('/' . preg_quote('Not good enough!') . '/'));
+                new question_pattern_expectation('/' . preg_quote('Not good enough!') . '/'));
 
         // Now change the max mark for the question and regrade.
         $this->quba->regrade_question($this->slot, true, 1);
@@ -158,7 +162,7 @@ class walkthrough_test extends \qbehaviour_walkthrough_test_base {
     public function test_manual_graded_truefalse() {
 
         // Create a true-false question with correct answer true.
-        $tf = \test_question_maker::make_question('truefalse', 'true');
+        $tf = test_question_maker::make_question('truefalse', 'true');
         $this->start_attempt_at_question($tf, 'manualgraded', 2);
 
         // Check the initial state.
@@ -196,7 +200,7 @@ class walkthrough_test extends \qbehaviour_walkthrough_test_base {
         $this->check_current_output(
             $this->get_does_not_contain_correctness_expectation(),
             $this->get_does_not_contain_specific_feedback_expectation(),
-            new \question_pattern_expectation('/' . preg_quote('Not good enough!', '/') . '/'));
+            new question_pattern_expectation('/' . preg_quote('Not good enough!', '/') . '/'));
     }
 
     public function test_manual_grade_ungraded_question() {
@@ -208,7 +212,7 @@ class walkthrough_test extends \qbehaviour_walkthrough_test_base {
         $PAGE->set_url('/');
 
         // Create an essay question.
-        $essay = \test_question_maker::make_an_essay_question();
+        $essay = test_question_maker::make_an_essay_question();
         $this->start_attempt_at_question($essay, 'deferredfeedback', 0);
 
         // Check the right model is being used.
@@ -228,7 +232,7 @@ class walkthrough_test extends \qbehaviour_walkthrough_test_base {
         $this->check_current_state(question_state::$complete);
         $this->check_current_mark(null);
         $this->check_current_output(
-                new \question_contains_tag_with_attribute('textarea', 'name',
+                new question_contains_tag_with_attribute('textarea', 'name',
                 $this->quba->get_question_attempt($this->slot)->get_qt_field_name('answer')),
                 $this->get_does_not_contain_feedback_expectation());
 
@@ -253,12 +257,12 @@ class walkthrough_test extends \qbehaviour_walkthrough_test_base {
         $this->check_current_state(question_state::$needsgrading);
         $this->check_current_mark(null);
         $this->check_current_output(
-                new \question_pattern_expectation('/' . preg_quote('Not good enough!', '/') . '/'));
+                new question_pattern_expectation('/' . preg_quote('Not good enough!', '/') . '/'));
     }
 
     public function test_manual_graded_ignore_repeat_sumbission() {
         // Create an essay question.
-        $essay = \test_question_maker::make_an_essay_question();
+        $essay = test_question_maker::make_an_essay_question();
         $this->start_attempt_at_question($essay, 'deferredfeedback', 10);
 
         // Check the right model is being used.
@@ -299,7 +303,7 @@ class walkthrough_test extends \qbehaviour_walkthrough_test_base {
         $this->check_current_state(question_state::$needsgrading);
         $this->check_current_mark(null);
         $this->check_current_output(
-                new \question_pattern_expectation('/' .
+                new question_pattern_expectation('/' .
                         preg_quote('I am not sure what grade to award.', '/') . '/'));
 
         // Now grade it.
@@ -308,7 +312,7 @@ class walkthrough_test extends \qbehaviour_walkthrough_test_base {
         $this->check_current_state(question_state::$mangrpartial);
         $this->check_current_mark(9);
         $this->check_current_output(
-                new \question_pattern_expectation('/' . preg_quote('Pretty good!', '/') . '/'));
+                new question_pattern_expectation('/' . preg_quote('Pretty good!', '/') . '/'));
 
         // Process the same data again, and make sure it does not add a step.
         $this->manual_grade('Pretty good!', '9.00000', FORMAT_HTML);
@@ -322,7 +326,7 @@ class walkthrough_test extends \qbehaviour_walkthrough_test_base {
         $this->check_current_state(question_state::$needsgrading);
         $this->check_current_mark(null);
         $this->check_current_output(
-                new \question_pattern_expectation('/' .
+                new question_pattern_expectation('/' .
                         preg_quote('Actually, I am not sure any more.', '/') . '/'));
 
         $qa = $this->quba->get_question_attempt($this->slot);
@@ -332,7 +336,7 @@ class walkthrough_test extends \qbehaviour_walkthrough_test_base {
 
     public function test_manual_graded_ignore_repeat_sumbission_commas() {
         // Create an essay question.
-        $essay = \test_question_maker::make_an_essay_question();
+        $essay = test_question_maker::make_an_essay_question();
         $this->start_attempt_at_question($essay, 'deferredfeedback', 10);
 
         // Check the right model is being used.
@@ -369,7 +373,7 @@ class walkthrough_test extends \qbehaviour_walkthrough_test_base {
         $this->assertEquals('Manually graded 9 with comment: Pretty good!',
                 $qa->summarise_action($qa->get_last_step()));
         $this->check_current_output(
-                new \question_pattern_expectation('/' . preg_quote('Pretty good!', '/') . '/'));
+                new question_pattern_expectation('/' . preg_quote('Pretty good!', '/') . '/'));
 
         // Process the same mark with a dot. Verify it does not add a new step.
         $this->manual_grade('Pretty good!', '9.00000', FORMAT_HTML);
@@ -387,7 +391,7 @@ class walkthrough_test extends \qbehaviour_walkthrough_test_base {
         $PAGE->set_url('/');
 
         // Create an essay question.
-        $essay = \test_question_maker::make_an_essay_question();
+        $essay = test_question_maker::make_an_essay_question();
         $this->start_attempt_at_question($essay, 'deferredfeedback', 10);
 
         // Check the right model is being used.
@@ -407,7 +411,7 @@ class walkthrough_test extends \qbehaviour_walkthrough_test_base {
         $this->check_current_state(question_state::$complete);
         $this->check_current_mark(null);
         $this->check_current_output(
-                new \question_contains_tag_with_attribute('textarea', 'name',
+                new question_contains_tag_with_attribute('textarea', 'name',
                 $this->quba->get_question_attempt($this->slot)->get_qt_field_name('answer')),
                 $this->get_does_not_contain_feedback_expectation());
 
@@ -437,7 +441,7 @@ class walkthrough_test extends \qbehaviour_walkthrough_test_base {
         $PAGE->set_url('/');
 
         // Create an essay question.
-        $essay = \test_question_maker::make_an_essay_question();
+        $essay = test_question_maker::make_an_essay_question();
         $this->start_attempt_at_question($essay, 'deferredfeedback', 10);
 
         // Simulate some data submitted by the student.
@@ -468,7 +472,7 @@ class walkthrough_test extends \qbehaviour_walkthrough_test_base {
         $PAGE->set_url('/');
 
         // Create an essay question.
-        $essay = \test_question_maker::make_an_essay_question();
+        $essay = test_question_maker::make_an_essay_question();
         $this->start_attempt_at_question($essay, 'deferredfeedback', 10);
 
         // Check the right model is being used.
@@ -488,7 +492,7 @@ class walkthrough_test extends \qbehaviour_walkthrough_test_base {
         $this->check_current_state(question_state::$complete);
         $this->check_current_mark(null);
         $this->check_current_output(
-                new \question_contains_tag_with_attribute('textarea', 'name',
+                new question_contains_tag_with_attribute('textarea', 'name',
                 $this->quba->get_question_attempt($this->slot)->get_qt_field_name('answer')),
                 $this->get_does_not_contain_feedback_expectation());
 
@@ -523,7 +527,7 @@ class walkthrough_test extends \qbehaviour_walkthrough_test_base {
         $PAGE->set_url('/');
 
         // Create an essay question.
-        $essay = \test_question_maker::make_an_essay_question();
+        $essay = test_question_maker::make_an_essay_question();
         $this->start_attempt_at_question($essay, 'deferredfeedback', 10);
 
         // Check the right model is being used.
@@ -543,7 +547,7 @@ class walkthrough_test extends \qbehaviour_walkthrough_test_base {
         $this->check_current_state(question_state::$complete);
         $this->check_current_mark(null);
         $this->check_current_output(
-                new \question_contains_tag_with_attribute('textarea', 'name',
+                new question_contains_tag_with_attribute('textarea', 'name',
                 $this->quba->get_question_attempt($this->slot)->get_qt_field_name('answer')),
                 $this->get_does_not_contain_feedback_expectation());
 
@@ -570,7 +574,7 @@ class walkthrough_test extends \qbehaviour_walkthrough_test_base {
         $PAGE->set_url('/');
 
         // Create an essay question.
-        $essay = \test_question_maker::make_an_essay_question();
+        $essay = test_question_maker::make_an_essay_question();
         $this->start_attempt_at_question($essay, 'deferredfeedback', 10);
 
         // Check the right model is being used.
@@ -590,7 +594,7 @@ class walkthrough_test extends \qbehaviour_walkthrough_test_base {
         $this->check_current_state(question_state::$complete);
         $this->check_current_mark(null);
         $this->check_current_output(
-                new \question_contains_tag_with_attribute('textarea', 'name',
+                new question_contains_tag_with_attribute('textarea', 'name',
                 $this->quba->get_question_attempt($this->slot)->get_qt_field_name('answer')),
                 $this->get_does_not_contain_feedback_expectation());
 
@@ -608,7 +612,7 @@ class walkthrough_test extends \qbehaviour_walkthrough_test_base {
         $this->manual_grade('Comment', '10.1', FORMAT_HTML);
     }
 
-    public function test_manual_graded_displays_proper_comment_format() {
+    public function test_manual_graded_displays_proper_comment_format () {
 
         global $PAGE;
 
@@ -618,7 +622,7 @@ class walkthrough_test extends \qbehaviour_walkthrough_test_base {
         $PAGE->set_url('/');
 
         // Create an essay question.
-        $essay = \test_question_maker::make_an_essay_question();
+        $essay = test_question_maker::make_an_essay_question();
         $this->start_attempt_at_question($essay, 'deferredfeedback', 10);
 
         // Check the right model is being used.
@@ -643,7 +647,7 @@ class walkthrough_test extends \qbehaviour_walkthrough_test_base {
         $preg = '/<textarea [^>]+name="[^"]+-comment"[^>]+>\*one\n\*two\n\*three\n/';
         $this->displayoptions->manualcomment = question_display_options::EDITABLE;
         $this->check_current_output(
-            new \question_pattern_expectation($preg)
+            new question_pattern_expectation($preg)
         );
     }
 
@@ -656,7 +660,7 @@ class walkthrough_test extends \qbehaviour_walkthrough_test_base {
         $PAGE->set_url('/');
 
         // Create an essay question graded out of 15 and attempt it.
-        $essay = \test_question_maker::make_an_essay_question();
+        $essay = test_question_maker::make_an_essay_question();
         $this->start_attempt_at_question($essay, 'deferredfeedback', 15);
         $this->process_submission(array('answer' => 'This is my wonderful essay!', 'answerformat' => FORMAT_HTML));
         $this->quba->finish_all_questions();
@@ -692,7 +696,7 @@ class walkthrough_test extends \qbehaviour_walkthrough_test_base {
         $PAGE->set_url('/');
 
         // Create an essay question graded out of 15 and attempt it.
-        $essay = \test_question_maker::make_an_essay_question();
+        $essay = test_question_maker::make_an_essay_question();
         $this->start_attempt_at_question($essay, 'deferredfeedback', 10);
         $this->process_submission(array('answer' => 'This is my wonderful essay!', 'answerformat' => FORMAT_HTML));
         $this->quba->finish_all_questions();

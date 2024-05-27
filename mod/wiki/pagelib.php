@@ -93,14 +93,13 @@ abstract class page_wiki {
     protected $cm;
 
     /**
-     * The page_wiki constructor.
+     * page_wiki constructor
      *
-     * @param stdClass $wiki Current wiki
-     * @param stdClass $subwiki Current subwiki.
-     * @param stdClass $cm Current course_module.
-     * @param string|null $activesecondarytab Secondary navigation node to be activated on the page, if required
+     * @param $wiki. Current wiki
+     * @param $subwiki. Current subwiki.
+     * @param $cm. Current course_module.
      */
-    public function __construct($wiki, $subwiki, $cm, ?string $activesecondarytab = null) {
+    function __construct($wiki, $subwiki, $cm) {
         global $PAGE, $CFG;
         $this->subwiki = $subwiki;
         $this->cm = $cm;
@@ -111,10 +110,6 @@ abstract class page_wiki {
         $PAGE->set_cacheable(true);
         $PAGE->set_cm($cm);
         $PAGE->set_activity_record($wiki);
-        if ($activesecondarytab) {
-            $PAGE->set_secondary_active_tab($activesecondarytab);
-        }
-        $PAGE->add_body_class('limitedwidth');
         // the search box
         if (!empty($subwiki->id)) {
             $search = optional_param('searchstring', null, PARAM_TEXT);
@@ -126,35 +121,30 @@ abstract class page_wiki {
      * This method prints the top of the page.
      */
     function print_header() {
-        global $OUTPUT, $PAGE, $SESSION;
+        global $OUTPUT, $PAGE, $CFG, $USER, $SESSION;
 
         $PAGE->set_heading($PAGE->course->fullname);
 
         $this->set_url();
+
         if (isset($SESSION->wikipreviousurl) && is_array($SESSION->wikipreviousurl)) {
             $this->process_session_url();
         }
         $this->set_session_url();
 
         $this->create_navbar();
+        $this->setup_tabs();
 
         echo $OUTPUT->header();
+        $wiki = $PAGE->activityrecord;
+        echo $OUTPUT->heading(format_string($wiki->name));
 
-        if (!empty($this->page)) {
-            echo $this->action_bar($this->page->id, $PAGE->url);
+        echo $this->wikioutput->wiki_info();
+
+        // tabs are associated with pageid, so if page is empty, tabs should be disabled
+        if (!empty($this->page) && !empty($this->tabs)) {
+            echo $this->wikioutput->tabs($this->page, $this->tabs, $this->tabs_options);
         }
-    }
-
-    /**
-     * This method returns the action bar.
-     *
-     * @param int $pageid The page id.
-     * @param moodle_url $pageurl The page url.
-     * @return string The HTML for the action bar.
-     */
-    protected function action_bar(int $pageid, moodle_url $pageurl): string {
-        $actionbar = new \mod_wiki\output\action_bar($pageid, $pageurl);
-        return $this->wikioutput->render_action_bar($actionbar);
     }
 
     /**
@@ -312,21 +302,13 @@ class page_wiki_view extends page_wiki {
 
         $this->wikioutput->wiki_print_subwiki_selector($PAGE->activityrecord, $this->subwiki, $this->page, 'view');
 
+        if (!empty($this->page)) {
+            echo $this->wikioutput->prettyview_link($this->page);
+        }
+
         //echo $this->wikioutput->page_index();
 
         $this->print_pagetitle();
-    }
-
-    /**
-     * This method returns the action bar.
-     *
-     * @param int $pageid The page id.
-     * @param moodle_url $pageurl The page url.
-     * @return string The HTML for the action bar.
-     */
-    protected function action_bar(int $pageid, moodle_url $pageurl): string {
-        $actionbar = new \mod_wiki\output\action_bar($pageid, $pageurl, true);
-        return $this->wikioutput->render_action_bar($actionbar);
     }
 
     function print_content() {
@@ -365,7 +347,7 @@ class page_wiki_view extends page_wiki {
             $params['swid'] = $this->subwiki->id;
             $params['title'] = $this->title;
         } else {
-            throw new \moodle_exception(get_string('invalidparameters', 'wiki'));
+            print_error(get_string('invalidparameters', 'wiki'));
         }
         $PAGE->set_url(new moodle_url($CFG->wwwroot . '/mod/wiki/view.php', $params));
     }
@@ -397,17 +379,9 @@ class page_wiki_edit extends page_wiki {
     protected $deleteuploads = array();
     protected $format;
 
-    /**
-     * The page_wiki_edit constructor.
-     *
-     * @param stdClass $wiki Current wiki
-     * @param stdClass $subwiki Current subwiki.
-     * @param stdClass $cm Current course_module.
-     * @param string|null $activesecondarytab Secondary navigation node to be activated on the page, if required
-     */
-    public function __construct($wiki, $subwiki, $cm, ?string $activesecondarytab = null) {
+    function __construct($wiki, $subwiki, $cm) {
         global $CFG, $PAGE;
-        parent::__construct($wiki, $subwiki, $cm, $activesecondarytab);
+        parent::__construct($wiki, $subwiki, $cm);
         $showfilemanager = false;
         if (has_capability('mod/wiki:managefiles', context_module::instance($cm->id))) {
             $showfilemanager = true;
@@ -660,6 +634,7 @@ class page_wiki_comments extends page_wiki {
             $cell1 = new html_table_cell($OUTPUT->user_picture($user, array('popup' => true)));
             $cell2 = new html_table_cell(get_string('bynameondate', 'forum', $by));
             $cell3 = new html_table_cell();
+            $cell3->atributtes ['width'] = "80%";
             $cell4 = new html_table_cell();
             $cell5 = new html_table_cell();
 
@@ -796,18 +771,6 @@ class page_wiki_editcomment extends page_wiki {
 
     protected function setup_tabs($options = array()) {
         parent::setup_tabs(array('linkedwhenactive' => 'comments', 'activetab' => 'comments'));
-    }
-
-    /**
-     * This method returns the action bar.
-     *
-     * @param int $pageid The page id.
-     * @param moodle_url $pageurl The page url.
-     * @return string The HTML for the action bar.
-     */
-    protected function action_bar(int $pageid, moodle_url $pageurl): string {
-        // The given page does not require an action bar.
-        return '';
     }
 
     private function add_comment_form() {
@@ -1164,18 +1127,6 @@ class page_wiki_diff extends page_wiki {
     }
 
     /**
-     * This method returns the action bar.
-     *
-     * @param int $pageid The page id.
-     * @param moodle_url $pageurl The page url.
-     * @return string The HTML for the action bar.
-     */
-    protected function action_bar(int $pageid, moodle_url $pageurl): string {
-        $backlink = new moodle_url('/mod/wiki/history.php', ['pageid' => $pageid]);
-        return html_writer::link($backlink, get_string('back'), ['class' => 'btn btn-secondary mb-4']);
-    }
-
-    /**
      * Given two versions of a page, prints a page displaying the differences between them.
      *
      * @global object $CFG
@@ -1204,7 +1155,7 @@ class page_wiki_diff extends page_wiki {
 
             echo $this->wikioutput->diff($pageid, $oldversion, $newversion, array('total' => $total));
         } else {
-            throw new \moodle_exception('versionerror', 'wiki');
+            print_error('versionerror', 'wiki');
         }
     }
 }
@@ -1230,17 +1181,9 @@ class page_wiki_history extends page_wiki {
      */
     private $allversion;
 
-    /**
-     * The page_wiki_history constructor.
-     *
-     * @param stdClass $wiki Current wiki.
-     * @param stdClass $subwiki Current subwiki.
-     * @param stdClass $cm Current course_module.
-     * @param string|null $activesecondarytab Secondary navigation node to be activated on the page, if required
-     */
-    public function __construct($wiki, $subwiki, $cm, ?string $activesecondarytab = null) {
+    function __construct($wiki, $subwiki, $cm) {
         global $PAGE;
-        parent::__construct($wiki, $subwiki, $cm, $activesecondarytab);
+        parent::__construct($wiki, $subwiki, $cm);
         $PAGE->requires->js_init_call('M.mod_wiki.history', null, true);
     }
 
@@ -1462,9 +1405,6 @@ class page_wiki_map extends page_wiki {
      * @var int wiki view option
      */
     private $view;
-
-    /** @var renderer_base */
-    protected $output;
 
     function print_header() {
         parent::print_header();
@@ -1773,7 +1713,7 @@ class page_wiki_map extends page_wiki {
             $strdataux = '';
             foreach ($pages as $page) {
                 $user = wiki_get_user_info($page->userid);
-                $strdata = date('d M Y', $page->timemodified);
+                $strdata = strftime('%d %b %Y', $page->timemodified);
                 if ($strdata != $strdataux) {
                     $table->data[] = array($OUTPUT->heading($strdata, 4));
                     $strdataux = $strdata;
@@ -1932,18 +1872,6 @@ class page_wiki_restoreversion extends page_wiki {
     }
 
     /**
-     * This method returns the action bar.
-     *
-     * @param int $pageid The page id.
-     * @param moodle_url $pageurl The page url.
-     * @return string The HTML for the action bar.
-     */
-    protected function action_bar(int $pageid, moodle_url $pageurl): string {
-        // The given page does not require an action bar.
-        return '';
-    }
-
-    /**
      * Prints the restore version content
      *
      * @uses $CFG
@@ -1964,12 +1892,13 @@ class page_wiki_restoreversion extends page_wiki {
 
         echo $OUTPUT->container_start();
         echo html_writer::tag('div', get_string('restoreconfirm', 'wiki', $version->version));
-        echo $OUTPUT->container_start('mt-2', 'wiki_restoreform');
-        $yesbutton = new single_button($restoreurl, get_string('yes'), 'post');
-        $nobutton = new single_button($return, get_string('no'), 'post');
-        $nobutton->class .= ' ml-2';
-        echo $OUTPUT->render($yesbutton);
-        echo $OUTPUT->render($nobutton);
+        echo $OUTPUT->container_start(false, 'wiki_restoreform');
+        echo '<form class="wiki_restore_yes" action="' . $restoreurl . '" method="post" id="restoreversion">';
+        echo '<div><input type="submit" class="btn btn-secondary" name="confirm" value="' . get_string('yes') . '" /></div>';
+        echo '</form>';
+        echo '<form class="wiki_restore_no" action="' . $return . '" method="post">';
+        echo '<div><input type="submit" class="btn btn-secondary" name="norestore" value="' . get_string('no') . '" /></div>';
+        echo '</form>';
         echo $OUTPUT->container_end();
         echo $OUTPUT->container_end();
     }
@@ -1996,7 +1925,9 @@ class page_wiki_deletecomment extends page_wiki {
     }
 
     public function set_action($action, $commentid, $content) {
+        $this->action = $action;
         $this->commentid = $commentid;
+        $this->content = $content;
     }
 
     protected function create_navbar() {
@@ -2011,23 +1942,17 @@ class page_wiki_deletecomment extends page_wiki {
     }
 
     /**
-     * This method returns the action bar.
-     *
-     * @param int $pageid The page id.
-     * @param moodle_url $pageurl The page url.
-     * @return string The HTML for the action bar.
-     */
-    protected function action_bar(int $pageid, moodle_url $pageurl): string {
-        // The given page does not require an action bar.
-        return '';
-    }
-
-    /**
      * Prints the comment deletion confirmation form
+     *
+     * @param page $page The page whose version will be restored
+     * @param int  $versionid The version to be restored
+     * @param bool $confirm If false, shows a yes/no confirmation page.
+     *     If true, restores the old version and redirects the user to the 'view' tab.
      */
     private function printconfirmdelete() {
         global $OUTPUT;
 
+        $strdeletecheck = get_string('deletecommentcheck', 'wiki');
         $strdeletecheckfull = get_string('deletecommentcheckfull', 'wiki');
 
         //ask confirmation
@@ -2035,7 +1960,18 @@ class page_wiki_deletecomment extends page_wiki {
         $deleteurl = new moodle_url('/mod/wiki/instancecomments.php', $optionsyes);
         $return = new moodle_url('/mod/wiki/comments.php', array('pageid'=>$this->page->id));
 
-        echo $OUTPUT->confirm($strdeletecheckfull, $deleteurl, $return);
+        echo $OUTPUT->container_start();
+        echo html_writer::tag('p', $strdeletecheckfull);
+        echo $OUTPUT->container_start(false, 'wiki_deletecommentform');
+        echo '<form class="wiki_deletecomment_yes" action="' . $deleteurl . '" method="post" id="deletecomment">';
+        echo '<div><input type="submit" class="btn btn-secondary" name="confirmdeletecomment" value="'
+            . get_string('yes') . '" /></div>';
+        echo '</form>';
+        echo '<form class="wiki_deletecomment_no" action="' . $return . '" method="post">';
+        echo '<div><input type="submit" class="btn btn-secondary" name="norestore" value="' . get_string('no') . '" /></div>';
+        echo '</form>';
+        echo $OUTPUT->container_end();
+        echo $OUTPUT->container_end();
     }
 }
 
@@ -2130,7 +2066,7 @@ class page_wiki_save extends page_wiki_edit {
             $url = new moodle_url('/mod/wiki/view.php', array('pageid' => $this->page->id, 'group' => $this->subwiki->groupid));
             redirect($url);
         } else {
-            throw new \moodle_exception('savingerror', 'wiki');
+            print_error('savingerror', 'wiki');
         }
     }
 }
@@ -2178,18 +2114,6 @@ class page_wiki_viewversion extends page_wiki {
     }
 
     /**
-     * This method returns the action bar.
-     *
-     * @param int $pageid The page id.
-     * @param moodle_url $pageurl The page url.
-     * @return string The HTML for the action bar.
-     */
-    protected function action_bar(int $pageid, moodle_url $pageurl): string {
-        $backlink = new moodle_url('/mod/wiki/history.php', ['pageid' => $pageid]);
-        return html_writer::link($backlink, get_string('back'), ['class' => 'btn btn-secondary mb-4']);
-    }
-
-    /**
      * Given an old page version, output the version content
      *
      * @global object $CFG
@@ -2216,11 +2140,11 @@ class page_wiki_viewversion extends page_wiki {
             $pageversion->content = file_rewrite_pluginfile_urls($pageversion->content, 'pluginfile.php', $this->modcontext->id, 'mod_wiki', 'attachments', $this->subwiki->id);
 
             $parseroutput = wiki_parse_content($pageversion->contentformat, $pageversion->content, $options);
-            $content = $OUTPUT->container(format_text($parseroutput['parsed_text'], FORMAT_HTML, ['overflowdiv' => true]));
+            $content = $OUTPUT->container(format_text($parseroutput['parsed_text'], FORMAT_HTML, array('overflowdiv'=>true)), false, '', '', true);
             echo $OUTPUT->box($content, 'generalbox wiki_contentbox');
 
         } else {
-            throw new \moodle_exception('versionerror', 'wiki');
+            print_error('versionerror', 'wiki');
         }
     }
 }
@@ -2247,7 +2171,7 @@ class page_wiki_confirmrestore extends page_wiki_save {
                 wiki_restore_page($this->page, $version, $this->modcontext)) {
             redirect($CFG->wwwroot . '/mod/wiki/view.php?pageid=' . $this->page->id, get_string('restoring', 'wiki', $version->version), 3);
         } else {
-            throw new \moodle_exception('restoreerror', 'wiki', $version->version);
+            print_error('restoreerror', 'wiki', $version->version);
         }
     }
 
@@ -2261,7 +2185,6 @@ class page_wiki_prettyview extends page_wiki {
     function __construct($wiki, $subwiki, $cm) {
         global $PAGE;
         $PAGE->set_pagelayout('embedded');
-        $PAGE->activityheader->disable();
         parent::__construct($wiki, $subwiki, $cm);
     }
 
@@ -2345,7 +2268,7 @@ class page_wiki_handlecomments extends page_wiki {
                 $this->delete_comment($this->commentid);
                 redirect($CFG->wwwroot . '/mod/wiki/comments.php?pageid=' . $this->page->id, get_string('deletecomment', 'wiki'), 2);
             } else {
-                throw new \moodle_exception('nopermissiontoeditcomment');
+                print_error('nopermissiontoeditcomment');
             }
         }
 
@@ -2494,11 +2417,10 @@ class page_wiki_admin extends page_wiki {
      * @param mixed $wiki instance of wiki
      * @param mixed $subwiki instance of subwiki
      * @param stdClass $cm course module
-     * @param string|null $activesecondarytab Secondary navigation node to be activated on the page, if required
      */
-    public function __construct($wiki, $subwiki, $cm, ?string $activesecondarytab = null) {
+    function __construct($wiki, $subwiki, $cm) {
         global $PAGE;
-        parent::__construct($wiki, $subwiki, $cm, $activesecondarytab);
+        parent::__construct($wiki, $subwiki, $cm);
         $PAGE->requires->js_init_call('M.mod_wiki.deleteversion', null, true);
     }
 

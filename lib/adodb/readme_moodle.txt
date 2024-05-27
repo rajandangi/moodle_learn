@@ -1,25 +1,26 @@
-Description of ADOdb library import into Moodle
+Description of ADODB V5.20.16 library import into Moodle
 
-Source: https://github.com/ADOdb/ADOdb
-
-This library will be probably removed sometime in the future
-because it is now used only by enrol and auth db plugins.
+This library will be probably removed in Moodle 2.1,
+it is now used only in enrol and auth db plugins.
+The core DML drivers are not using ADODB any more.
 
 Removed:
- * Any invisible file (dot suffixed)
- * composer.json
- * contrib/ (if present)
- * cute_icons_for_site/ (if present)
+ * contrib/
+ * cute_icons_for_site/
  * docs/
- * lang/* everything but adodb-en.inc.php (originally because they were not utf-8, now because of not used)
- * nbproject/ (if present)
+ * nbproject/
  * pear/
- * replicate/ (if present)
- * scripts/ (if present)
- * server.php (if present)
+ * replicate/
+ * scripts/
  * session/
- * tests/ (if present)
+ * tests/
+ * composer.json
+ * server.php
+ * lang/* except en (because they were not in utf8)
 
 Added:
  * index.html - prevent directory browsing on misconfigured servers
  * readme_moodle.txt - this file ;-)
+
+Our changes:
+ * MDL-67034 Fixes to make the library php74 compliant.

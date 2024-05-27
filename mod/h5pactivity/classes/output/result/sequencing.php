@@ -66,11 +66,10 @@ class sequencing extends result {
                 'id' => 'true',
                 'description' => get_string('result_sequencing_position', 'mod_h5pactivity', $num),
                 'correctanswer' => $this->get_answer(parent::TEXT, $choices[$pattern]->description),
-                'correctanswerid' => $key,
+                'correctanswerid' => 'item_'.$key,
             ];
             if (isset($response[$key])) {
-                $responseid = str_replace('item_', '', $response[$key]);
-                $answerstate = ($responseid == $option->correctanswerid) ? parent::PASS : parent::FAIL;
+                $answerstate = ($response[$key] == $option->correctanswerid) ? parent::PASS : parent::FAIL;
             } else {
                 $answerstate = parent::FAIL;
             }

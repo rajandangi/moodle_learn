@@ -14,10 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace qformat_multianswer;
+/**
+ * Unit tests for the Embedded answer (Cloze) question importer.
+ *
+ * @package   qformat_multianswer
+ * @copyright 2012 The Open University
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
-use qformat_multianswer;
-use question_check_specified_fields_expectation;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -27,14 +31,14 @@ require_once($CFG->dirroot . '/question/format.php');
 require_once($CFG->dirroot . '/question/format/multianswer/format.php');
 require_once($CFG->dirroot . '/question/engine/tests/helpers.php');
 
+
 /**
  * Unit tests for the Embedded answer (Cloze) question importer.
  *
- * @package   qformat_multianswer
  * @copyright 2012 The Open University
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class multianswerformat_test extends \question_testcase {
+class qformat_multianswer_test extends question_testcase {
 
     public function test_import() {
         $lines = file(__DIR__ . '/fixtures/questions.multianswer.txt');
@@ -83,9 +87,9 @@ The capital of France is {#5}.
         ob_end_clean();
 
         // Check that there were some expected errors.
-        $this->assertStringContainsString('Error importing question', $output);
-        $this->assertStringContainsString('Invalid embedded answers (Cloze) question', $output);
-        $this->assertStringContainsString('This type of question requires at least 2 choices', $output);
+        $this->assertContains('Error importing question', $output);
+        $this->assertContains('Invalid embedded answers (Cloze) question', $output);
+        $this->assertContains('This type of question requires at least 2 choices', $output);
 
         // No question  have been imported.
         $this->assertCount(0, $questions);
@@ -102,9 +106,9 @@ The capital of France is {#5}.
         ob_end_clean();
 
         // Check that there were some expected errors.
-        $this->assertStringContainsString('Error importing question', $output);
-        $this->assertStringContainsString('Invalid embedded answers (Cloze) question', $output);
-        $this->assertStringContainsString('One of the answers should have a score of 100% so it is possible to get full marks for this question.',
+        $this->assertContains('Error importing question', $output);
+        $this->assertContains('Invalid embedded answers (Cloze) question', $output);
+        $this->assertContains('One of the answers should have a score of 100% so it is possible to get full marks for this question.',
                 $output);
 
         // No question  have been imported.
@@ -122,9 +126,9 @@ The capital of France is {#5}.
         ob_end_clean();
 
         // Check that there were some expected errors.
-        $this->assertStringContainsString('Error importing question', $output);
-        $this->assertStringContainsString('Invalid embedded answers (Cloze) question', $output);
-        $this->assertStringContainsString('The answer must be a number, for example -1.234 or 3e8, or \'*\'.', $output);
+        $this->assertContains('Error importing question', $output);
+        $this->assertContains('Invalid embedded answers (Cloze) question', $output);
+        $this->assertContains('The answer must be a number, for example -1.234 or 3e8, or \'*\'.', $output);
 
         // No question  have been imported.
         $this->assertCount(0, $questions);
@@ -141,9 +145,9 @@ The capital of France is {#5}.
         ob_end_clean();
 
         // Check that there were some expected errors.
-        $this->assertStringContainsString('Error importing question', $output);
-        $this->assertStringContainsString('Invalid embedded answers (Cloze) question', $output);
-        $this->assertStringContainsString('The question text must include at least one embedded answer.', $output);
+        $this->assertContains('Error importing question', $output);
+        $this->assertContains('Invalid embedded answers (Cloze) question', $output);
+        $this->assertContains('The question text must include at least one embedded answer.', $output);
 
         // No question  have been imported.
         $this->assertCount(0, $questions);

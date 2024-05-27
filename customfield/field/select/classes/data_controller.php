@@ -24,6 +24,8 @@
 
 namespace customfield_select;
 
+use core_customfield\api;
+
 defined('MOODLE_INTERNAL') || die;
 
 /**
@@ -39,7 +41,7 @@ class data_controller extends \core_customfield\data_controller {
      * Return the name of the field where the information is stored
      * @return string
      */
-    public function datafield(): string {
+    public function datafield() : string {
         return 'intvalue';
     }
 
@@ -51,7 +53,8 @@ class data_controller extends \core_customfield\data_controller {
     public function get_default_value() {
         $defaultvalue = $this->get_field()->get_configdata_property('defaultvalue');
         if ('' . $defaultvalue !== '') {
-            $key = array_search($defaultvalue, $this->get_field()->get_options());
+            $options = field_controller::get_options_array($this->get_field());
+            $key = array_search($defaultvalue, $options);
             if ($key !== false) {
                 return $key;
             }
@@ -67,7 +70,7 @@ class data_controller extends \core_customfield\data_controller {
     public function instance_form_definition(\MoodleQuickForm $mform) {
         $field = $this->get_field();
         $config = $field->get('configdata');
-        $options = $field->get_options();
+        $options = field_controller::get_options_array($field);
         $formattedoptions = array();
         $context = $this->get_field()->get_handler()->get_configuration_context();
         foreach ($options as $key => $option) {
@@ -93,7 +96,7 @@ class data_controller extends \core_customfield\data_controller {
      * @param array $files
      * @return array
      */
-    public function instance_form_validation(array $data, array $files): array {
+    public function instance_form_validation(array $data, array $files) : array {
         $errors = parent::instance_form_validation($data, $files);
         if ($this->get_field()->get_configdata_property('required')) {
             // Standard required rule does not work on select element.
@@ -117,7 +120,7 @@ class data_controller extends \core_customfield\data_controller {
             return null;
         }
 
-        $options = $this->get_field()->get_options();
+        $options = field_controller::get_options_array($this->get_field());
         if (array_key_exists($value, $options)) {
             return format_string($options[$value], true,
                 ['context' => $this->get_field()->get_handler()->get_configuration_context()]);

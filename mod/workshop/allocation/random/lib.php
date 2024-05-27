@@ -263,17 +263,13 @@ class workshop_random_allocator implements workshop_allocator {
      * @return array of integers
      */
     public static function available_numofreviews_list() {
-
-        $options = [];
-
-        for ($i = 100; $i > 20; $i = $i - 10) {
+        $options = array();
+        $options[30] = 30;
+        $options[20] = 20;
+        $options[15] = 15;
+        for ($i = 10; $i >= 0; $i--) {
             $options[$i] = $i;
         }
-
-        for ($i = 20; $i >= 0; $i--) {
-            $options[$i] = $i;
-        }
-
         return $options;
     }
 
@@ -702,7 +698,7 @@ class workshop_random_allocator implements workshop_allocator {
     protected function filter_current_assessments(&$newallocations, $assessments) {
         foreach ($assessments as $assessment) {
             $allocation     = array($assessment->reviewerid => $assessment->authorid);
-            $foundat        = moodle_array_keys_filter($newallocations, $allocation);
+            $foundat        = array_keys($newallocations, $allocation);
             $newallocations = array_diff_key($newallocations, array_flip($foundat));
         }
     }
@@ -731,8 +727,6 @@ class workshop_random_allocator_setting {
     public $assesswosubmission;
     /** @var bool add self-assessments */
     public $addselfassessment;
-    /** @var bool scheduled allocation status */
-    public $enablescheduled;
 
     /**
      * Use the factory method {@link self::instance_from_object()}

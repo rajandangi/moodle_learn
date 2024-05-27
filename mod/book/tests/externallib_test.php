@@ -14,11 +14,15 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace mod_book;
-
-use core_external\external_api;
-use externallib_advanced_testcase;
-use mod_book_external;
+/**
+ * External mod_book functions unit tests
+ *
+ * @package    mod_book
+ * @category   external
+ * @copyright  2015 Juan Leyva <juan@moodle.com>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @since      Moodle 3.0
+ */
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -35,7 +39,7 @@ require_once($CFG->dirroot . '/webservice/tests/helpers.php');
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @since      Moodle 3.0
  */
-class externallib_test extends externallib_advanced_testcase {
+class mod_book_external_testcase extends externallib_advanced_testcase {
 
     /**
      * Test view_book
@@ -53,14 +57,14 @@ class externallib_test extends externallib_advanced_testcase {
         $chapter = $bookgenerator->create_chapter(array('bookid' => $book->id));
         $chapterhidden = $bookgenerator->create_chapter(array('bookid' => $book->id, 'hidden' => 1));
 
-        $context = \context_module::instance($book->cmid);
+        $context = context_module::instance($book->cmid);
         $cm = get_coursemodule_from_instance('book', $book->id);
 
         // Test invalid instance id.
         try {
             mod_book_external::view_book(0);
             $this->fail('Exception expected due to invalid mod_book instance id.');
-        } catch (\moodle_exception $e) {
+        } catch (moodle_exception $e) {
             $this->assertEquals('invalidrecord', $e->errorcode);
         }
 
@@ -70,7 +74,7 @@ class externallib_test extends externallib_advanced_testcase {
         try {
             mod_book_external::view_book($book->id, 0);
             $this->fail('Exception expected due to not enrolled user.');
-        } catch (\moodle_exception $e) {
+        } catch (moodle_exception $e) {
             $this->assertEquals('requireloginerror', $e->errorcode);
         }
 
@@ -111,7 +115,7 @@ class externallib_test extends externallib_advanced_testcase {
         try {
             mod_book_external::view_book($book->id, $chapterhidden->id);
             $this->fail('Exception expected due to missing capability.');
-        } catch (\moodle_exception $e) {
+        } catch (moodle_exception $e) {
             $this->assertEquals('errorchapter', $e->errorcode);
         }
 
@@ -123,7 +127,7 @@ class externallib_test extends externallib_advanced_testcase {
         try {
             mod_book_external::view_book($book->id, 0);
             $this->fail('Exception expected due to missing capability.');
-        } catch (\moodle_exception $e) {
+        } catch (moodle_exception $e) {
             $this->assertEquals('nopermissions', $e->errorcode);
         }
 
@@ -161,7 +165,7 @@ class externallib_test extends externallib_advanced_testcase {
         $this->assertCount(1, $books['books']);
         $this->assertEquals('First Book', $books['books'][0]['name']);
         // We see 10 fields.
-        $this->assertCount(11, $books['books'][0]);
+        $this->assertCount(10, $books['books'][0]);
 
         // As Student you cannot see some book properties like 'section'.
         $this->assertFalse(isset($books['books'][0]['section']));
@@ -183,7 +187,7 @@ class externallib_test extends externallib_advanced_testcase {
         $this->assertCount(1, $books['books']);
         $this->assertEquals('Second Book', $books['books'][0]['name']);
         // We see 17 fields.
-        $this->assertCount(18, $books['books'][0]);
+        $this->assertCount(17, $books['books'][0]);
         // As an Admin you can see some book properties like 'section'.
         $this->assertEquals(0, $books['books'][0]['section']);
 

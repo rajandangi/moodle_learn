@@ -14,7 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace core_backup;
+/**
+ * Test for restore_stepslib.
+ *
+ * @package core_backup
+ * @copyright 2016 Andrew Nicols <andrew@nicols.co.uk>
+ * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -30,7 +36,7 @@ require_once($CFG->libdir . '/completionlib.php');
  * @copyright 2016 Andrew Nicols <andrew@nicols.co.uk>
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class restore_gradebook_structure_step_test extends \advanced_testcase {
+class core_backup_restore_gradebook_structure_step_testcase extends advanced_testcase {
 
     /**
      * Provide tests for rewrite_step_backup_file_for_legacy_freeze based upon fixtures.
@@ -65,7 +71,7 @@ class restore_gradebook_structure_step_test extends \advanced_testcase {
      */
     public function test_rewrite_step_backup_file_for_legacy_freeze($source, $expected) {
         $restore = $this->getMockBuilder('\restore_gradebook_structure_step')
-            ->onlyMethods([])
+            ->setMethods(null)
             ->disableOriginalConstructor()
             ->getMock()
             ;
@@ -77,6 +83,7 @@ class restore_gradebook_structure_step_test extends \advanced_testcase {
 
         $rc = new \ReflectionClass('\restore_gradebook_structure_step');
         $rcm = $rc->getMethod('rewrite_step_backup_file_for_legacy_freeze');
+        $rcm->setAccessible(true);
         $rcm->invoke($restore, $filepath);
 
         // Check the result.

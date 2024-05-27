@@ -16,7 +16,8 @@
 /**
  * This class provides the enhancements to the drag-drop marker editing form.
  *
- * @module     qtype_ddmarker/form
+ * @package    qtype_ddmarker
+ * @subpackage form
  * @copyright  2018 The Open University
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -374,6 +375,7 @@ define(['jquery', 'core/dragdrop', 'qtype_ddmarker/shapes'], function($, dragDro
         init: function() {
             dragDropForm.fp = dragDropForm.filePickers();
             dragDropForm.noDropZones = dragDropForm.form.getFormValue('nodropzone', []);
+            dragDropForm.setupPreviewArea();
             dragDropForm.setOptionsForDragItemSelectors();
             dragDropForm.createShapes();
             dragDropForm.setupEventHandlers();
@@ -552,15 +554,9 @@ define(['jquery', 'core/dragdrop', 'qtype_ddmarker/shapes'], function($, dragDro
             // From now on, when a new file gets loaded into the filepicker, update the preview.
             // This is not in the setupEventHandlers section as it needs to be delayed until
             // after filepicker's javascript has finished.
-            $('form.mform[data-qtype="ddmarker"]').on('change', '#id_bgimage', dragDropForm.loadPreviewImage);
+            $('form.mform').on('change', '#id_bgimage', dragDropForm.loadPreviewImage);
 
-            if ($('#ddm-droparea').length) {
-                dragDropForm.loadPreviewImage();
-            } else {
-                // Setup preview area when the background image is uploaded the first time.
-                dragDropForm.setupPreviewArea();
-                dragDropForm.loadPreviewImage();
-            }
+            dragDropForm.loadPreviewImage();
         },
 
         /**
@@ -649,7 +645,7 @@ define(['jquery', 'core/dragdrop', 'qtype_ddmarker/shapes'], function($, dragDro
             },
 
             getEl: function(name, indexes) {
-                var form = $('form.mform[data-qtype="ddmarker"]')[0];
+                var form = $('form.mform')[0];
                 return form.elements[this.toNameWithIndex(name, indexes)];
             },
 

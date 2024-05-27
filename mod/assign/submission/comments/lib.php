@@ -43,10 +43,7 @@ function assignsubmission_comments_comment_validate(stdClass $options) {
     $context = $options->context;
 
     require_once($CFG->dirroot . '/mod/assign/locallib.php');
-    static $assignment = null;
-    if (is_null($assignment) || $assignment->get_context() != $context) {
-        $assignment = new assign($context, null, null);
-    }
+    $assignment = new assign($context, null, null);
 
     if ($assignment->get_instance()->id != $submission->assignment) {
         throw new comment_exception('invalidcontext');
@@ -74,10 +71,7 @@ function assignsubmission_comments_comment_permissions(stdClass $options) {
     $context = $options->context;
 
     require_once($CFG->dirroot . '/mod/assign/locallib.php');
-    static $assignment = null;
-    if (is_null($assignment) || $assignment->get_context() != $context) {
-        $assignment = new assign($context, null, null);
-    }
+    $assignment = new assign($context, null, null);
 
     if ($assignment->get_instance()->id != $submission->assignment) {
         throw new comment_exception('invalidcontext');
@@ -146,7 +140,7 @@ function assignsubmission_comments_comment_display($comments, $options) {
                 $a->participantnumber = $anonid;
                 $a->participantfullname = $comment->fullname;
                 $comment->fullname = get_string('blindmarkingviewfullname', 'assignsubmission_comments', $a);
-            } else if ($USER->id == $comment->userid || $submission->userid == $USER->id || $userinteam) { // phpcs:ignore
+            } else if ($USER->id == $comment->userid || $submission->userid == $USER->id || $userinteam) { //@codingStandardsIgnoreLine
                 // Do not anonymize the user details for this comment.
             } else {
                 // Anonymize the comments.

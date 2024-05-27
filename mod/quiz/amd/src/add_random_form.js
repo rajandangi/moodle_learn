@@ -17,6 +17,7 @@
  * JavaScript for the add_random_form class.
  *
  * @module    mod_quiz/add_random_form
+ * @package   mod_quiz
  * @copyright 2018 Ryan Wyllie <ryan@moodle.com>
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -167,9 +168,8 @@ define(
      */
     var addEventListeners = function(form, contextId, topCategories) {
         var reloadTimerId = null;
-        const tagsFilter = form.find(SELECTORS.TAG_IDS_FORM_ELEMENT);
 
-        form.add(tagsFilter).on('change', function(e) {
+        form.on('change', function(e) {
             // Only reload the preview when elements that will change the result
             // are modified.
             if (!isInterestingElement($(e.target))) {

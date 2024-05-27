@@ -36,7 +36,7 @@ var CSS = {
         COLLAPSEEXPAND: '.collapseexpand',
         COURSEBOX: '.coursebox',
         COURSEBOXLISTENLINK: '.coursebox .moreinfo',
-        COURSEBOXSPINNERLOCATION: '.info .moreinfo',
+        COURSEBOXSPINNERLOCATION: '.coursename a',
         COURSECATEGORYTREE: '.course_category_tree',
         PARENTWITHCHILDREN: '.category'
     },

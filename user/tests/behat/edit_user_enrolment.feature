@@ -82,7 +82,8 @@ Feature: Edit user enrolment
     And I log in as "admin"
     And I navigate to "Plugins > Enrolments > Manage enrol plugins" in site administration
     And I click on "Enable" "link" in the "Course meta link" "table_row"
-    And I add "Course meta link" enrolment method in "Course 1" with:
+    And I am on "Course 1" course homepage
+    And I add "Course meta link" enrolment method with:
       | Link course  | C2      |
     And I log out
     And I log in as "teacher1"

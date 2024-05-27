@@ -93,7 +93,7 @@ class exporter {
         stdClass $user,
         forum_entity $forum,
         ?int $currentgroup
-    ): forum_exporter {
+    ) : forum_exporter {
         return new forum_exporter($forum, [
             'legacydatamapperfactory' => $this->legacydatamapperfactory,
             'capabilitymanager' => $this->managerfactory->get_capability_manager($forum),
@@ -109,7 +109,7 @@ class exporter {
      *
      * @return  array
      */
-    public static function get_forum_export_structure(): array {
+    public static function get_forum_export_structure() : array {
         return forum_exporter::read_properties_definition();
     }
 
@@ -128,7 +128,7 @@ class exporter {
         discussion_entity $discussion,
         array $groupsbyid = [],
         array $favouriteids = []
-    ): discussion_exporter {
+    ) : discussion_exporter {
         return new discussion_exporter($discussion, [
             'context' => $forum->get_context(),
             'forum' => $forum,
@@ -178,7 +178,7 @@ class exporter {
         array $postauthorcontextids = [],
         array $favourites = [],
         array $latestauthors = []
-    ): discussion_summaries_exporter {
+    ) : discussion_summaries_exporter {
         return new discussion_summaries_exporter(
             $discussions,
             $groupsbyid,
@@ -224,8 +224,7 @@ class exporter {
      * @param   array           $tagsbypostid List of tags for each post indexed by post id
      * @param   rating[]        $ratingbypostid List of ratings for each post indexed by post id
      * @param   bool            $includehtml Include some pre-constructed HTML in the export
-     * @param   array           $inlineattachmentsbypostid List of attachments for each post indexed by post id
-     * @return  posts_exporter
+     * @return  post_exporter
      */
     public function get_posts_exporter(
         stdClass $user,
@@ -239,9 +238,8 @@ class exporter {
         post_read_receipt_collection_entity $readreceiptcollection = null,
         array $tagsbypostid = [],
         array $ratingbypostid = [],
-        bool $includehtml = false,
-        array $inlineattachmentsbypostid = []
-    ): posts_exporter {
+        bool $includehtml = false
+    ) : posts_exporter {
         return new posts_exporter(
             $posts,
             $authorsbyid,
@@ -259,8 +257,7 @@ class exporter {
                 'context' => $forum->get_context(),
                 'readreceiptcollection' => $readreceiptcollection,
                 'includehtml' => $includehtml
-            ],
-            $inlineattachmentsbypostid
+            ]
         );
     }
 

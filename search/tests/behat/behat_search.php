@@ -45,15 +45,14 @@ class behat_search extends behat_base {
      * @param string $query Query to search for
      */
     public function i_search_for_using_the_header_global_search_box($query) {
-        // Click the search icon.
-        $this->execute("behat_general::i_click_on", [get_string('togglesearch', 'core'), 'button']);
+        // Hover over the search icon.
+        $this->execute('behat_general::i_hover', ['.icon[title=Search]', 'css_element']);
 
         // Set the field.
         $this->execute('behat_forms::i_set_the_field_to', ['q', $query]);
 
         // Submit the form.
-        $this->execute("behat_general::i_click_on_in_the",
-            [get_string('search', 'core'), 'button', '#usernavigation', 'css_element']);
+        $this->execute_script('return document.querySelector(".search-input-form.expanded").submit();');
     }
 
     /**

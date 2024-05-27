@@ -23,6 +23,9 @@
  */
 
 namespace core\output;
+defined('MOODLE_INTERNAL') || die();
+
+require_once($CFG->libdir . '/externallib.php');
 
 use coding_exception;
 use context;
@@ -86,6 +89,7 @@ class chooser_item implements renderable, templatable {
         $options = new stdClass();
         $options->trusted = false;
         $options->noclean = false;
+        $options->smiley = false;
         $options->filter = false;
         $options->para = true;
         $options->newlines = false;
@@ -93,7 +97,7 @@ class chooser_item implements renderable, templatable {
 
         $data->description = '';
         if (!empty($this->description)) {
-            list($data->description) = \core_external\util::format_text((string) $this->description, FORMAT_MARKDOWN,
+            list($data->description) = external_format_text((string) $this->description, FORMAT_MARKDOWN,
                 $this->context->id, null, null, null, $options);
         }
 

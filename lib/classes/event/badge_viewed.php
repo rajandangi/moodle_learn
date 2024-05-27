@@ -73,11 +73,7 @@ class badge_viewed extends base {
      * @return \moodle_url
      */
     public function get_url() {
-        if (isset($this->other['badgehash'])) {
-            return new \moodle_url('/badges/badge.php', ['hash' => $this->other['badgehash']]);
-        }
-
-        return new \moodle_url('/badges/badgeclass.php', ['id' => $this->other['badgeid']]);
+        return new \moodle_url('/badges/badge.php', array('hash' => $this->other['badgehash']));
     }
 
     /**
@@ -91,6 +87,9 @@ class badge_viewed extends base {
 
         if (!isset($this->other['badgeid'])) {
             throw new \coding_exception('The \'badgeid\' must be set in other.');
+        }
+        if (!isset($this->other['badgehash'])) {
+            throw new \coding_exception('The \'badgehash\' must be set in other.');
         }
     }
 

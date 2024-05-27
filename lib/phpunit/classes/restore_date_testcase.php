@@ -51,7 +51,7 @@ abstract class restore_date_testcase extends advanced_testcase {
     /**
      * Setup.
      */
-    public function setUp(): void {
+    public function setUp() {
         global $CFG;
 
         parent::setUp();
@@ -115,15 +115,6 @@ abstract class restore_date_testcase extends advanced_testcase {
      * @return array
      */
     protected function create_course_and_module($modulename, $record = []) {
-        if ($modulename == 'chat') {
-            $manager = \core_plugin_manager::resolve_plugininfo_class('mod');
-            $manager::enable_plugin('chat', 1);
-        }
-        if ($modulename == 'survey') {
-            $manager = \core_plugin_manager::resolve_plugininfo_class('mod');
-            $manager::enable_plugin('survey', 1);
-        }
-
         // Create a course with specific start date.
         $record = (array)$record;
         $generator = $this->getDataGenerator();

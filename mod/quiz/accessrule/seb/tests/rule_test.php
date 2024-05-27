@@ -14,9 +14,17 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace quizaccess_seb;
+/**
+ * PHPUnit tests for plugin rule class.
+ *
+ * @package    quizaccess_seb
+ * @author     Andrew Madden <andrewmadden@catalyst-au.net>
+ * @copyright  2019 Catalyst IT
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
-use quizaccess_seb;
+use quizaccess_seb\quiz_settings;
+use quizaccess_seb\settings_provider;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -25,35 +33,22 @@ require_once(__DIR__ . '/test_helper_trait.php');
 /**
  * PHPUnit tests for plugin rule class.
  *
- * @package    quizaccess_seb
- * @author     Andrew Madden <andrewmadden@catalyst-au.net>
  * @copyright  2020 Catalyst IT
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers \quizaccess_seb
  */
-class rule_test extends \advanced_testcase {
-    use \quizaccess_seb_test_helper_trait;
+class quizaccess_seb_rule__testcase extends advanced_testcase {
+    use quizaccess_seb_test_helper_trait;
 
     /**
      * Called before every test.
      */
-    public function setUp(): void {
+    public function setUp() {
         parent::setUp();
 
         $this->resetAfterTest();
         $this->course = $this->getDataGenerator()->create_course();
     }
 
-    /**
-     * Called after every test.
-     */
-    public function tearDown(): void {
-        global $SESSION;
-
-        if (!empty($this->quiz)) {
-            unset($SESSION->quizaccess_seb_access);
-        }
-    }
 
     /**
      * Helper method to get SEB download link for testing.
@@ -87,9 +82,9 @@ class rule_test extends \advanced_testcase {
      *
      * @return array
      */
-    public function valid_form_data_provider(): array {
+    public function valid_form_data_provider() : array {
         return [
-            'valid seb_requiresafeexambrowser' => ['seb_requiresafeexambrowser', '0'],
+            'valid seb_requiresafeexambrowser' => ['seb_requiresafeexambrowser', 0],
             'valid seb_linkquitseb0' => ['seb_linkquitseb', 'http://safeexambrowser.org/macosx'],
             'valid seb_linkquitseb1' => ['seb_linkquitseb', 'safeexambrowser.org/macosx'],
             'valid seb_linkquitseb2' => ['seb_linkquitseb', 'www.safeexambrowser.org/macosx'],
@@ -103,7 +98,7 @@ class rule_test extends \advanced_testcase {
      *
      * @return array
      */
-    public function invalid_form_data_provider(): array {
+    public function invalid_form_data_provider() : array {
         return [
             'invalid seb_requiresafeexambrowser' => ['seb_requiresafeexambrowser', 'Uh oh!'],
             'invalid seb_linkquitseb0' => ['seb_linkquitseb', '\0'],
@@ -127,7 +122,7 @@ class rule_test extends \advanced_testcase {
         $this->quiz = $this->create_test_quiz($this->course, settings_provider::USE_SEB_CONFIG_MANUALLY);
 
         $form = $this->createMock('mod_quiz_mod_form');
-        $form->method('get_context')->willReturn(\context_module::instance($this->quiz->cmid));
+        $form->method('get_context')->willReturn(context_module::instance($this->quiz->cmid));
 
         // Validate settings with a dummy form.
         $errors = quizaccess_seb::validate_settings_form_fields([], [
@@ -151,7 +146,7 @@ class rule_test extends \advanced_testcase {
 
         $this->quiz = $this->create_test_quiz($this->course, settings_provider::USE_SEB_CONFIG_MANUALLY);
         $form = $this->createMock('mod_quiz_mod_form');
-        $form->method('get_context')->willReturn(\context_module::instance($this->quiz->cmid));
+        $form->method('get_context')->willReturn(context_module::instance($this->quiz->cmid));
 
         // Validate settings with a dummy form and quiz instance.
         $errors = quizaccess_seb::validate_settings_form_fields([], [
@@ -173,7 +168,7 @@ class rule_test extends \advanced_testcase {
         $this->setAdminUser();
 
         $form = $this->createMock('mod_quiz_mod_form');
-        $form->method('get_context')->willReturn(\context_module::instance($this->quiz->cmid));
+        $form->method('get_context')->willReturn(context_module::instance($this->quiz->cmid));
 
         // Validate settings with a dummy form and quiz instance.
         $errors = quizaccess_seb::validate_settings_form_fields([], [
@@ -191,11 +186,11 @@ class rule_test extends \advanced_testcase {
         $this->quiz = $this->create_test_quiz($this->course, settings_provider::USE_SEB_CONFIG_MANUALLY);
 
         $form = $this->createMock('mod_quiz_mod_form');
-        $form->method('get_context')->willReturn(\context_module::instance($this->quiz->cmid));
+        $form->method('get_context')->willReturn(context_module::instance($this->quiz->cmid));
 
         $user = $this->getDataGenerator()->create_user();
         $roleid = $this->getDataGenerator()->create_role();
-        $context = \context_module::instance($this->quiz->cmid);
+        $context = context_module::instance($this->quiz->cmid);
         assign_capability('quizaccess/seb:manage_seb_requiresafeexambrowser', CAP_ALLOW, $roleid, $context->id);
         $this->getDataGenerator()->role_assign($roleid, $user->id, $context->id);
 
@@ -221,7 +216,7 @@ class rule_test extends \advanced_testcase {
 
         $this->quiz = $this->create_test_quiz($this->course, settings_provider::USE_SEB_CONFIG_MANUALLY);
         $form = $this->createMock('mod_quiz_mod_form');
-        $form->method('get_context')->willReturn(\context_module::instance($this->quiz->cmid));
+        $form->method('get_context')->willReturn(context_module::instance($this->quiz->cmid));
 
         // Validate settings with a dummy form and quiz instance.
         $errors = quizaccess_seb::validate_settings_form_fields([], [
@@ -275,7 +270,7 @@ class rule_test extends \advanced_testcase {
 
         $user = $this->getDataGenerator()->create_user();
         $roleid = $this->getDataGenerator()->create_role();
-        $context = \context_module::instance($this->quiz->cmid);
+        $context = context_module::instance($this->quiz->cmid);
         assign_capability('quizaccess/seb:manage_seb_requiresafeexambrowser', CAP_ALLOW, $roleid, $context->id);
         $this->getDataGenerator()->role_assign($roleid, $user->id, $context->id);
 
@@ -285,7 +280,7 @@ class rule_test extends \advanced_testcase {
         $this->quiz->seb_requiresafeexambrowser = settings_provider::USE_SEB_NO;
         quizaccess_seb::save_settings($this->quiz);
 
-        $quizsettings = seb_quiz_settings::get_record(['quizid' => $this->quiz->id]);
+        $quizsettings = quiz_settings::get_record(['quizid' => $this->quiz->id]);
         $this->assertEquals(settings_provider::USE_SEB_CONFIG_MANUALLY, $quizsettings->get('requiresafeexambrowser'));
     }
 
@@ -295,7 +290,7 @@ class rule_test extends \advanced_testcase {
     public function test_save_settings_throw_an_exception_if_cm_not_found() {
         global $DB;
 
-        $this->expectException(\dml_missing_record_exception::class);
+        $this->expectException(dml_missing_record_exception::class);
         $this->expectExceptionMessage('Can\'t find data record in database.');
 
         $this->setAdminUser();
@@ -313,7 +308,7 @@ class rule_test extends \advanced_testcase {
         global $DB;
         $this->setAdminUser();
 
-        $quiz = new \stdClass();
+        $quiz = new stdClass();
         $quiz->id = 1;
         quizaccess_seb::delete_settings($quiz);
         $this->assertFalse($DB->record_exists('quizaccess_seb_quizsettings', ['quizid' => $quiz->id]));
@@ -344,11 +339,11 @@ class rule_test extends \advanced_testcase {
         // Check that correct error message is returned.
         $errormsg = $this->make_rule()->prevent_access();
         $this->assertNotEmpty($errormsg);
-        $this->assertStringContainsString("The Safe Exam Browser keys could not be validated. "
-            . "Check that you're using Safe Exam Browser with the correct configuration file.", $errormsg);
-        $this->assertStringContainsString($this->get_seb_download_link(), $errormsg);
-        $this->assertStringContainsString($this->get_seb_launch_link(), $errormsg);
-        $this->assertStringContainsString($this->get_seb_config_download_link(), $errormsg);
+        $this->assertContains("The config key or browser exam keys could not be validated. "
+            . "Please ensure you are using the Safe Exam Browser with correct configuration file.", $errormsg);
+        $this->assertContains($this->get_seb_download_link(), $errormsg);
+        $this->assertContains($this->get_seb_launch_link(), $errormsg);
+        $this->assertContains($this->get_seb_config_download_link(), $errormsg);
 
         $events = $sink->get_events();
         $this->assertEquals(1, count($events));
@@ -388,7 +383,7 @@ class rule_test extends \advanced_testcase {
         $this->quiz = $this->create_test_quiz($this->course, settings_provider::USE_SEB_CONFIG_MANUALLY);
 
         // Set quiz setting to require seb and save BEK.
-        $quizsettings = seb_quiz_settings::get_record(['quizid' => $this->quiz->id]);
+        $quizsettings = quiz_settings::get_record(['quizid' => $this->quiz->id]);
         $quizsettings->set('requiresafeexambrowser', settings_provider::USE_SEB_UPLOAD_CONFIG);
         $xml = file_get_contents(__DIR__ . '/fixtures/unencrypted.seb');
         $this->create_module_test_file($xml, $this->quiz->cmid);
@@ -414,7 +409,7 @@ class rule_test extends \advanced_testcase {
         $this->quiz = $this->create_test_quiz($this->course, settings_provider::USE_SEB_CONFIG_MANUALLY);
 
         // Set quiz setting to require seb and save BEK.
-        $quizsettings = seb_quiz_settings::get_record(['quizid' => $this->quiz->id]);
+        $quizsettings = quiz_settings::get_record(['quizid' => $this->quiz->id]);
         $quizsettings->set('requiresafeexambrowser', settings_provider::USE_SEB_TEMPLATE);
         $quizsettings->set('templateid', $this->create_template()->get('id'));
         $quizsettings->save();
@@ -442,7 +437,7 @@ class rule_test extends \advanced_testcase {
         $this->setUser($user);
 
         // Set quiz setting to require seb.
-        $quizsettings = seb_quiz_settings::get_record(['quizid' => $this->quiz->id]);
+        $quizsettings = quiz_settings::get_record(['quizid' => $this->quiz->id]);
 
         // Set up dummy request.
         $FULLME = 'https://example.com/moodle/mod/quiz/attempt.php?attemptid=123&page=4';
@@ -463,7 +458,7 @@ class rule_test extends \advanced_testcase {
         $this->quiz = $this->create_test_quiz($this->course, settings_provider::USE_SEB_CONFIG_MANUALLY);
 
         // Set quiz setting to require seb and save BEK.
-        $quizsettings = seb_quiz_settings::get_record(['quizid' => $this->quiz->id]);
+        $quizsettings = quiz_settings::get_record(['quizid' => $this->quiz->id]);
         $quizsettings->set('requiresafeexambrowser', settings_provider::USE_SEB_TEMPLATE);
         $quizsettings->set('templateid', $this->create_template()->get('id'));
         $quizsettings->save();
@@ -490,7 +485,7 @@ class rule_test extends \advanced_testcase {
         $this->quiz = $this->create_test_quiz($this->course, settings_provider::USE_SEB_CONFIG_MANUALLY);
 
         // Set quiz setting to require seb and save BEK.
-        $quizsettings = seb_quiz_settings::get_record(['quizid' => $this->quiz->id]);
+        $quizsettings = quiz_settings::get_record(['quizid' => $this->quiz->id]);
         $quizsettings->set('requiresafeexambrowser', settings_provider::USE_SEB_UPLOAD_CONFIG);
         $xml = file_get_contents(__DIR__ . '/fixtures/unencrypted.seb');
         $this->create_module_test_file($xml, $this->quiz->cmid);
@@ -522,7 +517,7 @@ class rule_test extends \advanced_testcase {
 
         // Set quiz setting to require seb and save BEK.
         $browserexamkey = hash('sha256', 'testkey');
-        $quizsettings = seb_quiz_settings::get_record(['quizid' => $this->quiz->id]);
+        $quizsettings = quiz_settings::get_record(['quizid' => $this->quiz->id]);
         $quizsettings->set('requiresafeexambrowser', settings_provider::USE_SEB_CLIENT_CONFIG); // Doesn't check config key.
         $quizsettings->set('allowedbrowserexamkeys', $browserexamkey);
         $quizsettings->save();
@@ -548,7 +543,7 @@ class rule_test extends \advanced_testcase {
 
         // Set quiz setting to require seb and save BEK.
         $browserexamkey = hash('sha256', 'testkey');
-        $quizsettings = seb_quiz_settings::get_record(['quizid' => $this->quiz->id]);
+        $quizsettings = quiz_settings::get_record(['quizid' => $this->quiz->id]);
         $quizsettings->set('requiresafeexambrowser', settings_provider::USE_SEB_UPLOAD_CONFIG);
         $quizsettings->set('allowedbrowserexamkeys', $browserexamkey);
         $xml = file_get_contents(__DIR__ . '/fixtures/unencrypted.seb');
@@ -569,24 +564,6 @@ class rule_test extends \advanced_testcase {
         $this->assertFalse($this->make_rule()->prevent_access());
     }
 
-    public function test_access_allowed_if_access_state_stored_in_session() {
-        global $SESSION;
-
-        $this->setAdminUser();
-        $this->quiz = $this->create_test_quiz($this->course, settings_provider::USE_SEB_CLIENT_CONFIG);
-
-        $user = $this->getDataGenerator()->create_user();
-        $this->setUser($user);
-
-        // Check that access is prevented.
-        $this->check_invalid_basic_header();
-
-        $SESSION->quizaccess_seb_access = [$this->quiz->cmid => true];
-
-        // Check access is now not prevented.
-        $this->assertFalse($this->make_rule()->prevent_access());
-    }
-
     /**
      * A helper method to check invalid browser key.
      *
@@ -601,25 +578,25 @@ class rule_test extends \advanced_testcase {
         // Check that correct error message is returned.
         $errormsg = $this->make_rule()->prevent_access();
         $this->assertNotEmpty($errormsg);
-        $this->assertStringContainsString("The Safe Exam Browser keys could not be validated. "
-            . "Check that you're using Safe Exam Browser with the correct configuration file.", $errormsg);
+        $this->assertContains("The config key or browser exam keys could not be validated. "
+            . "Please ensure you are using the Safe Exam Browser with correct configuration file.", $errormsg);
 
         if ($downloadseblink) {
-            $this->assertStringContainsString($this->get_seb_download_link(), $errormsg);
+            $this->assertContains($this->get_seb_download_link(), $errormsg);
         } else {
-            $this->assertStringNotContainsString($this->get_seb_download_link(), $errormsg);
+            $this->assertNotContains($this->get_seb_download_link(), $errormsg);
         }
 
         if ($launchlink) {
-            $this->assertStringContainsString($this->get_seb_launch_link(), $errormsg);
+            $this->assertContains($this->get_seb_launch_link(), $errormsg);
         } else {
-            $this->assertStringNotContainsString($this->get_seb_launch_link(), $errormsg);
+            $this->assertNotContains($this->get_seb_launch_link(), $errormsg);
         }
 
         if ($downloadconfiglink) {
-            $this->assertStringContainsString($this->get_seb_config_download_link(), $errormsg);
+            $this->assertContains($this->get_seb_config_download_link(), $errormsg);
         } else {
-            $this->assertStringNotContainsString($this->get_seb_config_download_link(), $errormsg);
+            $this->assertNotContains($this->get_seb_config_download_link(), $errormsg);
         }
 
         $events = $sink->get_events();
@@ -643,7 +620,7 @@ class rule_test extends \advanced_testcase {
 
         // Set quiz setting to require seb and save BEK.
         $browserexamkey = hash('sha256', 'testkey');
-        $quizsettings = seb_quiz_settings::get_record(['quizid' => $this->quiz->id]);
+        $quizsettings = quiz_settings::get_record(['quizid' => $this->quiz->id]);
         $quizsettings->set('requiresafeexambrowser', settings_provider::USE_SEB_CLIENT_CONFIG); // Doesn't check config key.
         $quizsettings->set('allowedbrowserexamkeys', $browserexamkey);
         $quizsettings->save();
@@ -666,7 +643,7 @@ class rule_test extends \advanced_testcase {
 
         // Set quiz setting to require seb and save BEK.
         $browserexamkey = hash('sha256', 'testkey');
-        $quizsettings = seb_quiz_settings::get_record(['quizid' => $this->quiz->id]);
+        $quizsettings = quiz_settings::get_record(['quizid' => $this->quiz->id]);
         $quizsettings->set('requiresafeexambrowser', settings_provider::USE_SEB_UPLOAD_CONFIG);
         $quizsettings->set('allowedbrowserexamkeys', $browserexamkey);
         $xml = file_get_contents(__DIR__ . '/fixtures/unencrypted.seb');
@@ -698,7 +675,7 @@ class rule_test extends \advanced_testcase {
 
         // Set quiz setting to require seb and save BEK.
         $browserexamkey = hash('sha256', 'testkey');
-        $quizsettings = seb_quiz_settings::get_record(['quizid' => $this->quiz->id]);
+        $quizsettings = quiz_settings::get_record(['quizid' => $this->quiz->id]);
         $quizsettings->set('requiresafeexambrowser', settings_provider::USE_SEB_TEMPLATE);
         $quizsettings->set('allowedbrowserexamkeys', $browserexamkey);
         $quizsettings->set('templateid', $this->create_template()->get('id'));
@@ -730,7 +707,7 @@ class rule_test extends \advanced_testcase {
         $this->setUser($user);
 
         // Set quiz setting to require seb.
-        $quizsettings = seb_quiz_settings::get_record(['quizid' => $this->quiz->id]);
+        $quizsettings = quiz_settings::get_record(['quizid' => $this->quiz->id]);
         $quizsettings->set('requiresafeexambrowser', settings_provider::USE_SEB_CLIENT_CONFIG); // Doesn't check config key.
         $quizsettings->save();
 
@@ -752,7 +729,7 @@ class rule_test extends \advanced_testcase {
         $this->setUser($user);
 
         // Set quiz setting to require seb.
-        $quizsettings = seb_quiz_settings::get_record(['quizid' => $this->quiz->id]);
+        $quizsettings = quiz_settings::get_record(['quizid' => $this->quiz->id]);
         $quizsettings->set('requiresafeexambrowser', settings_provider::USE_SEB_CLIENT_CONFIG); // Doesn't check config key.
         $quizsettings->save();
 
@@ -760,18 +737,10 @@ class rule_test extends \advanced_testcase {
         $_SERVER['HTTP_USER_AGENT'] = 'WRONG_TEST_SITE';
 
         // Create an event sink, trigger event and retrieve event.
-        $this->check_invalid_basic_header();
-    }
-
-    /**
-     * A helper method to check invalid basic header.
-     */
-    protected function check_invalid_basic_header() {
-        // Create an event sink, trigger event and retrieve event.
         $sink = $this->redirectEvents();
 
         // Check that correct error message is returned.
-        $this->assertStringContainsString(
+        $this->assertContains(
             'This quiz has been configured to use the Safe Exam Browser with client configuration.',
             $this->make_rule()->prevent_access()
         );
@@ -795,7 +764,7 @@ class rule_test extends \advanced_testcase {
         $this->quiz = $this->create_test_quiz($this->course, settings_provider::USE_SEB_CONFIG_MANUALLY);
 
         // Set quiz setting to require seb.
-        $quizsettings = seb_quiz_settings::get_record(['quizid' => $this->quiz->id]);
+        $quizsettings = quiz_settings::get_record(['quizid' => $this->quiz->id]);
         $quizsettings->set('requiresafeexambrowser', settings_provider::USE_SEB_UPLOAD_CONFIG); // Doesn't check basic header.
         $xml = file_get_contents(__DIR__ . '/fixtures/unencrypted.seb');
         $this->create_module_test_file($xml, $this->quiz->cmid);
@@ -824,7 +793,7 @@ class rule_test extends \advanced_testcase {
         $this->quiz = $this->create_test_quiz($this->course, settings_provider::USE_SEB_CONFIG_MANUALLY);
 
         // Set quiz setting to require seb.
-        $quizsettings = seb_quiz_settings::get_record(['quizid' => $this->quiz->id]);
+        $quizsettings = quiz_settings::get_record(['quizid' => $this->quiz->id]);
         $quizsettings->set('requiresafeexambrowser', settings_provider::USE_SEB_TEMPLATE);
         $quizsettings->set('templateid', $this->create_template()->get('id'));
         $quizsettings->save();
@@ -853,7 +822,7 @@ class rule_test extends \advanced_testcase {
         $this->setUser($user);
 
         // Set quiz setting to not require seb.
-        $quizsettings = seb_quiz_settings::get_record(['quizid' => $this->quiz->id]);
+        $quizsettings = quiz_settings::get_record(['quizid' => $this->quiz->id]);
         $quizsettings->set('requiresafeexambrowser', settings_provider::USE_SEB_NO);
         $quizsettings->save();
 
@@ -872,7 +841,7 @@ class rule_test extends \advanced_testcase {
         $this->setUser($user);
 
         // Set the bypass SEB check capability to $USER.
-        $this->assign_user_capability('quizaccess/seb:bypassseb', \context_module::instance($this->quiz->cmid)->id);
+        $this->assign_user_capability('quizaccess/seb:bypassseb', context_module::instance($this->quiz->cmid)->id);
 
         // Check that correct error message is returned.
         $this->assertFalse($this->make_rule()->prevent_access());
@@ -886,7 +855,7 @@ class rule_test extends \advanced_testcase {
         $this->quiz = $this->create_test_quiz($this->course, settings_provider::USE_SEB_CONFIG_MANUALLY);
 
         $form = $this->createMock('mod_quiz_mod_form');
-        $form->method('get_context')->willReturn(\context_module::instance($this->quiz->cmid));
+        $form->method('get_context')->willReturn(context_module::instance($this->quiz->cmid));
 
         // Validate settings with a dummy form.
         $errors = quizaccess_seb::validate_settings_form_fields([], [
@@ -906,7 +875,7 @@ class rule_test extends \advanced_testcase {
         $this->quiz = $this->create_test_quiz($this->course, settings_provider::USE_SEB_CONFIG_MANUALLY);
 
         $form = $this->createMock('mod_quiz_mod_form');
-        $form->method('get_context')->willReturn(\context_module::instance($this->quiz->cmid));
+        $form->method('get_context')->willReturn(context_module::instance($this->quiz->cmid));
 
         // Validate settings with a dummy form.
         $errors = quizaccess_seb::validate_settings_form_fields([], [
@@ -916,7 +885,7 @@ class rule_test extends \advanced_testcase {
             'filemanager_sebconfigfile' => 0,
         ], [], $form);
 
-        $this->assertContainsEquals(get_string('filenotpresent', 'quizaccess_seb'), $errors);
+        $this->assertContains(get_string('filenotpresent', 'quizaccess_seb'), $errors);
     }
 
     /**
@@ -929,7 +898,7 @@ class rule_test extends \advanced_testcase {
         $this->quiz = $this->create_test_quiz($this->course, settings_provider::USE_SEB_CONFIG_MANUALLY);
 
         $form = $this->createMock('mod_quiz_mod_form');
-        $form->method('get_context')->willReturn(\context_module::instance($this->quiz->cmid));
+        $form->method('get_context')->willReturn(context_module::instance($this->quiz->cmid));
 
         // Validate settings with a dummy form.
         $errors = quizaccess_seb::validate_settings_form_fields([], [
@@ -953,7 +922,7 @@ class rule_test extends \advanced_testcase {
         $this->quiz = $this->create_test_quiz($this->course, settings_provider::USE_SEB_CONFIG_MANUALLY);
 
         $form = $this->createMock('mod_quiz_mod_form');
-        $form->method('get_context')->willReturn(\context_module::instance($this->quiz->cmid));
+        $form->method('get_context')->willReturn(context_module::instance($this->quiz->cmid));
 
         // Validate settings with a dummy form.
         $errors = quizaccess_seb::validate_settings_form_fields([], [
@@ -975,7 +944,7 @@ class rule_test extends \advanced_testcase {
         $this->quiz = $this->create_test_quiz($this->course, settings_provider::USE_SEB_NO);
 
         $form = $this->createMock('mod_quiz_mod_form');
-        $form->method('get_context')->willReturn(\context_module::instance($this->quiz->cmid));
+        $form->method('get_context')->willReturn(context_module::instance($this->quiz->cmid));
 
         // Validate settings with a dummy form.
         $errors = quizaccess_seb::validate_settings_form_fields([], [
@@ -999,9 +968,10 @@ class rule_test extends \advanced_testcase {
 
         $reflection = new \ReflectionClass('quizaccess_seb');
         $method = $reflection->getMethod('get_download_seb_button');
+        $method->setAccessible(true);
 
         // The current default contents.
-        $this->assertStringContainsString($this->get_seb_download_link(), $method->invoke($this->make_rule()));
+        $this->assertContains($this->get_seb_download_link(), $method->invoke($this->make_rule()));
 
         set_config('downloadlink', '', 'quizaccess_seb');
 
@@ -1021,11 +991,12 @@ class rule_test extends \advanced_testcase {
 
         $reflection = new \ReflectionClass('quizaccess_seb');
         $method = $reflection->getMethod('get_action_buttons');
+        $method->setAccessible(true);
 
-        $this->assertStringContainsString($this->get_seb_download_link(), $method->invoke($this->make_rule()));
+        $this->assertContains($this->get_seb_download_link(), $method->invoke($this->make_rule()));
 
         $this->quiz->seb_showsebdownloadlink = 0;
-        $this->assertStringNotContainsString($this->get_seb_download_link(), $method->invoke($this->make_rule()));
+        $this->assertNotContains($this->get_seb_download_link(), $method->invoke($this->make_rule()));
     }
 
     /**
@@ -1040,33 +1011,34 @@ class rule_test extends \advanced_testcase {
 
         $reflection = new \ReflectionClass('quizaccess_seb');
         $method = $reflection->getMethod('get_action_buttons');
+        $method->setAccessible(true);
 
-        $quizsettings = seb_quiz_settings::get_record(['quizid' => $this->quiz->id]);
+        $quizsettings = quiz_settings::get_record(['quizid' => $this->quiz->id]);
 
         // Should see link when using manually.
-        $this->assertStringContainsString($this->get_seb_launch_link(), $method->invoke($this->make_rule()));
-        $this->assertStringContainsString($this->get_seb_config_download_link(), $method->invoke($this->make_rule()));
+        $this->assertContains($this->get_seb_launch_link(), $method->invoke($this->make_rule()));
+        $this->assertContains($this->get_seb_config_download_link(), $method->invoke($this->make_rule()));
 
         // Should see links when using template.
         $quizsettings->set('requiresafeexambrowser', settings_provider::USE_SEB_TEMPLATE);
         $quizsettings->set('templateid', $this->create_template()->get('id'));
         $quizsettings->save();
-        $this->assertStringContainsString($this->get_seb_launch_link(), $method->invoke($this->make_rule()));
-        $this->assertStringContainsString($this->get_seb_config_download_link(), $method->invoke($this->make_rule()));
+        $this->assertContains($this->get_seb_launch_link(), $method->invoke($this->make_rule()));
+        $this->assertContains($this->get_seb_config_download_link(), $method->invoke($this->make_rule()));
 
         // Should see links when using uploaded config.
         $quizsettings->set('requiresafeexambrowser', settings_provider::USE_SEB_UPLOAD_CONFIG);
         $xml = file_get_contents(__DIR__ . '/fixtures/unencrypted.seb');
         $this->create_module_test_file($xml, $this->quiz->cmid);
         $quizsettings->save();
-        $this->assertStringContainsString($this->get_seb_launch_link(), $method->invoke($this->make_rule()));
-        $this->assertStringContainsString($this->get_seb_config_download_link(), $method->invoke($this->make_rule()));
+        $this->assertContains($this->get_seb_launch_link(), $method->invoke($this->make_rule()));
+        $this->assertContains($this->get_seb_config_download_link(), $method->invoke($this->make_rule()));
 
         // Shouldn't see links if using client config.
         $quizsettings->set('requiresafeexambrowser', settings_provider::USE_SEB_CLIENT_CONFIG);
         $quizsettings->save();
-        $this->assertStringNotContainsString($this->get_seb_launch_link(), $method->invoke($this->make_rule()));
-        $this->assertStringNotContainsString($this->get_seb_config_download_link(), $method->invoke($this->make_rule()));
+        $this->assertNotContains($this->get_seb_launch_link(), $method->invoke($this->make_rule()));
+        $this->assertNotContains($this->get_seb_config_download_link(), $method->invoke($this->make_rule()));
     }
 
     /**
@@ -1081,22 +1053,23 @@ class rule_test extends \advanced_testcase {
 
         $reflection = new \ReflectionClass('quizaccess_seb');
         $method = $reflection->getMethod('get_action_buttons');
+        $method->setAccessible(true);
 
         set_config('showseblinks', 'seb,http', 'quizaccess_seb');
-        $this->assertStringContainsString($this->get_seb_launch_link(), $method->invoke($this->make_rule()));
-        $this->assertStringContainsString($this->get_seb_config_download_link(), $method->invoke($this->make_rule()));
+        $this->assertContains($this->get_seb_launch_link(), $method->invoke($this->make_rule()));
+        $this->assertContains($this->get_seb_config_download_link(), $method->invoke($this->make_rule()));
 
         set_config('showseblinks', 'http', 'quizaccess_seb');
-        $this->assertStringNotContainsString($this->get_seb_launch_link(), $method->invoke($this->make_rule()));
-        $this->assertStringContainsString($this->get_seb_config_download_link(), $method->invoke($this->make_rule()));
+        $this->assertNotContains($this->get_seb_launch_link(), $method->invoke($this->make_rule()));
+        $this->assertContains($this->get_seb_config_download_link(), $method->invoke($this->make_rule()));
 
         set_config('showseblinks', 'seb', 'quizaccess_seb');
-        $this->assertStringContainsString($this->get_seb_launch_link(), $method->invoke($this->make_rule()));
-        $this->assertStringNotContainsString($this->get_seb_config_download_link(), $method->invoke($this->make_rule()));
+        $this->assertContains($this->get_seb_launch_link(), $method->invoke($this->make_rule()));
+        $this->assertNotContains($this->get_seb_config_download_link(), $method->invoke($this->make_rule()));
 
         set_config('showseblinks', '', 'quizaccess_seb');
-        $this->assertStringNotContainsString($this->get_seb_launch_link(), $method->invoke($this->make_rule()));
-        $this->assertStringNotContainsString($this->get_seb_config_download_link(), $method->invoke($this->make_rule()));
+        $this->assertNotContains($this->get_seb_launch_link(), $method->invoke($this->make_rule()));
+        $this->assertNotContains($this->get_seb_config_download_link(), $method->invoke($this->make_rule()));
     }
 
     /**
@@ -1114,9 +1087,10 @@ class rule_test extends \advanced_testcase {
         // Set-up the button to be called.
         $reflection = new \ReflectionClass('quizaccess_seb');
         $method = $reflection->getMethod('get_quit_button');
+        $method->setAccessible(true);
 
         $button = $method->invoke($this->make_rule());
-        $this->assertStringContainsString("http://test.quit.link", $button);
+        $this->assertContains("http://test.quit.link", $button);
     }
 
     /**
@@ -1146,7 +1120,7 @@ class rule_test extends \advanced_testcase {
         $this->assertEquals($description[0], get_string('sebrequired', 'quizaccess_seb'));
 
         // The button is contained in the description when a quiz attempt is finished.
-        $this->assertStringContainsString("http://test.quit.link", $description[1]);
+        $this->assertContains("http://test.quit.link", $description[1]);
     }
 
     /**
@@ -1156,11 +1130,11 @@ class rule_test extends \advanced_testcase {
         $this->setAdminUser();
         $this->quiz = $this->create_test_quiz($this->course, settings_provider::USE_SEB_CONFIG_MANUALLY);
 
-        $quizsettings = seb_quiz_settings::get_record(['quizid' => $this->quiz->id]);
+        $quizsettings = quiz_settings::get_record(['quizid' => $this->quiz->id]);
 
         $user = $this->getDataGenerator()->create_user();
         $roleid = $this->getDataGenerator()->create_role();
-        $context = \context_module::instance($this->quiz->cmid);
+        $context = context_module::instance($this->quiz->cmid);
         assign_capability('quizaccess/seb:bypassseb', CAP_ALLOW, $roleid, $context->id);
 
         $this->setUser($user);
@@ -1175,7 +1149,7 @@ class rule_test extends \advanced_testcase {
         $description = $this->make_rule()->description();
         $this->assertCount(3, $description);
         $this->assertEquals($description[0], get_string('sebrequired', 'quizaccess_seb'));
-        $this->assertStringContainsString($this->get_seb_config_download_link(), $description[1]);
+        $this->assertContains($this->get_seb_config_download_link(), $description[1]);
 
         // Can't see download config link as usage method doesn't have SEB config to download.
         $quizsettings->set('requiresafeexambrowser', settings_provider::USE_SEB_CLIENT_CONFIG);
@@ -1200,6 +1174,7 @@ class rule_test extends \advanced_testcase {
         // We will check if we show only fake blocks. Which means no other blocks on a page.
         $reflection = new \ReflectionClass('block_manager');
         $property = $reflection->getProperty('fakeblocksonly');
+        $property->setAccessible(true);
 
         $this->assertFalse($property->getValue($PAGE->blocks));
 
@@ -1235,6 +1210,7 @@ class rule_test extends \advanced_testcase {
         // We will check if we show only fake blocks. Which means no other blocks on a page.
         $reflection = new \ReflectionClass('block_manager');
         $property = $reflection->getProperty('fakeblocksonly');
+        $property->setAccessible(true);
 
         $this->assertFalse($property->getValue($PAGE->blocks));
 
@@ -1254,19 +1230,30 @@ class rule_test extends \advanced_testcase {
     }
 
     /**
-     * Test cleanup when quiz is completed.
+     * Test we can decide if need to redirect to SEB config link.
      */
-    public function test_current_attempt_finished() {
-        global $SESSION;
+    public function test_should_redirect_to_seb_config_link() {
         $this->setAdminUser();
-
         $this->quiz = $this->create_test_quiz($this->course, settings_provider::USE_SEB_CONFIG_MANUALLY);
-        $quizsettings = seb_quiz_settings::get_record(['quizid' => $this->quiz->id]);
-        $quizsettings->save();
-        // Set access for Moodle session.
-        $SESSION->quizaccess_seb_access = [$this->quiz->cmid => true];
-        $this->make_rule()->current_attempt_finished();
 
-        $this->assertTrue(empty($SESSION->quizaccess_seb_access[$this->quiz->cmid]));
+        $reflection = new \ReflectionClass('quizaccess_seb');
+        $method = $reflection->getMethod('should_redirect_to_seb_config_link');
+        $method->setAccessible(true);
+
+        set_config('autoreconfigureseb', '0', 'quizaccess_seb');
+        $_SERVER['HTTP_USER_AGENT'] = 'TEST';
+        $this->assertFalse($method->invoke($this->make_rule()));
+
+        set_config('autoreconfigureseb', '0', 'quizaccess_seb');
+        $_SERVER['HTTP_USER_AGENT'] = 'SEB';
+        $this->assertFalse($method->invoke($this->make_rule()));
+
+        set_config('autoreconfigureseb', '1', 'quizaccess_seb');
+        $_SERVER['HTTP_USER_AGENT'] = 'TEST';
+        $this->assertFalse($method->invoke($this->make_rule()));
+
+        set_config('autoreconfigureseb', '1', 'quizaccess_seb');
+        $_SERVER['HTTP_USER_AGENT'] = 'SEB';
+        $this->assertTrue($method->invoke($this->make_rule()));
     }
 }

@@ -125,8 +125,6 @@ class backup_course_task extends backup_task {
             $this->add_step(new backup_course_logs_structure_step('course_logs', 'logs.xml'));
             // New log stores.
             $this->add_step(new backup_course_logstores_structure_step('course_logstores', 'logstores.xml'));
-            // Last access to course logs.
-            $this->add_step(new backup_course_loglastaccess_structure_step('course_loglastaccess', 'loglastaccess.xml'));
         }
 
         // Generate the course competencies.
@@ -156,7 +154,7 @@ class backup_course_task extends backup_task {
      * @param string $content content in which to encode links.
      * @return string content with links encoded.
      */
-    public static function encode_content_links($content) {
+    static public function encode_content_links($content) {
 
         // Link to the course main page (it also covers "&topic=xx" and "&week=xx"
         // because they don't become transformed (section number) in backup/restore.
@@ -167,8 +165,6 @@ class backup_course_task extends backup_task {
         $content = self::encode_links_helper($content, 'GRADEREPORTINDEXBYID', '/grade/report/index.php?id=');
         $content = self::encode_links_helper($content, 'BADGESVIEWBYID',       '/badges/view.php?type=2&id=');
         $content = self::encode_links_helper($content, 'USERINDEXVIEWBYID',    '/user/index.php?id=');
-        $content = self::encode_links_helper($content, 'PLUGINFILEBYCONTEXT',  '/pluginfile.php/');
-        $content = self::encode_links_helper($content, 'PLUGINFILEBYCONTEXTURLENCODED', '/pluginfile.php/', true);
 
         return $content;
     }
@@ -179,26 +175,17 @@ class backup_course_task extends backup_task {
      * @param string $name the name of this type of encoded link.
      * @param string $path the path that identifies this type of link, up
      *      to the ?paramname= bit.
-     * @param bool $urlencoded whether to use urlencode() before replacing the path.
      * @return string content with one type of link encoded.
      */
-    private static function encode_links_helper(string $content, string $name, string $path, bool $urlencoded = false) {
+    static private function encode_links_helper($content, $name, $path) {
         global $CFG;
         // We want to convert both http and https links.
         $root = $CFG->wwwroot;
         $httpsroot = str_replace('http://', 'https://', $root);
         $httproot = str_replace('https://', 'http://', $root);
 
-        $httpsbase = $httpsroot . $path;
-        $httpbase = $httproot . $path;
-
-        if ($urlencoded) {
-            $httpsbase = urlencode($httpsbase);
-            $httpbase = urlencode($httpbase);
-        }
-
-        $httpsbase = preg_quote($httpsbase, '/');
-        $httpbase = preg_quote($httpbase, '/');
+        $httpsbase = preg_quote($httpsroot . $path, '/');
+        $httpbase = preg_quote($httproot . $path, '/');
 
         $return = preg_replace('/(' . $httpsbase . ')([0-9]+)/', '$@' . $name . '*$2@$', $content);
         $return = preg_replace('/(' . $httpbase . ')([0-9]+)/', '$@' . $name . '*$2@$', $return);

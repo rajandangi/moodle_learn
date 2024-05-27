@@ -79,9 +79,6 @@ abstract class moodle_list {
     public $pageurl;
     public $pageparamname;
 
-    /** @var int no of top level items. */
-    private $itemsperpage;
-
     /**
      * Constructor.
      *
@@ -174,7 +171,7 @@ abstract class moodle_list {
         }
 
         if (!$suppresserror) {
-            throw new \moodle_exception('listnoitem');
+            print_error('listnoitem');
         }
         return null;
     }
@@ -250,7 +247,7 @@ abstract class moodle_list {
     /**
      * Should be overriden to return an array of records of list items.
      */
-    abstract public function get_records();
+    public abstract function get_records();
 
     /**
      * display list of page numbers for navigation
@@ -327,7 +324,7 @@ abstract class moodle_list {
                     $peers[$itemkey+1] = $id;
                     $peers[$itemkey] = $olditem;
                 } else {
-                    throw new \moodle_exception('listcantmoveup');
+                    print_error('listcantmoveup');
                 }
                 break;
 
@@ -337,7 +334,7 @@ abstract class moodle_list {
                     $peers[$itemkey-1] = $id;
                     $peers[$itemkey] = $olditem;
                 } else {
-                    throw new \moodle_exception('listcantmovedown');
+                    print_error('listcantmovedown');
                 }
                 break;
         }
@@ -362,7 +359,7 @@ abstract class moodle_list {
 
         $item = $this->find_item($id);
         if (!isset($item->parentlist->parentitem->parentlist)) {
-            throw new \moodle_exception('listcantmoveleft');
+            print_error('listcantmoveleft');
         } else {
             $newpeers = $this->get_items_peers($item->parentlist->parentitem->id);
             if (isset($item->parentlist->parentitem->parentlist->parentitem)) {
@@ -389,7 +386,7 @@ abstract class moodle_list {
         $peers = $this->get_items_peers($id);
         $itemkey = array_search($id, $peers);
         if (!isset($peers[$itemkey-1])) {
-            throw new \moodle_exception('listcantmoveright');
+            print_error('listcantmoveright');
         } else {
             $DB->set_field($this->table, "parent", $peers[$itemkey-1], array("id"=>$peers[$itemkey]));
             $newparent = $this->find_item($peers[$itemkey-1]);
@@ -628,7 +625,7 @@ abstract class list_item {
      */
     public function create_children(&$records, &$children, $thisrecordid) {
         //keys where value is $thisrecordid
-        $thischildren = moodle_array_keys_filter($children, $thisrecordid);
+        $thischildren = array_keys($children, $thisrecordid);
         foreach ($thischildren as $child) {
             $thisclass = get_class($this);
             $newlistitem = new $thisclass($records[$child], $this->children, $this->attributes);

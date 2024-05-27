@@ -19,10 +19,6 @@ require_once($CFG->libdir.'/formslib.php');
 define('FEEDBACK_ITEM_NAME_TEXTBOX_SIZE', 80);
 define('FEEDBACK_ITEM_LABEL_TEXTBOX_SIZE', 20);
 abstract class feedback_item_form extends moodleform {
-
-    /** @var string type value in the hidden element. */
-    protected $type;
-
     public function definition() {
         $item = $this->_customdata['item']; //the item object
 
@@ -106,7 +102,7 @@ abstract class feedback_item_form extends moodleform {
             $mform->setType('clone_item', PARAM_INT);
             $buttonarray[] = &$mform->createElement('submit',
                                                     'save_item',
-                                                    get_string('savechanges'));
+                                                    get_string('save_item', 'feedback'));
         }
         $buttonarray[] = &$mform->createElement('cancel');
         $mform->addGroup($buttonarray, 'buttonar', '&nbsp;', array(' '), false);

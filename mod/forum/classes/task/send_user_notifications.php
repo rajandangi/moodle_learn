@@ -94,13 +94,7 @@ class send_user_notifications extends \core\task\adhoc_task {
     protected $inboundmanager;
 
     /**
-     * @var array List of users.
-     */
-    protected $users = [];
-
-    /**
      * Send out messages.
-     * @throws \moodle_exception
      */
     public function execute() {
         global $CFG;
@@ -118,7 +112,6 @@ class send_user_notifications extends \core\task\adhoc_task {
 
         $this->prepare_data((array) $data);
 
-        $failedposts = [];
         $markposts = [];
         $errorcount = 0;
         $sentcount = 0;
@@ -166,7 +159,6 @@ class send_user_notifications extends \core\task\adhoc_task {
                             $sentcount++;
                         } else {
                             $this->log("Failed to send post {$post->id}", 1);
-                            $failedposts[] = $post->id;
                             $errorcount++;
                         }
                     }
@@ -182,20 +174,6 @@ class send_user_notifications extends \core\task\adhoc_task {
                 forum_tp_mark_posts_read($this->recipient, array_keys($markposts));
                 $this->log_finish("Marked {$count} posts as read");
             }
-        }
-
-        if ($errorcount > 0 and $sentcount === 0) {
-            // All messages errored. So fail.
-            throw new \moodle_exception('Error sending posts.');
-        } else if ($errorcount > 0) {
-            // Requeue failed messages as a new task.
-            $task = new send_user_notifications();
-            $task->set_userid($this->recipient->id);
-            $task->set_custom_data($failedposts);
-            $task->set_component('mod_forum');
-            $task->set_next_run_time(time() + MINSECS);
-            $task->set_fail_delay(MINSECS);
-            \core\task\manager::reschedule_or_queue_adhoc_task($task);
         }
     }
 
@@ -485,11 +463,6 @@ class send_user_notifications extends \core\task\adhoc_task {
             } else {
                 $headers[] = "References: $parentid";
             }
-        } else {
-            // If the message IDs that Moodle creates are overwritten then referencing these
-            // IDs here will enable then to still thread correctly with the first email.
-            $headers[] = "In-Reply-To: $rootid";
-            $headers[] = "References: $rootid";
         }
 
         // MS Outlook / Office uses poorly documented and non standard headers, including
@@ -575,6 +548,7 @@ class send_user_notifications extends \core\task\adhoc_task {
         unset($user->department);
         unset($user->address);
         unset($user->city);
+        unset($user->url);
         unset($user->currentlogin);
         unset($user->description);
         unset($user->descriptionformat);

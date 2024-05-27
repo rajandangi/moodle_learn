@@ -21,7 +21,8 @@ Feature: Keyholder role is listed as course contact
       | fullname | shortname | format | coursedisplay | numsections | category |
       | Course 1 | C1        | topics | 0             | 5           | CAT1     |
     And I log in as "admin"
-    And I add "Self enrolment" enrolment method in "Course 1" with:
+    And I am on "Course 1" course homepage
+    And I add "Self enrolment" enrolment method with:
       | Custom instance name | Test student enrolment |
       | Enrolment key | letmein |
     And I navigate to "Appearance > Courses" in site administration

@@ -16,15 +16,10 @@
 
 /**
  * @package    core_backup
- * @category   test
+ * @category   phpunit
  * @copyright  2010 onwards Eloy Lafuente (stronk7) {@link http://stronk7.com}
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
-namespace core_backup;
-
-use restore_decode_rule;
-use restore_decode_rule_exception;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -34,14 +29,9 @@ require_once($CFG->dirroot . '/backup/util/includes/restore_includes.php');
 
 
 /**
- * Restore_decode tests (both rule and content)
- *
- * @package    core_backup
- * @category   test
- * @copyright  2010 onwards Eloy Lafuente (stronk7) {@link http://stronk7.com}
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * restore_decode tests (both rule and content)
  */
-class decode_test extends \basic_testcase {
+class backup_restore_decode_testcase extends basic_testcase {
 
     /**
      * test restore_decode_rule class
@@ -52,7 +42,7 @@ class decode_test extends \basic_testcase {
         try {
             $dr = new restore_decode_rule('28 HJH', '/index.php', array());
             $this->assertTrue(false, 'restore_decode_rule_exception exception expected');
-        } catch (\Exception $e) {
+        } catch (exception $e) {
             $this->assertTrue($e instanceof restore_decode_rule_exception);
             $this->assertEquals($e->errorcode, 'decode_rule_incorrect_name');
             $this->assertEquals($e->a, '28 HJH');
@@ -61,7 +51,7 @@ class decode_test extends \basic_testcase {
         try {
             $dr = new restore_decode_rule('HJHJhH', '/index.php', array());
             $this->assertTrue(false, 'restore_decode_rule_exception exception expected');
-        } catch (\Exception $e) {
+        } catch (exception $e) {
             $this->assertTrue($e instanceof restore_decode_rule_exception);
             $this->assertEquals($e->errorcode, 'decode_rule_incorrect_name');
             $this->assertEquals($e->a, 'HJHJhH');
@@ -70,7 +60,7 @@ class decode_test extends \basic_testcase {
         try {
             $dr = new restore_decode_rule('', '/index.php', array());
             $this->assertTrue(false, 'restore_decode_rule_exception exception expected');
-        } catch (\Exception $e) {
+        } catch (exception $e) {
             $this->assertTrue($e instanceof restore_decode_rule_exception);
             $this->assertEquals($e->errorcode, 'decode_rule_incorrect_name');
             $this->assertEquals($e->a, '');
@@ -79,7 +69,7 @@ class decode_test extends \basic_testcase {
         try {
             $dr = new restore_decode_rule('TESTRULE', 'index.php', array());
             $this->assertTrue(false, 'restore_decode_rule_exception exception expected');
-        } catch (\Exception $e) {
+        } catch (exception $e) {
             $this->assertTrue($e instanceof restore_decode_rule_exception);
             $this->assertEquals($e->errorcode, 'decode_rule_incorrect_urltemplate');
             $this->assertEquals($e->a, 'index.php');
@@ -88,7 +78,7 @@ class decode_test extends \basic_testcase {
         try {
             $dr = new restore_decode_rule('TESTRULE', '', array());
             $this->assertTrue(false, 'restore_decode_rule_exception exception expected');
-        } catch (\Exception $e) {
+        } catch (exception $e) {
             $this->assertTrue($e instanceof restore_decode_rule_exception);
             $this->assertEquals($e->errorcode, 'decode_rule_incorrect_urltemplate');
             $this->assertEquals($e->a, '');
@@ -97,7 +87,7 @@ class decode_test extends \basic_testcase {
         try {
             $dr = new restore_decode_rule('TESTRULE', '/course/view.php?id=$1&c=$2$3', array('test1', 'test2'));
             $this->assertTrue(false, 'restore_decode_rule_exception exception expected');
-        } catch (\Exception $e) {
+        } catch (exception $e) {
             $this->assertTrue($e instanceof restore_decode_rule_exception);
             $this->assertEquals($e->errorcode, 'decode_rule_mappings_incorrect_count');
             $this->assertEquals($e->a->placeholders, 3);
@@ -107,7 +97,7 @@ class decode_test extends \basic_testcase {
         try {
             $dr = new restore_decode_rule('TESTRULE', '/course/view.php?id=$5&c=$4$1', array('test1', 'test2', 'test3'));
             $this->assertTrue(false, 'restore_decode_rule_exception exception expected');
-        } catch (\Exception $e) {
+        } catch (exception $e) {
             $this->assertTrue($e instanceof restore_decode_rule_exception);
             $this->assertEquals($e->errorcode, 'decode_rule_nonconsecutive_placeholders');
             $this->assertEquals($e->a, '1, 4, 5');
@@ -116,7 +106,7 @@ class decode_test extends \basic_testcase {
         try {
             $dr = new restore_decode_rule('TESTRULE', '/course/view.php?id=$0&c=$3$2', array('test1', 'test2', 'test3'));
             $this->assertTrue(false, 'restore_decode_rule_exception exception expected');
-        } catch (\Exception $e) {
+        } catch (exception $e) {
             $this->assertTrue($e instanceof restore_decode_rule_exception);
             $this->assertEquals($e->errorcode, 'decode_rule_nonconsecutive_placeholders');
             $this->assertEquals($e->a, '0, 2, 3');
@@ -125,7 +115,7 @@ class decode_test extends \basic_testcase {
         try {
             $dr = new restore_decode_rule('TESTRULE', '/course/view.php?id=$1&c=$3$3', array('test1', 'test2', 'test3'));
             $this->assertTrue(false, 'restore_decode_rule_exception exception expected');
-        } catch (\Exception $e) {
+        } catch (exception $e) {
             $this->assertTrue($e instanceof restore_decode_rule_exception);
             $this->assertEquals($e->errorcode, 'decode_rule_duplicate_placeholders');
             $this->assertEquals($e->a, '1, 3, 3');

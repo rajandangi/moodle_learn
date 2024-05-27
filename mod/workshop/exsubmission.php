@@ -38,7 +38,7 @@ $course     = $DB->get_record('course', array('id' => $cm->course), '*', MUST_EX
 
 require_login($course, false, $cm);
 if (isguestuser()) {
-    throw new \moodle_exception('guestsarenotallowed');
+    print_error('guestsarenotallowed');
 }
 
 $workshop = $DB->get_record('workshop', array('id' => $cm->instance), '*', MUST_EXIST);
@@ -47,7 +47,6 @@ $workshop = new workshop($workshop, $cm, $course);
 $PAGE->set_url($workshop->exsubmission_url($id), array('edit' => $edit));
 $PAGE->set_title($workshop->name);
 $PAGE->set_heading($course->fullname);
-$PAGE->set_secondary_active_tab('modulepage');
 if ($edit) {
     $PAGE->navbar->add(get_string('exampleediting', 'workshop'));
 } else {
@@ -74,7 +73,7 @@ if ($example->id and ($canmanage or ($workshop->assessing_examples_allowed() and
 } elseif (is_null($example->id) and $canmanage) {
     // ok you can go
 } else {
-    throw new \moodle_exception('nopermissions', 'error', $workshop->view_url(), 'view or manage example submission');
+    print_error('nopermissions', 'error', $workshop->view_url(), 'view or manage example submission');
 }
 
 if ($id and $delete and $confirm and $canmanage) {
@@ -157,13 +156,10 @@ if ($edit and $canmanage) {
         }
 
         // Save and relink embedded images and save attachments.
-        // To be used when Online text is allowed as a submission type.
-        if (!empty($formdata->content_editor)) {
-            $formdata = file_postupdate_standard_editor($formdata, 'content', $workshop->submission_content_options(),
-                $workshop->context, 'mod_workshop', 'submission_content', $example->id);
-            $formdata = file_postupdate_standard_filemanager($formdata, 'attachment', $workshop->submission_attachment_options(),
-                $workshop->context, 'mod_workshop', 'submission_attachment', $example->id);
-        }
+        $formdata = file_postupdate_standard_editor($formdata, 'content', $workshop->submission_content_options(),
+            $workshop->context, 'mod_workshop', 'submission_content', $example->id);
+        $formdata = file_postupdate_standard_filemanager($formdata, 'attachment', $workshop->submission_attachment_options(),
+            $workshop->context, 'mod_workshop', 'submission_attachment', $example->id);
 
         if (empty($formdata->attachment)) {
             // explicit cast to zero integer
@@ -177,9 +173,7 @@ if ($edit and $canmanage) {
 
 // Output starts here
 echo $output->header();
-if (!$PAGE->has_secondary_navigation()) {
-    echo $output->heading(format_string($workshop->name), 2);
-}
+echo $output->heading(format_string($workshop->name), 2);
 
 // show instructions for submitting as they may contain some list of questions and we need to know them
 // while reading the submitted answer

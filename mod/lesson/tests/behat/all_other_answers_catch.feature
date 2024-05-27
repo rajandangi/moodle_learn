@@ -16,14 +16,13 @@ Feature: Numeric and short answer questions have a section to catch all other st
       | user | course | role |
       | teacher1 | C1 | editingteacher |
       | student1 | C1 | student |
-    Given the following "activity" exists:
+    And the following "activity" exists:
       | activity      | lesson                  |
       | course        | C1                      |
       | idnumber      | 0001                    |
       | name          | Test lesson name        |
       | maxattempts   | 3                       |
     And I am on the "Test lesson name" "lesson activity editing" page logged in as teacher1
-    And I expand all fieldsets
     And I set the following fields to these values:
       | Provide option to try a question again | Yes |
     And I press "Save and display"

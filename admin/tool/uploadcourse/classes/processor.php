@@ -174,7 +174,7 @@ class tool_uploadcourse_processor {
     /**
      * Execute the process.
      *
-     * @param tool_uploadcourse_tracker $tracker the output tracker to use.
+     * @param object $tracker the output tracker to use.
      * @return void
      */
     public function execute($tracker = null) {
@@ -219,10 +219,6 @@ class tool_uploadcourse_processor {
 
                 $data = array_merge($data, $course->get_data(), array('id' => $course->get_id()));
                 $tracker->output($this->linenb, true, $status, $data);
-                if ($course->has_errors()) {
-                    $errors++;
-                    $tracker->output($this->linenb, false, $course->get_errors(), $data);
-                }
             } else {
                 $errors++;
                 $tracker->output($this->linenb, false, $course->get_errors(), $data);
@@ -324,7 +320,7 @@ class tool_uploadcourse_processor {
      * This only returns passed data, along with the errors.
      *
      * @param integer $rows number of rows to preview.
-     * @param tool_uploadcourse_tracker $tracker the output tracker to use.
+     * @param object $tracker the output tracker to use.
      * @return array of preview data.
      */
     public function preview($rows = 10, $tracker = null) {

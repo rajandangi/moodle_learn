@@ -22,7 +22,6 @@
  * @copyright 2017 Mark Nelson <markn@moodle.com>
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-namespace mod_chat;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -34,14 +33,10 @@ defined('MOODLE_INTERNAL') || die();
  * @copyright 2017 Mark Nelson <markn@moodle.com>
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class lib_test extends \advanced_testcase {
+class mod_chat_lib_testcase extends advanced_testcase {
 
-    public function setUp(): void {
+    public function setUp() {
         $this->resetAfterTest();
-
-        // Chat module is disabled by default, enable it for testing.
-        $manager = \core_plugin_manager::resolve_plugininfo_class('mod');
-        $manager::enable_plugin('chat', 1);
     }
 
     /*
@@ -657,7 +652,7 @@ class lib_test extends \advanced_testcase {
             \core_completion\api::COMPLETION_EVENT_TYPE_DATE_COMPLETION_EXPECTED);
 
         // Mark the activity as completed.
-        $completion = new \completion_info($course);
+        $completion = new completion_info($course);
         $completion->set_module_viewed($cm);
 
         // Create an action factory.
@@ -690,7 +685,7 @@ class lib_test extends \advanced_testcase {
             \core_completion\api::COMPLETION_EVENT_TYPE_DATE_COMPLETION_EXPECTED);
 
         // Mark the activity as completed for the student.
-        $completion = new \completion_info($course);
+        $completion = new completion_info($course);
         $completion->set_module_viewed($cm, $student->id);
 
         // Create an action factory.
@@ -712,7 +707,7 @@ class lib_test extends \advanced_testcase {
      * @return bool|calendar_event
      */
     private function create_action_event($courseid, $instanceid, $eventtype) {
-        $event = new \stdClass();
+        $event = new stdClass();
         $event->name = 'Calendar event';
         $event->modulename  = 'chat';
         $event->courseid = $courseid;
@@ -721,7 +716,7 @@ class lib_test extends \advanced_testcase {
         $event->eventtype = $eventtype;
         $event->timestart = time();
 
-        return \calendar_event::create($event);
+        return calendar_event::create($event);
     }
 
     /**
@@ -730,7 +725,7 @@ class lib_test extends \advanced_testcase {
     public function test_creation_with_no_calendar_capabilities() {
         $this->resetAfterTest();
         $course = self::getDataGenerator()->create_course();
-        $context = \context_course::instance($course->id);
+        $context = context_course::instance($course->id);
         $user = self::getDataGenerator()->create_and_enrol($course, 'editingteacher');
         $roleid = self::getDataGenerator()->create_role();
         self::getDataGenerator()->role_assign($roleid, $user->id, $context->id);

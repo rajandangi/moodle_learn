@@ -17,28 +17,14 @@
  * Add policy consent modal to the page
  *
  * @module     tool_policy/acceptmodal
+ * @class      AcceptOnBehalf
+ * @package    tool_policy
  * @copyright  2018 Marina Glancy
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-define([
-    'jquery',
-    'core/str',
-    'core/modal_save_cancel',
-    'core/modal_events',
-    'core/notification',
-    'core/fragment',
-    'core/ajax',
-    'core_form/changechecker',
-], function(
-    $,
-    Str,
-    ModalSaveCancel,
-    ModalEvents,
-    Notification,
-    Fragment,
-    Ajax,
-    FormChangeChecker
-) {
+define(['jquery', 'core/str', 'core/modal_factory', 'core/modal_events', 'core/notification', 'core/fragment',
+        'core/ajax', 'core/yui'],
+    function($, Str, ModalFactory, ModalEvents, Notification, Fragment, Ajax, Y) {
 
         "use strict";
 
@@ -153,10 +139,11 @@ define([
                     saveText = strings[5];
                 }
                 // Create the modal.
-                return ModalSaveCancel.create({
+                return ModalFactory.create({
+                    type: ModalFactory.types.SAVE_CANCEL,
                     title: title,
                     body: ''
-                }).then(function(modal) {
+                }).done(function(modal) {
                     this.modal = modal;
                     this.setupFormModal(formData, saveText);
                 }.bind(this));
@@ -259,7 +246,9 @@ define([
          * Destroy the modal
          */
         AcceptOnBehalf.prototype.destroy = function() {
-            FormChangeChecker.resetAllFormDirtyStates();
+            Y.use('moodle-core-formchangechecker', function() {
+                M.core_formchangechecker.reset_form_dirty_state();
+            });
             this.modal.destroy();
             this.currentTrigger.focus();
         };

@@ -178,7 +178,7 @@ class tool_log_setting_managestores extends admin_setting {
                     $hideshow = "<a href=\"$aurl\">";
                     $hideshow .= $OUTPUT->pix_icon('t/show', $strenable) . '</a>';
                     $isenabled = false;
-                    $displayname = "<span>$name</span>";
+                    $displayname = "<span class=\"dimmed_text\">$name</span>";
                 } else {
                     $hideshow = '';
                     $isenabled = false;
@@ -230,7 +230,6 @@ class tool_log_setting_managestores extends admin_setting {
 
             // Add a row to the table.
             $table->data[] = array($icon . $displayname, $supportedreports, $version, $hideshow, $updown, $settings, $uninstall);
-            $table->rowclasses[] = $isenabled ? '' : 'dimmed_text';
 
             $printed[$store] = true;
         }

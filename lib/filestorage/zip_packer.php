@@ -487,16 +487,8 @@ class zip_packer extends file_packer {
                     continue;
                 }
                 $content = '';
-                $realfilesize = 0;
                 while (!feof($fz)) {
                     $content .= fread($fz, 262143);
-                    $realfilesize = strlen($content); // Current file size.
-
-                    // More was read than was expected, which indicates a malformed/malicious archive.
-                    // Break and let the error handling below take care of the file clean up.
-                    if ($realfilesize > $size) {
-                        break;
-                    }
                 }
                 fclose($fz);
                 if (strlen($content) !== $size) {
@@ -541,17 +533,9 @@ class zip_packer extends file_packer {
                     $processed[$name] = 'Can not read file from zip archive'; // TODO: localise
                     continue;
                 }
-                $realfilesize = 0;
                 while (!feof($fz)) {
                     $content = fread($fz, 262143);
-                    $numofbytes = fwrite($fp, $content);
-                    $realfilesize += $numofbytes; // Current file size.
-
-                    // More was read than was expected, which indicates a malformed/malicious archive.
-                    // Break and let the error handling below take care of the file clean up.
-                    if ($realfilesize > $size) {
-                        break;
-                    }
+                    fwrite($fp, $content);
                 }
                 fclose($fz);
                 fclose($fp);

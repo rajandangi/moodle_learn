@@ -14,12 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace core_backup;
-
-use backup;
-use core_backup_external;
-use core_external\external_api;
-use externallib_advanced_testcase;
+/**
+ * Backup webservice tests.
+ *
+ * @package    core_backup
+ * @copyright  2020 onward The Moodle Users Association <https://moodleassociation.org/>
+ * @author     Matt Porritt <mattp@catalyst-au.net>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -37,12 +39,12 @@ require_once($CFG->dirroot . '/backup/externallib.php');
  * @author     Matt Porritt <mattp@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class externallib_test extends externallib_advanced_testcase {
+class backup_external_testcase extends externallib_advanced_testcase {
 
     /**
      * Set up tasks for all tests.
      */
-    protected function setUp(): void {
+    protected function setUp() {
         global $CFG;
 
         $this->resetAfterTest(true);
@@ -83,8 +85,8 @@ class externallib_test extends externallib_advanced_testcase {
         $formdata->role_3 = 3;
         $formdata->role_5 = 5;
 
-        $copydata = \copy_helper::process_formdata($formdata);
-        $copydetails = \copy_helper::create_copy($copydata);
+        $coursecopy = new \core_backup\copy\copy($formdata);
+        $copydetails = $coursecopy->create_copy();
         $copydetails['operation'] = \backup::OPERATION_BACKUP;
 
         $params = array('copies' => $copydetails);

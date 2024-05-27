@@ -30,37 +30,11 @@ Feature: Safe Exam Browser settings in quiz edit form
     And the "Require the use of Safe Exam Browser" select box should contain "Yes – Use SEB client config"
     And the field "Require the use of Safe Exam Browser" matches value "No"
 
-  Scenario: Quiz can be edited without capability to select SEB template
-    Given the following "permission override" exists:
-      | role         | editingteacher                       |
-      | capability   | quizaccess/seb:manage_seb_templateid |
-      | permission   | Prevent                              |
-      | contextlevel | System                               |
-      | reference    |                                      |
-    And the following "user" exists:
-      | username     | teacher |
-      | firstname    | Teacher |
-      | lastname     | One     |
-    And the following "course enrolment" exists:
-      | user         | teacher        |
-      | course       | C1             |
-      | role         | editingteacher |
-    And I log in as "teacher"
-    # Create the quiz.
-    When I add a quiz activity to course "Course 1" section "0" and I fill the form with:
-      | Name | My quiz |
-    Then I should not see "New Quiz"
-    # Edit the quiz.
-    And I am on the "My quiz" "quiz activity editing" page
-    And I set the field "Name" to "My quiz edited"
-    And I press "Save and return to course"
-    And I should not see "Edit settings"
-
   Scenario: SEB settings if using No SEB
     Given the following "quizaccess_seb > seb templates" exist:
       | name       |
       | Template 1 |
-    And I am on the "Quiz 1" "quiz activity editing" page logged in as admin
+    When I am on the "Quiz 1" "quiz activity editing" page logged in as admin
     And I expand all fieldsets
     And I set the field "Require the use of Safe Exam Browser" to "No"
     Then I should not see "Upload Safe Exam Browser config file"

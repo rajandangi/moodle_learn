@@ -32,7 +32,7 @@
  * @copyright  2015 Andrew Nicols <andrew@nicols.co.uk>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class phpunit_constraint_object_is_equal_with_exceptions extends PHPUnit\Framework\Constraint\Constraint {
+class phpunit_constraint_object_is_equal_with_exceptions extends PHPUnit\Framework\Constraint\IsEqual {
 
     /**
      * @var array $keys The list of exceptions.
@@ -45,16 +45,11 @@ class phpunit_constraint_object_is_equal_with_exceptions extends PHPUnit\Framewo
     protected $capturedvalue;
 
     /**
-     * @var \PHPUnit\Framework\Constraint\IsEqual $isequal original constraint to be used internally.
-     */
-    protected $isequal;
-
-    /**
      * Override constructor to capture value
      */
     public function __construct($value, float $delta = 0.0, int $maxDepth = 10, bool $canonicalize = false,
                                 bool $ignoreCase = false) {
-        $this->isequal = new \PHPUnit\Framework\Constraint\IsEqual($value, $delta, $maxDepth, $canonicalize, $ignoreCase);
+        parent::__construct($value, $delta, $maxDepth, $canonicalize, $ignoreCase);
         $this->capturedvalue = $value;
     }
 
@@ -86,7 +81,7 @@ class phpunit_constraint_object_is_equal_with_exceptions extends PHPUnit\Framewo
      * @return mixed
      * @throws PHPUnit\Framework\ExpectationFailedException
      */
-    public function evaluate($other, string $description = '', bool $shouldreturnesult = false): ?bool {
+    public function evaluate($other, $description = '', $shouldreturnesult = false) {
         foreach ($this->keys as $key => $comparison) {
             if (isset($other->$key) || isset($this->capturedvalue->$key)) {
                 // One of the keys is present, therefore run the comparison.
@@ -98,13 +93,8 @@ class phpunit_constraint_object_is_equal_with_exceptions extends PHPUnit\Framewo
             }
         }
 
-        // Run the IsEqual evaluation.
-        return $this->isequal->evaluate($other, $description, $shouldreturnesult);
-    }
-
-    // \PHPUnit\Framework\Constraint\IsEqual wrapping.
-    public function toString(): string {
-        return $this->isequal->toString();
+        // Run the parent evaluation (isEqual).
+        return parent::evaluate($other, $description, $shouldreturnesult);
     }
 
 }

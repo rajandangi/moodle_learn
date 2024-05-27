@@ -14,11 +14,21 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+/**
+ * License manager.
+ *
+ * @package    tool_licensemanager
+ * @copyright  2019 Tom Dickman <tomdickman@catalyst-au.net>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
 namespace tool_licensemanager;
 
 use tool_licensemanager\form\edit_license;
 use license_manager;
 use stdClass;
+
+defined('MOODLE_INTERNAL') || die();
 
 /**
  * License manager, main controller for tool_licensemanager.
@@ -75,7 +85,7 @@ class manager {
      * @param string $action the api action to carry out.
      * @param string|object $license the license object or shortname of license to carry action out on.
      */
-    public function execute(string $action, $license): void {
+    public function execute(string $action, $license) : void {
 
         admin_externalpage_setup('licensemanager');
 
@@ -85,30 +95,18 @@ class manager {
         }
 
         $viewmanager = true;
-        $message = null;
-        $redirect = helper::get_licensemanager_url();
 
         switch ($action) {
             case self::ACTION_DISABLE:
-                require_sesskey();
                 license_manager::disable($license);
-                redirect($redirect);
                 break;
 
             case self::ACTION_ENABLE:
-                require_sesskey();
                 license_manager::enable($license);
-                redirect($redirect);
                 break;
 
             case self::ACTION_DELETE:
-                require_sesskey();
-                try {
-                    license_manager::delete($license);
-                } catch (\moodle_exception $e) {
-                    $message = $e->getMessage();
-                }
-                redirect($redirect, $message);
+                license_manager::delete($license);
                 break;
 
             case self::ACTION_CREATE:
@@ -118,9 +116,7 @@ class manager {
 
             case self::ACTION_MOVE_UP:
             case self::ACTION_MOVE_DOWN:
-                require_sesskey();
                 $this->change_license_order($action, $license);
-                redirect($redirect);
                 break;
 
             case self::ACTION_VIEW_LICENSE_MANAGER:
@@ -128,7 +124,7 @@ class manager {
                 break;
         }
         if ($viewmanager) {
-            $this->view_license_manager($message);
+            $this->view_license_manager();
         }
     }
 
@@ -140,7 +136,7 @@ class manager {
      *
      * @return bool true if license editing complete, false otherwise.
      */
-    private function edit(string $action, string $licenseshortname): bool {
+    private function edit(string $action, string $licenseshortname) : bool {
 
         if ($action != self::ACTION_CREATE && $action != self::ACTION_UPDATE) {
             throw new \coding_exception('license edit actions are limited to create and update');
@@ -156,14 +152,14 @@ class manager {
             if ($action == self::ACTION_CREATE) {
                 // Check that license shortname isn't already in use.
                 if (!empty(license_manager::get_license_by_shortname($data->shortname))) {
-                    throw new \moodle_exception('duplicatelicenseshortname', 'tool_licensemanager',
+                    print_error('duplicatelicenseshortname', 'tool_licensemanager',
                         helper::get_licensemanager_url(),
                         $data->shortname);
                 }
                 $license->shortname = $data->shortname;
             } else {
                 if (empty(license_manager::get_license_by_shortname($licenseshortname))) {
-                    throw new \moodle_exception('licensenotfoundshortname', 'license',
+                    print_error('licensenotfoundshortname', 'license',
                         helper::get_licensemanager_url(),
                         $licenseshortname);
                 }
@@ -190,7 +186,7 @@ class manager {
      * @param string $direction which direction to move, up or down.
      * @param string $licenseshortname the shortname of the license to move up or down order.
      */
-    private function change_license_order(string $direction, string $licenseshortname): void {
+    private function change_license_order(string $direction, string $licenseshortname) : void {
 
         if (!empty($licenseshortname)) {
             if ($direction == self::ACTION_MOVE_UP) {
@@ -208,7 +204,7 @@ class manager {
      * @param string $licenseshortname the shortname of the license to create/edit.
      * @param \tool_licensemanager\form\edit_license $form the form for submitting edit data.
      */
-    private function view_license_editor(string $action, string $licenseshortname, edit_license $form): void {
+    private function view_license_editor(string $action, string $licenseshortname, edit_license $form) : void {
         global $PAGE;
 
         $renderer = $PAGE->get_renderer('tool_licensemanager');
@@ -233,16 +229,14 @@ class manager {
     /**
      * View the license manager.
      */
-    private function view_license_manager(string $message = null): void {
-        global $PAGE, $OUTPUT;
+    private function view_license_manager() : void {
+        global $PAGE;
+
+        $PAGE->requires->js_call_amd('tool_licensemanager/delete_license');
 
         $renderer = $PAGE->get_renderer('tool_licensemanager');
         $html = $renderer->header();
         $html .= $renderer->heading(get_string('licensemanager', 'tool_licensemanager'));
-
-        if (!empty($message)) {
-            $html .= $OUTPUT->notification($message);
-        }
 
         $table = new \tool_licensemanager\output\table();
         $html .= $renderer->render($table);

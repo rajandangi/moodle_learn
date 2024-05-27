@@ -14,10 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace enrol_imsenterprise;
-
-use enrol_imsenterprise_plugin;
-use enrol_imsenterprise\task\cron_task;
+/**
+ * IMS Enterprise enrolment tests.
+ *
+ * @package    enrol_imsenterprise
+ * @category   test
+ * @copyright  2012 David Monllaó
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -33,7 +37,7 @@ require_once($CFG->dirroot . '/enrol/imsenterprise/lib.php');
  * @copyright  2012 David Monllaó
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class imsenterprise_test extends \advanced_testcase {
+class enrol_imsenterprise_testcase extends advanced_testcase {
 
     /**
      * @var $imsplugin enrol_imsenterprise_plugin IMS plugin instance.
@@ -43,7 +47,7 @@ class imsenterprise_test extends \advanced_testcase {
     /**
      * Setup required for all tests.
      */
-    protected function setUp(): void {
+    protected function setUp() {
         $this->resetAfterTest(true);
         $this->imsplugin = enrol_get_plugin('imsenterprise');
         $this->set_test_config();
@@ -91,7 +95,7 @@ class imsenterprise_test extends \advanced_testcase {
 
         $prevnusers = $DB->count_records('user');
 
-        $user1 = new \stdClass();
+        $user1 = new StdClass();
         $user1->recstatus = enrol_imsenterprise_plugin::IMSENTERPRISE_ADD;
         $user1->username = 'u1';
         $user1->email = 'u1@example.com';
@@ -113,7 +117,7 @@ class imsenterprise_test extends \advanced_testcase {
 
         $prevnusers = $DB->count_records('user');
 
-        $user2 = new \stdClass();
+        $user2 = new StdClass();
         $user2->recstatus = enrol_imsenterprise_plugin::IMSENTERPRISE_ADD;
         $user2->username = 'u2';
         $user2->auth = 'cas';
@@ -142,7 +146,7 @@ class imsenterprise_test extends \advanced_testcase {
         global $DB;
 
         $user = $this->getDataGenerator()->create_user(array('idnumber' => 'test-update-user'));
-        $imsuser = new \stdClass();
+        $imsuser = new stdClass();
         $imsuser->recstatus = enrol_imsenterprise_plugin::IMSENTERPRISE_UPDATE;
         // THIS SHOULD WORK, surely?: $imsuser->username = $user->username;
         // But this is required...
@@ -165,7 +169,7 @@ class imsenterprise_test extends \advanced_testcase {
         $this->imsplugin->set_config('imsupdateusers', false);
 
         $user = $this->getDataGenerator()->create_user(array('idnumber' => 'test-update-user'));
-        $imsuser = new \stdClass();
+        $imsuser = new stdClass();
         $imsuser->recstatus = enrol_imsenterprise_plugin::IMSENTERPRISE_UPDATE;
         // THIS SHOULD WORK, surely?: $imsuser->username = $user->username;
         // But this is required...
@@ -193,7 +197,7 @@ class imsenterprise_test extends \advanced_testcase {
         $this->imsplugin->set_config('imsdeleteusers', true);
         $user = $this->getDataGenerator()->create_user(array('idnumber' => 'test-update-user'));
 
-        $imsuser = new \stdClass();
+        $imsuser = new stdClass();
         $imsuser->recstatus = enrol_imsenterprise_plugin::IMSENTERPRISE_DELETE;
         $imsuser->username = $user->username;
         $imsuser->firstname = $user->firstname;
@@ -214,7 +218,7 @@ class imsenterprise_test extends \advanced_testcase {
         $this->imsplugin->set_config('imsdeleteusers', false);
         $user = $this->getDataGenerator()->create_user(array('idnumber' => 'test-update-user'));
 
-        $imsuser = new \stdClass();
+        $imsuser = new stdClass();
         $imsuser->recstatus = enrol_imsenterprise_plugin::IMSENTERPRISE_DELETE;
         $imsuser->username = $user->username;
         $imsuser->firstname = $user->firstname;
@@ -258,13 +262,13 @@ class imsenterprise_test extends \advanced_testcase {
 
         $prevncourses = $DB->count_records('course');
 
-        $course1 = new \stdClass();
+        $course1 = new StdClass();
         $course1->recstatus = enrol_imsenterprise_plugin::IMSENTERPRISE_ADD;
         $course1->idnumber = 'id1';
         $course1->imsshort = 'id1';
         $course1->category[] = 'DEFAULT CATNAME';
 
-        $course2 = new \stdClass();
+        $course2 = new StdClass();
         $course2->recstatus = enrol_imsenterprise_plugin::IMSENTERPRISE_ADD;
         $course2->idnumber = 'id2';
         $course2->imsshort = 'id2';
@@ -289,13 +293,13 @@ class imsenterprise_test extends \advanced_testcase {
         $this->imsplugin->set_config('createnewcourses', false);
         $prevncourses = $DB->count_records('course');
 
-        $course1 = new \stdClass();
+        $course1 = new StdClass();
         $course1->recstatus = enrol_imsenterprise_plugin::IMSENTERPRISE_ADD;
         $course1->idnumber = 'id1';
         $course1->imsshort = 'id1';
         $course1->category[] = 'DEFAULT CATNAME';
 
-        $course2 = new \stdClass();
+        $course2 = new StdClass();
         $course2->recstatus = enrol_imsenterprise_plugin::IMSENTERPRISE_ADD;
         $course2->idnumber = 'id2';
         $course2->imsshort = 'id2';
@@ -323,7 +327,7 @@ class imsenterprise_test extends \advanced_testcase {
 
         $prevncourses = $DB->count_records('course');
 
-        $course1 = new \stdClass();
+        $course1 = new StdClass();
         $course1->recstatus = enrol_imsenterprise_plugin::IMSENTERPRISE_ADD;
         $course1->idnumber = '';
         $course1->imsshort = 'id1';
@@ -347,7 +351,7 @@ class imsenterprise_test extends \advanced_testcase {
         $this->imsplugin->set_config('truncatecoursecodes', $truncatelength);
         $prevncourses = $DB->count_records('course');
 
-        $course1 = new \stdClass();
+        $course1 = new StdClass();
         $course1->recstatus = enrol_imsenterprise_plugin::IMSENTERPRISE_ADD;
         $course1->idnumber = '123456789';
         $course1->imsshort = 'id1';
@@ -373,11 +377,11 @@ class imsenterprise_test extends \advanced_testcase {
         $this->imsplugin->set_config('createnewcategories', false);
 
         // Delete the default category, to ensure the plugin handles this gracefully.
-        $defaultcat = \core_course_category::get_default();
+        $defaultcat = core_course_category::get_default();
         $defaultcat->delete_full(false);
 
         // Create an course with the IMS plugin without a category.
-        $course1 = new \stdClass();
+        $course1 = new stdClass();
         $course1->idnumber = 'id1';
         $course1->imsshort = 'id1';
         $course1->category[] = '';
@@ -401,7 +405,7 @@ class imsenterprise_test extends \advanced_testcase {
         $this->imsplugin->set_config('imscoursemapfullname', 'coursecode');
         $this->imsplugin->set_config('imscoursemapsummary', 'coursecode');
 
-        $course1 = new \stdClass();
+        $course1 = new StdClass();
         $course1->recstatus = enrol_imsenterprise_plugin::IMSENTERPRISE_ADD;
         $course1->idnumber = 'id1';
         $course1->imsshort = 'description_short1';
@@ -423,7 +427,7 @@ class imsenterprise_test extends \advanced_testcase {
         $this->imsplugin->set_config('imscoursemapfullname', 'long');
         $this->imsplugin->set_config('imscoursemapsummary', 'full');
 
-        $course2 = new \stdClass();
+        $course2 = new StdClass();
         $course2->recstatus = enrol_imsenterprise_plugin::IMSENTERPRISE_ADD;
         $course2->idnumber = 'id2';
         $course2->imsshort = 'description_short2';
@@ -445,7 +449,7 @@ class imsenterprise_test extends \advanced_testcase {
         $this->imsplugin->set_config('imscoursemapfullname', 'long');
         $this->imsplugin->set_config('imscoursemapsummary', 'full');
 
-        $course3 = new \stdClass();
+        $course3 = new StdClass();
         $course3->recstatus = enrol_imsenterprise_plugin::IMSENTERPRISE_ADD;
         $course3->idnumber = 'id3';
         $course3->imsshort = 'description_short3';
@@ -468,7 +472,7 @@ class imsenterprise_test extends \advanced_testcase {
     public function test_course_update() {
         global $DB;
 
-        $course4 = new \stdClass();
+        $course4 = new StdClass();
         $course4->recstatus = enrol_imsenterprise_plugin::IMSENTERPRISE_ADD;
         $course4->idnumber = 'id4';
         $course4->imsshort = 'id4';
@@ -500,7 +504,7 @@ class imsenterprise_test extends \advanced_testcase {
     public function test_course_delete() {
         global $DB;
 
-        $course8 = new \stdClass();
+        $course8 = new StdClass();
         $course8->recstatus = enrol_imsenterprise_plugin::IMSENTERPRISE_ADD;
         $course8->idnumber = 'id8';
         $course8->imsshort = 'id8';
@@ -536,7 +540,7 @@ class imsenterprise_test extends \advanced_testcase {
         $topcat = 'DEFAULT CATNAME';
         $subcat = 'DEFAULT SUB CATNAME';
 
-        $course5 = new \stdClass();
+        $course5 = new StdClass();
         $course5->recstatus = enrol_imsenterprise_plugin::IMSENTERPRISE_ADD;
         $course5->idnumber = 'id5';
         $course5->imsshort = 'description_short';
@@ -558,7 +562,7 @@ class imsenterprise_test extends \advanced_testcase {
         $topcat = 'DEFAULT CATNAME';
         $subcat = 'DEFAULT SUB CATNAME TEST2';
 
-        $course6 = new \stdClass();
+        $course6 = new StdClass();
         $course6->recstatus = enrol_imsenterprise_plugin::IMSENTERPRISE_ADD;
         $course6->idnumber = 'id6';
         $course6->imsshort = 'description_short';
@@ -590,7 +594,7 @@ class imsenterprise_test extends \advanced_testcase {
         $topcat = 'DEFAULT CATNAME';
         $subcat = 'DEFAULT SUB CATNAME DUPTEST';
 
-        $course7 = new \stdClass();
+        $course7 = new StdClass();
         $course7->recstatus = enrol_imsenterprise_plugin::IMSENTERPRISE_ADD;
         $course7->idnumber = 'id7';
         $course7->imsshort = 'description_short';
@@ -604,7 +608,7 @@ class imsenterprise_test extends \advanced_testcase {
 
         $prevncategories = $DB->count_records('course_categories');
 
-        $course8 = new \stdClass();
+        $course8 = new StdClass();
         $course8->recstatus = enrol_imsenterprise_plugin::IMSENTERPRISE_ADD;
         $course8->idnumber = 'id8';
         $course8->imsshort = 'description_short';
@@ -639,7 +643,7 @@ class imsenterprise_test extends \advanced_testcase {
         $topcat = $topcatname.$catsep.$topcatidnumber;
         $subcat = $subcatname.$catsep.$subcatidnumber;
 
-        $course1 = new \stdClass();
+        $course1 = new StdClass();
         $course1->recstatus = enrol_imsenterprise_plugin::IMSENTERPRISE_ADD;
         $course1->idnumber = 'id5';
         $course1->imsshort = 'description_short';
@@ -670,7 +674,7 @@ class imsenterprise_test extends \advanced_testcase {
         $topcat = $topcatname.$catsep.$topcatidnumber;
         $subcat = $subcatname.$catsep.$subcatidnumber;
 
-        $course2 = new \stdClass();
+        $course2 = new StdClass();
         $course2->recstatus = enrol_imsenterprise_plugin::IMSENTERPRISE_ADD;
         $course2->idnumber = 'id6';
         $course2->imsshort = 'description_short';
@@ -709,7 +713,7 @@ class imsenterprise_test extends \advanced_testcase {
         $topcat = $topcatname.$catsep.$topcatidnumber;
         $subcat = $subcatname.$catsep.$subcatidnumber;
 
-        $course1 = new \stdClass();
+        $course1 = new StdClass();
         $course1->recstatus = enrol_imsenterprise_plugin::IMSENTERPRISE_ADD;
         $course1->idnumber = 'id1';
         $course1->imsshort = 'description_short';
@@ -723,7 +727,7 @@ class imsenterprise_test extends \advanced_testcase {
 
         $prevncategories = $DB->count_records('course_categories');
 
-        $course2 = new \stdClass();
+        $course2 = new StdClass();
         $course2->recstatus = enrol_imsenterprise_plugin::IMSENTERPRISE_ADD;
         $course2->idnumber = 'id2';
         $course2->imsshort = 'description_short';
@@ -757,7 +761,7 @@ class imsenterprise_test extends \advanced_testcase {
         $topcat = $topcatname.$catsep.$topcatidnumber;
         $subcat = $subcatname.$catsep.$subcatidnumber;
 
-        $course1 = new \stdClass();
+        $course1 = new StdClass();
         $course1->recstatus = enrol_imsenterprise_plugin::IMSENTERPRISE_ADD;
         $course1->idnumber = 'id1';
         $course1->imsshort = 'description_short';
@@ -776,7 +780,7 @@ class imsenterprise_test extends \advanced_testcase {
         $this->assertFalse((boolean)$subcatid);
 
         // Check course was put in default category.
-        $defaultcat = \core_course_category::get_default();
+        $defaultcat = core_course_category::get_default();
         $dbcourse = $DB->get_record('course', array('idnumber' => $course1->idnumber), '*', MUST_EXIST);
         $this->assertEquals($dbcourse->category, $defaultcat->id);
 
@@ -788,7 +792,7 @@ class imsenterprise_test extends \advanced_testcase {
     public function test_create_category_name_no_nested() {
         global $DB;
 
-        $course = new \stdClass();
+        $course = new StdClass();
         $course->recstatus = enrol_imsenterprise_plugin::IMSENTERPRISE_ADD;
         $course->idnumber = 'id';
         $course->imsshort = 'description_short';
@@ -819,7 +823,7 @@ class imsenterprise_test extends \advanced_testcase {
         $catsub = $this->getDataGenerator()->create_category(array('name' => 'CAT-SUB', 'parent' => $cattop->id));
         $prevcats = $DB->count_records('course_categories');
 
-        $course = new \stdClass();
+        $course = new StdClass();
         $course->recstatus = enrol_imsenterprise_plugin::IMSENTERPRISE_ADD;
         $course->idnumber = 'id';
         $course->imsshort = 'description_short';
@@ -852,7 +856,7 @@ class imsenterprise_test extends \advanced_testcase {
         $this->imsplugin->set_config('categoryseparator', '|');
         $catsep = trim($this->imsplugin->get_config('categoryseparator'));
 
-        $course = new \stdClass();
+        $course = new StdClass();
         $course->recstatus = enrol_imsenterprise_plugin::IMSENTERPRISE_ADD;
         $course->idnumber = 'id';
         $course->imsshort = 'description_short';
@@ -894,7 +898,7 @@ class imsenterprise_test extends \advanced_testcase {
                 'parent' => $cattop->id));
         $prevcats = $DB->count_records('course_categories');
 
-        $course = new \stdClass();
+        $course = new StdClass();
         $course->recstatus = enrol_imsenterprise_plugin::IMSENTERPRISE_ADD;
         $course->idnumber = 'id';
         $course->imsshort = 'description_short';
@@ -928,7 +932,7 @@ class imsenterprise_test extends \advanced_testcase {
 
         $catidnumber = '01';
 
-        $course = new \stdClass();
+        $course = new StdClass();
         $course->recstatus = enrol_imsenterprise_plugin::IMSENTERPRISE_ADD;
         $course->idnumber = 'id1';
         $course->imsshort = 'description_short';
@@ -944,7 +948,7 @@ class imsenterprise_test extends \advanced_testcase {
         $this->assertFalse($catid);
 
         // Check course was put in default category.
-        $defaultcat = \core_course_category::get_default();
+        $defaultcat = core_course_category::get_default();
         $dbcourse = $DB->get_record('course', array('idnumber' => $course->idnumber), '*', MUST_EXIST);
         $this->assertEquals($dbcourse->category, $defaultcat->id);
 
@@ -969,8 +973,8 @@ class imsenterprise_test extends \advanced_testcase {
     /**
      * Creates an IMS enterprise XML file and adds it's path to config settings.
      *
-     * @param bool|array $users false or array of users stdClass
-     * @param bool|array $courses false or of courses stdClass
+     * @param bool|array $users false or array of users StdClass
+     * @param bool|array $courses false or of courses StdClass
      */
     public function set_xml_file($users = false, $courses = false) {
 
@@ -1088,7 +1092,7 @@ class imsenterprise_test extends \advanced_testcase {
         global $DB;
         $prevnusers = $DB->count_records('user');
 
-        $user1 = new \stdClass();
+        $user1 = new StdClass();
         $user1->username = 'u1';
         $user1->email = 'u1@example.com';
         $user1->firstname = 'U';
@@ -1097,7 +1101,7 @@ class imsenterprise_test extends \advanced_testcase {
         $users = array($user1);
         $this->set_xml_file($users);
 
-        $task = new cron_task();
+        $task = new enrol_imsenterprise\task\cron_task();
         $task->execute();
 
         $this->assertEquals(($prevnusers + 1), $DB->count_records('user'));

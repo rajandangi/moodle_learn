@@ -14,7 +14,17 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace availability_grouping;
+/**
+ * Unit tests for the condition.
+ *
+ * @package availability_grouping
+ * @copyright 2014 The Open University
+ * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+defined('MOODLE_INTERNAL') || die();
+
+use availability_grouping\condition;
 
 /**
  * Unit tests for the condition.
@@ -23,11 +33,11 @@ namespace availability_grouping;
  * @copyright 2014 The Open University
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class condition_test extends \advanced_testcase {
+class availability_grouping_condition_testcase extends advanced_testcase {
     /**
      * Load required classes.
      */
-    public function setUp(): void {
+    public function setUp() {
         // Load the mock info class so that it can be used.
         global $CFG;
         require_once($CFG->dirroot . '/availability/tests/fixtures/mock_info.php');
@@ -64,7 +74,7 @@ class condition_test extends \advanced_testcase {
         // Check if available (when not available).
         $this->assertFalse($cond->is_available(false, $info, true, $user->id));
         $information = $cond->get_description(false, false, $info);
-        $this->assertMatchesRegularExpression('~belong to a group in.*Grouping!~', $information);
+        $this->assertRegExp('~belong to a group in.*Grouping!~', $information);
         $this->assertTrue($cond->is_available(true, $info, true, $user->id));
 
         // Add user to grouping and refresh cache.
@@ -75,7 +85,7 @@ class condition_test extends \advanced_testcase {
         $this->assertTrue($cond->is_available(false, $info, true, $user->id));
         $this->assertFalse($cond->is_available(true, $info, true, $user->id));
         $information = $cond->get_description(false, true, $info);
-        $this->assertMatchesRegularExpression('~do not belong to a group in.*Grouping!~', $information);
+        $this->assertRegExp('~do not belong to a group in.*Grouping!~', $information);
 
         // Admin user doesn't belong to the grouping, but they can access it
         // either way (positive or NOT) because of accessallgroups.
@@ -88,7 +98,7 @@ class condition_test extends \advanced_testcase {
         $cond = new condition((object)array('id' => $grouping->id + 1000));
         $this->assertFalse($cond->is_available(false, $info, true, $user->id));
         $information = $cond->get_description(false, false, $info);
-        $this->assertMatchesRegularExpression('~belong to a group in.*(Missing grouping)~', $information);
+        $this->assertRegExp('~belong to a group in.*(Missing grouping)~', $information);
 
         // We need an actual cm object to test the 'grouping from cm' option.
         $pagegen = $generator->get_plugin_generator('mod_page');
@@ -108,7 +118,7 @@ class condition_test extends \advanced_testcase {
         groups_remove_member($group, $user);
         get_fast_modinfo($course->id, 0, true);
         $this->assertFalse($info->is_available($information, false, $user->id));
-        $this->assertMatchesRegularExpression('~belong to a group in.*Grouping!~', $information);
+        $this->assertRegExp('~belong to a group in.*Grouping!~', $information);
     }
 
     /**
@@ -117,12 +127,12 @@ class condition_test extends \advanced_testcase {
      */
     public function test_constructor() {
         // No parameters.
-        $structure = new \stdClass();
+        $structure = new stdClass();
         try {
             $cond = new condition($structure);
             $this->fail();
-        } catch (\coding_exception $e) {
-            $this->assertStringContainsString('Missing ->id / ->activity', $e->getMessage());
+        } catch (coding_exception $e) {
+            $this->assertContains('Missing ->id / ->activity', $e->getMessage());
         }
 
         // Invalid id (not int).
@@ -130,8 +140,8 @@ class condition_test extends \advanced_testcase {
         try {
             $cond = new condition($structure);
             $this->fail();
-        } catch (\coding_exception $e) {
-            $this->assertStringContainsString('Invalid ->id', $e->getMessage());
+        } catch (coding_exception $e) {
+            $this->assertContains('Invalid ->id', $e->getMessage());
         }
 
         // Invalid activity option (not bool).
@@ -140,8 +150,8 @@ class condition_test extends \advanced_testcase {
         try {
             $cond = new condition($structure);
             $this->fail();
-        } catch (\coding_exception $e) {
-            $this->assertStringContainsString('Invalid ->activity', $e->getMessage());
+        } catch (coding_exception $e) {
+            $this->assertContains('Invalid ->activity', $e->getMessage());
         }
 
         // Invalid activity option (false).
@@ -149,8 +159,8 @@ class condition_test extends \advanced_testcase {
         try {
             $cond = new condition($structure);
             $this->fail();
-        } catch (\coding_exception $e) {
-            $this->assertStringContainsString('Invalid ->activity', $e->getMessage());
+        } catch (coding_exception $e) {
+            $this->assertContains('Invalid ->activity', $e->getMessage());
         }
 
         // Valid with id.

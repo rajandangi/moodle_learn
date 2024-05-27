@@ -43,8 +43,8 @@
  * The variable name for the capability definitions array is $capabilities
  *
  * For more information, take a look to the documentation available:
- *     - Access API: {@link https://moodledev.io/docs/apis/subsystems/access}
- *     - Upgrade API: {@link https://moodledev.io/docs/guides/upgrade}
+ *     - Access API: {@link http://docs.moodle.org/dev/Access_API}
+ *     - Upgrade API: {@link http://docs.moodle.org/dev/Upgrade_API}
  *
  * @package   core_access
  * @category  access
@@ -118,15 +118,6 @@ $capabilities = array(
             'user' => CAP_ALLOW
         )
     ),
-
-    'moodle/site:senderrormessage' => [
-        'riskbitmask' => RISK_SPAM,
-        'captype' => 'write',
-        'contextlevel' => CONTEXT_SYSTEM,
-        'archetypes' => array(
-            'user' => CAP_ALLOW
-        )
-    ],
 
     'moodle/site:deleteownmessage' => array(
 
@@ -781,20 +772,6 @@ $capabilities = array(
         )
     ),
 
-    'moodle/cohort:configurecustomfields' => array(
-        'riskbitmask' => RISK_SPAM,
-        'captype' => 'write',
-        'contextlevel' => CONTEXT_SYSTEM,
-        'clonepermissionsfrom' => 'moodle/site:config'
-    ),
-
-    'moodle/group:configurecustomfields' => array(
-        'riskbitmask' => RISK_SPAM,
-        'captype' => 'write',
-        'contextlevel' => CONTEXT_SYSTEM,
-        'clonepermissionsfrom' => 'moodle/site:config'
-    ),
-
     'moodle/course:create' => array(
 
         'riskbitmask' => RISK_XSS,
@@ -1108,7 +1085,6 @@ $capabilities = array(
         'clonepermissionsfrom' => 'moodle/course:update'
     ),
 
-    // Ability to set a forced language for a course or activity.
     'moodle/course:setforcedlanguage' => array(
         'captype' => 'write',
         'contextlevel' => CONTEXT_COURSE,
@@ -1165,17 +1141,6 @@ $capabilities = array(
         'captype' => 'write',
         'contextlevel' => CONTEXT_COURSE,
         'archetypes' => array(
-            'editingteacher' => CAP_ALLOW,
-            'manager' => CAP_ALLOW
-        )
-    ),
-
-    'moodle/course:viewhiddengroups' => array(
-        'riskbitmask' => RISK_PERSONAL,
-        'captype' => 'READ',
-        'contextlevel' => CONTEXT_COURSE,
-        'archetypes' => array(
-            'teacher' => CAP_ALLOW,
             'editingteacher' => CAP_ALLOW,
             'manager' => CAP_ALLOW
         )
@@ -2593,159 +2558,5 @@ $capabilities = array(
             'coursecreator' => CAP_ALLOW,
             'editingteacher' => CAP_ALLOW,
         )
-    ],
-
-    // Allow users to download content.
-    'moodle/contentbank:downloadcontent' => [
-        'captype' => 'read',
-        'contextlevel' => CONTEXT_COURSE,
-        'archetypes' => [
-            'manager' => CAP_ALLOW,
-            'coursecreator' => CAP_ALLOW,
-            'editingteacher' => CAP_ALLOW,
-        ]
-    ],
-
-    // Allow users to copy content.
-    'moodle/contentbank:copyanycontent' => [
-        'riskbitmask' => RISK_SPAM,
-        'captype' => 'write',
-        'contextlevel' => CONTEXT_COURSE,
-        'archetypes' => [
-            'manager' => CAP_ALLOW,
-            'coursecreator' => CAP_ALLOW,
-        ]
-    ],
-
-    // Allow users to copy content.
-    'moodle/contentbank:copycontent' => [
-        'riskbitmask' => RISK_SPAM,
-        'captype' => 'write',
-        'contextlevel' => CONTEXT_COURSE,
-        'archetypes' => [
-            'manager' => CAP_ALLOW,
-            'coursecreator' => CAP_ALLOW,
-            'editingteacher' => CAP_ALLOW,
-        ]
-    ],
-
-    // Allow users to download course content.
-    'moodle/course:downloadcoursecontent' => [
-        'captype' => 'read',
-        'contextlevel' => CONTEXT_COURSE,
-        'archetypes' => array(
-            'student' => CAP_ALLOW,
-            'teacher' => CAP_ALLOW,
-            'editingteacher' => CAP_ALLOW,
-            'manager' => CAP_ALLOW
-        )
-    ],
-
-    // Allow users to configure download course content functionality within a course, if the feature is available.
-    'moodle/course:configuredownloadcontent' => [
-        'captype' => 'write',
-        'contextlevel' => CONTEXT_COURSE,
-        'archetypes' => array(
-            'editingteacher' => CAP_ALLOW,
-            'manager' => CAP_ALLOW
-        ),
-    ],
-
-    // Allow to manage payment accounts.
-    'moodle/payment:manageaccounts' => [
-        'captype' => 'write',
-        'riskbitmask' => RISK_PERSONAL | RISK_CONFIG | RISK_DATALOSS,
-        'contextlevel' => CONTEXT_COURSE,
-        'archetypes' => [],
-    ],
-
-    // Allow to view payments.
-    'moodle/payment:viewpayments' => [
-        'captype' => 'read',
-        'riskbitmask' => RISK_PERSONAL,
-        'contextlevel' => CONTEXT_COURSE,
-        'archetypes' => [],
-    ],
-
-    // Allow users to view hidden content.
-    'moodle/contentbank:viewunlistedcontent' => [
-        'captype' => 'read',
-        'contextlevel' => CONTEXT_COURSE,
-        'archetypes' => [
-            'manager' => CAP_ALLOW,
-            'coursecreator' => CAP_ALLOW,
-        ]
-    ],
-
-    // Allow users to view custom reports.
-    'moodle/reportbuilder:view' => [
-        'captype' => 'read',
-        'contextlevel' => CONTEXT_SYSTEM,
-        'archetypes' => [
-            'user' => CAP_ALLOW,
-        ],
-    ],
-
-    // Allow users to view all custom reports.
-    'moodle/reportbuilder:viewall' => [
-        'captype' => 'read',
-        'contextlevel' => CONTEXT_SYSTEM,
-        'archetypes' => [],
-    ],
-
-    // Allow users to create/edit their own custom reports.
-    'moodle/reportbuilder:edit' => [
-        'captype' => 'write',
-        'riskbitmap' => RISK_PERSONAL,
-        'contextlevel' => CONTEXT_SYSTEM,
-        'archetypes' => [
-            'manager' => CAP_ALLOW,
-        ],
-    ],
-
-    // Allow users to create/edit all custom reports.
-    'moodle/reportbuilder:editall' => [
-        'captype' => 'write',
-        'riskbitmap' => RISK_PERSONAL,
-        'contextlevel' => CONTEXT_SYSTEM,
-        'archetypes' => [],
-    ],
-
-    // Allow users to schedule reports as other users.
-    'moodle/reportbuilder:scheduleviewas' => [
-        'captype' => 'read',
-        'riskbitmap' => RISK_PERSONAL,
-        'contextlevel' => CONTEXT_SYSTEM,
-        'archetypes' => [],
-    ],
-
-    // Allow users to share activities to MoodleNet.
-    'moodle/moodlenet:shareactivity' => [
-        'captype' => 'read',
-        'contextlevel' => CONTEXT_COURSE,
-        'archetypes' => [
-            'editingteacher' => CAP_ALLOW,
-            'manager' => CAP_ALLOW,
-        ]
-    ],
-
-    // Allow users to configure course communication rooms.
-    'moodle/course:configurecoursecommunication' => [
-        'captype' => 'write',
-        'contextlevel' => CONTEXT_COURSE,
-        'archetypes' => [
-            'editingteacher' => CAP_ALLOW,
-            'manager' => CAP_ALLOW,
-        ]
-    ],
-
-    // Allow users to share courses to MoodleNet.
-    'moodle/moodlenet:sharecourse' => [
-        'captype' => 'read',
-        'contextlevel' => CONTEXT_COURSE,
-        'archetypes' => [
-            'editingteacher' => CAP_ALLOW,
-            'manager' => CAP_ALLOW,
-        ]
     ],
 );

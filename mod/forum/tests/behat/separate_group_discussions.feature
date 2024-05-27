@@ -12,8 +12,6 @@ Feature: Posting to all groups in a separate group discussion is restricted to u
       | noneditor2 | Non-editing teacher | 2 | noneditor2@example.com |
       | student1 | Student | 1 | student1@example.com |
       | student2 | Student | 2 | student2@example.com |
-      | student3 | Student | 3 | student3@example.com |
-      | student4 | Student | 4 | student4@example.com |
     And the following "courses" exist:
       | fullname | shortname | category |
       | Course 1 | C1 | 0 |
@@ -24,14 +22,11 @@ Feature: Posting to all groups in a separate group discussion is restricted to u
       | noneditor2 | C1 | teacher |
       | student1 | C1 | student |
       | student2 | C1 | student |
-      | student3 | C1 | student |
-      | student4 | C1 | student |
     And the following "groups" exist:
-      | name    | course | idnumber | participation |
-      | Group A | C1     | G1       | 1             |
-      | Group B | C1     | G2       | 1             |
-      | Group C | C1     | G3       | 1             |
-      | Group D | C1     | G4       | 0             |
+      | name | course | idnumber |
+      | Group A | C1 | G1 |
+      | Group B | C1 | G2 |
+      | Group C | C1 | G3 |
     And the following "group members" exist:
       | user | group |
       | teacher1 | G1 |
@@ -44,7 +39,6 @@ Feature: Posting to all groups in a separate group discussion is restricted to u
       | student1 | G1 |
       | student2 | G1 |
       | student2 | G2 |
-      | student3 | G4 |
     And the following "activities" exist:
       | activity   | name                   | course | idnumber     | groupmode |
       | forum      | Standard forum name    | C1     | sepgroups    | 1         |
@@ -61,7 +55,6 @@ Feature: Posting to all groups in a separate group discussion is restricted to u
     And the "Separate groups" select box should contain "Group A"
     And the "Separate groups" select box should contain "Group B"
     And the "Separate groups" select box should contain "Group C"
-    And the "Separate groups" select box should not contain "Group D"
     And I select "All participants" from the "Separate groups" singleselect
     And I should see "Initial Disc ALL"
     And I should see "Initial Disc G1"
@@ -80,19 +73,18 @@ Feature: Posting to all groups in a separate group discussion is restricted to u
 
   Scenario: Teacher with accessallgroups can select any group when posting
     Given I am on the "Standard forum name" "forum activity" page logged in as teacher1
-    When I click on "Add discussion topic" "link"
+    When I click on "Add a new discussion topic" "link"
     And I click on "Advanced" "button"
     Then the "Group" select box should contain "All participants"
     And the "Group" select box should contain "Group A"
     And the "Group" select box should contain "Group B"
     And the "Group" select box should contain "Group C"
-    And the "Group" select box should not contain "Group D"
     And I should see "Post a copy to all groups"
 
   Scenario: Teacher with accessallgroups can post in groups they are a member of
     Given I am on the "Standard forum name" "forum activity" page logged in as teacher1
     And I select "Group A" from the "Separate groups" singleselect
-    When I click on "Add discussion topic" "link"
+    When I click on "Add a new discussion topic" "link"
     And I click on "Advanced" "button"
     Then I should see "Post a copy to all groups"
     And I set the following fields to these values:
@@ -121,7 +113,7 @@ Feature: Posting to all groups in a separate group discussion is restricted to u
   Scenario: Teacher with accessallgroups can post in groups they are not a member of
     Given I am on the "Standard forum name" "forum activity" page logged in as teacher1
     And I select "Group A" from the "Separate groups" singleselect
-    When I click on "Add discussion topic" "link"
+    When I click on "Add a new discussion topic" "link"
     And I click on "Advanced" "button"
     Then I should see "Post a copy to all groups"
     And I set the following fields to these values:
@@ -149,7 +141,7 @@ Feature: Posting to all groups in a separate group discussion is restricted to u
 
   Scenario: Teacher with accessallgroups can post to all groups
     Given I am on the "Standard forum name" "forum activity" page logged in as teacher1
-    When I click on "Add discussion topic" "link"
+    When I click on "Add a new discussion topic" "link"
     And I click on "Advanced" "button"
     And I set the following fields to these values:
       | Subject                   | Teacher 1 -> Post to all  |
@@ -176,7 +168,7 @@ Feature: Posting to all groups in a separate group discussion is restricted to u
   Scenario: Students in one group can only post in their group
     When I am on the "Standard forum name" "forum activity" page logged in as student1
     Then I should see "Group A"
-    And I click on "Add discussion topic" "link"
+    And I click on "Add a new discussion topic" "link"
     And I should see "Group A"
     And I should not see "Group B"
     And I should not see "Group C"
@@ -189,24 +181,10 @@ Feature: Posting to all groups in a separate group discussion is restricted to u
     And I should see "Group A" in the "Student -> B" "table_row"
     And I should not see "Group B" in the "Student -> B" "table_row"
 
-  Scenario: Students in no group can see all group discussions, but not post.
-    When I am on the "Standard forum name" "forum activity" page logged in as student4
-    Then I should see "All participants"
-    And I should see "Initial Disc ALL"
-    And I should see "You are not able to create a discussion"
-    And I should not see "Add discussion topic"
-
-  Scenario: Students in non-participation groups can see all group discussions, but not post.
-    When I am on the "Standard forum name" "forum activity" page logged in as student3
-    Then I should see "All participants"
-    And I should see "Initial Disc ALL"
-    And I should see "You are not able to create a discussion"
-    And I should not see "Add discussion topic"
-
   Scenario: Students in multiple group can post in all of their group individually
     When I am on the "Standard forum name" "forum activity" page logged in as student2
     And I select "Group A" from the "Separate groups" singleselect
-    And I click on "Add discussion topic" "link"
+    And I click on "Add a new discussion topic" "link"
     And I click on "Advanced" "button"
     And the "Group" select box should not contain "All participants"
     And the "Group" select box should contain "Group A"
@@ -227,7 +205,7 @@ Feature: Posting to all groups in a separate group discussion is restricted to u
     And I should not see "Student -> B"
     # Now try posting in Group A (starting at Group B)
     And I select "Group B" from the "Separate groups" singleselect
-    And I click on "Add discussion topic" "link"
+    And I click on "Add a new discussion topic" "link"
     And I click on "Advanced" "button"
     And the "Group" select box should not contain "All participants"
     And the "Group" select box should contain "Group A"
@@ -249,7 +227,7 @@ Feature: Posting to all groups in a separate group discussion is restricted to u
 
   Scenario: Teacher in all groups but without accessallgroups can only post in their groups
     Given I am on the "Standard forum name" "forum activity" page logged in as noneditor1
-    When I click on "Add discussion topic" "link"
+    When I click on "Add a new discussion topic" "link"
     And I click on "Advanced" "button"
     Then the "Group" select box should not contain "All participants"
     And the "Group" select box should contain "Group A"
@@ -258,7 +236,7 @@ Feature: Posting to all groups in a separate group discussion is restricted to u
 
   Scenario: Teacher in some groups and without accessallgroups can only post in their groups
     Given I am on the "Standard forum name" "forum activity" page logged in as noneditor1
-    When I click on "Add discussion topic" "link"
+    When I click on "Add a new discussion topic" "link"
     And I click on "Advanced" "button"
     Then the "Group" select box should not contain "All participants"
     And the "Group" select box should contain "Group A"

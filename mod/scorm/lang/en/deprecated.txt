@@ -1,1 +1,1 @@
-completionscorerequired_help,mod_scorm
+duedate,mod_scorm

@@ -54,19 +54,18 @@ if (!confirm_sesskey()) {
     redirect($returnurl);
 }
 
-$needsupdate = false;
 switch ($action) {
     case 'disable':
         // Remove from enabled list.
-        $class = \core_plugin_manager::resolve_plugininfo_class('antivirus');
-        $class::enable_plugin($antivirus, false);
+        $key = array_search($antivirus, $activeantiviruses);
+        unset($activeantiviruses[$key]);
         break;
 
     case 'enable':
         // Add to enabled list.
         if (!in_array($antivirus, $activeantiviruses)) {
-            $class = \core_plugin_manager::resolve_plugininfo_class('antivirus');
-            $class::enable_plugin($antivirus, true);
+            $activeantiviruses[] = $antivirus;
+            $activeantiviruses = array_unique($activeantiviruses);
         }
         break;
 
@@ -79,7 +78,6 @@ switch ($action) {
                 $fsave = $activeantiviruses[$key];
                 $activeantiviruses[$key] = $activeantiviruses[$key + 1];
                 $activeantiviruses[$key + 1] = $fsave;
-                $needsupdate = true;
             }
         }
         break;
@@ -93,7 +91,6 @@ switch ($action) {
                 $fsave = $activeantiviruses[$key];
                 $activeantiviruses[$key] = $activeantiviruses[$key - 1];
                 $activeantiviruses[$key - 1] = $fsave;
-                $needsupdate = true;
             }
         }
         break;
@@ -101,13 +98,10 @@ switch ($action) {
     default:
         break;
 }
+$new = implode(',', $activeantiviruses);
+add_to_config_log('antiviruses', $CFG->antiviruses, $new, 'core');
+set_config('antiviruses', $new);
 
-if ($needsupdate) {
-    $new = implode(',', $activeantiviruses);
-    add_to_config_log('antiviruses', $CFG->antiviruses, $new, 'core');
-    set_config('antiviruses', $new);
-    core_plugin_manager::reset_caches();
-}
-
+core_plugin_manager::reset_caches();
 
 redirect ($returnurl);

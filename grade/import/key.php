@@ -33,27 +33,26 @@ $id       = optional_param('id', 0, PARAM_INT);
 $delete   = optional_param('delete', 0, PARAM_BOOL);
 $confirm  = optional_param('confirm', 0, PARAM_BOOL);
 
-$url = new moodle_url('/grade/import/key.php', ['courseid' => $courseid, 'id' => $id]);
-$PAGE->set_url($url);
+$PAGE->set_url('/grade/import/key.php', array('courseid' => $courseid, 'id' => $id));
 
 if ($id) {
     if (!$key = $DB->get_record('user_private_key', array('id' => $id))) {
-        throw new \moodle_exception('invalidgroupid');
+        print_error('invalidgroupid');
     }
     if (empty($courseid)) {
         $courseid = $key->instance;
 
     } else if ($courseid != $key->instance) {
-        throw new \moodle_exception('invalidcourseid');
+        print_error('invalidcourseid');
     }
 
     if (!$course = $DB->get_record('course', array('id' => $courseid))) {
-        throw new \moodle_exception('invalidcourseid');
+        print_error('invalidcourseid');
     }
 
 } else {
     if (!$course = $DB->get_record('course', array('id' => $courseid))) {
-        throw new \moodle_exception('invalidcourseid');
+        print_error('invalidcourseid');
     }
     $key = new stdClass();
 }
@@ -67,28 +66,20 @@ require_capability('moodle/grade:import', $context);
 // Check if the user has at least one grade publishing capability.
 $plugins = grade_helper::get_plugins_import($course->id);
 if (!isset($plugins['keymanager'])) {
-    throw new \moodle_exception('nopermissions');
+    print_error('nopermissions');
 }
 
 // extra security check
 if (!empty($key->userid) and $USER->id != $key->userid) {
-    throw new \moodle_exception('notownerofkey');
+    print_error('notownerofkey');
 }
 
 $returnurl = $CFG->wwwroot.'/grade/import/keymanager.php?id='.$course->id;
-
-$strkeys   = get_string('keymanager', 'userkey');
-$strimportgrades = get_string('import', 'grades');
-$PAGE->navbar->add($strimportgrades, new moodle_url(new moodle_url('/grade/import/index.php', ['id' => $courseid])));
-$PAGE->navbar->add($strkeys, new moodle_url('/grade/import/keymanager.php', ['id' => $courseid]));
 
 if ($id and $delete) {
     if (!$confirm) {
         $PAGE->set_title(get_string('deleteselectedkey'));
         $PAGE->set_heading($course->fullname);
-        $PAGE->set_secondary_active_tab('grades');
-        $PAGE->navbar->add(get_string('deleteuserkey', 'userkey'));
-
         echo $OUTPUT->header();
         $optionsyes = array('id'=>$id, 'delete'=>1, 'courseid'=>$courseid, 'sesskey'=>sesskey(), 'confirm'=>1);
         $optionsno  = array('id'=>$courseid);
@@ -126,20 +117,23 @@ if ($editform->is_cancelled()) {
     redirect($returnurl);
 }
 
+$strkeys   = get_string('userkeys', 'userkey');
+$strgrades = get_string('grades');
+
 if ($id) {
     $strheading = get_string('edituserkey', 'userkey');
 } else {
     $strheading = get_string('createuserkey', 'userkey');
 }
 
+$PAGE->navbar->add($strgrades, new moodle_url('/grade/index.php', array('id'=>$courseid)));
+$PAGE->navbar->add($strkeys, new moodle_url('/grade/import/keymanager.php', array('id'=>$courseid)));
 $PAGE->navbar->add($strheading);
 
 /// Print header
 $PAGE->set_title($strkeys);
 $PAGE->set_heading($course->fullname);
-$PAGE->set_secondary_active_tab('grades');
 echo $OUTPUT->header();
-echo $OUTPUT->heading($strheading);
 
 $editform->display();
 echo $OUTPUT->footer();

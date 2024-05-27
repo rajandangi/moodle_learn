@@ -14,17 +14,22 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace core;
-
 /**
- * GeoIp data file parsing test.
+ * GeoIP tests
  *
- * @package    core
- * @category   test
+ * @package    core_iplookup
+ * @category   phpunit
  * @copyright  2012 Petr Skoda {@link http://skodak.org}
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class geoplugin_test extends \advanced_testcase {
+
+defined('MOODLE_INTERNAL') || die();
+
+
+/**
+ * GeoIp data file parsing test.
+ */
+class core_iplookup_geoplugin_testcase extends advanced_testcase {
 
     /**
      * Load required test libraries
@@ -37,7 +42,7 @@ class geoplugin_test extends \advanced_testcase {
     /**
      * In order to execute this test PHPUNIT_LONGTEST should be defined as true in phpunit.xml or directly in config.php
      */
-    public function setUp(): void {
+    public function setUp() {
         if (!PHPUNIT_LONGTEST) {
             $this->markTestSkipped('PHPUNIT_LONGTEST is not defined');
         }
@@ -51,14 +56,14 @@ class geoplugin_test extends \advanced_testcase {
     public function test_ipv4(): void {
         $result = iplookup_find_location('50.0.184.0');
 
-        $this->assertIsArray($result);
-        $this->assertIsFloat($result['latitude']);
-        $this->assertIsFloat($result['longitude']);
-        $this->assertIsString($result['city']);
-        $this->assertIsString($result['country']);
-        $this->assertIsArray($result['title']);
-        $this->assertIsString($result['title'][0]);
-        $this->assertIsString($result['title'][1]);
+        $this->assertInternalType('array', $result);
+        $this->assertInternalType('float', $result['latitude']);
+        $this->assertInternalType('float', $result['longitude']);
+        $this->assertInternalType('string', $result['city']);
+        $this->assertInternalType('string', $result['country']);
+        $this->assertInternalType('array', $result['title']);
+        $this->assertInternalType('string', $result['title'][0]);
+        $this->assertInternalType('string', $result['title'][1]);
         $this->assertNull($result['error']);
     }
 

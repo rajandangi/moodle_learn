@@ -45,28 +45,21 @@ class block_calendar_month extends block_base {
         }
 
         $this->content = new stdClass;
+        $this->content->text = '';
         $this->content->footer = '';
-
-        $renderer = $this->page->get_renderer('core_calendar');
-        $this->content->text = $renderer->start_layout();
 
         $courseid = $this->page->course->id;
         $categoryid = ($this->page->context->contextlevel === CONTEXT_COURSECAT && !empty($this->page->category)) ?
             $this->page->category->id : null;
         $calendar = \calendar_information::create(time(), $courseid, $categoryid);
-        list($data, $template) = calendar_get_view($calendar, 'monthblock', isloggedin());
+        list($data, $template) = calendar_get_view($calendar, 'mini', isloggedin(), isloggedin());
 
         $renderer = $this->page->get_renderer('core_calendar');
         $this->content->text .= $renderer->render_from_template($template, $data);
 
-        $options = [
-            'showfullcalendarlink' => true
-        ];
-        list($footerdata, $footertemplate) = calendar_get_footer_options($calendar, $options);
-        $this->content->footer .= $renderer->render_from_template($footertemplate, $footerdata);
-        $this->content->text .= $renderer->complete_layout();
-
-        $this->page->requires->js_call_amd('core_calendar/popover');
+        if ($this->page->course->id != SITEID) {
+            $this->content->text .= $renderer->event_filter();
+        }
 
         return $this->content;
     }

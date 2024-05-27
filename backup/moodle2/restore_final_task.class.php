@@ -93,8 +93,6 @@ class restore_final_task extends restore_task {
             $this->add_step(new restore_course_logs_structure_step('course_logs', 'course/logs.xml'));
             // New log stores.
             $this->add_step(new restore_course_logstores_structure_step('course_logstores', 'course/logstores.xml'));
-            // Last access to course logs.
-            $this->add_step(new restore_course_loglastaccess_structure_step('course_loglastaccess', 'course/loglastaccess.xml'));
         }
 
         // Review all the executed tasks having one after_restore method
@@ -147,7 +145,7 @@ class restore_final_task extends restore_task {
      * in final task because we need all the activities to be
      * restored in order to handle some log records properly
      */
-    public static function define_restore_log_rules() {
+    static public function define_restore_log_rules() {
         $rules = array();
 
         // module 'course' rules

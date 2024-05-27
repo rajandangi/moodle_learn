@@ -16,12 +16,12 @@
 /**
  * Contain the logic for a drawer.
  *
- * @module theme_boost/drawer
+ * @package    theme_boost
  * @copyright  2016 Damyon Wiese
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-define(['jquery', 'core/custom_interaction_events', 'core/log', 'core/pubsub', 'core/aria', 'core_user/repository'],
-     function($, CustomEvents, Log, PubSub, Aria, UserRepository) {
+define(['jquery', 'core/custom_interaction_events', 'core/log', 'core/pubsub'],
+     function($, CustomEvents, Log, PubSub) {
 
     var SELECTORS = {
         TOGGLE_REGION: '[data-region="drawer-toggle"]',
@@ -37,6 +37,8 @@ define(['jquery', 'core/custom_interaction_events', 'core/log', 'core/pubsub', '
 
     /**
      * Constructor for the Drawer.
+     *
+     * @param {object} root The root jQuery element for the modal
      */
     var Drawer = function() {
 
@@ -55,7 +57,7 @@ define(['jquery', 'core/custom_interaction_events', 'core/log', 'core/pubsub', '
             var body = $(SELECTORS.BODY);
             var preference = trigger.attr('data-preference');
             if (small) {
-                UserRepository.setUserPreference(preference, false);
+                M.util.set_user_preference(preference, 'false');
             }
 
             drawer.on('mousewheel DOMMouseScroll', this.preventPageScroll);
@@ -85,10 +87,10 @@ define(['jquery', 'core/custom_interaction_events', 'core/log', 'core/pubsub', '
 
             trigger.attr('aria-expanded', 'false');
             body.removeClass('drawer-open-' + side);
-            Aria.hide(drawer.get());
+            drawer.attr('aria-hidden', 'true');
             drawer.addClass('closed');
             if (!small) {
-                UserRepository.setUserPreference(preference, false);
+                M.util.set_user_preference(preference, 'false');
             }
         });
     };
@@ -107,7 +109,7 @@ define(['jquery', 'core/custom_interaction_events', 'core/log', 'core/pubsub', '
         var side = trigger.attr('data-side');
         var preference = trigger.attr('data-preference');
         if (small) {
-            UserRepository.setUserPreference(preference, false);
+            M.util.set_user_preference(preference, 'false');
         }
 
         body.addClass('drawer-ease');
@@ -115,12 +117,12 @@ define(['jquery', 'core/custom_interaction_events', 'core/log', 'core/pubsub', '
         if (!open) {
             // Open.
             trigger.attr('aria-expanded', 'true');
-            Aria.unhide(drawer.get());
+            drawer.attr('aria-hidden', 'false');
             drawer.focus();
             body.addClass('drawer-open-' + side);
             drawer.removeClass('closed');
             if (!small) {
-                UserRepository.setUserPreference(preference, true);
+                M.util.set_user_preference(preference, 'true');
             }
         } else {
             // Close.
@@ -129,12 +131,12 @@ define(['jquery', 'core/custom_interaction_events', 'core/log', 'core/pubsub', '
             drawer.addClass('closed').delay(500).queue(function() {
                 // Ensure that during the delay, the drawer wasn't re-opened.
                 if ($(this).hasClass('closed')) {
-                    Aria.hide(this);
+                    $(this).attr('aria-hidden', 'true');
                 }
                 $(this).dequeue();
             });
             if (!small) {
-                UserRepository.setUserPreference(preference, false);
+                M.util.set_user_preference(preference, 'false');
             }
         }
 
@@ -185,8 +187,7 @@ define(['jquery', 'core/custom_interaction_events', 'core/log', 'core/pubsub', '
         // to either an open or closed state.
         $(SELECTORS.DRAWER).on('webkitTransitionEnd msTransitionEnd transitionend', function(e) {
             var drawer = $(e.target).closest(SELECTORS.DRAWER);
-            // Note: aria-hidden is either present, or absent. It should not be set to false.
-            var open = !!drawer.attr('aria-hidden');
+            var open = drawer.attr('aria-hidden') == 'false';
             PubSub.publish('nav-drawer-toggle-end', open);
         });
     };

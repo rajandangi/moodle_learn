@@ -14,7 +14,15 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace mod_forum;
+/**
+ * The discussion exporter tests.
+ *
+ * @package    mod_forum
+ * @copyright  2019 Ryan Wyllie <ryan@moodle.com>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+defined('MOODLE_INTERNAL') || die();
 
 use mod_forum\local\entities\discussion as discussion_entity;
 use mod_forum\local\exporters\discussion as discussion_exporter;
@@ -26,15 +34,11 @@ use mod_forum\local\exporters\discussion as discussion_exporter;
  * @copyright  2019 Ryan Wyllie <ryan@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class exporters_discussion_test extends \advanced_testcase {
-
-    /** @var \mod_forum\local\builders\exported_posts */
-    private $builder;
-
+class mod_forum_exporters_discussion_testcase extends advanced_testcase {
     /**
      * Test set up function.
      */
-    public function setUp(): void {
+    public function setUp() {
         // We must clear the subscription caches. This has to be done both before each test, and after in case of other
         // tests using these functions.
         \mod_forum\subscriptions::reset_forum_cache();
@@ -46,7 +50,7 @@ class exporters_discussion_test extends \advanced_testcase {
     /**
      * Test tear down function.
      */
-    public function tearDown(): void {
+    public function tearDown() {
         // We must clear the subscription caches. This has to be done both before each test, and after in case of other
         // tests using these functions.
         \mod_forum\subscriptions::reset_forum_cache();
@@ -65,9 +69,9 @@ class exporters_discussion_test extends \advanced_testcase {
         $course = $datagenerator->create_course();
         $forum = $datagenerator->create_module('forum', ['course' => $course->id]);
         $coursemodule = get_coursemodule_from_instance('forum', $forum->id);
-        $context = \context_module::instance($coursemodule->id);
+        $context = context_module::instance($coursemodule->id);
         $entityfactory = \mod_forum\local\container::get_entity_factory();
-        $forum = $entityfactory->get_forum_from_stdClass($forum, $context, $coursemodule, $course);
+        $forum = $entityfactory->get_forum_from_stdclass($forum, $context, $coursemodule, $course);
         $group = $datagenerator->create_group(['courseid' => $course->id]);
         $now = time();
         $discussion = new discussion_entity(

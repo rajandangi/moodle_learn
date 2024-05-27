@@ -14,7 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace mod_imscp;
+/**
+ * mod_imscp generator tests
+ *
+ * @package    mod_imscp
+ * @category   test
+ * @copyright  2013 Marina Glancy
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
 /**
  * Genarator tests class for mod_imscp.
@@ -24,7 +31,7 @@ namespace mod_imscp;
  * @copyright  2013 Marina Glancy
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class generator_test extends \advanced_testcase {
+class mod_imscp_generator_testcase extends advanced_testcase {
 
     public function test_create_instance() {
         global $DB, $CFG, $USER;
@@ -59,7 +66,7 @@ class generator_test extends \advanced_testcase {
             'course' => $course->id,
             'package' => file_get_unused_draft_itemid()
         );
-        $usercontext = \context_user::instance($USER->id);
+        $usercontext = context_user::instance($USER->id);
         $filerecord = array('component' => 'user', 'filearea' => 'draft',
                 'contextid' => $usercontext->id, 'itemid' => $params['package'],
                 'filename' => 'singlescobasic.zip', 'filepath' => '/');

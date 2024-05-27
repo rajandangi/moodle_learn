@@ -17,18 +17,19 @@
  * Javascript to handle changing users via the user selector in the header.
  *
  * @module     mod_assign/grading_navigation
+ * @package    mod_assign
  * @copyright  2016 Damyon Wiese <damyon@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @since      3.1
  */
 define(['jquery', 'core/notification', 'core/str', 'core/form-autocomplete',
-        'core/ajax', 'core_user/repository', 'mod_assign/grading_form_change_checker'],
-       function($, notification, str, autocomplete, ajax, UserRepository, checker) {
+        'core/ajax', 'mod_assign/grading_form_change_checker'],
+       function($, notification, str, autocomplete, ajax, checker) {
 
     /**
      * GradingNavigation class.
      *
-     * @class mod_assign/grading_navigation
+     * @class GradingNavigation
      * @param {String} selector The selector for the page region containing the user navigation.
      */
     var GradingNavigation = function(selector) {
@@ -40,14 +41,6 @@ define(['jquery', 'core/notification', 'core/str', 'core/form-autocomplete',
         this._lastXofYUpdate = 0;
         this._firstLoadUsers = true;
 
-        let url = new URL(window.location);
-        if (parseInt(url.searchParams.get('treset')) > 0) {
-            // Remove 'treset' url parameter to make sure that
-            // table preferences won't be reset on page refresh.
-            url.searchParams.delete('treset');
-            window.history.replaceState({}, "", url);
-        }
-
         // Get the current user list from a webservice.
         this._loadAllUsers();
 
@@ -58,7 +51,6 @@ define(['jquery', 'core/notification', 'core/str', 'core/form-autocomplete',
         this._region.find('[data-action="next-user"]').on('click', this._handleNextUser.bind(this));
         this._region.find('[data-action="change-user"]').on('change', this._handleChangeUser.bind(this));
         this._region.find('[data-region="user-filters"]').on('click', this._toggleExpandFilters.bind(this));
-        this._region.find('[data-region="user-resettable"]').on('click', this._toggleResetTable.bind());
 
         $(document).on('user-changed', this._refreshSelector.bind(this));
         $(document).on('done-saving-show-next', this._handleNextUser.bind(this));
@@ -87,22 +79,22 @@ define(['jquery', 'core/notification', 'core/str', 'core/form-autocomplete',
         }.bind(this));
     };
 
-    /** @property {Boolean} Boolean tracking active ajax requests. */
+    /** @type {Boolean} Boolean tracking active ajax requests. */
     GradingNavigation.prototype._isLoading = false;
 
-    /** @property {String} Selector for the page region containing the user navigation. */
+    /** @type {String} Selector for the page region containing the user navigation. */
     GradingNavigation.prototype._regionSelector = null;
 
-    /** @property {Array} The list of active filter keys */
+    /** @type {Array} The list of active filter keys */
     GradingNavigation.prototype._filters = null;
 
-    /** @property {Array} The list of users */
+    /** @type {Array} The list of users */
     GradingNavigation.prototype._users = null;
 
-    /** @property {JQuery} JQuery node for the page region containing the user navigation. */
+    /** @type {JQuery} JQuery node for the page region containing the user navigation. */
     GradingNavigation.prototype._region = null;
 
-    /** @property {String} Last active filters */
+    /** @type {String} Last active filters */
     GradingNavigation.prototype._lastFilters = '';
 
     /**
@@ -219,13 +211,19 @@ define(['jquery', 'core/notification', 'core/str', 'core/form-autocomplete',
             });
         }
 
-        return UserRepository.setUserPreferences(preferences);
+        return ajax.call([{
+            methodname: 'core_user_set_user_preferences',
+            args: {
+                preferences: preferences
+            }
+        }])[0];
     };
     /**
      * Turn a filter on or off.
      *
      * @private
      * @method _filterChanged
+     * @param {Event} event
      */
     GradingNavigation.prototype._filterChanged = function() {
         // There are 3 types of filter right now.
@@ -259,7 +257,7 @@ define(['jquery', 'core/notification', 'core/str', 'core/form-autocomplete',
             // Reload the list of users to apply the new filters.
             if (!this._loadAllUsers()) {
                 var userid = parseInt(select.attr('data-selected'));
-                let foundIndex = null;
+                var foundIndex = 0;
                 // Search the returned users for the current selection.
                 $.each(this._filteredUsers, function(index, user) {
                     if (userid == user.id) {
@@ -267,7 +265,7 @@ define(['jquery', 'core/notification', 'core/str', 'core/form-autocomplete',
                     }
                 });
 
-                if (this._filteredUsers.length && foundIndex !== null) {
+                if (this._filteredUsers.length) {
                     this._selectUserById(this._filteredUsers[foundIndex].id);
                 } else {
                     this._selectNoUser();
@@ -336,9 +334,8 @@ define(['jquery', 'core/notification', 'core/str', 'core/form-autocomplete',
         } else {
             select.attr('data-selected', userid);
 
-            // If we have some filtered users, and userid is specified, then trigger change.
-            if (this._filteredUsers.length > 0 && !isNaN(useridnumber) && useridnumber > 0) {
-                $(document).trigger('user-changed', useridnumber);
+            if (!isNaN(useridnumber) && useridnumber > 0) {
+                $(document).trigger('user-changed', userid);
             }
         }
     };
@@ -368,18 +365,6 @@ define(['jquery', 'core/notification', 'core/str', 'core/form-autocomplete',
             event.stopPropagation();
             $(document).on('click.mod_assign_grading_navigation', this._checkClickOutsideConfigureFilters.bind(this));
         }
-    };
-
-    /**
-     * Reset table preferences.
-     *
-     * @private
-     * @method _toggleResetTable
-     */
-    GradingNavigation.prototype._toggleResetTable = function() {
-        let url = new URL(window.location);
-        url.searchParams.set('treset', '1');
-        window.location.href = url;
     };
 
     /**
@@ -552,6 +537,7 @@ define(['jquery', 'core/notification', 'core/str', 'core/form-autocomplete',
      *
      * @private
      * @method _handleChangeUser
+     * @param {Event} event
      */
     GradingNavigation.prototype._handleChangeUser = function() {
         var select = this._region.find('[data-action=change-user]');

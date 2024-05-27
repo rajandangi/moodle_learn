@@ -17,6 +17,8 @@
  * A module that enables the setting of form field values on the client side.
  *
  * @module     mod_lti/form-field
+ * @class      form-field
+ * @package    mod_lti
  * @copyright  2016 Jun Pataleta <jun@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @since      3.2
@@ -87,13 +89,7 @@ define(['jquery'],
                             attoEditor.html(value.text);
                         } else if (typeof tinyMCE !== 'undefined') {
                             // If the editor is not Atto, try to fallback to TinyMCE.
-                            if (tinyMCE.majorVersion == "3") {
-                                // Tiny 3.
-                                tinyMCE.execInstanceCommand(this.id, 'mceInsertContent', false, value.text);
-                            } else {
-                                // Tiny 4+.
-                                tinyMCE.get(this.id).setContent(value.text);
-                            }
+                            tinyMCE.execInstanceCommand(this.id, 'mceInsertContent', false, value.text);
                         }
 
                         // Set text to actual editor text area.

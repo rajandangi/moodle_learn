@@ -47,7 +47,7 @@ Feature: Flag quiz questions
     Given I am on the "Quiz 1" "quiz activity" page logged in as student1
     And I press "Attempt quiz"
     # flag question 1
-    When I press "Flag question"
+    When I click on "Not flagged" "button" in the "First question" "question"
     # Confirm question 1 is flagged in navigation
     Then "Question 1 This page Flagged" "link" should exist
     # Confirm that link in question 1 is changed to Remove flag
@@ -60,12 +60,12 @@ Feature: Flag quiz questions
     And I click on "True" "radio" in the "Third question" "question"
     And I follow "Finish attempt ..."
     And I press "Submit all and finish"
-    And I click on "Submit all and finish" "button" in the "Submit all your answers and finish?" "dialogue"
+    And I click on "Submit all and finish" "button" in the "Confirmation" "dialogue"
     # Confirm only flagged question is flagged
     And I should see "Remove flag" in the "First question" "question"
     And I should see "Flag question" in the "Second question" "question"
     And I should see "Flag question" in the "Third question" "question"
-    And I click on "Flagged" "button" in the "Second question" "question"
+    And I click on "Not flagged" "button" in the "Second question" "question"
     And I am on the "Quiz 1" "mod_quiz > Grades report" page logged in as teacher1
     And "Flagged" "icon" should exist in the "Student 1" "table_row"
     And I am on the "Quiz 1" "mod_quiz > Responses report" page

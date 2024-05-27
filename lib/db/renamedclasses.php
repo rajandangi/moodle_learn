@@ -35,18 +35,14 @@ defined('MOODLE_INTERNAL') || die();
 // Like other files in the db directory this file uses an array.
 // The old class name is the key, the new class name is the value.
 // The array must be called $renamedclasses.
-$renamedclasses = [
-    // Since Moodle 4.1.
-    'core_admin\\local\\systemreports\\task_logs' => 'core_admin\\reportbuilder\\local\\systemreports\\task_logs',
-    'core_admin\\local\\entities\\task_log' => 'core_admin\\reportbuilder\\local\\entities\\task_log',
-    'core_course\\local\\entities\\course_category' => 'core_course\\reportbuilder\\local\\entities\\course_category',
-    'core_cohort\\local\\entities\\cohort' => 'core_cohort\\reportbuilder\\local\\entities\\cohort',
-    'core_cohort\\local\\entities\\cohort_member' => 'core_cohort\\reportbuilder\\local\\entities\\cohort_member',
-    'core_block\\local\\views\\secondary' => 'core_block\\navigation\\views\\secondary',
-    // Since Moodle 4.2.
-    'Box\\Spout' => 'OpenSpout',
-    // Since Moodle 4.3.
-    'core_question\\bank\\search\\condition' => 'core_question\\local\\bank\\condition',
-    'core_question\\bank\\search\\category_condition' => 'qbank_managecategories\\category_condition',
-    'core_question\\bank\\search\\hidden_condition' => 'qbank_deletequestion\\hidden_condition',
-];
+$renamedclasses = array(
+    // Since Moodle 3.6.
+    'course_in_list' => 'core_course_list_element',
+    'coursecat' => 'core_course_category',
+    // Since Moodle 3.7.
+    'core\\analytics\\target\\course_dropout' => 'core_course\\analytics\\target\\course_dropout',
+    'core\\analytics\\target\\course_competencies' => 'core_course\\analytics\\target\\course_competencies',
+    'core\\analytics\\target\\course_completion' => 'core_course\\analytics\\target\\course_completion',
+    'core\\analytics\\target\\course_gradetopass' => 'core_course\\analytics\\target\\course_gradetopass',
+    'core\\analytics\\target\\no_teaching' => 'core_course\\analytics\\target\\no_teaching',
+);

@@ -14,7 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace mod_glossary;
+/**
+ * Concept fetching and caching tests.
+ *
+ * @package    mod_glossary
+ * @category   test
+ * @copyright  2014 Petr Skoda
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
 /**
  * Concept fetching and caching tests.
@@ -24,7 +31,7 @@ namespace mod_glossary;
  * @copyright  2014 Petr Skoda
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class concept_cache_test extends \advanced_testcase {
+class mod_glossary_concept_cache_testcase extends advanced_testcase {
     /**
      * Test convect fetching.
      */
@@ -167,7 +174,7 @@ class concept_cache_test extends \advanced_testcase {
         $this->assertCount(4, $concepts1[0]);
         $this->assertCount(4, $concepts1[1]);
         $this->setUser($user);
-        \course_modinfo::clear_instance_cache();
+        course_modinfo::clear_instance_cache();
         \mod_glossary\local\concept_cache::reset_caches();
         $concepts1 = \mod_glossary\local\concept_cache::get_concepts($course1->id);
         $this->assertCount(3, $concepts1[0]);

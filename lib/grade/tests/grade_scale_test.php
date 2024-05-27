@@ -14,21 +14,19 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace core;
+/**
+ * @package    core_grades
+ * @category   phpunit
+ * @copyright  nicolas@moodle.com
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
 defined('MOODLE_INTERNAL') || die();
 
 require_once(__DIR__.'/fixtures/lib.php');
 
-/**
- * Unit tests for grade_scale
- *
- * @package    core
- * @category   test
- * @copyright  nicolas@moodle.com
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-class grade_scale_test extends \grade_base_testcase {
+
+class core_grade_scale_testcase extends grade_base_testcase {
 
     public function test_grade_scale() {
         $this->sub_test_scale_construct();
@@ -42,7 +40,7 @@ class grade_scale_test extends \grade_base_testcase {
     }
 
     protected function sub_test_scale_construct() {
-        $params = new \stdClass();
+        $params = new stdClass();
         $params->name        = 'unittestscale3';
         $params->courseid    = $this->course->id;
         $params->userid      = $this->userid;
@@ -50,7 +48,7 @@ class grade_scale_test extends \grade_base_testcase {
         $params->description = 'This scale is used to mark standard assignments.';
         $params->timemodified = time();
 
-        $scale = new \grade_scale($params, false);
+        $scale = new grade_scale($params, false);
 
         $this->assertEquals($params->name, $scale->name);
         $this->assertEquals($params->scale, $scale->scale);
@@ -59,7 +57,7 @@ class grade_scale_test extends \grade_base_testcase {
     }
 
     protected function sub_test_grade_scale_insert() {
-        $grade_scale = new \grade_scale();
+        $grade_scale = new grade_scale();
         $this->assertTrue(method_exists($grade_scale, 'insert'));
 
         $grade_scale->name        = 'unittestscale3';
@@ -79,7 +77,7 @@ class grade_scale_test extends \grade_base_testcase {
 
     protected function sub_test_grade_scale_update() {
         global $DB;
-        $grade_scale = new \grade_scale($this->scale[1], false);
+        $grade_scale = new grade_scale($this->scale[1], false);
         $this->assertTrue(method_exists($grade_scale, 'update'));
 
         $grade_scale->name = 'Updated info for this unittest grade_scale';
@@ -90,7 +88,7 @@ class grade_scale_test extends \grade_base_testcase {
 
     protected function sub_test_grade_scale_delete() {
         global $DB;
-        $grade_scale = new \grade_scale($this->scale[4], false); // Choose one we're not using elsewhere.
+        $grade_scale = new grade_scale($this->scale[4], false); // Choose one we're not using elsewhere.
         $this->assertTrue(method_exists($grade_scale, 'delete'));
 
         $this->assertTrue($grade_scale->delete());
@@ -101,16 +99,16 @@ class grade_scale_test extends \grade_base_testcase {
     }
 
     protected function sub_test_grade_scale_fetch() {
-        $grade_scale = new \grade_scale();
+        $grade_scale = new grade_scale();
         $this->assertTrue(method_exists($grade_scale, 'fetch'));
 
-        $grade_scale = \grade_scale::fetch(array('id'=>$this->scale[0]->id));
+        $grade_scale = grade_scale::fetch(array('id'=>$this->scale[0]->id));
         $this->assertEquals($this->scale[0]->id, $grade_scale->id);
         $this->assertEquals($this->scale[0]->name, $grade_scale->name);
     }
 
     protected function sub_test_scale_load_items() {
-        $scale = new \grade_scale($this->scale[0], false);
+        $scale = new grade_scale($this->scale[0], false);
         $this->assertTrue(method_exists($scale, 'load_items'));
 
         $scale->load_items();
@@ -120,7 +118,7 @@ class grade_scale_test extends \grade_base_testcase {
     }
 
     protected function sub_test_scale_compact_items() {
-        $scale = new \grade_scale($this->scale[0], false);
+        $scale = new grade_scale($this->scale[0], false);
         $this->assertTrue(method_exists($scale, 'compact_items'));
 
         $scale->load_items();
@@ -132,7 +130,7 @@ class grade_scale_test extends \grade_base_testcase {
     }
 
     protected function sub_test_scale_one_item() {
-        $params = new \stdClass();
+        $params = new stdClass();
         $params->name         = 'unittestscale1i';
         $params->courseid     = $this->course->id;
         $params->userid       = $this->userid;
@@ -140,7 +138,7 @@ class grade_scale_test extends \grade_base_testcase {
         $params->description  = 'This scale is used to like something.';
         $params->timemodified = time();
 
-        $scale = new \grade_scale($params, false);
+        $scale = new grade_scale($params, false);
         $scale->load_items();
 
         $this->assertCount(1, $scale->scale_items);
@@ -150,7 +148,7 @@ class grade_scale_test extends \grade_base_testcase {
         $scale->insert();
 
         // Manual grade item with 1 item scale.
-        $grade_item = new \stdClass();
+        $grade_item = new stdClass();
         $grade_item->courseid = $this->course->id;
         $grade_item->categoryid = $this->grade_categories[0]->id;
         $grade_item->itemname = 'manual grade_item scale_1';
@@ -163,7 +161,7 @@ class grade_scale_test extends \grade_base_testcase {
         $grade_item->timecreated = time();
         $grade_item->timemodified = time();
 
-        $grade_item = new \grade_item($grade_item);
+        $grade_item = new grade_item($grade_item);
         $grade_item->insert();
 
         $this->assertNotEmpty($grade_item->id);
@@ -173,5 +171,6 @@ class grade_scale_test extends \grade_base_testcase {
         $status = $scale->is_used();
 
         $this->assertTrue($status);
+
     }
 }

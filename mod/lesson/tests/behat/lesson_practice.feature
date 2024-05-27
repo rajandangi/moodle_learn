@@ -16,22 +16,28 @@ Feature: Practice mode in a lesson activity
       | user | course | role |
       | teacher1 | C1 | editingteacher |
       | student1 | C1 | student |
+    And I log in as "teacher1"
+    And I am on "Course 1" course homepage with editing mode on
+      # Setup a basic lesson, we'll adjust it in the scenarios later.
     And the following "activity" exists:
       | activity                      | lesson             |
       | course                        | C1                 |
       | idnumber                      | 0001               |
       | name                          | Test lesson name   |
-    And the following "mod_lesson > page" exist:
-      | lesson           | qtype     | title         | content                   |
-      | Test lesson name | truefalse | True or False | Paper is made from trees. |
-    And the following "mod_lesson > answers" exist:
-      | page          | answer | jumpto        | score |
-      | True or False | True   | Next page     | 1     |
-      | True or False | False  | This page     | 0     |
-    And I am on the "Test lesson name" "lesson activity editing" page logged in as teacher1
+    And I am on the "Test lesson name" "lesson activity" page
+    And I follow "Add a question page"
+    And I set the field "Select a question type" to "True/false"
+    And I press "Add a question page"
+    And I set the following fields to these values:
+      | Page title | True or False |
+      | Page contents | Paper is made from trees. |
+      | id_answer_editor_0 | True |
+      | id_answer_editor_1 | False |
+    And I press "Save page"
 
   Scenario: Non-practice lesson records grades in the gradebook
-    Given I set the following fields to these values:
+    Given I am on the "Test lesson name" "lesson activity editing" page
+    And I set the following fields to these values:
       | Name | Non-practice lesson |
       | Description | This lesson will affect your course grade |
       | Practice lesson | No |
@@ -46,7 +52,8 @@ Feature: Practice mode in a lesson activity
     And I should see "Non-practice lesson"
 
   Scenario: Practice lesson doesn't record grades in the gradebook
-    Given I set the following fields to these values:
+    Given I am on the "Test lesson name" "lesson activity editing" page
+    And I set the following fields to these values:
       | Name | Practice lesson |
       | Description | This lesson will NOT affect your course grade |
       | Practice lesson | Yes |
@@ -61,7 +68,8 @@ Feature: Practice mode in a lesson activity
     And I should not see "Practice lesson"
 
   Scenario: Practice lesson with scale doesn't record grades in the gradebook
-    Given I set the following fields to these values:
+    Given I am on the "Test lesson name" "lesson activity editing" page
+    And I set the following fields to these values:
       | Name | Practice lesson with scale |
       | Description | This lesson will NOT affect your course grade |
       | Practice lesson | Yes |

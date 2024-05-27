@@ -14,7 +14,17 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace core_availability;
+/**
+ * Unit tests for the capability checker class.
+ *
+ * @package core_availability
+ * @copyright 2014 The Open University
+ * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+use core_availability\capability_checker;
+
+defined('MOODLE_INTERNAL') || die();
 
 /**
  * Unit tests for the capability checker class.
@@ -23,7 +33,7 @@ namespace core_availability;
  * @copyright 2014 The Open University
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class capability_checker_test extends \advanced_testcase {
+class core_availability_capability_checker_testcase extends advanced_testcase {
     /**
      * Tests loading a class from /availability/classes.
      */
@@ -41,7 +51,7 @@ class capability_checker_test extends \advanced_testcase {
         $generator->enrol_user($student->id, $course->id, $roleids['student']);
 
         // Check a capability which they both have.
-        $context = \context_course::instance($course->id);
+        $context = context_course::instance($course->id);
         $checker = new capability_checker($context);
         $result = array_keys($checker->get_users_by_capability('mod/forum:replypost'));
         sort($result);

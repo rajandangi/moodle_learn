@@ -17,6 +17,7 @@
  * Adds support for confirmation via JS modal for some management actions at the Manage policies page.
  *
  * @module      tool_policy/managedocsactions
+ * @package     tool_policy
  * @copyright   2018 David Mudrák <david@moodle.com>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -25,9 +26,9 @@ define([
     'core/log',
     'core/config',
     'core/str',
-    'core/modal_save_cancel',
+    'core/modal_factory',
     'core/modal_events'
-], function($, Log, Config, Str, ModalSaveCancel, ModalEvents) {
+], function($, Log, Config, Str, ModalFactory, ModalEvents) {
 
     "use strict";
 
@@ -106,9 +107,10 @@ define([
 
             promise.then(function(strs) {
                 strings = strs;
-                return ModalSaveCancel.create({
+                return ModalFactory.create({
                     title: strings[0],
                     body: strings[1],
+                    type: ModalFactory.types.SAVE_CANCEL
                 });
 
             }).then(function(modal) {

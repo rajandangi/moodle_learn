@@ -75,7 +75,7 @@ function url_fix_submitted_url($url) {
  *
  * This function does not include any XSS protection.
  *
- * @param stdClass $url
+ * @param string $url
  * @param object $cm
  * @param object $course
  * @param object $config
@@ -114,12 +114,11 @@ function url_get_full_url($url, $cm, $course, $config=null) {
         $fullurl = str_replace('>', '%3E', $fullurl);
     }
 
-    if (!$config) {
-        $config = get_config('url');
-    }
-
     // add variable url parameters
-    if ($config->allowvariables && !empty($parameters)) {
+    if (!empty($parameters)) {
+        if (!$config) {
+            $config = get_config('url');
+        }
         $paramvalues = url_get_variable_values($url, $cm, $course, $config);
 
         foreach ($parameters as $parse=>$parameter) {
@@ -173,22 +172,37 @@ function url_print_header($url, $cm, $course) {
 }
 
 /**
- * Get url introduction.
- *
+ * Print url heading.
  * @param object $url
  * @param object $cm
- * @param bool $ignoresettings print even if not specified in modedit
- * @return string
+ * @param object $course
+ * @param bool $notused This variable is no longer used.
+ * @return void
  */
-function url_get_intro(object $url, object $cm, bool $ignoresettings = false): string {
+function url_print_heading($url, $cm, $course, $notused = false) {
+    global $OUTPUT;
+    echo $OUTPUT->heading(format_string($url->name), 2);
+}
+
+/**
+ * Print url introduction.
+ * @param object $url
+ * @param object $cm
+ * @param object $course
+ * @param bool $ignoresettings print even if not specified in modedit
+ * @return void
+ */
+function url_print_intro($url, $cm, $course, $ignoresettings=false) {
+    global $OUTPUT;
+
     $options = empty($url->displayoptions) ? [] : (array) unserialize_array($url->displayoptions);
     if ($ignoresettings or !empty($options['printintro'])) {
         if (trim(strip_tags($url->intro))) {
-            return format_module_intro('url', $url, $cm->id);
+            echo $OUTPUT->box_start('mod_introbox', 'urlintro');
+            echo format_module_intro('url', $url, $cm->id);
+            echo $OUTPUT->box_end();
         }
     }
-
-    return '';
 }
 
 /**
@@ -205,11 +219,9 @@ function url_display_frame($url, $cm, $course) {
 
     if ($frame === 'top') {
         $PAGE->set_pagelayout('frametop');
-        $PAGE->activityheader->set_attrs([
-            'description' => url_get_intro($url, $cm),
-            'title' => format_string($url->name)
-        ]);
         url_print_header($url, $cm, $course);
+        url_print_heading($url, $cm, $course);
+        url_print_intro($url, $cm, $course);
         echo $OUTPUT->footer();
         die;
 
@@ -251,33 +263,35 @@ EOF;
  * @param object $url
  * @param object $cm
  * @param object $course
+ * @return does not return
  */
 function url_print_workaround($url, $cm, $course) {
-    global $OUTPUT, $PAGE, $USER;
+    global $OUTPUT;
 
-    $PAGE->activityheader->set_description(url_get_intro($url, $cm, true));
     url_print_header($url, $cm, $course);
+    url_print_heading($url, $cm, $course, true);
+    url_print_intro($url, $cm, $course, true);
 
-    $fullurl = new moodle_url(url_get_full_url($url, $cm, $course));
+    $fullurl = url_get_full_url($url, $cm, $course);
 
     $display = url_get_final_display_type($url);
     if ($display == RESOURCELIB_DISPLAY_POPUP) {
-        $jsfullurl = addslashes_js($fullurl->out(false));
+        $jsfullurl = addslashes_js($fullurl);
         $options = empty($url->displayoptions) ? [] : (array) unserialize_array($url->displayoptions);
         $width  = empty($options['popupwidth'])  ? 620 : $options['popupwidth'];
         $height = empty($options['popupheight']) ? 450 : $options['popupheight'];
         $wh = "width=$width,height=$height,toolbar=no,location=no,menubar=no,copyhistory=no,status=no,directories=no,scrollbars=yes,resizable=yes";
-        $attributes = ['onclick' => "window.open('$jsfullurl', '', '$wh'); return false;"];
+        $extra = "onclick=\"window.open('$jsfullurl', '', '$wh'); return false;\"";
 
     } else if ($display == RESOURCELIB_DISPLAY_NEW) {
-        $attributes = ['onclick' => "this.target='_blank';"];
+        $extra = "onclick=\"this.target='_blank';\"";
 
     } else {
-        $attributes = [];
+        $extra = '';
     }
 
     echo '<div class="urlworkaround">';
-    print_string('clicktoopen', 'url', html_writer::link($fullurl, format_string($cm->name), $attributes));
+    print_string('clicktoopen', 'url', "<a href=\"$fullurl\" $extra>$fullurl</a>");
     echo '</div>';
 
     echo $OUTPUT->footer();
@@ -289,17 +303,18 @@ function url_print_workaround($url, $cm, $course) {
  * @param object $url
  * @param object $cm
  * @param object $course
+ * @return does not return
  */
 function url_display_embed($url, $cm, $course) {
-    global $PAGE, $OUTPUT;
+    global $CFG, $PAGE, $OUTPUT;
 
     $mimetype = resourcelib_guess_url_mimetype($url->externalurl);
     $fullurl  = url_get_full_url($url, $cm, $course);
     $title    = $url->name;
 
-    $moodleurl = new moodle_url($fullurl);
-    $link = html_writer::link($moodleurl, format_string($cm->name));
+    $link = html_writer::tag('a', $fullurl, array('href'=>str_replace('&amp;', '&', $fullurl)));
     $clicktoopen = get_string('clicktoopen', 'url', $link);
+    $moodleurl = new moodle_url($fullurl);
 
     $extension = resourcelib_get_extension($url->externalurl);
 
@@ -321,10 +336,12 @@ function url_display_embed($url, $cm, $course) {
         $code = resourcelib_embed_general($fullurl, $title, $clicktoopen, $mimetype);
     }
 
-    $PAGE->activityheader->set_description(url_get_intro($url, $cm));
     url_print_header($url, $cm, $course);
+    url_print_heading($url, $cm, $course);
 
     echo $code;
+
+    url_print_intro($url, $cm, $course);
 
     echo $OUTPUT->footer();
     die;
@@ -350,9 +367,8 @@ function url_get_final_display_type($url) {
         }
     }
 
-    // Binaries and other formats that are known to cause trouble for external links.
-    static $download = ['application/zip', 'application/x-tar', 'application/g-zip',
-                        'application/pdf', 'text/html', 'document/unknown'];
+    static $download = array('application/zip', 'application/x-tar', 'application/g-zip',     // binary formats
+                             'application/pdf', 'text/html');  // these are known to cause trouble for external links, sorry
     static $embed    = array('image/gif', 'image/jpeg', 'image/png', 'image/svg+xml',         // images
                              'application/x-shockwave-flash', 'video/x-flv', 'video/x-ms-wm', // video formats
                              'video/quicktime', 'video/mpeg', 'video/mp4',
@@ -417,6 +433,7 @@ function url_get_variable_options($config) {
         'userlastname'    => get_string('lastname'),
         'userfullname'    => get_string('fullnameuser'),
         'useremail'       => get_string('email'),
+        'usericq'         => get_string('icqnumber'),
         'userphone1'      => get_string('phone1'),
         'userphone2'      => get_string('phone2'),
         'userinstitution' => get_string('institution'),
@@ -424,6 +441,7 @@ function url_get_variable_options($config) {
         'useraddress'     => get_string('address'),
         'usercity'        => get_string('city'),
         'usertimezone'    => get_string('timezone'),
+        'userurl'         => get_string('webpage'),
     );
 
     if ($config->rolesinparams) {
@@ -478,6 +496,7 @@ function url_get_variable_values($url, $cm, $course, $config) {
         $values['userlastname']    = $USER->lastname;
         $values['userfullname']    = fullname($USER);
         $values['useremail']       = $USER->email;
+        $values['usericq']         = $USER->icq;
         $values['userphone1']      = $USER->phone1;
         $values['userphone2']      = $USER->phone2;
         $values['userinstitution'] = $USER->institution;
@@ -486,6 +505,7 @@ function url_get_variable_values($url, $cm, $course, $config) {
         $values['usercity']        = $USER->city;
         $now = new DateTime('now', core_date::get_user_timezone_object());
         $values['usertimezone']    = $now->getOffset() / 3600.0; // Value in hours for BC.
+        $values['userurl']         = $USER->url;
     }
 
     // weak imitation of Single-Sign-On, for backwards compatibility only
@@ -528,16 +548,12 @@ function url_get_encrypted_parameter($url, $config) {
 /**
  * Optimised mimetype detection from general URL
  * @param $fullurl
- * @param null $unused This parameter has been deprecated since 4.3 and should not be used anymore.
+ * @param int $size of the icon.
  * @return string|null mimetype or null when the filetype is not relevant.
  */
-function url_guess_icon($fullurl, $unused = null) {
+function url_guess_icon($fullurl, $size = null) {
     global $CFG;
     require_once("$CFG->libdir/filelib.php");
-
-    if ($unused !== null) {
-        debugging('Deprecated argument passed to ' . __FUNCTION__, DEBUG_DEVELOPER);
-    }
 
     if (substr_count($fullurl, '/') < 3 or substr($fullurl, -1) === '/') {
         // Most probably default directory - index.php, index.html, etc. Return null because
@@ -545,23 +561,12 @@ function url_guess_icon($fullurl, $unused = null) {
         return null;
     }
 
-    try {
-        // There can be some cases where the url is invalid making parse_url() to return false.
-        // That will make moodle_url class to throw an exception, so we need to catch the exception to prevent errors.
-        $moodleurl = new moodle_url($fullurl);
-        $fullurl = $moodleurl->out_omit_querystring();
-    } catch (\moodle_exception $e) {
-        // If an exception is thrown, means the url is invalid. No need to log exception.
-        return null;
-    }
-
-    $icon = file_extension_icon($fullurl);
-    $htmlicon = file_extension_icon('.htm');
-    $unknownicon = file_extension_icon('');
-    $phpicon = file_extension_icon('.php'); // Exception for php files.
+    $icon = file_extension_icon($fullurl, $size);
+    $htmlicon = file_extension_icon('.htm', $size);
+    $unknownicon = file_extension_icon('', $size);
 
     // We do not want to return those icon types, the module icon is more appropriate.
-    if ($icon === $unknownicon || $icon === $htmlicon || $icon === $phpicon) {
+    if ($icon === $unknownicon || $icon === $htmlicon) {
         return null;
     }
 

@@ -14,9 +14,17 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace tool_uploadcourse;
+/**
+ * File containing tests for the helper.
+ *
+ * @package    tool_uploadcourse
+ * @copyright  2013 Frédéric Massart
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
-use tool_uploadcourse_helper;
+defined('MOODLE_INTERNAL') || die();
+
+global $CFG;
 
 /**
  * Helper test case.
@@ -25,7 +33,7 @@ use tool_uploadcourse_helper;
  * @copyright  2013 Frédéric Massart
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class helper_test extends \advanced_testcase {
+class tool_uploadcourse_helper_testcase extends advanced_testcase {
 
     public function test_generate_shortname() {
         $data = (object) array('fullname' => 'Ah bh Ch 01 02 03', 'idnumber' => 'ID123');
@@ -45,7 +53,7 @@ class helper_test extends \advanced_testcase {
 
     public function test_get_course_formats() {
         $result = tool_uploadcourse_helper::get_course_formats();
-        $this->assertSame(array_keys(\core_component::get_plugin_list('format')), $result);
+        $this->assertSame(array_keys(core_component::get_plugin_list('format')), $result);
         // Should be similar as first result, as cached.
         $this->assertSame($result, tool_uploadcourse_helper::get_course_formats());
     }
@@ -114,8 +122,8 @@ class helper_test extends \advanced_testcase {
         $c2 = $this->getDataGenerator()->create_course((object) array('shortname' => 'Yay'));
 
         // Creating backup file.
-        $bc = new \backup_controller(\backup::TYPE_1COURSE, $c1->id, \backup::FORMAT_MOODLE,
-            \backup::INTERACTIVE_NO, \backup::MODE_GENERAL, 2);
+        $bc = new backup_controller(backup::TYPE_1COURSE, $c1->id, backup::FORMAT_MOODLE,
+            backup::INTERACTIVE_NO, backup::MODE_GENERAL, 2);
         $bc->execute_plan();
         $result = $bc->get_results();
         $this->assertTrue(isset($result['backup_destination']));
@@ -123,8 +131,8 @@ class helper_test extends \advanced_testcase {
         $bc->destroy();
 
         // Creating backup file.
-        $bc = new \backup_controller(\backup::TYPE_1COURSE, $c2->id, \backup::FORMAT_MOODLE,
-            \backup::INTERACTIVE_NO, \backup::MODE_GENERAL, 2);
+        $bc = new backup_controller(backup::TYPE_1COURSE, $c2->id, backup::FORMAT_MOODLE,
+            backup::INTERACTIVE_NO, backup::MODE_GENERAL, 2);
         $bc->execute_plan();
         $result = $bc->get_results();
         $this->assertTrue(isset($result['backup_destination']));
@@ -136,7 +144,7 @@ class helper_test extends \advanced_testcase {
 
         // Checking restore dir.
         $dir = tool_uploadcourse_helper::get_restore_content_dir($c1backupfile, null);
-        $bcinfo = \backup_general_helper::get_backup_information($dir);
+        $bcinfo = backup_general_helper::get_backup_information($dir);
         $this->assertEquals($bcinfo->original_course_id, $c1->id);
         $this->assertEquals($bcinfo->original_course_fullname, $c1->fullname);
 
@@ -146,13 +154,13 @@ class helper_test extends \advanced_testcase {
 
         // Get the second course.
         $dir = tool_uploadcourse_helper::get_restore_content_dir($c2backupfile, null);
-        $bcinfo = \backup_general_helper::get_backup_information($dir);
+        $bcinfo = backup_general_helper::get_backup_information($dir);
         $this->assertEquals($bcinfo->original_course_id, $c2->id);
         $this->assertEquals($bcinfo->original_course_fullname, $c2->fullname);
 
         // Checking with a shortname.
         $dir = tool_uploadcourse_helper::get_restore_content_dir(null, $c1->shortname);
-        $bcinfo = \backup_general_helper::get_backup_information($dir);
+        $bcinfo = backup_general_helper::get_backup_information($dir);
         $this->assertEquals($bcinfo->original_course_id, $c1->id);
         $this->assertEquals($bcinfo->original_course_fullname, $c1->fullname);
 
@@ -162,7 +170,7 @@ class helper_test extends \advanced_testcase {
 
         // Get the second course.
         $dir = tool_uploadcourse_helper::get_restore_content_dir(null, $c2->shortname);
-        $bcinfo = \backup_general_helper::get_backup_information($dir);
+        $bcinfo = backup_general_helper::get_backup_information($dir);
         $this->assertEquals($bcinfo->original_course_id, $c2->id);
         $this->assertEquals($bcinfo->original_course_fullname, $c2->fullname);
 
@@ -263,19 +271,19 @@ class helper_test extends \advanced_testcase {
         $this->assertCount(5, $fields);
 
         $this->assertArrayHasKey($checkboxfield->get('shortname'), $fields);
-        $this->assertInstanceOf(\customfield_checkbox\field_controller::class, $fields[$checkboxfield->get('shortname')]);
+        $this->assertInstanceOf(customfield_checkbox\field_controller::class, $fields[$checkboxfield->get('shortname')]);
 
         $this->assertArrayHasKey($datefield->get('shortname'), $fields);
-        $this->assertInstanceOf(\customfield_date\field_controller::class, $fields[$datefield->get('shortname')]);
+        $this->assertInstanceOf(customfield_date\field_controller::class, $fields[$datefield->get('shortname')]);
 
         $this->assertArrayHasKey($selectfield->get('shortname'), $fields);
-        $this->assertInstanceOf(\customfield_select\field_controller::class, $fields[$selectfield->get('shortname')]);
+        $this->assertInstanceOf(customfield_select\field_controller::class, $fields[$selectfield->get('shortname')]);
 
         $this->assertArrayHasKey($textfield->get('shortname'), $fields);
-        $this->assertInstanceOf(\customfield_text\field_controller::class, $fields[$textfield->get('shortname')]);
+        $this->assertInstanceOf(customfield_text\field_controller::class, $fields[$textfield->get('shortname')]);
 
         $this->assertArrayHasKey($textareafield->get('shortname'), $fields);
-        $this->assertInstanceOf(\customfield_textarea\field_controller::class, $fields[$textareafield->get('shortname')]);
+        $this->assertInstanceOf(customfield_textarea\field_controller::class, $fields[$textareafield->get('shortname')]);
 
         $data = [
             'customfield_mycheckbox' => '1',
@@ -296,7 +304,7 @@ class helper_test extends \advanced_testcase {
         $user = $this->getDataGenerator()->create_and_enrol($course, 'manager');
         $this->setUser($user);
 
-        $context = \context_course::instance($course->id);
+        $context = context_course::instance($course->id);
 
         $this->assertEquals($expected, tool_uploadcourse_helper::get_custom_course_field_data($data, [], $context));
 
@@ -381,15 +389,12 @@ class helper_test extends \advanced_testcase {
 
         $c1 = $this->getDataGenerator()->create_category(array('idnumber' => 'C1'));
         $c2 = $this->getDataGenerator()->create_category(array('idnumber' => 'C2'));
-        $c3 = $this->getDataGenerator()->create_category(['idnumber' => 'C3', 'visible' => false]);
 
         // Doubled for cache check.
         $this->assertEquals($c1->id, tool_uploadcourse_helper::resolve_category_by_idnumber('C1'));
         $this->assertEquals($c1->id, tool_uploadcourse_helper::resolve_category_by_idnumber('C1'));
         $this->assertEquals($c2->id, tool_uploadcourse_helper::resolve_category_by_idnumber('C2'));
         $this->assertEquals($c2->id, tool_uploadcourse_helper::resolve_category_by_idnumber('C2'));
-        $this->assertEmpty(tool_uploadcourse_helper::resolve_category_by_idnumber('C3'));
-        $this->assertEmpty(tool_uploadcourse_helper::resolve_category_by_idnumber('C3'));
         $this->assertEmpty(tool_uploadcourse_helper::resolve_category_by_idnumber('DoesNotExist'));
         $this->assertEmpty(tool_uploadcourse_helper::resolve_category_by_idnumber('DoesNotExist'));
     }
@@ -439,8 +444,8 @@ class helper_test extends \advanced_testcase {
 
         // Hidden parent.
         $path = array('Cat 2', 'Cat 2.1', 'Cat 2.1.2');
-        $this->assertEmpty(tool_uploadcourse_helper::resolve_category_by_path($path));
-        $this->assertEmpty(tool_uploadcourse_helper::resolve_category_by_path($path));
+        $this->assertEquals($cat2_1_2->id, tool_uploadcourse_helper::resolve_category_by_path($path));
+        $this->assertEquals($cat2_1_2->id, tool_uploadcourse_helper::resolve_category_by_path($path));
 
         // Does not exist.
         $path = array('No cat 3', 'Cat 1.2');
@@ -470,7 +475,7 @@ class helper_test extends \advanced_testcase {
      *
      * @return core_customfield_generator
      */
-    protected function get_customfield_generator(): \core_customfield_generator {
+    protected function get_customfield_generator() : core_customfield_generator {
         return $this->getDataGenerator()->get_plugin_generator('core_customfield');
     }
 
@@ -484,7 +489,7 @@ class helper_test extends \advanced_testcase {
      * @return \core_customfield\field_controller
      */
     protected function create_custom_field(\core_customfield\category_controller $category, string $type, string $shortname,
-            array $configdata = []): \core_customfield\field_controller {
+            array $configdata = []) : \core_customfield\field_controller {
 
         return $this->get_customfield_generator()->create_field([
             'categoryid' => $category->get('id'),

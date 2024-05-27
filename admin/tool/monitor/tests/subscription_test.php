@@ -13,8 +13,7 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
-
-namespace tool_monitor;
+defined('MOODLE_INTERNAL') || exit();
 
 /**
  * Unit tests for the subscription class.
@@ -25,7 +24,7 @@ namespace tool_monitor;
  * @copyright  2016 Jake Dallimore <jrhdallimore@gmail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class subscription_test extends \advanced_testcase {
+class tool_monitor_subscription_testcase extends advanced_testcase {
 
     /**
      * @var \tool_monitor\subscription $subscription object.
@@ -35,16 +34,16 @@ class subscription_test extends \advanced_testcase {
     /**
      * Test set up.
      */
-    public function setUp(): void {
+    public function setUp() {
         $this->resetAfterTest(true);
 
         // Create the mock subscription.
-        $sub = new \stdClass();
+        $sub = new stdClass();
         $sub->id = 100;
         $sub->name = 'My test rule';
         $sub->courseid = 20;
         $mockbuilder = $this->getMockBuilder('\tool_monitor\subscription');
-        $mockbuilder->onlyMethods([]);
+        $mockbuilder->setMethods(null);
         $mockbuilder->setConstructorArgs(array($sub));
         $this->subscription = $mockbuilder->getMock();
     }
@@ -60,10 +59,11 @@ class subscription_test extends \advanced_testcase {
 
     /**
      * Test for the magic __get method.
+     *
+     * @expectedException coding_exception
      */
     public function test_magic_get() {
         $this->assertEquals(20, $this->subscription->courseid);
-        $this->expectException(\coding_exception::class);
         $this->subscription->ruleid;
     }
 }

@@ -5,10 +5,8 @@ Feature: Manage analytics models
   I need to create and use a model
 
   Background:
-    # Turn off the course welcome message, so we can easily test other messages.
     Given the following config values are set as admin:
-      | onlycli                  | 0 | analytics    |
-      | sendcoursewelcomemessage | 0 | enrol_manual |
+      | onlycli  | 0 | analytics |
     And the following "users" exist:
       | username | firstname | lastname | email                |
       | teacher1 | Teacher   | 1        | teacher1@example.com |
@@ -94,8 +92,8 @@ Feature: Manage analytics models
     And I should see "Configuration"
     And I click on "View" "link"
     And I should see "Log extra info"
-    And I click on "Close" "button" in the "Log extra info" "dialogue"
-    And I navigate to "Analytics > Analytics models" in site administration
+    And I click on "Close" "button"
+    And I click on "Analytics models" "link"
     # Execute scheduled analysis
     And I open the action menu in "Students at risk of not meeting the course completion conditions" "table_row"
     And I choose "Execute scheduled analysis" in the open action menu

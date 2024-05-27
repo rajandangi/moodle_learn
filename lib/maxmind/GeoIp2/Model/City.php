@@ -1,15 +1,13 @@
 <?php
 
-declare(strict_types=1);
-
 namespace GeoIp2\Model;
 
 /**
- * Model class for the data returned by City Plus web service and City
- * database.
+ * Model class for the data returned by GeoIP2 City web service and database.
  *
- * See https://dev.maxmind.com/geoip/docs/web-services?lang=en for more
- * details.
+ * The only difference between the City and Insights model classes is which
+ * fields in each record may be populated. See
+ * https://dev.maxmind.com/geoip/geoip2/web-services for more details.
  *
  * @property-read \GeoIp2\Record\City $city City data for the requested IP
  * address.
@@ -33,36 +31,28 @@ class City extends Country
 {
     /**
      * @ignore
-     *
-     * @var \GeoIp2\Record\City
      */
     protected $city;
-
     /**
      * @ignore
-     *
-     * @var \GeoIp2\Record\Location
      */
     protected $location;
-
     /**
      * @ignore
-     *
-     * @var \GeoIp2\Record\Postal
      */
     protected $postal;
-
     /**
      * @ignore
-     *
-     * @var array<\GeoIp2\Record\Subdivision>
      */
     protected $subdivisions = [];
 
     /**
      * @ignore
+     *
+     * @param mixed $raw
+     * @param mixed $locales
      */
-    public function __construct(array $raw, array $locales = ['en'])
+    public function __construct($raw, $locales = ['en'])
     {
         parent::__construct($raw, $locales);
 
@@ -73,28 +63,29 @@ class City extends Country
         $this->createSubdivisions($raw, $locales);
     }
 
-    private function createSubdivisions(array $raw, array $locales): void
+    private function createSubdivisions($raw, $locales)
     {
         if (!isset($raw['subdivisions'])) {
             return;
         }
 
         foreach ($raw['subdivisions'] as $sub) {
-            $this->subdivisions[] =
+            array_push(
+                $this->subdivisions,
                 new \GeoIp2\Record\Subdivision($sub, $locales)
-            ;
+            );
         }
     }
 
     /**
      * @ignore
      *
-     * @return mixed
+     * @param mixed $attr
      */
-    public function __get(string $attr)
+    public function __get($attr)
     {
         if ($attr === 'mostSpecificSubdivision') {
-            return $this->{$attr}();
+            return $this->$attr();
         }
 
         return parent::__get($attr);
@@ -102,8 +93,10 @@ class City extends Country
 
     /**
      * @ignore
+     *
+     * @param mixed $attr
      */
-    public function __isset(string $attr): bool
+    public function __isset($attr)
     {
         if ($attr === 'mostSpecificSubdivision') {
             // We always return a mostSpecificSubdivision, even if it is the
@@ -114,7 +107,7 @@ class City extends Country
         return parent::__isset($attr);
     }
 
-    private function mostSpecificSubdivision(): \GeoIp2\Record\Subdivision
+    private function mostSpecificSubdivision()
     {
         return empty($this->subdivisions) ?
             new \GeoIp2\Record\Subdivision([], $this->locales) :

@@ -14,7 +14,19 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace block_online_users;
+/**
+ * Online users tests
+ *
+ * @package    block_online_users
+ * @category   test
+ * @copyright  2015 University of Nottingham <www.nottingham.ac.uk>
+ * @author     Barry Oosthuizen <barry.oosthuizen@nottingham.ac.uk>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+use block_online_users\fetcher;
+
+defined('MOODLE_INTERNAL') || die();
 
 /**
  * Online users testcase
@@ -25,7 +37,7 @@ namespace block_online_users;
  * @author     Barry Oosthuizen <barry.oosthuizen@nottingham.ac.uk>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class online_users_test extends \advanced_testcase {
+class block_online_users_testcase extends advanced_testcase {
 
     protected $data;
 
@@ -35,7 +47,7 @@ class online_users_test extends \advanced_testcase {
      * Prepare the site with some courses, groups, users and
      * simulate various recent accesses.
      */
-    protected function setUp(): void {
+    protected function setUp() {
 
         // Generate (simulated) recently logged-in users.
         $generator = $this->getDataGenerator()->get_plugin_generator('block_online_users');
@@ -58,7 +70,7 @@ class online_users_test extends \advanced_testcase {
         $groupid = $this->data['group1']->id;
         $now = time();
         $timetoshowusers = $CFG->block_online_users_timetosee * 60;
-        $context = \context_course::instance($this->data['course1']->id);
+        $context = context_course::instance($this->data['course1']->id);
         $courseid = $this->data['course1']->id;
         $onlineusers = new fetcher($groupid, $now, $timetoshowusers, $context, false, $courseid);
 
@@ -98,7 +110,7 @@ class online_users_test extends \advanced_testcase {
         $currentgroup = null;
         $now = time();
         $timetoshowusers = $CFG->block_online_users_timetosee * 60;
-        $context = \context_course::instance($this->data['course1']->id);
+        $context = context_course::instance($this->data['course1']->id);
         $courseid = $this->data['course1']->id;
         $onlineusers = new fetcher($currentgroup, $now, $timetoshowusers, $context, false, $courseid);
 
@@ -128,7 +140,7 @@ class online_users_test extends \advanced_testcase {
         $currentgroup = null;
         $now = time();
         $timetoshowusers = $CFG->block_online_users_timetosee * 60;
-        $context = \context_system::instance();
+        $context = context_system::instance();
         $onlineusers = new fetcher($currentgroup, $now, $timetoshowusers, $context, true);
 
         $usercount = $onlineusers->count_users();
@@ -148,7 +160,7 @@ class online_users_test extends \advanced_testcase {
         $groupid = $this->data['group1']->id;
         $now = time();
         $timetoshowusers = $CFG->block_online_users_timetosee * 60;
-        $context = \context_course::instance($this->data['course1']->id);
+        $context = context_course::instance($this->data['course1']->id);
         $courseid = $this->data['course1']->id;
         $user1 = $this->data['user1'];
         $user2 = $this->data['user2'];
@@ -203,7 +215,7 @@ class online_users_test extends \advanced_testcase {
         $currentgroup = null;
         $now = time();
         $timetoshowusers = $CFG->block_online_users_timetosee * 60;
-        $context = \context_course::instance($this->data['course1']->id);
+        $context = context_course::instance($this->data['course1']->id);
         $courseid = $this->data['course1']->id;
         $user1 = $this->data['user1'];
         $user2 = $this->data['user2'];
@@ -259,7 +271,7 @@ class online_users_test extends \advanced_testcase {
         $currentgroup = null;
         $now = time();
         $timetoshowusers = $CFG->block_online_users_timetosee * 60;
-        $context = \context_system::instance();
+        $context = context_system::instance();
         $user1 = $this->data['user1'];
         $user2 = $this->data['user2'];
         // Set user2 as logged user.

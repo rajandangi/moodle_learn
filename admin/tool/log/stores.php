@@ -26,7 +26,7 @@ require_once('../../../config.php');
 require_once($CFG->libdir . '/adminlib.php');
 
 $action = required_param('action', PARAM_ALPHANUMEXT);
-$store = required_param('store', PARAM_PLUGIN);
+$enrol = required_param('store', PARAM_PLUGIN);
 
 $PAGE->set_url('/admin/tool/log/stores.php');
 $PAGE->set_context(context_system::instance());
@@ -48,44 +48,50 @@ $syscontext = context_system::instance();
 
 switch ($action) {
     case 'disable':
-        $class = \core_plugin_manager::resolve_plugininfo_class('logstore');
-        $class::enable_plugin($store, false);
+        unset($enabled[$enrol]);
+        set_config('enabled_stores', implode(',', array_keys($enabled)), 'tool_log');
+        add_to_config_log('tool_logstore_visibility', '1', '0', $enrol);
         break;
 
     case 'enable':
-        $class = \core_plugin_manager::resolve_plugininfo_class('logstore');
-        $class::enable_plugin($store, true);
+        if (!isset($all[$enrol])) {
+            break;
+        }
+        $enabled = array_keys($enabled);
+        $enabled[] = $enrol;
+        set_config('enabled_stores', implode(',', $enabled), 'tool_log');
+        add_to_config_log('tool_logstore_visibility', '0', '1', $enrol);
         break;
 
     case 'up':
-        if (!isset($enabled[$store])) {
+        if (!isset($enabled[$enrol])) {
             break;
         }
         $enabled = array_keys($enabled);
         $enabled = array_flip($enabled);
-        $current = $enabled[$store];
+        $current = $enabled[$enrol];
         if ($current == 0) {
             break; // Already at the top.
         }
         $enabled = array_flip($enabled);
         $enabled[$current] = $enabled[$current - 1];
-        $enabled[$current - 1] = $store;
+        $enabled[$current - 1] = $enrol;
         set_config('enabled_stores', implode(',', $enabled), 'tool_log');
         break;
 
     case 'down':
-        if (!isset($enabled[$store])) {
+        if (!isset($enabled[$enrol])) {
             break;
         }
         $enabled = array_keys($enabled);
         $enabled = array_flip($enabled);
-        $current = $enabled[$store];
+        $current = $enabled[$enrol];
         if ($current == count($enabled) - 1) {
             break; // Already at the end.
         }
         $enabled = array_flip($enabled);
         $enabled[$current] = $enabled[$current + 1];
-        $enabled[$current + 1] = $store;
+        $enabled[$current + 1] = $enrol;
         set_config('enabled_stores', implode(',', $enabled), 'tool_log');
         break;
 }

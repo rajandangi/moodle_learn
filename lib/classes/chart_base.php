@@ -77,7 +77,7 @@ class chart_base implements JsonSerializable, renderable {
      *
      * @return array
      */
-    public function jsonSerialize(): array {
+    public function jsonSerialize() { // @codingStandardsIgnoreLine (CONTRIB-6469).
         global $CFG;
         return [
             'type' => $this->get_type(),

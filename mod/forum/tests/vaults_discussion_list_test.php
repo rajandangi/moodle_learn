@@ -14,10 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace mod_forum;
-
-use mod_forum_external;
-use mod_forum_tests_generator_trait;
+/**
+ * The discussion_list vault tests.
+ *
+ * @package    mod_forum
+ * @copyright  2019 Ryan Wyllie <ryan@moodle.com>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -33,7 +36,7 @@ require_once(__DIR__ . '/generator_trait.php');
  * @copyright  2019 Ryan Wyllie <ryan@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class vaults_discussion_list_test extends \advanced_testcase {
+class mod_forum_vaults_discussion_list_testcase extends advanced_testcase {
     // Make use of the test generator trait.
     use mod_forum_tests_generator_trait;
 
@@ -43,7 +46,7 @@ class vaults_discussion_list_test extends \advanced_testcase {
     /**
      * Set up function for tests.
      */
-    public function setUp(): void {
+    public function setUp() {
         $vaultfactory = \mod_forum\local\container::get_vault_factory();
         $this->vault = $vaultfactory->get_discussions_in_forum_vault();
     }
@@ -533,9 +536,9 @@ class vaults_discussion_list_test extends \advanced_testcase {
     /**
      * Pin a duscussion.
      *
-     * @param \stdClass $discussion
+     * @param stdClass $discussion
      */
-    private function pin_discussion(\stdClass $discussion) {
+    private function pin_discussion(stdClass $discussion) {
         global $DB;
 
         $DB->update_record('forum_discussions',
@@ -545,10 +548,10 @@ class vaults_discussion_list_test extends \advanced_testcase {
     /**
      * Star a duscussion.
      *
-     * @param \stdClass $discussion
+     * @param stdClass $discussion
      * @param bool     $targetstate The new starred state of the discussion (0 => unstar, 1 => star)
      */
-    private function star_discussion(\stdClass $discussion, bool $targetstate) {
+    private function star_discussion(stdClass $discussion, bool $targetstate) {
         mod_forum_external::toggle_favourite_state($discussion->id, $targetstate);
     }
 }

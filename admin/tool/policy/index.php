@@ -33,8 +33,8 @@ use tool_policy\output\page_agreedocs;
 // Do not check for the site policies in require_login() to avoid the redirect loop.
 define('NO_SITEPOLICY_CHECK', true);
 
-// See the {@see page_agreedocs} for the access control checks.
-require(__DIR__.'/../../../config.php'); // phpcs:ignore
+// @codingStandardsIgnoreLine See the {@link page_agreedocs} for the access control checks.
+require(__DIR__.'/../../../config.php');
 
 $submit = optional_param('submit', null, PARAM_NOTAGS);
 $cancel = optional_param('cancel', null, PARAM_NOTAGS);

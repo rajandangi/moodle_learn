@@ -21,7 +21,6 @@
  * http://tools.ietf.org/html/draft-zyp-json-schema-03#section-5
  *
  */
-#[AllowDynamicProperties]
 class Google_Model implements ArrayAccess
 {
   /**
@@ -247,12 +246,11 @@ class Google_Model implements ArrayAccess
     }
   }
 
-  public function offsetExists($offset): bool
+  public function offsetExists($offset)
   {
     return isset($this->$offset) || isset($this->modelData[$offset]);
   }
 
-  #[\ReturnTypeWillChange]
   public function offsetGet($offset)
   {
     return isset($this->$offset) ?
@@ -260,7 +258,7 @@ class Google_Model implements ArrayAccess
         $this->__get($offset);
   }
 
-  public function offsetSet($offset, $value): void
+  public function offsetSet($offset, $value)
   {
     if (property_exists($this, $offset)) {
       $this->$offset = $value;
@@ -270,7 +268,7 @@ class Google_Model implements ArrayAccess
     }
   }
 
-  public function offsetUnset($offset): void
+  public function offsetUnset($offset)
   {
     unset($this->modelData[$offset]);
   }

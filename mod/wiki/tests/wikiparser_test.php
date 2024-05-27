@@ -8,26 +8,17 @@
 //
 // Moodle is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
-
-namespace mod_wiki;
-
-use wiki_parser_proxy;
-
-defined('MOODLE_INTERNAL') || die;
-
-global $CFG;
-require_once($CFG->dirroot . '/mod/wiki/parser/parser.php');
+// along with Moodle. If not, see <http://www.gnu.org/licenses/>.
 
 /**
  * Unit tests for the wiki parser
  *
  * @package   mod_wiki
- * @category  test
+ * @category  phpunit
  * @copyright 2009 Marc Alier, Jordi Piguillem marc.alier@upc.edu
  * @copyright 2009 Universitat Politecnica de Catalunya http://www.upc.edu
  *
@@ -39,7 +30,14 @@ require_once($CFG->dirroot . '/mod/wiki/parser/parser.php');
  *
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class wikiparser_test extends \advanced_testcase {
+
+defined('MOODLE_INTERNAL') || die;
+
+global $CFG;
+require_once($CFG->dirroot . '/mod/wiki/parser/parser.php');
+
+
+class mod_wiki_wikiparser_test extends basic_testcase {
 
     /**
      * URL inside the clickable text of some link should not be turned into a new link via the url_tag_rule.
@@ -56,7 +54,7 @@ class wikiparser_test extends \advanced_testcase {
             'link_callback_args' => ['swid' => 1],
         ]);
 
-        $this->assertStringContainsString($output, $parsingresult['parsed_text']);
+        $this->assertContains($output, $parsingresult['parsed_text']);
     }
 
     /**
@@ -230,8 +228,8 @@ class wikiparser_test extends \advanced_testcase {
             'link_callback' => '/mod/wiki/locallib.php:wiki_parser_link',
             'link_callback_args' => array('swid' => 1)
         ));
-        $this->assertMatchesRegularExpression($regexpoutput, $actual['parsed_text']);
-        $this->assertMatchesRegularExpression($regexptoc, $actual['toc']);
+        $this->assertRegExp($regexpoutput, $actual['parsed_text']);
+        $this->assertRegExp($regexptoc, $actual['toc']);
 
         // Now going to test Creole markup.
         // Note that Creole uses links to the escaped version of the section.
@@ -332,52 +330,4 @@ class wikiparser_test extends \advanced_testcase {
         $this->assertNotEquals(false, $section);
     }
 
-    /**
-     * Test that format that are not supported are raising an exception
-     *
-     * @param string $format
-     * @param string $expected
-     * @covers \wiki_parser_proxy::parse
-     * @dataProvider format_parser_provider
-     */
-    public function test_format_parser(string $format, string $expected) {
-        $this->resetAfterTest();
-        $this->setAdminUser();
-        $generator = $this->getDataGenerator();
-        $course = $generator->create_course();
-        $wiki = $generator->create_module('wiki', array_merge(['course' => $course->id, 'defaultformat' => $format]));
-        $wikigenerator = $this->getDataGenerator()->get_plugin_generator('mod_wiki');
-        if ($expected === 'exception') {
-            $this->expectException(\moodle_exception::class);
-        }
-        $page = $wikigenerator->create_page($wiki);
-        $version = wiki_get_current_version($page->id);
-        $this->assertEquals($expected, $version->contentformat);
-    }
-
-    /**
-     * Data provider for test_format_parser
-     *
-     * @return array[]
-     */
-    public static function format_parser_provider(): array {
-        return [
-            'creole' => [
-                'data' => 'creole',
-                'expected' => 'creole',
-            ],
-            'html' => [
-                'data' => 'html',
-                'expected' => 'html',
-            ],
-            'wikimarkup' => [
-                'data' => 'nwiki',
-                'expected' => 'nwiki',
-            ],
-            'wrong format' => [
-                'data' => '../wrongformat123',
-                'expected' => 'exception',
-            ],
-        ];
-    }
 }

@@ -429,7 +429,7 @@ abstract class pdo_moodle_database extends moodle_database {
     /**
      * Update record in database, as fast as possible, no safety checks, lobs not supported.
      * @param string $table name
-     * @param stdClass|array $params data record as object or array
+     * @param mixed $params data record as object or array
      * @param bool true means repeated updates expected
      * @return bool success
      */
@@ -527,31 +527,19 @@ abstract class pdo_moodle_database extends moodle_database {
                 break;
             default:
                 $this->lastError = __FILE__ . ' LINE: ' . __LINE__ . '.';
-                throw new \moodle_exception(unknowparamtype, 'error', '', $this->lastError);
+                print_error(unknowparamtype, 'error', '', $this->lastError);
             }
         }
         $sql = "UPDATE {{$table}} SET $newfield $select";
         return $this->execute($sql, $params);
     }
 
-    public function sql_concat(...$arr) {
-        throw new \moodle_exception('TODO');
+    public function sql_concat() {
+        print_error('TODO');
     }
 
     public function sql_concat_join($separator="' '", $elements=array()) {
-        throw new \moodle_exception('TODO');
-    }
-
-    /**
-     * Return SQL for performing group concatenation on given field/expression
-     *
-     * @param string $field
-     * @param string $separator
-     * @param string $sort
-     * @return string
-     */
-    public function sql_group_concat(string $field, string $separator = ', ', string $sort = ''): string {
-        return ''; // TODO.
+        print_error('TODO');
     }
 
     protected function begin_transaction() {
@@ -614,12 +602,12 @@ abstract class pdo_moodle_database extends moodle_database {
      * Overridden to ensure $this->lastErorr is reset each query
      *
      * @param string $sql
-     * @param array|null $params An array of parameters.
+     * @param array array of parameters
      * @param int $type type of query
      * @param mixed $extrainfo driver specific extra information
      * @return void
      */
-    protected function query_start($sql, ?array $params, $type, $extrainfo=null) {
+    protected function query_start($sql, array $params=null, $type, $extrainfo=null) {
         $this->lastError = null;
         parent::query_start($sql, $params, $type, $extrainfo);
     }

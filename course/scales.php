@@ -35,7 +35,6 @@ if ($scaleid !== 0) {
     $url->param('scaleid', $scaleid);
 }
 $PAGE->set_url($url);
-$PAGE->set_pagelayout('popup');
 
 $context = null;
 if ($course = $DB->get_record('course', array('id'=>$id))) {

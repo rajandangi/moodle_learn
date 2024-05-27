@@ -34,13 +34,23 @@ Feature: Toggle activities visibility from the course page
     And I log in as "teacher1"
     And I am on "Course 1" course homepage with editing mode on
     When I open "Test forum name" actions menu
-    And I choose "Hide" in the open action menu
-    Then "Test forum name" activity should be hidden
+    Then "Test forum name" actions menu should not have "Show" item
+    And "Test forum name" actions menu should not have "Make available" item
+    And "Test forum name" actions menu should not have "Make unavailable" item
+    And I click on "Hide" "link" in the "Test forum name" activity
+    And "Test forum name" activity should be hidden
     And I open "Test forum name" actions menu
-    And I choose "Show" in the open action menu
+    And "Test forum name" actions menu should not have "Hide" item
+    # Stealth behaviour is not available by default:
+    And "Test forum name" actions menu should not have "Make available" item
+    And "Test forum name" actions menu should not have "Make unavailable" item
+    And I click on "Show" "link" in the "Test forum name" activity
     And "Test forum name" activity should be visible
     And I open "Test forum name" actions menu
-    And I choose "Hide" in the open action menu
+    And "Test forum name" actions menu should not have "Show" item
+    And "Test forum name" actions menu should not have "Make available" item
+    And "Test forum name" actions menu should not have "Make unavailable" item
+    And I click on "Hide" "link" in the "Test forum name" activity
     And "Test forum name" activity should be hidden
     And I reload the page
     And "Test forum name" activity should be hidden
@@ -49,9 +59,11 @@ Feature: Toggle activities visibility from the course page
     And I click on "Edit settings" "link" in the "Test forum name" activity
     And I expand all fieldsets
     And the "Availability" select box should contain "Show on course page"
-    And the "Availability" select box should not contain "Make available but don't show on course page"
-    And the field "Availability" matches value "Hide on course page"
+    And the "Availability" select box should not contain "Make available but not shown on course page"
+    And the field "Availability" matches value "Hide from students"
     And I press "Save and return to course"
+    And "Test forum name" activity should be hidden
+    And I turn editing mode off
     And "Test forum name" activity should be hidden
     # Student should not see this activity.
     And I am on the "Course 1" course page logged in as student1
@@ -69,21 +81,27 @@ Feature: Toggle activities visibility from the course page
     And I log in as "teacher1"
     And I am on "Course 1" course homepage with editing mode on
     When I hide section "2"
-    And "Test forum name" activity should be hidden
+    Then "Test forum name" activity should be hidden
     And I open "Test forum name" actions menu
-    And I choose "Availability > Make available but don't show on course page" in the open action menu
-    Then "Test forum name" activity should be available but hidden from course page
+    And "Test forum name" actions menu should not have "Show" item
+    And "Test forum name" actions menu should not have "Hide" item
+    And "Test forum name" actions menu should not have "Make unavailable" item
+    And I click on "Make available" "link" in the "Test forum name" activity
+    And "Test forum name" activity should be available but hidden from course page
     And I open "Test forum name" actions menu
-    And I choose "Availability > Hide on course page" in the open action menu
+    And "Test forum name" actions menu should not have "Show" item
+    And "Test forum name" actions menu should not have "Hide" item
+    And "Test forum name" actions menu should not have "Make available" item
+    And I click on "Make unavailable" "link" in the "Test forum name" activity
     And "Test forum name" activity should be hidden
     # Make sure that "Availability" dropdown in the edit menu has three options.
     And I open "Test forum name" actions menu
     And I click on "Edit settings" "link" in the "Test forum name" activity
     And I expand all fieldsets
-    And the "Availability" select box should contain "Hide on course page"
-    And the "Availability" select box should contain "Make available but don't show on course page"
+    And the "Availability" select box should contain "Hide from students"
+    And the "Availability" select box should contain "Make available but not shown on course page"
     And the "Availability" select box should not contain "Show on course page"
-    And I set the field "Availability" to "Make available but don't show on course page"
+    And I set the field "Availability" to "Make available but not shown on course page"
     And I press "Save and return to course"
     And "Test forum name" activity should be available but hidden from course page
     And I turn editing mode off
@@ -93,7 +111,7 @@ Feature: Toggle activities visibility from the course page
     And "Test forum name" activity should be hidden
     And I click on "Test forum name" "link" in the "Recent activity" "block"
     And I should see "Test forum name"
-    And I should see "There are no discussion topics yet in this forum"
+    And I should see "(There are no discussion topics yet in this forum)"
 
   @javascript
   Scenario: Activities can be made available but not visible on a course page
@@ -102,15 +120,25 @@ Feature: Toggle activities visibility from the course page
     And I log in as "teacher1"
     And I am on "Course 1" course homepage with editing mode on
     When I open "Test assignment name" actions menu
-    And I choose "Availability > Make available but don't show on course page" in the open action menu
-    Then "Test assignment name" activity should be available but hidden from course page
+    Then "Test assignment name" actions menu should not have "Show" item
+    And "Test assignment name" actions menu should have "Hide" item
+    And "Test assignment name" actions menu should not have "Make available" item
+    And "Test assignment name" actions menu should not have "Make unavailable" item
+    And I click on "Hide" "link" in the "Test assignment name" activity
+    And "Test assignment name" activity should be hidden
+    And I open "Test assignment name" actions menu
+    And "Test assignment name" actions menu should have "Show" item
+    And "Test assignment name" actions menu should not have "Hide" item
+    And "Test assignment name" actions menu should not have "Make unavailable" item
+    And I click on "Make available" "link" in the "Test assignment name" activity
+    And "Test assignment name" activity should be available but hidden from course page
     # Make sure that "Availability" dropdown in the edit menu has three options.
     And I open "Test assignment name" actions menu
     And I click on "Edit settings" "link" in the "Test assignment name" activity
     And I expand all fieldsets
     And the "Availability" select box should contain "Show on course page"
-    And the "Availability" select box should contain "Hide on course page"
-    And the field "Availability" matches value "Make available but don't show on course page"
+    And the "Availability" select box should contain "Hide from students"
+    And the field "Availability" matches value "Make available but not shown on course page"
     And I press "Save and return to course"
     And "Test assignment name" activity should be available but hidden from course page
     And I turn editing mode off

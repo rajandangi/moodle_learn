@@ -15,10 +15,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace tool_installaddon;
-
-use testable_tool_installaddon_installer;
-use tool_installaddon_installer;
+/**
+ * Provides the unit tests class and some helper classes
+ *
+ * @package     tool_installaddon
+ * @category    test
+ * @copyright   2013 David Mudrak <david@moodle.com>
+ * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -28,12 +32,10 @@ require_once(__DIR__.'/fixtures/testable_installer.php');
 /**
  * Unit tests for the {@link tool_installaddon_installer} class
  *
- * @package     tool_installaddon
- * @category    test
  * @copyright 2013 David Mudrak <david@moodle.com>
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class installer_test extends \advanced_testcase {
+class tool_installaddon_installer_testcase extends advanced_testcase {
 
     public function test_get_addons_repository_url() {
         $installer = testable_tool_installaddon_installer::instance();
@@ -42,7 +44,7 @@ class installer_test extends \advanced_testcase {
         $this->assertEquals(1, preg_match('~^site=(.+)$~', $query, $matches));
         $site = rawurldecode($matches[1]);
         $site = json_decode(base64_decode($site), true);
-        $this->assertIsArray($site);
+        $this->assertInternalType('array', $site);
         $this->assertEquals(3, count($site));
         $this->assertSame('Nasty site', $site['fullname']);
         $this->assertSame('file:///etc/passwd', $site['url']);

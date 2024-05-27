@@ -19,9 +19,6 @@
  *
  * All CLI utilities uses $CFG->behat_dataroot and $CFG->prefix_dataroot as
  * $CFG->dataroot and $CFG->prefix
- * Same applies for $CFG->behat_dbname, $CFG->behat_dbuser, $CFG->behat_dbpass
- * and $CFG->behat_dbhost. But if any of those is not defined $CFG->dbname,
- * $CFG->dbuser, $CFG->dbpass and/or $CFG->dbhost will be used.
  *
  * @package    tool_behat
  * @copyright  2012 David Monllaó
@@ -57,8 +54,6 @@ list($options, $unrecognized) = cli_get_params(
         'torun'       => 0,
         'optimize-runs' => '',
         'add-core-features-to-theme' => false,
-        'axe'         => true,
-        'scss-deprecations' => false,
     ),
     array(
         'h' => 'help',
@@ -74,18 +69,15 @@ $help = "
 Behat utilities to manage the test environment
 
 Usage:
-  php util.php  [--install|--drop|--enable|--disable|--diag|--updatesteps|--no-axe|--scss-deprecations|--help]
-                [--parallel=value [--maxruns=value]]
+  php util.php [--install|--drop|--enable|--disable|--diag|--updatesteps|--help] [--parallel=value [--maxruns=value]]
 
 Options:
---install           Installs the test environment for acceptance tests
---drop              Drops the database tables and the dataroot contents
---enable            Enables test environment and updates tests list
---disable           Disables test environment
---diag              Get behat test environment status code
---updatesteps       Update feature step file.
---no-axe            Disable axe accessibility tests.
---scss-deprecations Enable SCSS deprecation checks.
+--install      Installs the test environment for acceptance tests
+--drop         Drops the database tables and the dataroot contents
+--enable       Enables test environment and updates tests list
+--disable      Disables test environment
+--diag         Get behat test environment status code
+--updatesteps  Update feature step file.
 
 -j, --parallel Number of parallel behat run operation
 -m, --maxruns Max parallel processes to be executed at one time.
@@ -97,7 +89,7 @@ Options:
 Example from Moodle root directory:
 \$ php admin/tool/behat/cli/util.php --enable --parallel=4
 
-More info in https://moodledev.io/general/development/tools/behat/running
+More info in http://docs.moodle.org/dev/Acceptance_testing#Running_tests
 ";
 
 if (!empty($options['help'])) {
@@ -323,7 +315,12 @@ function commands_to_execute($options) {
     }
 
     foreach ($extraoptions as $option => $value) {
-        $extra .= behat_get_command_flags($option, $value);
+        if ($options[$option]) {
+            $extra .= " --$option";
+            if ($value) {
+                $extra .= "=\"$value\"";
+            }
+        }
     }
 
     if (empty($options['parallel'])) {
@@ -358,7 +355,7 @@ function print_combined_drop_output($processes) {
                 $op = $process->getIncrementalOutput();
                 if (trim($op)) {
                     $update = preg_filter('#^\s*([FS\.\-]+)(?:\s+\d+)?\s*$#', '$1', $op);
-                    $strlentoprint = $update ? strlen($update) : 0;
+                    $strlentoprint = strlen($update);
 
                     // If not enough dots printed on line then just print.
                     if ($strlentoprint < $remainingprintlen) {

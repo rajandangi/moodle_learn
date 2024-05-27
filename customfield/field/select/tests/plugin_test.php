@@ -14,10 +14,18 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace customfield_select;
+/**
+ * Tests for class customfield_select
+ *
+ * @package    customfield_select
+ * @copyright  2019 Marina Glancy
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
-use core_customfield_generator;
-use core_customfield_test_instance_form;
+defined('MOODLE_INTERNAL') || die();
+
+use customfield_select\field_controller;
+use customfield_select\data_controller;
 
 /**
  * Functional test for customfield_select
@@ -26,7 +34,7 @@ use core_customfield_test_instance_form;
  * @copyright  2019 Marina Glancy
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class plugin_test extends \advanced_testcase {
+class customfield_select_plugin_testcase extends advanced_testcase {
 
     /** @var stdClass[]  */
     private $courses = [];
@@ -40,7 +48,7 @@ class plugin_test extends \advanced_testcase {
     /**
      * Tests set up.
      */
-    public function setUp(): void {
+    public function setUp() {
         $this->resetAfterTest();
 
         $this->cfcat = $this->get_generator()->create_category();
@@ -69,7 +77,7 @@ class plugin_test extends \advanced_testcase {
      * Get generator
      * @return core_customfield_generator
      */
-    protected function get_generator(): core_customfield_generator {
+    protected function get_generator() : core_customfield_generator {
         return $this->getDataGenerator()->get_plugin_generator('core_customfield');
     }
 
@@ -96,16 +104,15 @@ class plugin_test extends \advanced_testcase {
      * Create a configuration form and submit it with the same values as in the field
      */
     public function test_config_form() {
-        $this->setAdminUser();
         $submitdata = (array)$this->cfields[1]->to_record();
         $submitdata['configdata'] = $this->cfields[1]->get('configdata');
 
-        $submitdata = \core_customfield\field_config_form::mock_ajax_submit($submitdata);
-        $form = new \core_customfield\field_config_form(null, null, 'post', '', null, true,
-            $submitdata, true);
-        $form->set_data_for_dynamic_submission();
+        \core_customfield\field_config_form::mock_submit($submitdata, []);
+        $handler = $this->cfcat->get_handler();
+        $form = $handler->get_field_config_form($this->cfields[1]);
         $this->assertTrue($form->is_validated());
-        $form->process_dynamic_submission();
+        $data = $form->get_data();
+        $handler->save_field_configuration($this->cfields[1], $data);
     }
 
     /**
@@ -145,7 +152,7 @@ class plugin_test extends \advanced_testcase {
         $this->assertEquals('a', $this->cfdata[1]->export_value());
 
         // Field without data but with a default value.
-        $d = \core_customfield\data_controller::create(0, null, $this->cfields[3]);
+        $d = core_customfield\data_controller::create(0, null, $this->cfields[3]);
         $this->assertEquals(2, $d->get_value());
         $this->assertEquals('b', $d->export_value());
     }
@@ -155,7 +162,7 @@ class plugin_test extends \advanced_testcase {
      *
      * @return array
      */
-    public function parse_value_provider(): array {
+    public function parse_value_provider() : array {
         return [
             ['Red', 1],
             ['Blue', 2],

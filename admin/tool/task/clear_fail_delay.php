@@ -26,6 +26,8 @@ define('NO_OUTPUT_BUFFERING', true);
 
 require('../../../config.php');
 
+require_once($CFG->libdir.'/cronlib.php');
+
 // Basic security checks.
 require_admin();
 $context = context_system::instance();
@@ -34,7 +36,7 @@ $context = context_system::instance();
 $taskname = required_param('task', PARAM_RAW_TRIMMED);
 $task = \core\task\manager::get_scheduled_task($taskname);
 if (!$task) {
-    throw new \moodle_exception('cannotfindinfo', 'error', $taskname);
+    print_error('cannotfindinfo', 'error', $taskname);
 }
 
 $returnurl = new moodle_url('/admin/tool/task/scheduledtasks.php',

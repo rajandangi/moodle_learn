@@ -234,9 +234,7 @@ function blog_rss_get_feed($context, $args) {
 
     switch ($type) {
         case 'user':
-            $userfieldsapi = \core_user\fields::for_name();
-            $info = fullname($DB->get_record('user', array('id' => $id),
-                    $userfieldsapi->get_sql('', false, '', '', false)->selects));
+            $info = fullname($DB->get_record('user', array('id' => $id), get_all_user_name_fields(true)));
             break;
         case 'course':
             $info = $DB->get_field('course', 'fullname', array('id' => $id));

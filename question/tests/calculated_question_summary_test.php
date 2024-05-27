@@ -14,19 +14,26 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace core_question;
-
-use core_question\statistics\questions\calculated_question_summary;
-
 /**
- * Class core_question_calculated_question_summary_testcase
+ * Unit tests for the calculated_random_question_summary class.
  *
  * @package    core_question
  * @category   test
  * @copyright  2018 Shamim Rezaie <shamim@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class calculated_question_summary_test extends \advanced_testcase {
+
+defined('MOODLE_INTERNAL') || die();
+
+use core_question\statistics\questions\calculated_question_summary;
+
+/**
+ * Class core_question_calculated_question_summary_testcase
+ *
+ * @copyright  2018 Shamim Rezaie <shamim@moodle.com>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+class core_question_calculated_question_summary_testcase extends advanced_testcase {
 
     /**
      * Provider for test_get_min_max_of.
@@ -127,7 +134,7 @@ class calculated_question_summary_test extends \advanced_testcase {
             ],
             'zero mark' => [
                 [
-                    (object)['questionid' => 1, 'sd' => 0, 'maxmark' => 0],
+                    (object)['questionid' => 1, 'sd' => 0.2, 'maxmark' => 0],
                     (object)['questionid' => 2, 'sd' => 0.1049, 'maxmark' => 1],
                 ],
                 [null, 0.1049]
@@ -138,13 +145,6 @@ class calculated_question_summary_test extends \advanced_testcase {
                     (object)['questionid' => 2, 'sd' => 0.7, 'maxmark' => 2],
                 ],
                 [0.35, 0.4]
-            ],
-            'zero max mark as loaded from the DB' => [
-                [
-                    (object)['questionid' => 1, 'sd' => '0.0000000000', 'maxmark' => '0.0000000'],
-                    (object)['questionid' => 2, 'sd' => '0.0000000000', 'maxmark' => '0.0000000'],
-                ],
-                [null, null]
             ],
         ];
     }

@@ -14,10 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace qtype_gapselect;
+/**
+ * This file contains tests that simulate a user attempt a gapselect question.
+ *
+ * @package   qtype_gapselect
+ * @copyright 2012 The Open University
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
-use question_hint_with_parts;
-use question_state;
 
 defined('MOODLE_INTERNAL') || die();
 global $CFG;
@@ -29,15 +33,14 @@ require_once($CFG->dirroot . '/question/type/gapselect/tests/helper.php');
 /**
  * Unit tests for the gap-select question type.
  *
- * @package   qtype_gapselect
  * @copyright 2012 The Open University
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class walkthrough_test extends \qbehaviour_walkthrough_test_base {
+class qtype_gapselect_walkthrough_test extends qbehaviour_walkthrough_test_base {
     public function test_interactive_behaviour() {
 
         // Create a gapselect question.
-        $q = \test_question_maker::make_question('gapselect');
+        $q = test_question_maker::make_question('gapselect');
         $q->hints = array(
             new question_hint_with_parts(1, 'This is the first hint.', FORMAT_HTML, false, false),
             new question_hint_with_parts(2, 'This is the second hint.', FORMAT_HTML, true, true),
@@ -153,11 +156,11 @@ class walkthrough_test extends \qbehaviour_walkthrough_test_base {
         // Enable multilang filter to on content and heading.
         filter_set_global_state('multilang', TEXTFILTER_ON);
         filter_set_applies_to_strings('multilang', 1);
-        $filtermanager = \filter_manager::instance();
+        $filtermanager = filter_manager::instance();
         $filtermanager->reset_caches();
 
         // Create a multilang gapselect question.
-        $q = \test_question_maker::make_question('gapselect', 'multilang');
+        $q = test_question_maker::make_question('gapselect', 'multilang');
         $q->shufflechoices = false;
         $this->start_attempt_at_question($q, 'interactive', 3);
 
@@ -174,7 +177,7 @@ class walkthrough_test extends \qbehaviour_walkthrough_test_base {
     public function test_choices_containing_dollars() {
 
         // Choices with a currency like entry (e.g. $3) should display.
-        $q = \test_question_maker::make_question('gapselect', 'currency');
+        $q = test_question_maker::make_question('gapselect', 'currency');
         $q->shufflechoices = false;
         $this->start_attempt_at_question($q, 'interactive', 1);
 

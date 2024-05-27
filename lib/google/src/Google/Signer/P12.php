@@ -26,7 +26,6 @@ if (!class_exists('Google_Client')) {
  *
  * @author Brian Eaton <beaton@google.com>
  */
-#[AllowDynamicProperties]
 class Google_Signer_P12 extends Google_Signer_Abstract
 {
   // OpenSSL private key resource
@@ -75,10 +74,7 @@ class Google_Signer_P12 extends Google_Signer_Abstract
   public function __destruct()
   {
     if ($this->privateKey) {
-      // TODO: Remove this block once PHP 8.0 becomes required.
-      if (PHP_MAJOR_VERSION < 8) {
-        openssl_pkey_free($this->privateKey);
-      }
+      openssl_pkey_free($this->privateKey);
     }
   }
 

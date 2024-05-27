@@ -22,26 +22,23 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace core_message;
-
 defined('MOODLE_INTERNAL') || die();
 require_once(__DIR__ . '/fixtures/inbound_fixtures.php');
 
 /**
  * Tests for core_message_inbound to test Variable Envelope Return Path functionality.
  *
- * @package    core_message
  * @copyright  2014 Andrew Nicols <andrew@nicols.co.uk>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class inbound_test extends \advanced_testcase {
+class core_message_inbound_testcase extends advanced_testcase {
 
     /**
      * Perform setup tasks generic to each test.
      * This includes:
      * * configuring the messageinbound_mailbox.
      */
-    public function setUp(): void {
+    public function setUp() {
         global $CFG;
 
         $this->resetAfterTest(true);
@@ -70,7 +67,7 @@ class inbound_test extends \advanced_testcase {
         $record->component = $component;
         $record->enabled = $enabled;
         $record->id = $DB->insert_record('messageinbound_handlers', $record);
-        $handler = core_message_inbound_test_manager::handler_from_record($record);
+        $handler = \core_message_inbound_test_manager::handler_from_record($record);
 
         return $handler;
     }

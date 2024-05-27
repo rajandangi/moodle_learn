@@ -36,7 +36,7 @@ class tool_customlang_utils {
      * Rough number of strings that are being processed during a full checkout.
      * This is used to estimate the progress of the checkout.
      */
-    const ROUGH_NUMBER_OF_STRINGS = 32000;
+    const ROUGH_NUMBER_OF_STRINGS = 30000;
 
     /** @var array cache of {@link self::list_components()} results */
     private static $components = null;
@@ -89,9 +89,7 @@ class tool_customlang_utils {
      * @param progress_bar $progressbar optionally, the given progress bar can be updated
      */
     public static function checkout($lang, progress_bar $progressbar = null) {
-        global $DB, $CFG;
-
-        require_once("{$CFG->libdir}/adminlib.php");
+        global $DB;
 
         // For behat executions we are going to load only a few components in the
         // language customisation structures. Using the whole "en" langpack is
@@ -264,7 +262,7 @@ class tool_customlang_utils {
      * @param string $lang language code
      * @return string full path
      */
-    public static function get_localpack_location($lang) {
+    protected static function get_localpack_location($lang) {
         global $CFG;
 
         return $CFG->langlocalroot.'/'.$lang.'_local';
@@ -469,7 +467,7 @@ class tool_customlang_menu implements renderable {
  */
 class tool_customlang_translator implements renderable {
 
-    /** @var int number of rows per page */
+    /** @const int number of rows per page */
     const PERPAGE = 100;
 
     /** @var int total number of the rows int the table */

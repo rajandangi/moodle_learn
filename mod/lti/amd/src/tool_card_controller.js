@@ -20,14 +20,16 @@
  * See template: mod_lti/tool_card
  *
  * @module     mod_lti/tool_card_controller
+ * @class      tool_card_controller
+ * @package    mod_lti
  * @copyright  2015 Ryan Wyllie <ryan@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @since      3.1
  */
- define(['jquery', 'core/ajax', 'core/notification', 'core/templates', 'core/modal',
+ define(['jquery', 'core/ajax', 'core/notification', 'core/templates', 'core/modal_factory',
         'mod_lti/tool_type', 'mod_lti/events', 'mod_lti/keys',
         'core/str'],
-        function($, ajax, notification, templates, Modal, toolType, ltiEvents, KEYS, str) {
+        function($, ajax, notification, templates, modalFactory, toolType, ltiEvents, KEYS, str) {
 
     var SELECTORS = {
         DELETE_BUTTON: '.delete',
@@ -482,7 +484,10 @@
             return toolTypeData;
         }).then(function(toolTypeData) {
             return templates.render('mod_lti/tool_card', toolTypeData);
-        }).then(function(html, js) {
+        }).then(function(renderResult) {
+            var html = renderResult[0];
+            var js = renderResult[1];
+
             templates.replaceNode(element, html, js);
             return;
         }).catch(function() {
@@ -635,50 +640,42 @@
      * @param {JQuery} element jQuery object representing the tool card.
      */
     var registerModal = function(element) {
-        const configurationLink = element.find('#' + element.data('uniqid') + '-' + element.data('deploymentid'));
-        if (!configurationLink.length) {
-            return;
-        }
-        const trigger = configurationLink.get(0);
-        trigger.addEventListener('click', (e) => {
-            e.preventDefault();
-            var context = {
-                'uniqid': element.data('uniqid'),
-                'platformid': element.data('platformid'),
-                'clientid': element.data('clientid'),
-                'deploymentid': element.data('deploymentid'),
-                'urls': {
-                    'publickeyset': element.data('publickeyseturl'),
-                    'accesstoken': element.data('accesstokenurl'),
-                    'authrequest': element.data('authrequesturl')
-                }
-            };
-            var bodyPromise = templates.render('mod_lti/tool_config_modal_body', context);
-            var mailTo = 'mailto:?subject=' + encodeURIComponent(element.data('mailtosubject')) +
-                '&body=' + encodeURIComponent(element.data('platformidstr')) + ':%20' +
-                encodeURIComponent(element.data('platformid')) + '%0D%0A' +
-                encodeURIComponent(element.data('clientidstr')) + ':%20' +
-                encodeURIComponent(element.data('clientid')) + '%0D%0A' +
-                encodeURIComponent(element.data('deploymentidstr')) + ':%20' +
-                encodeURIComponent(element.data('deploymentid')) + '%0D%0A' +
-                encodeURIComponent(element.data('publickeyseturlstr')) + ':%20' +
-                encodeURIComponent(element.data('publickeyseturl')) + '%0D%0A' +
-                encodeURIComponent(element.data('accesstokenurlstr')) + ':%20' +
-                encodeURIComponent(element.data('accesstokenurl')) + '%0D%0A' +
-                encodeURIComponent(element.data('authrequesturlstr')) + ':%20' +
-                encodeURIComponent(element.data('authrequesturl')) + '%0D%0A';
-            context = {
-                'mailto': mailTo
-            };
-            var footerPromise = templates.render('mod_lti/tool_config_modal_footer', context);
-            Modal.create({
-                large: true,
-                title: element.data('modaltitle'),
-                body: bodyPromise,
-                footer: footerPromise,
-                show: true
-            });
-        });
+        var trigger = $('#' + element.data('uniqid') + '-' + element.data('deploymentid'));
+        var context = {
+            'uniqid': element.data('uniqid'),
+            'platformid': element.data('platformid'),
+            'clientid': element.data('clientid'),
+            'deploymentid': element.data('deploymentid'),
+            'urls': {
+                'publickeyset': element.data('publickeyseturl'),
+                'accesstoken': element.data('accesstokenurl'),
+                'authrequest': element.data('authrequesturl')
+            }
+        };
+        var bodyPromise = templates.render('mod_lti/tool_config_modal_body', context);
+        var mailTo = 'mailto:?subject=' + encodeURIComponent(element.data('mailtosubject')) +
+            '&body=' + encodeURIComponent(element.data('platformidstr')) + ':%20' +
+            encodeURIComponent(element.data('platformid')) + '%0D%0A' +
+            encodeURIComponent(element.data('clientidstr')) + ':%20' +
+            encodeURIComponent(element.data('clientid')) + '%0D%0A' +
+            encodeURIComponent(element.data('deploymentidstr')) + ':%20' +
+            encodeURIComponent(element.data('deploymentid')) + '%0D%0A' +
+            encodeURIComponent(element.data('publickeyseturlstr')) + ':%20' +
+            encodeURIComponent(element.data('publickeyseturl')) + '%0D%0A' +
+            encodeURIComponent(element.data('accesstokenurlstr')) + ':%20' +
+            encodeURIComponent(element.data('accesstokenurl')) + '%0D%0A' +
+            encodeURIComponent(element.data('authrequesturlstr')) + ':%20' +
+            encodeURIComponent(element.data('authrequesturl')) + '%0D%0A';
+        context = {
+            'mailto': mailTo
+        };
+        var footerPromise = templates.render('mod_lti/tool_config_modal_footer', context);
+        modalFactory.create({
+          large: true,
+          title: element.data('modaltitle'),
+          body: bodyPromise,
+          footer: footerPromise,
+        }, trigger);
     };
 
     return /** @alias module:mod_lti/tool_card_controller */ {

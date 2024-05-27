@@ -41,15 +41,15 @@ if ($action !== false) {
 $PAGE->set_url($url);
 
 if (! $cm = get_coursemodule_from_id('feedback', $id)) {
-    throw new \moodle_exception('invalidcoursemodule');
+    print_error('invalidcoursemodule');
 }
 
 if (! $course = $DB->get_record("course", array("id"=>$cm->course))) {
-    throw new \moodle_exception('coursemisconf');
+    print_error('coursemisconf');
 }
 
 if (! $feedback = $DB->get_record("feedback", array("id"=>$cm->instance))) {
-    throw new \moodle_exception('invalidcoursemodule');
+    print_error('invalidcoursemodule');
 }
 
 $context = context_module::instance($cm->id);
@@ -57,7 +57,6 @@ $context = context_module::instance($cm->id);
 require_login($course, true, $cm);
 
 require_capability('mod/feedback:edititems', $context);
-$actionbar = new \mod_feedback\output\edit_action_bar($cm->id, $url);
 
 $mform = new feedback_import_form();
 $newformdata = array('id'=>$id,
@@ -77,7 +76,7 @@ if ($choosefile) {
     $xmlcontent = $mform->get_file_content('choosefile');
 
     if (!$xmldata = feedback_load_xml_data($xmlcontent)) {
-        throw new \moodle_exception('cannotloadxml', 'feedback', 'edit.php?id='.$id);
+        print_error('cannotloadxml', 'feedback', 'edit.php?id='.$id);
     }
 
     $importerror = feedback_import_loaded_data($xmldata, $feedback->id);
@@ -95,22 +94,17 @@ $strfeedback  = get_string("modulename", "feedback");
 
 $PAGE->set_heading($course->fullname);
 $PAGE->set_title($feedback->name);
-$PAGE->activityheader->set_attrs([
-    "hidecompletion" => true,
-    "description" => ''
-]);
 echo $OUTPUT->header();
-/** @var \mod_feedback\output\renderer $renderer */
-$renderer = $PAGE->get_renderer('mod_feedback');
-echo $renderer->main_action_bar($actionbar);
+echo $OUTPUT->heading(format_string($feedback->name));
+/// print the tabs
+$current_tab = 'templates';
+require('tabs.php');
 
 /// Print the main part of the page
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-if (!$PAGE->has_secondary_navigation()) {
-    echo $OUTPUT->heading(get_string('import_questions', 'feedback'), 3);
-}
+echo $OUTPUT->heading(get_string('import_questions', 'feedback'), 3);
 
 if (isset($importerror->msg) AND is_array($importerror->msg)) {
     echo $OUTPUT->box_start('generalbox errorboxcontent boxaligncenter');

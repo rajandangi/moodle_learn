@@ -351,13 +351,13 @@ class summary_table extends table_sql {
         ];
 
         // Add relevant filter params.
-        foreach ($this->exportfilterdata as $name => $filterdata) {
-            if (is_array($filterdata)) {
-                foreach ($filterdata as $key => $value) {
+        foreach ($this->exportfilterdata as $name => $data) {
+            if (is_array($data)) {
+                foreach ($data as $key => $value) {
                     $params["{$name}[{$key}]"] = $value;
                 }
             } else {
-                $params[$name] = $filterdata;
+                $params[$name] = $data;
             }
         }
 
@@ -370,14 +370,14 @@ class summary_table extends table_sql {
     }
 
     /**
-     * Override the default implementation to set a notification.
+     * Override the default implementation to set a decent heading level.
      *
      * @return void.
      */
     public function print_nothing_to_display(): void {
         global $OUTPUT;
 
-        echo $OUTPUT->notification(get_string('nothingtodisplay'), 'info', false);
+        echo $OUTPUT->heading(get_string('nothingtodisplay'), 4);
     }
 
     /**
@@ -543,9 +543,8 @@ class summary_table extends table_sql {
     protected function define_base_sql(): void {
         global $USER;
 
-        // TODO Does not support custom user profile fields (MDL-70456).
-        $userfieldsapi = \core_user\fields::for_identity($this->userfieldscontext, false)->with_userpic();
-        $userfieldssql = $userfieldsapi->get_sql('u', false, '', '', false)->selects;
+        $userfields = get_extra_user_fields($this->userfieldscontext);
+        $userfieldssql = \user_picture::fields('u', $userfields);
 
         // Define base SQL query format.
         $this->sql->basefields = ' u.id AS userid,
@@ -586,21 +585,26 @@ class summary_table extends table_sql {
         [$enrolleduserssql, $enrolledusersparams] = get_enrolled_sql($this->get_context(), '', $groupids);
         $this->sql->params += $enrolledusersparams;
 
-        $queryattachments = 'SELECT COUNT(fi.id) AS attcount, fi.itemid AS postid, fi.userid
-                               FROM {files} fi
-                              WHERE fi.component = :component AND fi.filesize > 0
-                           GROUP BY fi.itemid, fi.userid';
-        $this->sql->basefromjoins = ' {user} u
-                                 JOIN (' . $enrolleduserssql . ') enrolledusers ON enrolledusers.id = u.id
-                                 JOIN {forum} f ON f.course = :forumcourseid
-                                 JOIN {forum_discussions} d ON d.forum = f.id
-                            LEFT JOIN {forum_posts} p ON p.discussion = d.id AND p.userid = u.id '
-                                    . $privaterepliessql
-                                    . $this->sql->filterbase['dates'] . '
-                            LEFT JOIN (' . $queryattachments . ') att ON att.postid = p.id AND att.userid = u.id';
+        $this->sql->basefromjoins = '    {user} u
+                                    JOIN (' . $enrolleduserssql . ') enrolledusers ON enrolledusers.id = u.id
+                                    JOIN {forum} f ON f.course = :forumcourseid
+                                    JOIN {forum_discussions} d ON d.forum = f.id
+                               LEFT JOIN {forum_posts} p ON p.discussion =  d.id
+                                     AND p.userid = u.id
+                                     ' . $privaterepliessql
+                                       . $this->sql->filterbase['dates'] . '
+                               LEFT JOIN (
+                                            SELECT COUNT(fi.id) AS attcount, fi.itemid AS postid, fi.userid
+                                              FROM {files} fi
+                                             WHERE fi.component = :component
+                                               AND fi.filesize > 0
+                                          GROUP BY fi.itemid, fi.userid
+                                         ) att ON att.postid = p.id
+                                         AND att.userid = u.id';
 
-        $this->sql->basewhere = '1 = 1';
-        $this->sql->basegroupby = "$userfieldssql, d.course";
+        $this->sql->basewhere = '1=1';
+
+        $this->sql->basegroupby = $userfieldssql . ', d.course';
 
         if ($this->logreader) {
             $this->fill_log_summary_temp_table();
@@ -732,11 +736,11 @@ class summary_table extends table_sql {
 
             $groupby = ' GROUP BY ' . $this->sql->basegroupby . $this->sql->filtergroupby;
 
-            if ($sort = $this->get_sql_sort()) {
+            if (($sort = $this->get_sql_sort())) {
                 $orderby = " ORDER BY {$sort}";
             }
         } else {
-            $selectfields = 'COUNT(DISTINCT u.id)';
+            $selectfields = 'COUNT(u.id)';
         }
 
         $sql = "SELECT {$selectfields}
@@ -762,7 +766,7 @@ class summary_table extends table_sql {
         foreach ($readers as $reader) {
 
             // If reader is not a sql_internal_table_reader and not legacy store then return.
-            if (!($reader instanceof \core\log\sql_internal_table_reader)) {
+            if (!($reader instanceof \core\log\sql_internal_table_reader) && !($reader instanceof logstore_legacy\log\store)) {
                 continue;
             }
             $logreader = $reader;
@@ -785,8 +789,14 @@ class summary_table extends table_sql {
 
         $this->create_log_summary_temp_table();
 
-        $logtable = $this->logreader->get_internal_log_table_name();
-        $nonanonymous = 'AND anonymous = 0';
+        if ($this->logreader instanceof logstore_legacy\log\store) {
+            $logtable = 'log';
+            // Anonymous actions are never logged in legacy log.
+            $nonanonymous = '';
+        } else {
+            $logtable = $this->logreader->get_internal_log_table_name();
+            $nonanonymous = 'AND anonymous = 0';
+        }
 
         // Apply dates filter if applied.
         $datewhere = $this->sql->filterbase['dateslog'] ?? '';

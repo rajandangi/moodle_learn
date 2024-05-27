@@ -204,10 +204,6 @@ M.mod_quiz.autosave = {
         this.form.delegate('change', this.value_changed, this.SELECTORS.CHANGE_ELEMENTS, this);
         this.form.on('submit', this.stop_autosaving, this);
 
-        require(['core_form/events'], function(FormEvent) {
-            window.addEventListener(FormEvent.eventTypes.uploadChanged, this.value_changed.bind(this));
-        }.bind(this));
-
         this.init_tinymce(this.TINYMCE_DETECTION_REPEATS);
 
         this.save_hidden_field_values();
@@ -267,19 +263,7 @@ M.mod_quiz.autosave = {
 
         Y.log('Found TinyMCE.', 'debug', 'moodle-mod_quiz-autosave');
         this.editor_change_handler = Y.bind(this.editor_changed, this);
-        if (window.tinyMCE.onAddEditor) {
-            window.tinyMCE.onAddEditor.add(Y.bind(this.init_tinymce_editor, this));
-        } else if (window.tinyMCE.on) {
-            var startSaveTimer = this.start_save_timer_if_necessary.bind(this);
-            window.tinyMCE.on('AddEditor', function(event) {
-                event.editor.on('Change Undo Redo keydown', startSaveTimer);
-            });
-            // One or more editors might already have been added, so we have to attach
-            // the event handlers to these as well.
-            window.tinyMCE.get().forEach(function(editor) {
-                editor.on('Change Undo Redo keydown', startSaveTimer);
-            });
-         }
+        window.tinyMCE.onAddEditor.add(Y.bind(this.init_tinymce_editor, this));
     },
 
     /**
@@ -374,20 +358,12 @@ M.mod_quiz.autosave = {
     },
 
     save_done: function(transactionid, response) {
-        var autosavedata = JSON.parse(response.responseText);
-        if (autosavedata.status !== 'OK') {
+        if (response.responseText !== 'OK') {
             // Because IIS is useless, Moodle can't send proper HTTP response
             // codes, so we have to detect failures manually.
             this.save_failed(transactionid, response);
             return;
         }
-
-        if (typeof autosavedata.timeleft !== 'undefined') {
-            Y.log('Updating timer: ' + autosavedata.timeleft + ' seconds remain.', 'debug', 'moodle-mod_quiz-timer');
-            M.mod_quiz.timer.updateEndTime(autosavedata.timeleft);
-        }
-
-        this.update_saved_time_display();
 
         Y.log('Save completed.', 'debug', 'moodle-mod_quiz-autosave');
         this.save_transaction = null;
@@ -421,21 +397,6 @@ M.mod_quiz.autosave = {
         }
     },
 
-    /**
-     * Inform the user that their answers have been saved.
-     *
-     * @method update_saved_time_display
-     */
-    update_saved_time_display: function() {
-        // We fetch the current language's preferred time format from the language pack.
-        var timeFormat = M.util.get_string('strftimedatetimeshortaccurate', 'langconfig');
-        var message = M.util.get_string('lastautosave', 'quiz', Y.Date.format(new Date(), {'format': timeFormat}));
-
-        var infoDiv = Y.one('#mod_quiz_navblock .othernav .autosave_info');
-        infoDiv.set('text', message);
-        infoDiv.show();
-    },
-
     is_time_nearly_over: function() {
         return M.mod_quiz.timer && M.mod_quiz.timer.endtime &&
                 (new Date().getTime() + 2 * this.delay) > M.mod_quiz.timer.endtime;
@@ -451,14 +412,4 @@ M.mod_quiz.autosave = {
 };
 
 
-}, '@VERSION@', {
-    "requires": [
-        "base",
-        "node",
-        "event",
-        "event-valuechange",
-        "node-event-delegate",
-        "io-form",
-        "datatype-date-format"
-    ]
-});
+}, '@VERSION@', {"requires": ["base", "node", "event", "event-valuechange", "node-event-delegate", "io-form"]});

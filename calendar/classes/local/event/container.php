@@ -180,13 +180,8 @@ class container {
                         $course = new \stdClass();
                         $course->id = $dbrow->courseid;
                         $completion = new \completion_info($course);
-                        if ($completion->is_enabled($cm)) {
-                            // Check if the event is completed, then in this case we do not need to complete it.
-                            // Make sure we're using a cm_info object.
-                            $completiondata = $completion->get_data($cm);
-                            return intval($completiondata->completionstate) === COMPLETION_COMPLETE;
-                        }
-                        return true;
+
+                        return (bool) !$completion->is_enabled($cm);
                     }
 
                     return false;

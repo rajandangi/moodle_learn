@@ -5,16 +5,10 @@ Feature: Manage assignment submission web notifications
   I need to be able to turn on web notifications for assignment submission
 
   Background:
-    # Turn off the course welcome message, so we can easily test other messages.
-    Given the following config values are set as admin:
-      | sendcoursewelcomemessage | 0 | enrol_manual |
-    And the following "users" exist:
+    Given the following "users" exist:
       | username | firstname | lastname | email                |
       | student1 | Student   | 1        | student1@example.com |
       | teacher1 | Teacher   | 1        | teacher1@example.com |
-    And the following "user preferences" exist:
-      | user      | preference                                                | value |
-      | teacher1  | message_provider_mod_assign_assign_notification_enabled   | none  |
     And the following "courses" exist:
       | fullname | shortname | category |
       | Course 1 | C1        | 0        |
@@ -38,11 +32,12 @@ Feature: Manage assignment submission web notifications
     Given I log in as "teacher1"
     When I open the notification popover
     Then I should see "You have no notifications"
+    # Enable assignment submission notification
+    And I follow "Preferences" in the user menu
+    And I click on "Notification preferences" "link" in the "#page-content" "css_element"
+    And I click on "//td[@data-processor-name='popup']//label[@class='preference-state']" "xpath_element" in the "Assignment notifications" "table_row"
     # Update assignment submission to generate a notification
     And I am on the "Assign 1" "assign activity" page logged in as student1
-    And the following "user preferences" exist:
-      | user      | preference                                                | value |
-      | teacher1  | message_provider_mod_assign_assign_notification_enabled   | popup |
     # This should generate a notification
     And I press "Edit submission"
     And I set the field "Online text" to "updated"

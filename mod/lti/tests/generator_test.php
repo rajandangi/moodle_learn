@@ -14,7 +14,17 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace mod_lti;
+/**
+ * PHPUnit data generator tests
+ *
+ * @package    mod_lti
+ * @category   phpunit
+ * @copyright  Copyright (c) 2012 Moodlerooms Inc. (http://www.moodlerooms.com)
+ * @author     Mark Nielsen
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+defined('MOODLE_INTERNAL') || die();
 
 /**
  * PHPUnit data generator testcase
@@ -25,7 +35,7 @@ namespace mod_lti;
  * @author     Mark Nielsen
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class generator_test extends \advanced_testcase {
+class mod_lti_generator_testcase extends advanced_testcase {
     public function test_generator() {
         global $DB;
 
@@ -52,7 +62,7 @@ class generator_test extends \advanced_testcase {
         $this->assertEquals('lti', $cm->modname);
         $this->assertEquals($course->id, $cm->course);
 
-        $context = \context_module::instance($cm->id);
+        $context = context_module::instance($cm->id);
         $this->assertEquals($lti->cmid, $context->instanceid);
 
         // Test gradebook integration using low level DB access - DO NOT USE IN PLUGIN CODE!

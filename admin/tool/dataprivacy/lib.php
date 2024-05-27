@@ -22,7 +22,8 @@
  */
 
 use core_user\output\myprofile\tree;
-use tool_dataprivacy\form\exportfilter_form;
+
+defined('MOODLE_INTERNAL') || die();
 
 /**
  * Add nodes to myprofile page.
@@ -53,12 +54,10 @@ function tool_dataprivacy_myprofile_navigation(tree $tree, $user, $iscurrentuser
     // Contact data protection officer link.
     if (\tool_dataprivacy\api::can_contact_dpo() && $iscurrentuser) {
         $renderer = $PAGE->get_renderer('tool_dataprivacy');
-        $content = $renderer->render_contact_dpo_link();
+        $content = $renderer->render_contact_dpo_link($USER->email);
         $node = new core_user\output\myprofile\node('privacyandpolicies', 'contactdpo', null, null, null, $content);
         $category->add_node($node);
-
-        // Require our Javascript module to handle contact DPO interaction.
-        $PAGE->requires->js_call_amd('tool_dataprivacy/contactdpo', 'init');
+        $PAGE->requires->js_call_amd('tool_dataprivacy/myrequestactions', 'init');
 
         $url = new moodle_url('/admin/tool/dataprivacy/mydatarequests.php');
         $node = new core_user\output\myprofile\node('privacyandpolicies', 'datarequests',
@@ -67,9 +66,8 @@ function tool_dataprivacy_myprofile_navigation(tree $tree, $user, $iscurrentuser
 
         // Check if the user has an ongoing data export request.
         $hasexportrequest = \tool_dataprivacy\api::has_ongoing_request($user->id, \tool_dataprivacy\api::DATAREQUEST_TYPE_EXPORT);
-        // Show data export link only if the user doesn't have an ongoing data export request and has permission
-        // to download own data.
-        if (!$hasexportrequest && \tool_dataprivacy\api::can_create_data_download_request_for_self()) {
+        // Show data export link only if the user doesn't have an ongoing data export request.
+        if (!$hasexportrequest) {
             $exportparams = ['type' => \tool_dataprivacy\api::DATAREQUEST_TYPE_EXPORT];
             $exporturl = new moodle_url('/admin/tool/dataprivacy/createdatarequest.php', $exportparams);
             $exportnode = new core_user\output\myprofile\node('privacyandpolicies', 'requestdataexport',
@@ -114,6 +112,29 @@ function tool_dataprivacy_myprofile_navigation(tree $tree, $user, $iscurrentuser
     }
 
     return false;
+}
+
+/**
+ * Callback to add footer elements.
+ *
+ * @return string HTML footer content
+ */
+function tool_dataprivacy_standard_footer_html() {
+    $output = '';
+
+    // A returned 0 means that the setting was set and disabled, false means that there is no value for the provided setting.
+    $showsummary = get_config('tool_dataprivacy', 'showdataretentionsummary');
+    if ($showsummary === false) {
+        // This means that no value is stored in db. We use the default value in this case.
+        $showsummary = true;
+    }
+
+    if ($showsummary) {
+        $url = new moodle_url('/admin/tool/dataprivacy/summary.php');
+        $output = html_writer::link($url, get_string('dataretentionsummary', 'tool_dataprivacy'));
+        $output = html_writer::div($output, 'tool_dataprivacy');
+    }
+    return $output;
 }
 
 /**
@@ -254,25 +275,4 @@ function tool_dataprivacy_pluginfile($course, $cm, $context, $filearea, $args, $
     } else {
         send_file_not_found();
     }
-}
-
-/**
- * Fragment to add a select course.
- *
- * @param array $args The fragment arguments.
- * @return string The rendered mform fragment.
- */
-function tool_dataprivacy_output_fragment_selectcourses_form(array $args): string {
-    $args = (object)$args;
-
-    $context = context_system::instance();
-    require_capability('tool/dataprivacy:managedatarequests', $context);
-
-    if (!empty($args->jsonformdata)) {
-        $serialiseddata = json_decode($args->jsonformdata);
-    }
-
-    $mform = new exportfilter_form(null, ['requestid' => $serialiseddata->requestid]);
-
-    return $mform->render();
 }

@@ -14,7 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace mod_quiz;
+/**
+ * Restore override tests.
+ *
+ * @package    mod_quiz
+ * @author   2019 Nathan Nguyen <nathannguyen@catalyst-au.net>
+ * @copyright Catalyst IT
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -23,12 +30,12 @@ require_once($CFG->libdir . "/phpunit/classes/restore_date_testcase.php");
 /**
  * Restore override tests.
  *
- * @package   mod_quiz
- * @author    2019 Nathan Nguyen <nathannguyen@catalyst-au.net>
+ * @package    mod_quiz
+ * @author   2019 Nathan Nguyen <nathannguyen@catalyst-au.net>
  * @copyright Catalyst IT
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class restore_override_test extends \restore_date_testcase {
+class mod_quiz_restore_override_testcase extends restore_date_testcase {
 
     /**
      * Test restore overrides.
@@ -41,8 +48,8 @@ class restore_override_test extends \restore_date_testcase {
         $quizgen = $this->getDataGenerator()->get_plugin_generator('mod_quiz');
         $quiz = $quizgen->create_instance(['course' => $course->id]);
 
-        $group1 = $this->getDataGenerator()->create_group(['courseid' => $course->id]);
-        $group2 = $this->getDataGenerator()->create_group(['courseid' => $course->id]);
+        $group1 = $this->getDataGenerator()->create_group(array('courseid' => $course->id));
+        $group2 = $this->getDataGenerator()->create_group(array('courseid' => $course->id));
 
         $now = 100;
 

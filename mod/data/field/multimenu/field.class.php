@@ -32,27 +32,6 @@ class data_field_multimenu extends data_field_base {
      * */
     protected static $priority = self::LOW_PRIORITY;
 
-    public function supports_preview(): bool {
-        return true;
-    }
-
-    public function get_data_content_preview(int $recordid): stdClass {
-        $options = explode("\n", $this->field->param1);
-        $options = array_map('trim', $options);
-        $selected = $options[$recordid % count($options)];
-        $selected .= '##' . $options[($recordid + 1) % count($options)];
-        return (object)[
-            'id' => 0,
-            'fieldid' => $this->field->id,
-            'recordid' => $recordid,
-            'content' => $selected,
-            'content1' => null,
-            'content2' => null,
-            'content3' => null,
-            'content4' => null,
-        ];
-    }
-
     function display_add_field($recordid = 0, $formdata = null) {
         global $DB, $OUTPUT;
 
@@ -74,7 +53,7 @@ class data_field_multimenu extends data_field_base {
         $str .= '<input name="field_' . $this->field->id . '[xxx]" type="hidden" value="xxx"/>'; // hidden field - needed for empty selection
 
         $str .= '<label for="field_' . $this->field->id . '">';
-        $str .= '<legend><span class="accesshide">' . s($this->field->name);
+        $str .= '<legend><span class="accesshide">' . $this->field->name;
 
         if ($this->field->required) {
             $str .= '&nbsp;' . get_string('requiredelement', 'form') . '</span></legend>';
@@ -119,7 +98,7 @@ class data_field_multimenu extends data_field_base {
 
         static $c = 0;
 
-        $str = '<label class="accesshide" for="f_' . $this->field->id . '">' . s($this->field->name) . '</label>';
+        $str = '<label class="accesshide" for="f_' . $this->field->id . '">' . $this->field->name . '</label>';
         $str .= '<select id="f_'.$this->field->id.'" name="f_'.$this->field->id.'[]" multiple="multiple" class="form-control">';
 
         // display only used options
@@ -271,23 +250,28 @@ class data_field_multimenu extends data_field_base {
 
 
     function display_browse_field($recordid, $template) {
-        $content = $this->get_data_content($recordid);
-        if (!$content || empty($content->content)) {
-            return '';
-        }
-        $options = explode("\n", $this->field->param1);
-        $options = array_map('trim', $options);
+        global $DB;
 
-        $contentarray = explode('##', $content->content);
-        $str = '';
-        foreach ($contentarray as $line) {
-            if (!in_array($line, $options)) {
-                // Hmm, looks like somebody edited the field definition.
-                continue;
+        if ($content = $DB->get_record('data_content', array('fieldid'=>$this->field->id, 'recordid'=>$recordid))) {
+            if (strval($content->content) === '') {
+                return false;
             }
-            $str .= $line . "<br />\n";
+
+            $options = explode("\n",$this->field->param1);
+            $options = array_map('trim', $options);
+
+            $contentArr = explode('##', $content->content);
+            $str = '';
+            foreach ($contentArr as $line) {
+                if (!in_array($line, $options)) {
+                    // hmm, looks like somebody edited the field definition
+                    continue;
+                }
+                $str .= $line . "<br />\n";
+            }
+            return $str;
         }
-        return $str;
+        return false;
     }
 
     /**

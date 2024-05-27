@@ -41,8 +41,7 @@
         "icon": {
             "key": "i/courseevent",
             "component": "core",
-            "alttext": "Some course event",
-            "iconurl": "#"
+            "alttext": "Some course event"
         },
         "editurl": "#",
         "url": "#"
@@ -52,7 +51,7 @@
     }} data-type="event"{{!
     }} data-course-id="{{course.id}}"{{!
     }} data-event-id="{{id}}"{{!
-    }} class="event mt-3"{{!
+    }} class="event m-t-1"{{!
     }} data-event-component="{{component}}"{{!
     }} data-event-eventtype="{{eventtype}}"{{!
     }} data-eventtype-{{normalisedeventtype}}="1"{{!
@@ -64,27 +63,18 @@
             <div class="commands float-sm-right">
                 {{#canedit}}
                     {{#candelete}}
-                        <a href="{{deleteurl}}" data-action="delete" aria-label="{{#str}}delete{{/str}}" title="{{#str}}delete{{/str}}">
-                            {{#pix}}t/delete, core{{/pix}}
+                        <a href="{{deleteurl}}" data-action="delete">
+                            {{#pix}}t/delete, core, {{#str}}delete{{/str}}{{/pix}}
                         </a>
                     {{/candelete}}
                     {{^isactionevent}}
-                        <a href="{{editurl}}" data-action="edit" aria-label="{{#str}}edit{{/str}}" title="{{#str}}edit{{/str}}">
-                            {{#pix}}t/edit, core{{/pix}}
+                        <a href="{{editurl}}" data-action="edit">
+                            {{#pix}}t/edit, core, {{#str}}edit{{/str}}{{/pix}}
                         </a>
                     {{/isactionevent}}
                 {{/canedit}}
             </div>
-            {{#icon}}
-                <div class="d-inline-block mt-1 align-top">
-                    {{#iconurl}}
-                        <img alt="{{alttext}}" title="{{alttext}}" src="{{{iconurl}}}" class="icon {{iconclass}}">
-                    {{/iconurl}}
-                    {{^iconurl}}
-                        {{#pix}} {{key}}, {{component}}, {{alttext}} {{/pix}}
-                    {{/iconurl}}
-                </div>
-            {{/icon}}
+            {{#icon}}<div class="d-inline-block mt-1 align-top">{{#pix}} {{key}}, {{component}}, {{alttext}} {{/pix}}</div>{{/icon}}
             <div class="d-inline-block">
                 <h3 class="name d-inline-block">{{{name}}}</h3>
             </div>

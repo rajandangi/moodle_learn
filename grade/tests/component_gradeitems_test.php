@@ -25,7 +25,7 @@
 
 declare(strict_types = 1);
 
-namespace core_grades {
+namespace tests\core_grades {
 
     use advanced_testcase;
     use core_grades\component_gradeitems;

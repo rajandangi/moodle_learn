@@ -24,30 +24,27 @@
  * @category   preference
  * @copyright  2008 Tim Hunt
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @deprecated since Moodle 4.3
  */
 
 require_once(__DIR__ . '/../../config.php');
 
 // Check access.
 if (!confirm_sesskey()) {
-    throw new \moodle_exception('invalidsesskey');
+    print_error('invalidsesskey');
 }
 
 // Get the name of the preference to update, and check it is allowed.
 $name = required_param('pref', PARAM_RAW);
 if (!isset($USER->ajax_updatable_user_prefs[$name])) {
-    throw new \moodle_exception('notallowedtoupdateprefremotely');
+    print_error('notallowedtoupdateprefremotely');
 }
-
-debugging('Use of setuserpref.php is deprecated. Please use the "core_user/repository" module instead.', DEBUG_DEVELOPER);
 
 // Get and the value.
 $value = required_param('value', $USER->ajax_updatable_user_prefs[$name]);
 
 // Update
 if (!set_user_preference($name, $value)) {
-    throw new \moodle_exception('errorsettinguserpref');
+    print_error('errorsettinguserpref');
 }
 
 echo 'OK';

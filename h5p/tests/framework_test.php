@@ -17,10 +17,6 @@
 namespace core_h5p;
 
 use core_collator;
-use Moodle\H5PCore;
-use Moodle\H5PDisplayOptionBehaviour;
-
-// phpcs:disable moodle.NamingConventions.ValidFunctionName.LowercaseMethod
 
 /**
  *
@@ -30,10 +26,9 @@ use Moodle\H5PDisplayOptionBehaviour;
  * @category   test
  * @copyright  2019 Mihail Geshoski <mihail@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers     \core_h5p\framework
  * @runTestsInSeparateProcesses
  */
-class framework_test extends \advanced_testcase {
+class framework_testcase extends \advanced_testcase {
 
     /** @var \core_h5p\framework */
     private $framework;
@@ -41,7 +36,7 @@ class framework_test extends \advanced_testcase {
     /**
      * Set up function for tests.
      */
-    public function setUp(): void {
+    public function setUp() {
         $factory = new \core_h5p\factory();
         $this->framework = $factory->get_framework();
     }
@@ -169,55 +164,6 @@ class framework_test extends \advanced_testcase {
 
         // The response should be empty.
         $this->assertEmpty($data);
-    }
-
-    /**
-     * Test the behaviour of setLibraryTutorialUrl().
-     */
-    public function test_setLibraryTutorialUrl() {
-        global $DB;
-
-        $this->resetAfterTest();
-
-        $generator = $this->getDataGenerator()->get_plugin_generator('core_h5p');
-
-        // Create several libraries records.
-        $lib1 = $generator->create_library_record('Library1', 'Lib1', 1, 0, 1, '', null, 'http://tutorial1.org',
-            'http://example.org');
-        $lib2 = $generator->create_library_record('Library2', 'Lib2', 2, 0, 1, '', null, 'http://tutorial2.org');
-        $lib3 = $generator->create_library_record('Library3', 'Lib3', 3, 0);
-
-        // Check only lib1 tutorial URL is updated.
-        $url = 'https://newtutorial.cat';
-        $this->framework->setLibraryTutorialUrl($lib1->machinename, $url);
-
-        $libraries = $DB->get_records('h5p_libraries');
-        $this->assertEquals($libraries[$lib1->id]->tutorial, $url);
-        $this->assertNotEquals($libraries[$lib2->id]->tutorial, $url);
-
-        // Check lib1 tutorial URL is set to null.
-        $this->framework->setLibraryTutorialUrl($lib1->machinename, null);
-
-        $libraries = $DB->get_records('h5p_libraries');
-        $this->assertCount(3, $libraries);
-        $this->assertNull($libraries[$lib1->id]->tutorial);
-
-        // Check no tutorial URL is set if library name doesn't exist.
-        $this->framework->setLibraryTutorialUrl('Unexisting library', $url);
-
-        $libraries = $DB->get_records('h5p_libraries');
-        $this->assertCount(3, $libraries);
-        $this->assertNull($libraries[$lib1->id]->tutorial);
-        $this->assertEquals($libraries[$lib2->id]->tutorial, 'http://tutorial2.org');
-        $this->assertNull($libraries[$lib3->id]->tutorial);
-
-        // Check tutorial is set as expected when it was null.
-        $this->framework->setLibraryTutorialUrl($lib3->machinename, $url);
-
-        $libraries = $DB->get_records('h5p_libraries');
-        $this->assertEquals($libraries[$lib3->id]->tutorial, $url);
-        $this->assertNull($libraries[$lib1->id]->tutorial);
-        $this->assertEquals($libraries[$lib2->id]->tutorial, 'http://tutorial2.org');
     }
 
     /**
@@ -1064,7 +1010,6 @@ class framework_test extends \advanced_testcase {
 
         $this->resetAfterTest();
 
-        /** @var \core_h5p_generator $generator */
         $generator = $this->getDataGenerator()->get_plugin_generator('core_h5p');
 
         // Create a library record.
@@ -1089,60 +1034,7 @@ class framework_test extends \advanced_testcase {
 
         // Make sure the h5p content was properly updated.
         $this->assertNotEmpty($h5pcontent);
-        $this->assertNotEmpty($h5pcontent->pathnamehash);
-        $this->assertNotEmpty($h5pcontent->contenthash);
         $this->assertEquals($content['params'], $h5pcontent->jsoncontent);
-        $this->assertEquals($content['library']['libraryId'], $h5pcontent->mainlibraryid);
-        $this->assertEquals($content['disable'], $h5pcontent->displayoptions);
-    }
-
-    /**
-     * Test the behaviour of updateContent() with metadata.
-     *
-     * @covers ::updateContent
-     */
-    public function test_updateContent_withmetadata(): void {
-        global $DB;
-
-        $this->resetAfterTest();
-
-        /** @var \core_h5p_generator $generator */
-        $generator = $this->getDataGenerator()->get_plugin_generator('core_h5p');
-
-        // Create a library record.
-        $lib = $generator->create_library_record('TestLibrary', 'Test', 1, 1, 2);
-
-        // Create an h5p content with 'TestLibrary' as it's main library.
-        $contentid = $generator->create_h5p_record($lib->id);
-
-        $params = ['param2' => 'Test2'];
-        $metadata = [
-            'license' => 'CC BY',
-            'licenseVersion' => '4.0',
-            'yearFrom' => 2000,
-            'yearTo' => 2023,
-            'defaultLanguage' => 'ca',
-        ];
-        $content = [
-            'id' => $contentid,
-            'params' => json_encode($params),
-            'library' => [
-                'libraryId' => $lib->id,
-            ],
-            'disable' => 8,
-            'metadata' => $metadata,
-        ];
-
-        // Update the h5p content.
-        $this->framework->updateContent($content);
-
-        $h5pcontent = $DB->get_record('h5p', ['id' => $contentid]);
-
-        // Make sure the h5p content was properly updated.
-        $this->assertNotEmpty($h5pcontent);
-        $this->assertNotEmpty($h5pcontent->pathnamehash);
-        $this->assertNotEmpty($h5pcontent->contenthash);
-        $this->assertEquals(json_encode(array_merge($params, ['metadata' => $metadata])), $h5pcontent->jsoncontent);
         $this->assertEquals($content['library']['libraryId'], $h5pcontent->mainlibraryid);
         $this->assertEquals($content['disable'], $h5pcontent->displayoptions);
     }
@@ -1196,102 +1088,33 @@ class framework_test extends \advanced_testcase {
 
         $this->resetAfterTest();
 
-        /** @var \core_h5p_generator $generator */
         $generator = $this->getDataGenerator()->get_plugin_generator('core_h5p');
-        // For the mod_h5pactivity component, the activity needs to be created too.
-        $course = $this->getDataGenerator()->create_course();
-        $user = $this->getDataGenerator()->create_and_enrol($course, 'student');
-        $this->setUser($user);
-        $activity = $this->getDataGenerator()->create_module('h5pactivity', ['course' => $course]);
-        $activitycontext = \context_module::instance($activity->cmid);
-        $filerecord = [
-            'contextid' => $activitycontext->id,
-            'component' => 'mod_h5pactivity',
-            'filearea' => 'package',
-            'itemid' => 0,
-            'filepath' => '/',
-            'filename' => 'dummy.h5p',
-            'addxapistate' => true,
-        ];
 
         // Generate some h5p related data.
-        $data = $generator->generate_h5p_data(false, $filerecord);
+        $data = $generator->generate_h5p_data();
         $h5pid = $data->h5pcontent->h5pid;
 
+        $h5pcontent = $DB->get_record('h5p', ['id' => $h5pid]);
         // Make sure the particular h5p content exists in the DB.
-        $this->assertNotEmpty($DB->get_record('h5p', ['id' => $h5pid]));
+        $this->assertNotEmpty($h5pcontent);
+
+        // Get the h5p content libraries from the DB.
+        $h5pcontentlibraries = $DB->get_records('h5p_contents_libraries', ['h5pid' => $h5pid]);
+
         // Make sure the content libraries exists in the DB.
-        $this->assertCount(5, $DB->get_records('h5p_contents_libraries', ['h5pid' => $h5pid]));
-        // Make sure the particular xAPI state exists in the DB.
-        $records = $DB->get_records('xapi_states');
-        $record = reset($records);
-        $this->assertCount(1, $records);
-        $this->assertNotNull($record->statedata);
+        $this->assertNotEmpty($h5pcontentlibraries);
+        $this->assertCount(5, $h5pcontentlibraries);
 
         // Delete the h5p content and it's related data.
         $this->framework->deleteContentData($h5pid);
 
+        $h5pcontent = $DB->get_record('h5p', ['id' => $h5pid]);
+        $h5pcontentlibraries = $DB->get_record('h5p_contents_libraries', ['h5pid' => $h5pid]);
+
         // The particular h5p content should no longer exist in the db.
-        $this->assertEmpty($DB->get_record('h5p', ['id' => $h5pid]));
+        $this->assertEmpty($h5pcontent);
         // The particular content libraries should no longer exist in the db.
-        $this->assertEmpty($DB->get_record('h5p_contents_libraries', ['h5pid' => $h5pid]));
-        // The xAPI state should be reseted.
-        $records = $DB->get_records('xapi_states');
-        $record = reset($records);
-        $this->assertCount(1, $records);
-        $this->assertNull($record->statedata);
-    }
-
-    /**
-     * Test the behaviour of resetContentUserData().
-     */
-    public function test_resetContentUserData() {
-        global $DB;
-
-        $this->resetAfterTest();
-
-        /** @var \core_h5p_generator $generator */
-        $generator = $this->getDataGenerator()->get_plugin_generator('core_h5p');
-        // For the mod_h5pactivity component, the activity needs to be created too.
-        $course = $this->getDataGenerator()->create_course();
-        $user = $this->getDataGenerator()->create_and_enrol($course, 'student');
-        $this->setUser($user);
-        $activity = $this->getDataGenerator()->create_module('h5pactivity', ['course' => $course]);
-        $activitycontext = \context_module::instance($activity->cmid);
-        $filerecord = [
-            'contextid' => $activitycontext->id,
-            'component' => 'mod_h5pactivity',
-            'filearea' => 'package',
-            'itemid' => 0,
-            'filepath' => '/',
-            'filename' => 'dummy.h5p',
-            'addxapistate' => true,
-        ];
-
-        // Generate some h5p related data.
-        $data = $generator->generate_h5p_data(false, $filerecord);
-        $h5pid = $data->h5pcontent->h5pid;
-
-        // Make sure the H5P content, libraries and xAPI state exist in the DB.
-        $this->assertNotEmpty($DB->get_record('h5p', ['id' => $h5pid]));
-        $this->assertCount(5, $DB->get_records('h5p_contents_libraries', ['h5pid' => $h5pid]));
-        $records = $DB->get_records('xapi_states');
-        $record = reset($records);
-        $this->assertCount(1, $records);
-        $this->assertNotNull($record->statedata);
-
-        // Reset the user data associated to this H5P content.
-        $this->framework->resetContentUserData($h5pid);
-
-        // The H5P content should still exist in the db.
-        $this->assertNotEmpty($DB->get_record('h5p', ['id' => $h5pid]));
-        // The particular content libraries should still exist in the db.
-        $this->assertCount(5, $DB->get_records('h5p_contents_libraries', ['h5pid' => $h5pid]));
-        // The xAPI state should still exist in the db, but should be reset.
-        $records = $DB->get_records('xapi_states');
-        $record = reset($records);
-        $this->assertCount(1, $records);
-        $this->assertNull($record->statedata);
+        $this->assertEmpty($h5pcontentlibraries);
     }
 
     /**
@@ -1773,7 +1596,7 @@ class framework_test extends \advanced_testcase {
             'embedType' => 'iframe',
             'disable' => $h5p->displayoptions,
             'title' => $mainlibrary->title,
-            'slug' => H5PCore::slugify($mainlibrary->title) . '-' . $h5p->id,
+            'slug' => \H5PCore::slugify($mainlibrary->title) . '-' . $h5p->id,
             'filtered' => $h5p->filtered,
             'libraryId' => $mainlibrary->id,
             'libraryName' => $mainlibrary->machinename,
@@ -1926,13 +1749,13 @@ class framework_test extends \advanced_testcase {
         $this->resetAfterTest();
 
         // Get value for display_option_download.
-        $value = $this->framework->getOption(H5PCore::DISPLAY_OPTION_DOWNLOAD);
-        $expected = H5PDisplayOptionBehaviour::CONTROLLED_BY_AUTHOR_DEFAULT_OFF;
+        $value = $this->framework->getOption(\H5PCore::DISPLAY_OPTION_DOWNLOAD);
+        $expected = \H5PDisplayOptionBehaviour::CONTROLLED_BY_AUTHOR_DEFAULT_OFF;
         $this->assertEquals($expected, $value);
 
         // Get value for display_option_embed using default value (it should be ignored).
-        $value = $this->framework->getOption(H5PCore::DISPLAY_OPTION_EMBED, H5PDisplayOptionBehaviour::NEVER_SHOW);
-        $expected = H5PDisplayOptionBehaviour::CONTROLLED_BY_AUTHOR_DEFAULT_OFF;
+        $value = $this->framework->getOption(\H5PCore::DISPLAY_OPTION_EMBED, \H5PDisplayOptionBehaviour::NEVER_SHOW);
+        $expected = \H5PDisplayOptionBehaviour::CONTROLLED_BY_AUTHOR_DEFAULT_OFF;
         $this->assertEquals($expected, $value);
 
         // Get value for unexisting setting without default.
@@ -1962,11 +1785,11 @@ class framework_test extends \advanced_testcase {
         $this->assertEquals($newvalue, $value);
 
         // Set value for display_option_download and then get it again. Check it hasn't changed.
-        $name = H5PCore::DISPLAY_OPTION_DOWNLOAD;
-        $newvalue = H5PDisplayOptionBehaviour::NEVER_SHOW;
+        $name = \H5PCore::DISPLAY_OPTION_DOWNLOAD;
+        $newvalue = \H5PDisplayOptionBehaviour::NEVER_SHOW;
         $this->framework->setOption($name, $newvalue);
         $value = $this->framework->getOption($name);
-        $expected = H5PDisplayOptionBehaviour::CONTROLLED_BY_AUTHOR_DEFAULT_OFF;
+        $expected = \H5PDisplayOptionBehaviour::CONTROLLED_BY_AUTHOR_DEFAULT_OFF;
         $this->assertEquals($expected, $value);
     }
 

@@ -14,11 +14,15 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace mod_chat;
-
-use core_external\external_api;
-use externallib_advanced_testcase;
-use mod_chat_external;
+/**
+ * External mod_chat functions unit tests
+ *
+ * @package    mod_chat
+ * @category   external
+ * @copyright  2015 Juan Leyva <juan@moodle.com>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @since      Moodle 3.0
+ */
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -35,16 +39,7 @@ require_once($CFG->dirroot . '/webservice/tests/helpers.php');
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @since      Moodle 3.0
  */
-class externallib_test extends externallib_advanced_testcase {
-
-    /**
-     * Setup testcase.
-     */
-    public function setUp(): void {
-        // Chat module is disabled by default, enable it for testing.
-        $manager = \core_plugin_manager::resolve_plugininfo_class('mod');
-        $manager::enable_plugin('chat', 1);
-    }
+class mod_chat_external_testcase extends externallib_advanced_testcase {
 
     /**
      * Test login user
@@ -168,14 +163,14 @@ class externallib_test extends externallib_advanced_testcase {
         $this->setAdminUser();
         $course = $this->getDataGenerator()->create_course();
         $chat = $this->getDataGenerator()->create_module('chat', array('course' => $course->id));
-        $context = \context_module::instance($chat->cmid);
+        $context = context_module::instance($chat->cmid);
         $cm = get_coursemodule_from_instance('chat', $chat->id);
 
         // Test invalid instance id.
         try {
             mod_chat_external::view_chat(0);
             $this->fail('Exception expected due to invalid mod_chat instance id.');
-        } catch (\moodle_exception $e) {
+        } catch (moodle_exception $e) {
             $this->assertEquals('invalidrecord', $e->errorcode);
         }
 
@@ -185,7 +180,7 @@ class externallib_test extends externallib_advanced_testcase {
         try {
             mod_chat_external::view_chat($chat->id);
             $this->fail('Exception expected due to not enrolled user.');
-        } catch (\moodle_exception $e) {
+        } catch (moodle_exception $e) {
             $this->assertEquals('requireloginerror', $e->errorcode);
         }
 
@@ -219,7 +214,7 @@ class externallib_test extends externallib_advanced_testcase {
         try {
             mod_chat_external::view_chat($chat->id);
             $this->fail('Exception expected due to missing capability.');
-        } catch (\moodle_exception $e) {
+        } catch (moodle_exception $e) {
             $this->assertEquals('nopermissions', $e->errorcode);
         }
     }
@@ -228,7 +223,7 @@ class externallib_test extends externallib_advanced_testcase {
      * Test get_chats_by_courses
      */
     public function test_get_chats_by_courses() {
-        global $DB, $CFG;
+        global $DB, $USER, $CFG;
         $this->resetAfterTest(true);
         $this->setAdminUser();
 
@@ -260,7 +255,7 @@ class externallib_test extends externallib_advanced_testcase {
         $this->assertCount(1, $chats['chats']);
         $this->assertEquals('First Chat', $chats['chats'][0]['name']);
         // We see 12 fields.
-        $this->assertCount(13, $chats['chats'][0]);
+        $this->assertCount(12, $chats['chats'][0]);
 
         // As Student you cannot see some chat properties like 'section'.
         $this->assertFalse(isset($chats['chats'][0]['section']));
@@ -283,7 +278,7 @@ class externallib_test extends externallib_advanced_testcase {
         $this->assertEquals('Second Chat', $chats['chats'][0]['name']);
         $this->assertEquals('header_js', $chats['chats'][0]['chatmethod']);
         // We see 17 fields.
-        $this->assertCount(18, $chats['chats'][0]);
+        $this->assertCount(17, $chats['chats'][0]);
         // As an Admin you can see some chat properties like 'section'.
         $this->assertEquals(0, $chats['chats'][0]['section']);
 

@@ -14,9 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace gradingform_guide;
-
-use gradingform_controller;
+/**
+ * Unit tests for Marking Guide grading method.
+ *
+ * @package    gradingform_guide
+ * @category   test
+ * @copyright  2015 Nikita Kalinin <nixorv@gmail.com>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -32,7 +37,7 @@ require_once($CFG->dirroot . '/grade/grading/form/guide/lib.php');
  * @copyright  2015 Nikita Kalinin <nixorv@gmail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class guide_test extends \advanced_testcase {
+class gradingform_guide_testcase extends advanced_testcase {
     /**
      * Unit test to get draft instance and create new instance.
      */

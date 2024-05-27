@@ -44,15 +44,18 @@ class managesubscriptions extends \moodleform {
         $mform = $this->_form;
         $eventtypes = calendar_get_allowed_event_types();
         if (in_array(true, $eventtypes, true) === false) {
-            throw new \moodle_exception('nopermissiontoupdatecalendar');
+            print_error('nopermissiontoupdatecalendar');
         }
+
+        $mform->addElement('header', 'addsubscriptionform', get_string('importcalendarheading', 'calendar'));
 
         // Name.
         $mform->addElement('text', 'name', get_string('subscriptionname', 'calendar'), array('maxsize' => '255', 'size' => '40'));
-        $mform->addRule('name', get_string('required'), 'required', null, 'client');
+        $mform->addRule('name', get_string('required'), 'required');
         $mform->setType('name', PARAM_TEXT);
 
         // Import from (url | importfile).
+        $mform->addElement('html', get_string('importfrominstructions', 'calendar'));
         $choices = array(CALENDAR_IMPORT_FROM_FILE => get_string('importfromfile', 'calendar'),
             CALENDAR_IMPORT_FROM_URL  => get_string('importfromurl',  'calendar'));
         $mform->addElement('select', 'importfrom', get_string('importcalendarfrom', 'calendar'), $choices);
@@ -83,7 +86,7 @@ class managesubscriptions extends \moodleform {
         $this->add_event_type_elements($mform, $eventtypes);
 
         // Eventtype: 0 = user, 1 = site, anything else = course ID.
-        $mform->addElement('submit', 'add', get_string('importcalendar', 'calendar'));
+        $mform->addElement('submit', 'add', get_string('add'));
 
         // Add the javascript required to enhance this mform.
         $PAGE->requires->js_call_amd('core_calendar/event_form', 'init', [$mform->getAttribute('id')]);
@@ -106,7 +109,7 @@ class managesubscriptions extends \moodleform {
         $courseid = (!empty($data[$coursekey])) ? $data[$coursekey] : null;
         $eventtypes = calendar_get_allowed_event_types($courseid);
 
-        if (empty($eventtype) || !isset($eventtypes[$eventtype]) || $eventtypes[$eventtype] == false) {
+        if (empty($eventtype) || !isset($eventtypes[$eventtype])) {
             $errors['eventtype'] = get_string('invalideventtype', 'calendar');
         }
 
@@ -124,27 +127,14 @@ class managesubscriptions extends \moodleform {
                 }
             }
         } else if (($data['importfrom'] == CALENDAR_IMPORT_FROM_URL)) {
-            if (empty($data['url'])) {
-                $errors['url'] = get_string('errorrequiredurlorfile', 'calendar');
-            } else {
-                // Clean input calendar url.
-                $url = clean_param($data['url'], PARAM_URL);
-                try {
-                    calendar_get_icalendar($url);
-                } catch (\moodle_exception $e) {
-                    $errors['url'] = get_string('errorinvalidicalurl', 'calendar');
-                }
+            // Clean input calendar url.
+            $url = clean_param($data['url'], PARAM_URL);
+            if (empty($url) || ($url !== $data['url'])) {
+                $errors['url']  = get_string('invalidurl', 'error');
             }
         } else {
             // Shouldn't happen.
             $errors['url'] = get_string('errorrequiredurlorfile', 'calendar');
-        }
-
-        // Validate course/category event types (ensure appropriate field is also filled in).
-        if ($eventtype === 'course' && empty($data['courseid'])) {
-            $errors['courseid'] = get_string('selectacourse');
-        } else if ($eventtype === 'category' && empty($data['categoryid'])) {
-            $errors['categoryid'] = get_string('required');
         }
 
         return $errors;

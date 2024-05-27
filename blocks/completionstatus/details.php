@@ -41,10 +41,10 @@ if ($userid) {
 }
 
 // Check permissions.
-require_login($course);
+require_login();
 
 if (!completion_can_view_data($user->id, $course)) {
-    throw new \moodle_exception('cannotviewreport');
+    print_error('cannotviewreport');
 }
 
 // Load completion data.
@@ -54,17 +54,21 @@ $returnurl = new moodle_url('/course/view.php', array('id' => $id));
 
 // Don't display if completion isn't enabled.
 if (!$info->is_enabled()) {
-    throw new \moodle_exception('completionnotenabled', 'completion', $returnurl);
+    print_error('completionnotenabled', 'completion', $returnurl);
 }
 
 // Check this user is enroled.
 if (!$info->is_tracked_user($user->id)) {
     if ($USER->id == $user->id) {
-        throw new \moodle_exception('notenroled', 'completion', $returnurl);
+        print_error('notenroled', 'completion', $returnurl);
     } else {
-        throw new \moodle_exception('usernotenroled', 'completion', $returnurl);
+        print_error('usernotenroled', 'completion', $returnurl);
     }
 }
+
+// Display page.
+
+$PAGE->set_context(context_course::instance($course->id));
 
 // Print header.
 $page = get_string('completionprogressdetails', 'block_completionstatus');
@@ -110,36 +114,7 @@ $params = array(
 );
 $ccompletion = new completion_completion($params);
 
-// Save row data.
-$rows = array();
-
-// Flag to set if current completion data is inconsistent with what is stored in the database.
-$pendingupdate = false;
-
-// Load criteria to display.
-$completions = $info->get_completions($user->id);
-
-// Loop through course criteria.
-foreach ($completions as $completion) {
-    $criteria = $completion->get_criteria();
-
-    if (!$pendingupdate && $criteria->is_pending($completion)) {
-        $pendingupdate = true;
-    }
-
-    $row = array();
-    $row['type'] = $criteria->criteriatype;
-    $row['title'] = $criteria->get_title();
-    $row['status'] = $completion->get_status();
-    $row['complete'] = $completion->is_complete();
-    $row['timecompleted'] = $completion->timecompleted;
-    $row['details'] = $criteria->get_details($completion);
-    $rows[] = $row;
-}
-
-if ($pendingupdate) {
-    echo html_writer::tag('i', get_string('pending', 'completion'));
-} else if ($coursecomplete) {
+if ($coursecomplete) {
     echo get_string('complete');
 } else if (!$criteriacomplete && !$ccompletion->timestarted) {
     echo html_writer::tag('i', get_string('notyetstarted', 'completion'));
@@ -149,6 +124,9 @@ if ($pendingupdate) {
 
 echo html_writer::end_tag('td');
 echo html_writer::end_tag('tr');
+
+// Load criteria to display.
+$completions = $info->get_completions($user->id);
 
 // Check if this course has any criteria.
 if (empty($completions)) {
@@ -191,6 +169,23 @@ if (empty($completions)) {
     echo html_writer::tag('th', get_string('complete'), array('class' => 'c4 header', 'scope' => 'col'));
     echo html_writer::tag('th', get_string('completiondate', 'report_completion'), array('class' => 'c5 header', 'scope' => 'col'));
     echo html_writer::end_tag('tr');
+
+    // Save row data.
+    $rows = array();
+
+    // Loop through course criteria.
+    foreach ($completions as $completion) {
+        $criteria = $completion->get_criteria();
+
+        $row = array();
+        $row['type'] = $criteria->criteriatype;
+        $row['title'] = $criteria->get_title();
+        $row['status'] = $completion->get_status();
+        $row['complete'] = $completion->is_complete();
+        $row['timecompleted'] = $completion->timecompleted;
+        $row['details'] = $criteria->get_details($completion);
+        $rows[] = $row;
+    }
 
     // Print table.
     $last_type = '';
@@ -248,7 +243,7 @@ if (empty($completions)) {
         // Completion data.
         echo html_writer::start_tag('td', array('class' => 'cell c5'));
         if ($row['timecompleted']) {
-            echo userdate($row['timecompleted'], get_string('strftimedatemonthtimeshort', 'langconfig'));
+            echo userdate($row['timecompleted'], get_string('strftimedate', 'langconfig'));
         } else {
             echo '-';
         }
@@ -261,5 +256,8 @@ if (empty($completions)) {
     echo html_writer::end_tag('tbody');
     echo html_writer::end_tag('table');
 }
-
+$courseurl = new moodle_url("/course/view.php", array('id' => $course->id));
+echo html_writer::start_tag('div', array('class' => 'buttons'));
+echo $OUTPUT->single_button($courseurl, get_string('returntocourse', 'block_completionstatus'), 'get');
+echo html_writer::end_tag('div');
 echo $OUTPUT->footer();

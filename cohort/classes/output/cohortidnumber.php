@@ -24,7 +24,6 @@
 
 namespace core_cohort\output;
 
-use core_external\external_api;
 use lang_string;
 
 /**
@@ -62,13 +61,11 @@ class cohortidnumber extends \core\output\inplace_editable {
         global $DB;
         $cohort = $DB->get_record('cohort', array('id' => $cohortid), '*', MUST_EXIST);
         $cohortcontext = \context::instance_by_id($cohort->contextid);
-        external_api::validate_context($cohortcontext);
+        \external_api::validate_context($cohortcontext);
         require_capability('moodle/cohort:manage', $cohortcontext);
-        if ($newvalue == '' || !$DB->record_exists_select('cohort', 'idnumber = ? AND id != ?', [$newvalue, $cohort->id])) {
-            $record = (object) ['id' => $cohort->id, 'idnumber' => $newvalue, 'contextid' => $cohort->contextid];
-            cohort_update_cohort($record);
-            $cohort->idnumber = $newvalue;
-        }
+        $record = (object)array('id' => $cohort->id, 'idnumber' => $newvalue, 'contextid' => $cohort->contextid);
+        cohort_update_cohort($record);
+        $cohort->idnumber = $newvalue;
         return new static($cohort);
     }
 }

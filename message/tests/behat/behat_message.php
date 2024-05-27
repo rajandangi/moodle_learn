@@ -195,21 +195,16 @@ XPATH
      * @param string $string the search string.
      */
     public function i_search_for_string_in_messaging($string) {
-        $messagedrawer = $this->find('css', '[data-region="message-drawer"]');
-        $this->execute('behat_general::i_click_on_in_the', [
-            get_string('search', 'core'), 'field',
-            $messagedrawer, 'NodeElement'
-        ]);
+        $this->execute('behat_general::i_click_on', [get_string('search', 'core'), 'field']);
 
-        $this->execute('behat_forms::i_set_the_field_with_xpath_to', [
-            "//*[@data-region='message-drawer']//input[@data-region='search-input']",
-            $this->escape($string)
-        ]);
+        $this->execute('behat_forms::i_set_the_field_with_xpath_to',
+            [
+                "//*[@data-region='message-drawer']//input[@data-region='search-input']",
+                $this->escape($string)
+            ]
+        );
 
-        $this->execute('behat_general::i_click_on_in_the', [
-            '[data-action="search"]', 'css_element',
-            $messagedrawer, 'NodeElement'
-        ]);
+        $this->execute('behat_general::i_click_on', ['[data-action="search"]', 'css_element']);
 
         $this->execute('behat_general::wait_until_the_page_is_ready');
     }

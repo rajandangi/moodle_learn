@@ -91,10 +91,8 @@ class acceptances_table extends \table_sql {
             }
         }
 
-        // TODO Does not support custom user profile fields (MDL-70456).
-        $userfieldsapi = \core_user\fields::for_identity(\context_system::instance(), false)->with_userpic();
-        $userfields = $userfieldsapi->get_sql('u', false, '', '', false)->selects;
-        $extrafields = $userfieldsapi->get_required_fields([\core_user\fields::PURPOSE_IDENTITY]);
+        $extrafields = get_extra_user_fields(\context_system::instance());
+        $userfields = \user_picture::fields('u', $extrafields);
 
         $this->set_sql("$userfields",
             "{user} u",
@@ -105,7 +103,7 @@ class acceptances_table extends \table_sql {
         }
         $this->add_column_header('fullname', get_string('fullnameuser', 'core'));
         foreach ($extrafields as $field) {
-            $this->add_column_header($field, \core_user\fields::get_display_name($field));
+            $this->add_column_header($field, get_user_field_name($field));
         }
 
         if (!$this->is_downloading() && !has_capability('tool/policy:acceptbehalf', \context_system::instance())) {
@@ -155,7 +153,6 @@ class acceptances_table extends \table_sql {
             $this->columns[$key] = count($this->columns);
             $this->column_style[$key] = array();
             $this->column_class[$key] = $columnclass;
-            $this->columnsticky[$key] = '';
             $this->column_suppress[$key] = false;
             $this->headers[] = $label;
         }
@@ -171,8 +168,7 @@ class acceptances_table extends \table_sql {
      * Helper configuration method.
      */
     protected function configure_for_single_version() {
-        $userfieldsapi = \core_user\fields::for_name();
-        $userfieldsmod = $userfieldsapi->get_sql('m', false, 'mod', '', false)->selects;
+        $userfieldsmod = get_all_user_name_fields(true, 'm', null, 'mod');
         $v = key($this->versionids);
         $this->sql->fields .= ", $userfieldsmod, a{$v}.status AS status{$v}, a{$v}.note, ".
            "a{$v}.timemodified, a{$v}.usermodified AS usermodified{$v}";
@@ -574,7 +570,7 @@ class acceptances_table extends \table_sql {
         if ($row->timemodified) {
             if ($this->is_downloading()) {
                 // Use timestamp format readable for both machines and humans.
-                return date_format_string((int) $row->timemodified, '%Y-%m-%d %H:%M:%S %Z');
+                return date_format_string($row->timemodified, '%Y-%m-%d %H:%M:%S %Z');
             } else {
                 // Use localised calendar format.
                 return userdate($row->timemodified, get_string('strftimedatetime'));

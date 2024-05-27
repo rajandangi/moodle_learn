@@ -14,12 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace qformat_gift;
+/**
+ * Unit tests for the Moodle GIFT format.
+ *
+ * @package    qformat_gift
+ * @copyright  2010 The Open University
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
-use phpunit_util;
-use qformat_gift;
-use question_bank;
-use question_check_specified_fields_expectation;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -29,26 +31,24 @@ require_once($CFG->dirroot . '/question/format.php');
 require_once($CFG->dirroot . '/question/format/gift/format.php');
 require_once($CFG->dirroot . '/question/engine/tests/helpers.php');
 
+
 /**
  * Unit tests for the GIFT import/export format.
  *
- * @package   qformat_gift
  * @copyright 2010 The Open University
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class giftformat_test extends \question_testcase {
+class qformat_gift_test extends question_testcase {
     public function assert_same_gift($expectedtext, $text) {
-        $this->assertEquals(
-            phpunit_util::normalise_line_endings($expectedtext),
-            phpunit_util::normalise_line_endings($text)
-        );
+        $this->assertEquals(str_replace("\r\n", "\n", $expectedtext),
+                str_replace("\r\n", "\n", $text));
     }
 
     public function test_import_essay() {
         $gift = '
 // essay
 ::Q8:: How are you? {}';
-        $lines = preg_split('/[\\n\\r]/', phpunit_util::normalise_line_endings($gift));
+        $lines = preg_split('/[\\n\\r]/', str_replace("\r\n", "\n", $gift));
 
         $importer = new qformat_gift();
         $q = $importer->readquestion($lines);
@@ -117,7 +117,7 @@ class giftformat_test extends \question_testcase {
     =[markdown]A collection of web pages that anyone can add to or edit. -> Wiki
     = -> Chat
 }';
-        $lines = preg_split('/[\\n\\r]/', phpunit_util::normalise_line_endings($gift));
+        $lines = preg_split('/[\\n\\r]/', str_replace("\r\n", "\n", $gift));
 
         $importer = new qformat_gift();
         $q = $importer->readquestion($lines);
@@ -287,7 +287,7 @@ class giftformat_test extends \question_testcase {
     ~red # [html]wrong, it's yellow
     ~[plain]blue # wrong, it's yellow
 }";
-        $lines = preg_split('/[\\n\\r]/', phpunit_util::normalise_line_endings($gift));
+        $lines = preg_split('/[\\n\\r]/', str_replace("\r\n", "\n", $gift));
 
         $importer = new qformat_gift();
         $q = $importer->readquestion($lines);
@@ -390,7 +390,7 @@ class giftformat_test extends \question_testcase {
     ~%50%off-beige # right; good!
     ~%-100%[plain]blue # wrong
 }";
-        $lines = preg_split('/[\\n\\r]/', phpunit_util::normalise_line_endings($gift));
+        $lines = preg_split('/[\\n\\r]/', str_replace("\r\n", "\n", $gift));
 
         $importer = new qformat_gift();
         $q = $importer->readquestion($lines);
@@ -485,7 +485,7 @@ class giftformat_test extends \question_testcase {
     ~%-50%red # wrong
     ~%-50%blue # wrong
 }";
-        $lines = preg_split('/[\\n\\r]/', phpunit_util::normalise_line_endings($gift));
+        $lines = preg_split('/[\\n\\r]/', str_replace("\r\n", "\n", $gift));
 
         $importer = new qformat_gift();
         $q = $importer->readquestion($lines);
@@ -697,7 +697,7 @@ class giftformat_test extends \question_testcase {
         $gift = "
 // math range question
 ::Q5:: What is a number from 1 to 5? {#3:2~#Completely wrong}";
-        $lines = preg_split('/[\\n\\r]/', phpunit_util::normalise_line_endings($gift));
+        $lines = preg_split('/[\\n\\r]/', str_replace("\r\n", "\n", $gift));
 
         $importer = new qformat_gift();
         $q = $importer->readquestion($lines);
@@ -729,7 +729,7 @@ class giftformat_test extends \question_testcase {
                     'files' => array(),
                 ),
             ),
-            'tolerance' => array(2, ''),
+            'tolerance' => array(2, 0),
         );
 
         // Repeated test for better failure messages.
@@ -803,7 +803,7 @@ class giftformat_test extends \question_testcase {
     =%50%Cat#What is it with Moodlers and cats?
     =%0%*#Completely wrong
 }";
-        $lines = preg_split('/[\\n\\r]/', phpunit_util::normalise_line_endings($gift));
+        $lines = preg_split('/[\\n\\r]/', str_replace("\r\n", "\n", $gift));
 
         $importer = new qformat_gift();
         $q = $importer->readquestion($lines);
@@ -859,7 +859,7 @@ class giftformat_test extends \question_testcase {
     =%0%*#Completely wrong
     ####[html]Here is some general feedback!
 }";
-        $lines = preg_split('/[\\n\\r]/', phpunit_util::normalise_line_endings($gift));
+        $lines = preg_split('/[\\n\\r]/', str_replace("\r\n", "\n", $gift));
 
         $importer = new qformat_gift();
         $q = $importer->readquestion($lines);
@@ -1032,7 +1032,7 @@ class giftformat_test extends \question_testcase {
 // true/false
 ::Q1:: 42 is the Absolute Answer to everything.{
 FALSE#42 is the Ultimate Answer.#You gave the right answer.}";
-        $lines = preg_split('/[\\n\\r]/', phpunit_util::normalise_line_endings($gift));
+        $lines = preg_split('/[\\n\\r]/', str_replace("\r\n", "\n", $gift));
 
         $importer = new qformat_gift();
         $q = $importer->readquestion($lines);
@@ -1066,7 +1066,7 @@ FALSE#42 is the Ultimate Answer.#You gave the right answer.}";
     public function test_import_truefalse_true_answer1() {
         $gift = "// name 0-11
 ::2-08 TSL::TSL is blablabla.{T}";
-        $lines = preg_split('/[\\n\\r]/', phpunit_util::normalise_line_endings($gift));
+        $lines = preg_split('/[\\n\\r]/', str_replace("\r\n", "\n", $gift));
 
         $importer = new qformat_gift();
         $q = $importer->readquestion($lines);
@@ -1100,7 +1100,7 @@ FALSE#42 is the Ultimate Answer.#You gave the right answer.}";
     public function test_import_truefalse_true_answer2() {
         $gift = "// name 0-11
 ::2-08 TSL::TSL is blablabla.{TRUE}";
-        $lines = preg_split('/[\\n\\r]/', phpunit_util::normalise_line_endings($gift));
+        $lines = preg_split('/[\\n\\r]/', str_replace("\r\n", "\n", $gift));
 
         $importer = new qformat_gift();
         $q = $importer->readquestion($lines);
@@ -1222,7 +1222,7 @@ FALSE#42 is the Ultimate Answer.#You gave the right answer.}";
         $gift = '
 // essay
 ::double backslash:: A \\\\ B \\\\\\\\ C{}';
-        $lines = preg_split('/[\\n\\r]/', phpunit_util::normalise_line_endings($gift));
+        $lines = preg_split('/[\\n\\r]/', str_replace("\r\n", "\n", $gift));
 
         $importer = new qformat_gift();
         $q = $importer->readquestion($lines);
@@ -1260,7 +1260,7 @@ FALSE#42 is the Ultimate Answer.#You gave the right answer.}";
     \}
 </pre>
 {}';
-        $lines = preg_split('/[\\n\\r]/', phpunit_util::normalise_line_endings($gift));
+        $lines = preg_split('/[\\n\\r]/', str_replace("\r\n", "\n", $gift));
 
         $importer = new qformat_gift();
         $q = $importer->readquestion($lines);
@@ -1299,7 +1299,7 @@ FALSE#42 is the Ultimate Answer.#You gave the right answer.}";
 // This question is to test importing tags: [tag:tag] [tag:other-tag].
 // And an idnumber: [id:myid].
 ::Question name:: How are you? {}';
-        $lines = preg_split('/[\\n\\r]/', phpunit_util::normalise_line_endings($gift));
+        $lines = preg_split('/[\\n\\r]/', str_replace("\r\n", "\n", $gift));
 
         $importer = new qformat_gift();
         $q = $importer->readquestion($lines);
@@ -1373,8 +1373,8 @@ FALSE#42 is the Ultimate Answer.#You gave the right answer.}";
         $category = $generator->create_question_category();
         $question = $generator->create_question('truefalse', null,
                 ['category' => $category->id, 'idnumber' => 'myid']);
-        \core_tag_tag::set_item_tags('core_question', 'question', $question->id,
-                \context::instance_by_id($category->contextid), ['tag1', 'tag2'], 0);
+        core_tag_tag::set_item_tags('core_question', 'question', $question->id,
+                context::instance_by_id($category->contextid), ['tag1', 'tag2'], 0);
 
         // Export it.
         $questiondata = question_bank::load_question_data($question->id);

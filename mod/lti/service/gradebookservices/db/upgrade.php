@@ -41,6 +41,8 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+ defined('MOODLE_INTERNAL') || die;
+
 /**
  * xmldb_ltiservice_gradebookservices_upgrade is the function that upgrades
  * the gradebook lti service subplugin database when is needed.
@@ -53,16 +55,59 @@
  * @return boolean
  */
 function xmldb_ltiservice_gradebookservices_upgrade($oldversion) {
-    // Automatically generated Moodle v4.1.0 release upgrade line.
-    // Put any upgrade step following this.
+    global $CFG, $DB, $OUTPUT;
 
-    // Automatically generated Moodle v4.2.0 release upgrade line.
-    // Put any upgrade step following this.
+    $dbman = $DB->get_manager();
 
-    // Automatically generated Moodle v4.3.0 release upgrade line.
-    // Put any upgrade step following this.
+    if ($oldversion < 2020042401) {
+        // Define field typeid to be added to lti_tool_settings.
+        $table = new xmldb_table('ltiservice_gradebookservices');
+        $field = new xmldb_field('resourceid', XMLDB_TYPE_CHAR, "512", null, null, null, null);
 
-    // Automatically generated Moodle v4.4.0 release upgrade line.
+        // Conditionally launch add field typeid.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Lti savepoint reached.
+        upgrade_plugin_savepoint(true, 2020042401, 'ltiservice', 'gradebookservices');
+    }
+
+    if ($oldversion < 2020042402) {
+        // Now that we have added the new column let's migrate it'
+        // Prior implementation was storing the resourceid under the grade item idnumber, so moving it to lti_gradebookservices.
+        // We only care for mod/lti grade items as manual columns would already have a matching gradebookservices record.
+
+        $DB->execute("INSERT INTO {ltiservice_gradebookservices}
+                (gradeitemid, courseid, typeid, ltilinkid, resourceid, baseurl, toolproxyid)
+         SELECT gi.id, courseid, lti.typeid, lti.id, gi.idnumber, t.baseurl, t.toolproxyid
+           FROM {grade_items} gi
+           JOIN {lti} lti ON lti.id=gi.iteminstance AND gi.itemtype='mod' AND gi.itemmodule='lti'
+           JOIN {lti_types} t ON t.id = lti.typeid
+          WHERE gi.id NOT IN ( SELECT gradeitemid
+                                 FROM {ltiservice_gradebookservices} )
+             AND gi.idnumber IS NOT NULL
+             AND gi.idnumber <> ''");
+
+        // Lti savepoint reached.
+        upgrade_plugin_savepoint(true, 2020042402, 'ltiservice', 'gradebookservices');
+    }
+
+    if ($oldversion < 2020042403) {
+        // Here updating the resourceid of pre-existing lti_gradebookservices.
+        $DB->execute("UPDATE {ltiservice_gradebookservices}
+                         SET resourceid = (SELECT idnumber FROM {grade_items} WHERE id=gradeitemid)
+                       WHERE gradeitemid in (SELECT id FROM {grade_items}
+                                             WHERE ((itemtype='mod' AND itemmodule='lti') OR itemtype='manual')
+                                               AND idnumber IS NOT NULL
+                                               AND idnumber <> '')
+                         AND (resourceid is null OR resourceid = '')");
+
+        // Lti savepoint reached.
+        upgrade_plugin_savepoint(true, 2020042403, 'ltiservice', 'gradebookservices');
+    }
+
+    // Automatically generated Moodle v3.9.0 release upgrade line.
     // Put any upgrade step following this.
 
     return true;

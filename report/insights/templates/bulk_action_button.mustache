@@ -55,7 +55,7 @@
     {{/params}}
     <button type="submit" class="btn {{#primary}}btn-primary{{/primary}}{{^primary}}btn-outline-primary{{/primary}}"
         id="{{id}}"
-        title="{{tooltip}}"
+        title={{#quote}}{{tooltip}}{{/quote}}
         {{#disabled}}disabled{{/disabled}}
-        {{#attributes}} {{name}}="{{value}}" {{/attributes}}>{{{label}}}</button>
+        {{#attributes}} {{name}}={{#quote}}{{value}}{{/quote}} {{/attributes}}>{{{label}}}</button>
 </div>

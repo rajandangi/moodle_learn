@@ -64,7 +64,7 @@ class manager {
      * @param \stdClass $savemessage
      * @return int
      */
-    public static function send_message_to_conversation(message $eventdata, \stdClass $savemessage): int {
+    public static function send_message_to_conversation(message $eventdata, \stdClass $savemessage) : int {
         global $DB, $CFG, $SITE;
 
         if (empty($eventdata->convid)) {
@@ -208,6 +208,20 @@ class manager {
                 return false;
             }
 
+            // Set the online state.
+            if (isset($CFG->block_online_users_timetosee)) {
+                $timetoshowusers = $CFG->block_online_users_timetosee * 60;
+            } else {
+                $timetoshowusers = 300;
+            }
+
+            // Work out if the user is logged in or not.
+            $userstate = 'loggedoff';
+            if (!empty($localisedeventdata->userto->lastaccess)
+                    && (time() - $timetoshowusers) < $localisedeventdata->userto->lastaccess) {
+                $userstate = 'loggedin';
+            }
+
             // Fill in the array of processors to be used based on default and user preferences.
             // Do not process muted conversations.
             $processorlist = [];
@@ -219,22 +233,15 @@ class manager {
                     }
 
                     // First find out permissions.
-                    $defaultlockedpreference = $processor->name . '_provider_' . $preferencebase . '_locked';
-                    $locked = false;
-                    if (isset($defaultpreferences->{$defaultlockedpreference})) {
-                        $locked = $defaultpreferences->{$defaultlockedpreference};
+                    $defaultpreference = $processor->name . '_provider_' . $preferencebase . '_permitted';
+                    if (isset($defaultpreferences->{$defaultpreference})) {
+                        $permitted = $defaultpreferences->{$defaultpreference};
                     } else {
                         // MDL-25114 They supplied an $eventdata->component $eventdata->name combination which doesn't
                         // exist in the message_provider table (thus there is no default settings for them).
-                        $preferrormsg = "Could not load preference $defaultlockedpreference.
-                     Make sure the component and name you supplied to message_send() are valid.";
-                        throw new \coding_exception($preferrormsg);
-                    }
-
-                    $enabledpreference = 'message_provider_'.$preferencebase . '_enabled';
-                    $forced = false;
-                    if ($locked && isset($defaultpreferences->{$enabledpreference})) {
-                        $forced = $defaultpreferences->{$enabledpreference};
+                        $preferrormsg = "Could not load preference $defaultpreference. Make sure the component and name you supplied
+                    to message_send() are valid.";
+                        throw new coding_exception($preferrormsg);
                     }
 
                     // Find out if user has configured this output.
@@ -242,7 +249,7 @@ class manager {
                     $userisconfigured = $processor->object->is_user_configured($recipient);
 
                     // DEBUG: notify if we are forcing unconfigured output.
-                    if ($forced && !$userisconfigured) {
+                    if ($permitted == 'forced' && !$userisconfigured) {
                         debugging('Attempt to force message delivery to user who has "' . $processor->name .
                             '" output unconfigured', DEBUG_NORMAL);
                     }
@@ -250,13 +257,13 @@ class manager {
                     // Populate the list of processors we will be using.
                     if (!$eventdata->notification && $processor->object->force_process_messages()) {
                         $processorlist[] = $processor->name;
-                    } else if ($forced && $userisconfigured) {
+                    } else if ($permitted == 'forced' && $userisconfigured) {
                         // An admin is forcing users to use this message processor. Use this processor unconditionally.
                         $processorlist[] = $processor->name;
-                    } else if (!$locked && $userisconfigured && !$recipient->emailstop) {
+                    } else if ($permitted == 'permitted' && $userisconfigured && !$recipient->emailstop) {
                         // User has not disabled notifications.
                         // See if user set any notification preferences, otherwise use site default ones.
-                        $userpreferencename = 'message_provider_' . $preferencebase . '_enabled';
+                        $userpreferencename = 'message_provider_' . $preferencebase . '_' . $userstate;
                         if ($userpreference = get_user_preferences($userpreferencename, null, $recipient)) {
                             if (in_array($processor->name, explode(',', $userpreference))) {
                                 $processorlist[] = $processor->name;
@@ -355,7 +362,6 @@ class manager {
      * @param \stdClass|\core\message\message $eventdata
      * @param \stdClass $savemessage
      * @param array $processorlist
-     * @throws \moodle_exception
      * @return int $messageid
      */
     protected static function send_message_to_processors($eventdata, \stdClass $savemessage, array
@@ -379,9 +385,7 @@ class manager {
         }
 
         // Send the message to processors.
-        if (!self::call_processors($eventdata, $processorlist)) {
-            throw new \moodle_exception("Message was not sent.");
-        }
+        self::call_processors($eventdata, $processorlist);
 
         // Trigger event for sending a message or notification - we need to do this before marking as read!
         self::trigger_message_events($eventdata, $savemessage);
@@ -482,12 +486,11 @@ class manager {
      *
      * @param message $eventdata the message object.
      * @param array $processorlist the list of processors for a single user.
-     * @return bool false if error calling message processor
      */
     protected static function call_processors(message $eventdata, array $processorlist) {
         // Allow plugins to change the message/notification data before sending it.
         $pluginsfunction = get_plugins_with_function('pre_processor_message_send');
-        $sendmsgsuccessful = true;
+
         foreach ($processorlist as $procname) {
             // Let new messaging class add custom content based on the processor.
             $proceventdata = ($eventdata instanceof message) ? $eventdata->get_eventobject_for_processor($procname) : $eventdata;
@@ -505,9 +508,7 @@ class manager {
             $processor = \core_message\api::get_processed_processor_object($stdproc);
             if (!$processor->object->send_message($proceventdata)) {
                 debugging('Error calling message processor ' . $procname);
-                $sendmsgsuccessful = false;
             }
         }
-        return $sendmsgsuccessful;
     }
 }

@@ -15,18 +15,11 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Test the convert helper.
- *
  * @package    core_backup
- * @category   test
+ * @category   phpunit
  * @copyright  2010 onwards Eloy Lafuente (stronk7) {@link http://stronk7.com}
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
-namespace core_backup;
-
-use backup;
-use convert_helper;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -34,15 +27,22 @@ defined('MOODLE_INTERNAL') || die();
 global $CFG;
 require_once($CFG->dirroot . '/backup/util/helper/convert_helper.class.php');
 
+
 /**
- * Test the convert helper.
- *
- * @package    core_backup
- * @category   test
- * @copyright  2010 onwards Eloy Lafuente (stronk7) {@link http://stronk7.com}
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * Provides access to the protected methods we need to test
  */
-class converterhelper_test extends \basic_testcase {
+class testable_convert_helper extends convert_helper {
+
+    public static function choose_conversion_path($format, array $descriptions) {
+        return parent::choose_conversion_path($format, $descriptions);
+    }
+}
+
+
+/**
+ * Defines the test methods
+ */
+class backup_convert_helper_testcase extends basic_testcase {
 
     public function test_choose_conversion_path() {
 
@@ -141,15 +141,5 @@ class converterhelper_test extends \basic_testcase {
         // ask the helper to find the most effective way
         $path = testable_convert_helper::choose_conversion_path(backup::FORMAT_MOODLE1, $descriptions);
         $this->assertEquals($path, array('cc1', 'cc3', 'cc4'));
-    }
-}
-
-/**
- * Provides access to the protected methods we need to test
- */
-class testable_convert_helper extends convert_helper {
-
-    public static function choose_conversion_path($format, array $descriptions) {
-        return parent::choose_conversion_path($format, $descriptions);
     }
 }

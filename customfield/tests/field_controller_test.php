@@ -14,14 +14,19 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace core_customfield;
+/**
+ * Tests for class \core_customfield\field_controller.
+ *
+ * @package    core_customfield
+ * @category   test
+ * @copyright  2018 Ruslan Kabalin
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
-use core_customfield_generator;
-use customfield_checkbox;
-use customfield_date;
-use customfield_select;
-use customfield_text;
-use customfield_textarea;
+defined('MOODLE_INTERNAL') || die();
+
+use \core_customfield\category_controller;
+use \core_customfield\field_controller;
 
 /**
  * Functional test for class \core_customfield\field_controller.
@@ -31,7 +36,7 @@ use customfield_textarea;
  * @copyright  2018 Ruslan Kabalin
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class field_controller_test extends \advanced_testcase {
+class core_customfield_field_controller_testcase extends advanced_testcase {
 
     /**
      * Get generator.
@@ -115,48 +120,48 @@ class field_controller_test extends \advanced_testcase {
         try {
             field_controller::create($fieldrecord->id + 1);
             $this->fail('Expected exception');
-        } catch (\moodle_exception $e) {
+        } catch (moodle_exception $e) {
             $this->assertEquals('Field not found', $e->getMessage());
-            $this->assertEquals(\moodle_exception::class, get_class($e));
+            $this->assertEquals(moodle_exception::class, get_class($e));
         }
 
         // Retrieve without id and without type.
         try {
             field_controller::create(0, (object)['name' => 'a'], $category);
             $this->fail('Expected exception');
-        } catch (\coding_exception $e) {
+        } catch (coding_exception $e) {
             $this->assertEquals('Coding error detected, it must be fixed by a programmer: Not enough parameters to ' .
                 'initialise field_controller - unknown field type', $e->getMessage());
-            $this->assertEquals(\coding_exception::class, get_class($e));
+            $this->assertEquals(coding_exception::class, get_class($e));
         }
 
         // Missing category id.
         try {
             field_controller::create(0, (object)['type' => 'text']);
             $this->fail('Expected exception');
-        } catch (\coding_exception $e) {
+        } catch (coding_exception $e) {
             $this->assertEquals('Coding error detected, it must be fixed by a programmer: Not enough parameters ' .
                 'to initialise field_controller - unknown category', $e->getMessage());
-            $this->assertEquals(\coding_exception::class, get_class($e));
+            $this->assertEquals(coding_exception::class, get_class($e));
         }
 
         // Mismatching category id.
         try {
             field_controller::create(0, (object)['type' => 'text', 'categoryid' => $category->get('id') + 1], $category);
             $this->fail('Expected exception');
-        } catch (\coding_exception $e) {
+        } catch (coding_exception $e) {
             $this->assertEquals('Coding error detected, it must be fixed by a programmer: Category of the field ' .
                 'does not match category from the parameter', $e->getMessage());
-            $this->assertEquals(\coding_exception::class, get_class($e));
+            $this->assertEquals(coding_exception::class, get_class($e));
         }
 
         // Non-existing type.
         try {
             field_controller::create(0, (object)['type' => 'nonexisting'], $category);
             $this->fail('Expected exception');
-        } catch (\moodle_exception $e) {
+        } catch (moodle_exception $e) {
             $this->assertEquals('Field type nonexisting not found', $e->getMessage());
-            $this->assertEquals(\moodle_exception::class, get_class($e));
+            $this->assertEquals(moodle_exception::class, get_class($e));
         }
     }
 
@@ -176,7 +181,7 @@ class field_controller_test extends \advanced_testcase {
         $this->assertCount(0, $fields);
 
         // Create field.
-        $fielddata = new \stdClass();
+        $fielddata = new stdClass();
         $fielddata->name = 'Field';
         $fielddata->shortname = 'field';
         $fielddata->type = 'text';

@@ -14,7 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace mod_glossary;
+/**
+ * mod_glossary generator tests
+ *
+ * @package    mod_glossary
+ * @category   test
+ * @copyright  2013 Marina Glancy
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
 /**
  * Genarator tests class for mod_glossary.
@@ -24,7 +31,7 @@ namespace mod_glossary;
  * @copyright  2013 Marina Glancy
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class generator_test extends \advanced_testcase {
+class mod_glossary_generator_testcase extends advanced_testcase {
 
     public function test_create_instance() {
         global $DB;
@@ -65,7 +72,7 @@ class generator_test extends \advanced_testcase {
         $this->assertEquals($entry2->id, $records[$entry2->id]->id);
         $this->assertEquals('Custom concept', $records[$entry2->id]->concept);
         $this->assertEquals(array('Cats', 'mice'),
-            array_values(\core_tag_tag::get_item_tags_array('mod_glossary', 'glossary_entries', $entry2->id)));
+            array_values(core_tag_tag::get_item_tags_array('mod_glossary', 'glossary_entries', $entry2->id)));
         $aliases = $DB->get_records_menu('glossary_alias', array('entryid' => $entry2->id), 'id ASC', 'id, alias');
         $this->assertSame(array('alias1', 'alias2'), array_values($aliases));
 

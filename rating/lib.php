@@ -46,7 +46,7 @@ define ('RATING_DEFAULT_SCALE', 5);
 class rating implements renderable {
 
     /**
-     * @var context The context in which this rating exists
+     * @var stdClass The context in which this rating exists
      */
     public $context;
 
@@ -455,8 +455,7 @@ class rating_manager {
             'component'  => $options->component,
             'ratingarea' => $options->ratingarea,
         );
-        $userfieldsapi = \core_user\fields::for_userpic();
-        $userfields = $userfieldsapi->get_sql('u', false, '', 'userid', false)->selects;
+        $userfields = user_picture::fields('u', null, 'userid');
         $sql = "SELECT r.id, r.rating, r.itemid, r.userid, r.timemodified, r.component, r.ratingarea, $userfields
                   FROM {rating} r
              LEFT JOIN {user} u ON r.userid = u.id
@@ -516,13 +515,7 @@ class rating_manager {
             // Ratings are not enabled.
             return $options->items;
         }
-
-        // Ensure average aggregation returns float.
         $aggregatestr = $this->get_aggregation_method($options->aggregate);
-        $aggregatefield = 'r.rating';
-        if ($aggregatestr === 'AVG') {
-            $aggregatefield = "1.0 * {$aggregatefield}";
-        }
 
         // Default the userid to the current user if it is not set.
         if (empty($options->userid)) {
@@ -565,7 +558,7 @@ class rating_manager {
               ORDER BY r.itemid";
         $userratings = $DB->get_records_sql($sql, $params);
 
-        $sql = "SELECT r.itemid, {$aggregatestr}({$aggregatefield}) AS aggrrating, COUNT(r.rating) AS numratings
+        $sql = "SELECT r.itemid, $aggregatestr(r.rating) AS aggrrating, COUNT(r.rating) AS numratings
                   FROM {rating} r
                  WHERE r.contextid = :contextid AND
                        r.itemid {$itemidtest} AND
@@ -826,13 +819,7 @@ class rating_manager {
         $itemtable            = $options->itemtable;
         $itemtableusercolumn  = $options->itemtableusercolumn;
         $scaleid              = $options->scaleid;
-
-        // Ensure average aggregation returns float.
-        $aggregationstring = $this->get_aggregation_method($options->aggregationmethod);
-        $aggregationfield = 'r.rating';
-        if ($aggregationstring === 'AVG') {
-            $aggregationfield = "1.0 * {$aggregationfield}";
-        }
+        $aggregationstring    = $this->get_aggregation_method($options->aggregationmethod);
 
         // If userid is not 0 we only want the grade for a single user.
         $singleuserwhere = '';
@@ -844,7 +831,7 @@ class rating_manager {
         // MDL-24648 The where line used to be "WHERE (r.contextid is null or r.contextid=:contextid)".
         // r.contextid will be null for users who haven't been rated yet.
         // No longer including users who haven't been rated to reduce memory requirements.
-        $sql = "SELECT u.id as id, u.id AS userid, {$aggregationstring}({$aggregationfield}) AS rawgrade
+        $sql = "SELECT u.id as id, u.id AS userid, $aggregationstring(r.rating) AS rawgrade
                   FROM {user} u
              LEFT JOIN {{$itemtable}} i ON u.id=i.{$itemtableusercolumn}
              LEFT JOIN {rating} r ON r.itemid=i.id

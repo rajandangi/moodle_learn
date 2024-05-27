@@ -14,9 +14,17 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace qbehaviour_adaptive;
 
-use question_state;
+/**
+ * This file contains tests that walks a question through the adaptive
+ * behaviour.
+ *
+ * @package    qbehaviour
+ * @subpackage adaptive
+ * @copyright  2009 The Open University
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -28,49 +36,48 @@ require_once(__DIR__ . '/../../../engine/tests/helpers.php');
 /**
  * Unit tests for the adaptive behaviour.
  *
- * @package    qbehaviour_adaptive
  * @copyright  2009 The Open University
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class walkthrough_test extends \qbehaviour_walkthrough_test_base {
+class qbehaviour_adaptive_walkthrough_test extends qbehaviour_walkthrough_test_base {
     protected function get_contains_penalty_info_expectation($penalty) {
         $penaltyinfo = get_string('gradingdetailspenalty', 'qbehaviour_adaptive',
                                   format_float($penalty, $this->displayoptions->markdp));
-        return new \question_pattern_expectation('/'.preg_quote($penaltyinfo, '/').'/');
+        return new question_pattern_expectation('/'.preg_quote($penaltyinfo, '/').'/');
     }
 
     protected function get_does_not_contain_penalty_info_expectation() {
         $penaltyinfo = get_string('gradingdetailspenalty', 'qbehaviour_adaptive', 'XXXXX');
         $penaltypattern = '/'.str_replace('XXXXX', '\\w*', preg_quote($penaltyinfo, '/')).'/';
-        return new \question_no_pattern_expectation($penaltypattern);
+        return new question_no_pattern_expectation($penaltypattern);
     }
 
     protected function get_contains_total_penalty_expectation($penalty) {
         $penaltyinfo = get_string('gradingdetailspenaltytotal', 'qbehaviour_adaptive',
                                   format_float($penalty, $this->displayoptions->markdp));
-        return new \question_pattern_expectation('/'.preg_quote($penaltyinfo, '/').'/');
+        return new question_pattern_expectation('/'.preg_quote($penaltyinfo, '/').'/');
     }
 
     protected function get_does_not_contain_total_penalty_expectation() {
         $penaltyinfo = get_string('gradingdetailspenaltytotal', 'qbehaviour_adaptive', 'XXXXX');
         $penaltypattern = '/'.str_replace('XXXXX', '\\w*', preg_quote($penaltyinfo, '/')).'/';
-        return new \question_no_pattern_expectation($penaltypattern);
+        return new question_no_pattern_expectation($penaltypattern);
     }
 
     protected function get_contains_disregarded_info_expectation() {
         $penaltyinfo = get_string('disregardedwithoutpenalty', 'qbehaviour_adaptive');
-        return new \question_pattern_expectation('/'.preg_quote($penaltyinfo, '/').'/');
+        return new question_pattern_expectation('/'.preg_quote($penaltyinfo, '/').'/');
     }
 
     protected function get_does_not_contain_disregarded_info_expectation() {
         $penaltyinfo = get_string('disregardedwithoutpenalty', 'qbehaviour_adaptive');
-        return new \question_no_pattern_expectation('/'.preg_quote($penaltyinfo, '/').'/');
+        return new question_no_pattern_expectation('/'.preg_quote($penaltyinfo, '/').'/');
     }
 
     public function test_adaptive_multichoice() {
 
         // Create a multiple choice, single response question.
-        $mc = \test_question_maker::make_a_multichoice_single_question();
+        $mc = test_question_maker::make_a_multichoice_single_question();
         $mc->penalty = 0.3333333;
         $this->start_attempt_at_question($mc, 'adaptive', 3);
 
@@ -103,7 +110,7 @@ class walkthrough_test extends \qbehaviour_walkthrough_test_base {
                 $this->get_contains_incorrect_expectation(),
                 $this->get_contains_penalty_info_expectation(1.00),
                 $this->get_does_not_contain_total_penalty_expectation());
-        $this->assertMatchesRegularExpression('/B|C/',
+        $this->assertRegExp('/B|C/',
                 $this->quba->get_response_summary($this->slot));
 
         // Process a change of answer to the right one, but not sumbitted.
@@ -117,7 +124,7 @@ class walkthrough_test extends \qbehaviour_walkthrough_test_base {
                 $this->get_contains_mc_radio_expectation($rightindex, true, true),
                 $this->get_contains_mc_radio_expectation(($rightindex + 1) % 3, true, false),
                 $this->get_contains_mc_radio_expectation(($rightindex + 2) % 3, true, false));
-        $this->assertMatchesRegularExpression('/B|C/',
+        $this->assertRegExp('/B|C/',
                 $this->quba->get_response_summary($this->slot));
 
         // Now submit the right answer.
@@ -158,7 +165,7 @@ class walkthrough_test extends \qbehaviour_walkthrough_test_base {
         $this->check_current_mark(1);
         $this->check_current_output(
                 $this->get_contains_mark_summary(1),
-                new \question_pattern_expectation('/' . preg_quote('Not good enough!', '/') . '/'));
+                new question_pattern_expectation('/' . preg_quote('Not good enough!', '/') . '/'));
 
         // Now change the correct answer to the question, and regrade.
         $mc->answers[13]->fraction = -0.33333333;
@@ -174,13 +181,13 @@ class walkthrough_test extends \qbehaviour_walkthrough_test_base {
                 $this->get_contains_partcorrect_expectation());
 
         $autogradedstep = $this->get_step($this->get_step_count() - 2);
-        $this->assertEqualsWithDelta($autogradedstep->get_fraction(), 1, 0.0000001);
+        $this->assertEquals($autogradedstep->get_fraction(), 1, '', 0.0000001);
     }
 
     public function test_adaptive_multichoice2() {
 
         // Create a multiple choice, multiple response question.
-        $mc = \test_question_maker::make_a_multichoice_multi_question();
+        $mc = test_question_maker::make_a_multichoice_multi_question();
         $mc->penalty = 0.3333333;
         $mc->shuffleanswers = 0;
         $this->start_attempt_at_question($mc, 'adaptive', 2);
@@ -232,7 +239,7 @@ class walkthrough_test extends \qbehaviour_walkthrough_test_base {
     public function test_adaptive_shortanswer_partially_right() {
 
         // Create a short answer question.
-        $sa = \test_question_maker::make_question('shortanswer');
+        $sa = test_question_maker::make_question('shortanswer');
         $this->start_attempt_at_question($sa, 'adaptive');
 
         // Check the initial state.
@@ -311,7 +318,7 @@ class walkthrough_test extends \qbehaviour_walkthrough_test_base {
     public function test_adaptive_shortanswer_wrong_right_wrong() {
 
         // Create a short answer question.
-        $sa = \test_question_maker::make_question('shortanswer');
+        $sa = test_question_maker::make_question('shortanswer');
         $this->start_attempt_at_question($sa, 'adaptive', 6);
 
         // Check the initial state.
@@ -394,7 +401,7 @@ class walkthrough_test extends \qbehaviour_walkthrough_test_base {
     public function test_adaptive_shortanswer_invalid_after_complete() {
 
         // Create a short answer question.
-        $sa = \test_question_maker::make_question('shortanswer');
+        $sa = test_question_maker::make_question('shortanswer');
         $this->start_attempt_at_question($sa, 'adaptive');
 
         // Check the initial state.
@@ -476,7 +483,7 @@ class walkthrough_test extends \qbehaviour_walkthrough_test_base {
     public function test_adaptive_shortanswer_zero_penalty() {
 
         // Create a short answer question.
-        $sa = \test_question_maker::make_question('shortanswer');
+        $sa = test_question_maker::make_question('shortanswer');
         // Disable penalties for this question.
         $sa->penalty = 0;
         $this->start_attempt_at_question($sa, 'adaptive');
@@ -533,7 +540,7 @@ class walkthrough_test extends \qbehaviour_walkthrough_test_base {
     public function test_adaptive_shortanswer_try_to_submit_blank() {
 
         // Create a short answer question with correct answer true.
-        $sa = \test_question_maker::make_question('shortanswer');
+        $sa = test_question_maker::make_question('shortanswer');
         $this->start_attempt_at_question($sa, 'adaptive');
 
         // Check the initial state.
@@ -592,7 +599,7 @@ class walkthrough_test extends \qbehaviour_walkthrough_test_base {
     public function test_adaptive_numerical() {
 
         // Create a numerical question.
-        $sa = \test_question_maker::make_question('numerical', 'pi');
+        $sa = test_question_maker::make_question('numerical', 'pi');
         $this->start_attempt_at_question($sa, 'adaptive');
 
         // Check the initial state.
@@ -647,7 +654,7 @@ class walkthrough_test extends \qbehaviour_walkthrough_test_base {
     public function test_adaptive_numerical_invalid() {
 
         // Create a numerical question.
-        $numq = \test_question_maker::make_question('numerical', 'pi');
+        $numq = test_question_maker::make_question('numerical', 'pi');
         $numq->penalty = 0.1;
         $this->start_attempt_at_question($numq, 'adaptive');
 
@@ -751,7 +758,7 @@ class walkthrough_test extends \qbehaviour_walkthrough_test_base {
     public function test_adaptive_multianswer() {
 
         // Create a multianswer question.
-        $q = \test_question_maker::make_question('multianswer', 'twosubq');
+        $q = test_question_maker::make_question('multianswer', 'twosubq');
         // To simplify testing, multichoice subquestion's answers are not shuffled.
         $q->subquestions[2]->shuffleanswers = 0;
         $choices = array('0' => 'Bow-wow', '1' => 'Wiggly worm', '2' => 'Pussy-cat');

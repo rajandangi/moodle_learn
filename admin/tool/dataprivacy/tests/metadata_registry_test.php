@@ -14,7 +14,16 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace tool_dataprivacy;
+/**
+ * Metadata registry tests.
+ *
+ * @package    tool_dataprivacy
+ * @copyright  2018 Adrian Greeve <adriangreeve.com>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+defined('MOODLE_INTERNAL') || die();
+global $CFG;
 
 /**
  * Metadata registry tests.
@@ -23,7 +32,7 @@ namespace tool_dataprivacy;
  * @copyright  2018 Adrian Greeve <adriangreeve.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class metadata_registry_test extends \advanced_testcase {
+class tool_dataprivacy_metadata_registry_testcase extends advanced_testcase {
 
     /**
      * Fetch the meta data and return it in a form that we can easily unit test.

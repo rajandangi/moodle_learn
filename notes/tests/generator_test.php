@@ -22,7 +22,7 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace core_notes;
+defined('MOODLE_INTERNAL') || die();
 
 /**
  * Generator tests class.
@@ -31,7 +31,7 @@ namespace core_notes;
  * @copyright  2013 Ankit Agarwal
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class generator_test extends \advanced_testcase {
+class core_notes_generator_testcase extends advanced_testcase {
 
     /** Test create_instance method */
     public function test_create_instance() {
@@ -65,16 +65,16 @@ class generator_test extends \advanced_testcase {
         try {
             $gen->create_instance(array('courseid' => 2));
             $this->fail('A note should not be allowed to be created without associcated userid');
-        } catch (\coding_exception $e) {
-            $this->assertStringContainsString('Module generator requires $record->userid', $e->getMessage());
+        } catch (coding_exception $e) {
+            $this->assertContains('Module generator requires $record->userid', $e->getMessage());
         }
 
         // Test not setting courseid.
         try {
             $gen->create_instance(array('userid' => 2));
             $this->fail('A note should not be allowed to be created without associcated courseid');
-        } catch (\coding_exception $e) {
-            $this->assertStringContainsString('Module generator requires $record->courseid', $e->getMessage());
+        } catch (coding_exception $e) {
+            $this->assertContains('Module generator requires $record->courseid', $e->getMessage());
         }
     }
 

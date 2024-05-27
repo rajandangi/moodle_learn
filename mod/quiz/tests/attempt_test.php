@@ -14,13 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace mod_quiz;
-
-use core_question\local\bank\condition;
-use core_question\local\bank\question_version_status;
-use core_question_generator;
-use mod_quiz_generator;
-use question_engine;
+/**
+ * Tests for the quiz_attempt class.
+ *
+ * @package   mod_quiz
+ * @category  test
+ * @copyright 2014 Tim Hunt
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -30,13 +31,10 @@ require_once($CFG->dirroot . '/mod/quiz/locallib.php');
 /**
  * Tests for the quiz_attempt class.
  *
- * @package   mod_quiz
- * @category  test
  * @copyright 2014 Tim Hunt
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers \mod_quiz\quiz_attempt
  */
-class attempt_test extends \advanced_testcase {
+class mod_quiz_attempt_testcase extends advanced_testcase {
 
     /**
      * Create quiz and attempt data with layout.
@@ -54,9 +52,13 @@ class attempt_test extends \advanced_testcase {
         // Make a quiz.
         $quizgenerator = $this->getDataGenerator()->get_plugin_generator('mod_quiz');
         $quiz = $quizgenerator->create_instance(['course' => $course->id,
-            'grade' => 100.0, 'sumgrades' => 2, 'navmethod' => $navmethod]);
+            'grade' => 100.0, 'sumgrades' => 2, 'layout' => $layout, 'navmethod' => $navmethod]);
 
-        $quizobj = quiz_settings::create($quiz->id, $user->id);
+        $quizobj = quiz::create($quiz->id, $user->id);
+
+
+        $quba = question_engine::make_questions_usage_by_activity('mod_quiz', $quizobj->get_context());
+        $quba->set_preferred_behaviour($quizobj->get_quiz()->preferredbehaviour);
 
         $questiongenerator = $this->getDataGenerator()->get_plugin_generator('core_question');
         $cat = $questiongenerator->create_question_category();
@@ -72,7 +74,11 @@ class attempt_test extends \advanced_testcase {
             quiz_add_quiz_question($question->id, $quiz, $page);
         }
 
-        $attempt = quiz_prepare_and_start_new_attempt($quizobj, 1, null, false, [], [], $user->id);
+        $timenow = time();
+        $attempt = quiz_create_attempt($quizobj, 1, false, $timenow, false, $user->id);
+        quiz_start_new_attempt($quizobj, $quba, $attempt, 1, $timenow);
+        quiz_attempt_save_started($quizobj, $quba, $attempt);
+
         return quiz_attempt::create($attempt->id);
     }
 
@@ -84,75 +90,70 @@ class attempt_test extends \advanced_testcase {
         $url = '/mod/quiz/attempt.php';
         $params = ['attempt' => $attemptid, 'cmid' => $cmid, 'page' => 2];
 
-        $this->assertEquals(new \moodle_url($url, $params), $attempt->attempt_url(null, 2));
+        $this->assertEquals(new moodle_url($url, $params), $attempt->attempt_url(null, 2));
 
         $params['page'] = 1;
-        $this->assertEquals(new \moodle_url($url, $params), $attempt->attempt_url(3));
+        $this->assertEquals(new moodle_url($url, $params), $attempt->attempt_url(3));
 
         $questionattempt = $attempt->get_question_attempt(4);
         $expecteanchor = $questionattempt->get_outer_question_div_unique_id();
-        $this->assertEquals(new \moodle_url($url, $params, $expecteanchor), $attempt->attempt_url(4));
+        $this->assertEquals(new moodle_url($url, $params, $expecteanchor), $attempt->attempt_url(4));
 
-        $questionattempt = $attempt->get_question_attempt(3);
-        $expecteanchor = '#' . $questionattempt->get_outer_question_div_unique_id();
-        $this->assertEquals(new \moodle_url('#'), $attempt->attempt_url(null, 2, 2));
-        $this->assertEquals(new \moodle_url($expecteanchor), $attempt->attempt_url(3, -1, 1));
+        $this->assertEquals(new moodle_url('#'), $attempt->attempt_url(null, 2, 2));
+        $this->assertEquals(new moodle_url('#'), $attempt->attempt_url(3, -1, 1));
 
         $questionattempt = $attempt->get_question_attempt(4);
         $expecteanchor = $questionattempt->get_outer_question_div_unique_id();
-        $this->assertEquals(new \moodle_url(null, null, $expecteanchor, null), $attempt->attempt_url(4, -1, 1));
+        $this->assertEquals(new moodle_url(null, null, $expecteanchor, null), $attempt->attempt_url(4, -1, 1));
 
         // Summary page.
         $url = '/mod/quiz/summary.php';
         unset($params['page']);
-        $this->assertEquals(new \moodle_url($url, $params), $attempt->summary_url());
+        $this->assertEquals(new moodle_url($url, $params), $attempt->summary_url());
 
         // Review page.
         $url = '/mod/quiz/review.php';
-        $this->assertEquals(new \moodle_url($url, $params), $attempt->review_url());
+        $this->assertEquals(new moodle_url($url, $params), $attempt->review_url());
 
         $params['page'] = 1;
-        $this->assertEquals(new \moodle_url($url, $params), $attempt->review_url(3, -1, false));
-        $this->assertEquals(new \moodle_url($url, $params, $expecteanchor), $attempt->review_url(4, -1, false));
+        $this->assertEquals(new moodle_url($url, $params), $attempt->review_url(3, -1, false));
+        $this->assertEquals(new moodle_url($url, $params, $expecteanchor), $attempt->review_url(4, -1, false));
 
         unset($params['page']);
-        $this->assertEquals(new \moodle_url($url, $params), $attempt->review_url(null, 2, true));
-        $this->assertEquals(new \moodle_url($url, $params), $attempt->review_url(1, -1, true));
+        $this->assertEquals(new moodle_url($url, $params), $attempt->review_url(null, 2, true));
+        $this->assertEquals(new moodle_url($url, $params), $attempt->review_url(1, -1, true));
 
         $params['page'] = 2;
-        $this->assertEquals(new \moodle_url($url, $params), $attempt->review_url(null, 2, false));
+        $this->assertEquals(new moodle_url($url, $params), $attempt->review_url(null, 2, false));
         unset($params['page']);
 
         $params['showall'] = 0;
-        $this->assertEquals(new \moodle_url($url, $params), $attempt->review_url(null, 0, false));
-        $this->assertEquals(new \moodle_url($url, $params), $attempt->review_url(1, -1, false));
+        $this->assertEquals(new moodle_url($url, $params), $attempt->review_url(null, 0, false));
+        $this->assertEquals(new moodle_url($url, $params), $attempt->review_url(1, -1, false));
 
         $params['page'] = 1;
         unset($params['showall']);
-        $this->assertEquals(new \moodle_url($url, $params), $attempt->review_url(3, -1, false));
+        $this->assertEquals(new moodle_url($url, $params), $attempt->review_url(3, -1, false));
 
         $params['page'] = 2;
-        $this->assertEquals(new \moodle_url($url, $params), $attempt->review_url(null, 2));
-        $this->assertEquals(new \moodle_url('#'), $attempt->review_url(null, -1, null, 0));
+        $this->assertEquals(new moodle_url($url, $params), $attempt->review_url(null, 2));
+        $this->assertEquals(new moodle_url('#'), $attempt->review_url(null, -1, null, 0));
 
         $questionattempt = $attempt->get_question_attempt(3);
         $expecteanchor = '#' . $questionattempt->get_outer_question_div_unique_id();
-        $this->assertEquals(new \moodle_url($expecteanchor), $attempt->review_url(3, -1, null, 0));
+        $this->assertEquals(new moodle_url($expecteanchor), $attempt->review_url(3, -1, null, 0));
 
         $questionattempt = $attempt->get_question_attempt(4);
         $expecteanchor = '#' . $questionattempt->get_outer_question_div_unique_id();
-        $this->assertEquals(new \moodle_url($expecteanchor), $attempt->review_url(4, -1, null, 0));
-        $this->assertEquals(new \moodle_url('#'), $attempt->review_url(null, 2, true, 0));
-
-        $questionattempt = $attempt->get_question_attempt(1);
-        $expecteanchor = '#' . $questionattempt->get_outer_question_div_unique_id();
-        $this->assertEquals(new \moodle_url($expecteanchor), $attempt->review_url(1, -1, true, 0));
-        $this->assertEquals(new \moodle_url($expecteanchor), $attempt->review_url(1, -1, false, 0));
-        $this->assertEquals(new \moodle_url($url, $params), $attempt->review_url(null, 2, false, 0));
-        $this->assertEquals(new \moodle_url('#'), $attempt->review_url(null, 0, false, 0));
+        $this->assertEquals(new moodle_url($expecteanchor), $attempt->review_url(4, -1, null, 0));
+        $this->assertEquals(new moodle_url('#'), $attempt->review_url(null, 2, true, 0));
+        $this->assertEquals(new moodle_url('#'), $attempt->review_url(1, -1, true, 0));
+        $this->assertEquals(new moodle_url($url, $params), $attempt->review_url(null, 2, false, 0));
+        $this->assertEquals(new moodle_url('#'), $attempt->review_url(null, 0, false, 0));
+        $this->assertEquals(new moodle_url('#'), $attempt->review_url(1, -1, false, 0));
 
         $params['page'] = 1;
-        $this->assertEquals(new \moodle_url($url, $params), $attempt->review_url(3, -1, false, 0));
+        $this->assertEquals(new moodle_url($url, $params), $attempt->review_url(3, -1, false, 0));
 
         // Setup another attempt.
         $attempt = $this->create_quiz_and_attempt_with_layout(
@@ -163,58 +164,54 @@ class attempt_test extends \advanced_testcase {
         $attemptid = $attempt->get_attempt()->id;
         $cmid = $attempt->get_cmid();
         $params = ['attempt' => $attemptid, 'cmid' => $cmid];
-        $this->assertEquals(new \moodle_url($url, $params), $attempt->review_url());
+        $this->assertEquals(new moodle_url($url, $params), $attempt->review_url());
 
         $params['page'] = 2;
-        $this->assertEquals(new \moodle_url($url, $params), $attempt->review_url(null, 2));
+        $this->assertEquals(new moodle_url($url, $params), $attempt->review_url(null, 2));
 
         $params['page'] = 1;
         unset($params['showall']);
-        $this->assertEquals(new \moodle_url($url, $params), $attempt->review_url(11, -1, false));
+        $this->assertEquals(new moodle_url($url, $params), $attempt->review_url(11, -1, false));
 
         $questionattempt = $attempt->get_question_attempt(12);
         $expecteanchor = $questionattempt->get_outer_question_div_unique_id();
-        $this->assertEquals(new \moodle_url($url, $params, $expecteanchor), $attempt->review_url(12, -1, false));
+        $this->assertEquals(new moodle_url($url, $params, $expecteanchor), $attempt->review_url(12, -1, false));
 
         $params['showall'] = 1;
         unset($params['page']);
-        $this->assertEquals(new \moodle_url($url, $params), $attempt->review_url(null, 2, true));
+        $this->assertEquals(new moodle_url($url, $params), $attempt->review_url(null, 2, true));
 
-        $this->assertEquals(new \moodle_url($url, $params), $attempt->review_url(1, -1, true));
+        $this->assertEquals(new moodle_url($url, $params), $attempt->review_url(1, -1, true));
         $params['page'] = 2;
         unset($params['showall']);
-        $this->assertEquals(new \moodle_url($url, $params),  $attempt->review_url(null, 2, false));
+        $this->assertEquals(new moodle_url($url, $params),  $attempt->review_url(null, 2, false));
         unset($params['page']);
-        $this->assertEquals(new \moodle_url($url, $params), $attempt->review_url(null, 0, false));
+        $this->assertEquals(new moodle_url($url, $params), $attempt->review_url(null, 0, false));
         $params['page'] = 1;
-        $this->assertEquals(new \moodle_url($url, $params), $attempt->review_url(11, -1, false));
-        $this->assertEquals(new \moodle_url($url, $params, $expecteanchor), $attempt->review_url(12, -1, false));
+        $this->assertEquals(new moodle_url($url, $params), $attempt->review_url(11, -1, false));
+        $this->assertEquals(new moodle_url($url, $params, $expecteanchor), $attempt->review_url(12, -1, false));
         $params['page'] = 2;
-        $this->assertEquals(new \moodle_url($url, $params), $attempt->review_url(null, 2));
-        $this->assertEquals(new \moodle_url('#'), $attempt->review_url(null, -1, null, 0));
+        $this->assertEquals(new moodle_url($url, $params), $attempt->review_url(null, 2));
+        $this->assertEquals(new moodle_url('#'), $attempt->review_url(null, -1, null, 0));
 
         $questionattempt = $attempt->get_question_attempt(3);
         $expecteanchor = $questionattempt->get_outer_question_div_unique_id();
-        $this->assertEquals(new \moodle_url(null, null, $expecteanchor), $attempt->review_url(3, -1, null, 0));
+        $this->assertEquals(new moodle_url(null, null, $expecteanchor), $attempt->review_url(3, -1, null, 0));
 
         $questionattempt = $attempt->get_question_attempt(4);
         $expecteanchor = $questionattempt->get_outer_question_div_unique_id();
-        $this->assertEquals(new \moodle_url(null, null, $expecteanchor), $attempt->review_url(4, -1, null, 0));
+        $this->assertEquals(new moodle_url(null, null, $expecteanchor), $attempt->review_url(4, -1, null, 0));
 
-        $questionattempt = $attempt->get_question_attempt(1);
-        $expecteanchor = '#' . $questionattempt->get_outer_question_div_unique_id();
-        $this->assertEquals(new \moodle_url($expecteanchor), $attempt->review_url(1, -1, true, 0));
-        $this->assertEquals(new \moodle_url('#'), $attempt->review_url(null, 2, true, 0));
+        $this->assertEquals(new moodle_url('#'), $attempt->review_url(null, 2, true, 0));
+        $this->assertEquals(new moodle_url('#'), $attempt->review_url(1, -1, true, 0));
 
         $params['page'] = 2;
-        $questionattempt = $attempt->get_question_attempt(1);
-        $expecteanchor = '#' . $questionattempt->get_outer_question_div_unique_id();
-        $this->assertEquals(new \moodle_url($expecteanchor), $attempt->review_url(1, -1, false, 0));
-        $this->assertEquals(new \moodle_url($url, $params), $attempt->review_url(null, 2, false, 0));
-        $this->assertEquals(new \moodle_url('#'), $attempt->review_url(null, 0, false, 0));
+        $this->assertEquals(new moodle_url($url, $params), $attempt->review_url(null, 2, false, 0));
+        $this->assertEquals(new moodle_url('#'), $attempt->review_url(null, 0, false, 0));
+        $this->assertEquals(new moodle_url('#'), $attempt->review_url(1, -1, false, 0));
 
         $params['page'] = 1;
-        $this->assertEquals(new \moodle_url($url, $params), $attempt->review_url(11, -1, false, 0));
+        $this->assertEquals(new moodle_url($url, $params), $attempt->review_url(11, -1, false, 0));
     }
 
     /**
@@ -285,8 +282,8 @@ class attempt_test extends \advanced_testcase {
         $course = $this->getDataGenerator()->create_course();
         $student = $this->getDataGenerator()->create_and_enrol($course, 'student');
         $student2 = $this->getDataGenerator()->create_and_enrol($course, 'student', [], 'manual', 0, 0, ENROL_USER_SUSPENDED);
-        $quiz = $this->getDataGenerator()->create_module('quiz', ['course' => $course->id]);
-        $quizobj = quiz_settings::create($quiz->id);
+        $quiz = $this->getDataGenerator()->create_module('quiz', array('course' => $course->id));
+        $quizobj = quiz::create($quiz->id);
 
         // Login as student.
         $this->setUser($student);
@@ -334,7 +331,7 @@ class attempt_test extends \advanced_testcase {
         $question = $questiongenerator->create_question('shortanswer', null, ['category' => $cat->id]);
         quiz_add_quiz_question($question->id, $quiz, 1);
 
-        $quizobj = quiz_settings::create($quiz->id);
+        $quizobj = quiz::create($quiz->id);
 
         // Login as student1.
         $this->setUser($student1);
@@ -371,49 +368,6 @@ class attempt_test extends \advanced_testcase {
         $quba = question_engine::load_questions_usage_by_activity($student1attempt->uniqueid);
         $step = $quba->get_question_attempt(1)->get_step(0);
         $this->assertEquals($student1->id, $step->get_user_id());
-    }
-
-    /**
-     * Test quiz_prepare_and_start_new_attempt function
-     */
-    public function test_quiz_prepare_and_start_new_attempt_random_draft(): void {
-        $this->resetAfterTest();
-        $this->setAdminUser();
-
-        // Create course.
-        $course = $this->getDataGenerator()->create_course();
-        // Create quiz.
-        /** @var mod_quiz_generator $quizgenerator */
-        $quizgenerator = $this->getDataGenerator()->get_plugin_generator('mod_quiz');
-        $quiz = $quizgenerator->create_instance(['course' => $course->id]);
-
-        // Create question with 2 versions. V1 ready. V2 draft.
-        /** @var core_question_generator $questiongenerator */
-        $questiongenerator = $this->getDataGenerator()->get_plugin_generator('core_question');
-        $category = $questiongenerator->create_question_category();
-        $question = $questiongenerator->create_question('shortanswer', null,
-                ['questiontext' => 'V1', 'category' => $category->id]);
-        $questiongenerator->update_question($question, null,
-                ['questiontext' => 'V2', 'status' => question_version_status::QUESTION_STATUS_DRAFT]);
-
-        // Add a random question form that category.
-        $filtercondition = [
-            'filter' => [
-                'category' => [
-                    'jointype' => condition::JOINTYPE_DEFAULT,
-                    'values' => [$category->id],
-                    'filteroptions' => ['includesubcategories' => false],
-                ],
-            ],
-        ];
-        $quizobj = quiz_settings::create($quiz->id);
-        $quizobj->get_structure()->add_random_questions(1, 1, $filtercondition);
-        $quizobj->get_grade_calculator()->recompute_quiz_sumgrades();
-
-        // Create an attempt.
-        $quizobj = quiz_settings::create($quiz->id);
-        $attempt = quiz_prepare_and_start_new_attempt($quizobj, 1, null);
-        $this->assertEquals(1, $attempt->preview);
     }
 
     /**
@@ -468,107 +422,5 @@ class attempt_test extends \advanced_testcase {
         $this->assertTrue($attempt->check_page_access(3));
         $this->assertFalse($attempt->check_page_access(4));
         $this->assertFalse($attempt->check_page_access(1));
-    }
-
-    /**
-     * Starting a new attempt with a question in draft status should throw an exception.
-     *
-     * @covers ::quiz_start_new_attempt()
-     * @return void
-     */
-    public function test_start_new_attempt_with_draft(): void {
-        $this->resetAfterTest();
-
-        // Create course.
-        $course = $this->getDataGenerator()->create_course();
-        // Create students.
-        $student1 = $this->getDataGenerator()->create_and_enrol($course, 'student');
-        $student2 = $this->getDataGenerator()->create_and_enrol($course, 'student');
-        // Create quiz.
-        $quizgenerator = $this->getDataGenerator()->get_plugin_generator('mod_quiz');
-        $quiz = $quizgenerator->create_instance(['course' => $course->id, 'grade' => 100.0, 'sumgrades' => 2, 'layout' => '1,0']);
-        // Create question and add it to quiz.
-        $questiongenerator = $this->getDataGenerator()->get_plugin_generator('core_question');
-        $cat = $questiongenerator->create_question_category();
-        $question = $questiongenerator->create_question('shortanswer', null,
-                ['category' => $cat->id, 'status' => question_version_status::QUESTION_STATUS_DRAFT]);
-        quiz_add_quiz_question($question->id, $quiz, 1);
-
-        $quizobj = quiz_settings::create($quiz->id);
-        $quba = question_engine::make_questions_usage_by_activity('mod_quiz', $quizobj->get_context());
-        $quba->set_preferred_behaviour($quizobj->get_quiz()->preferredbehaviour);
-        $attempt = quiz_create_attempt($quizobj, 1, false, time(), false, $student1->id);
-
-        $this->expectExceptionObject(new \moodle_exception('questiondraftonly', 'mod_quiz', '', $question->name));
-        quiz_start_new_attempt($quizobj, $quba, $attempt, 1, time());
-    }
-
-    /**
-     * Starting a new attempt built on last with a question in draft status should throw an exception.
-     *
-     * @covers ::quiz_start_attempt_built_on_last()
-     * @return void
-     */
-    public function test_quiz_start_attempt_built_on_last_with_draft(): void {
-        global $DB;
-        $this->resetAfterTest();
-
-        // Create course.
-        $course = $this->getDataGenerator()->create_course();
-        // Create students.
-        $student1 = $this->getDataGenerator()->create_and_enrol($course, 'student');
-        $student2 = $this->getDataGenerator()->create_and_enrol($course, 'student');
-        // Create quiz.
-        $quizgenerator = $this->getDataGenerator()->get_plugin_generator('mod_quiz');
-        $quiz = $quizgenerator->create_instance(['course' => $course->id, 'grade' => 100.0, 'sumgrades' => 2, 'layout' => '1,0']);
-        // Create question and add it to quiz.
-        $questiongenerator = $this->getDataGenerator()->get_plugin_generator('core_question');
-        $cat = $questiongenerator->create_question_category();
-        $question = $questiongenerator->create_question('shortanswer', null, ['category' => $cat->id]);
-        quiz_add_quiz_question($question->id, $quiz, 1);
-
-        $quizobj = quiz_settings::create($quiz->id);
-        $quba = question_engine::make_questions_usage_by_activity('mod_quiz', $quizobj->get_context());
-        $quba->set_preferred_behaviour($quizobj->get_quiz()->preferredbehaviour);
-        $attempt = quiz_create_attempt($quizobj, 1, false, time(), false, $student1->id);
-        $attempt = quiz_start_new_attempt($quizobj, $quba, $attempt, 1, time());
-        $attempt = quiz_attempt_save_started($quizobj, $quba, $attempt);
-        $DB->set_field('question_versions', 'status', question_version_status::QUESTION_STATUS_DRAFT,
-                ['questionid' => $question->id]);
-        // We need to reset the cache since the question has been edited by changing its status to draft.
-        \question_bank::notify_question_edited($question->id);
-        $quizobj = quiz_settings::create($quiz->id);
-        $quba = question_engine::make_questions_usage_by_activity('mod_quiz', $quizobj->get_context());
-        $quba->set_preferred_behaviour($quizobj->get_quiz()->preferredbehaviour);
-        $newattempt = quiz_create_attempt($quizobj, 2, $attempt, time(), false, $student1->id);
-
-        $this->expectExceptionObject(new \moodle_exception('questiondraftonly', 'mod_quiz', '', $question->name));
-        quiz_start_attempt_built_on_last($quba, $newattempt, $attempt);
-    }
-
-    public function test_get_grade_item_totals(): void {
-        $attemptobj = $this->create_quiz_and_attempt_with_layout('1,2,3,0');
-        /** @var mod_quiz_generator $quizgenerator */
-        $quizgenerator = $this->getDataGenerator()->get_plugin_generator('mod_quiz');
-
-        // Set up some section grades.
-        $listeninggrade = $quizgenerator->create_grade_item(['quizid' => $attemptobj->get_quizid(), 'name' => 'Listening']);
-        $readinggrade = $quizgenerator->create_grade_item(['quizid' => $attemptobj->get_quizid(), 'name' => 'Reading']);
-        $structure = $attemptobj->get_quizobj()->get_structure();
-        $structure->update_slot_grade_item($structure->get_slot_by_number(1), $listeninggrade->id);
-        $structure->update_slot_grade_item($structure->get_slot_by_number(2), $listeninggrade->id);
-        $structure->update_slot_grade_item($structure->get_slot_by_number(3), $readinggrade->id);
-
-        // Reload the attempt and verify.
-        $attemptobj = quiz_attempt::create($attemptobj->get_attemptid());
-        $grades = $attemptobj->get_grade_item_totals();
-
-        // All grades zero because student has not done the quiz yet, but this is a sufficent test.
-        $this->assertEquals('Listening', $grades[$listeninggrade->id]->name);
-        $this->assertEquals(0, $grades[$listeninggrade->id]->grade);
-        $this->assertEquals(2, $grades[$listeninggrade->id]->maxgrade);
-        $this->assertEquals('Reading', $grades[$readinggrade->id]->name);
-        $this->assertEquals(0, $grades[$readinggrade->id]->grade);
-        $this->assertEquals(1, $grades[$readinggrade->id]->maxgrade);
     }
 }

@@ -51,11 +51,17 @@ class award_criteria_profile extends award_criteria {
         'address',
         'phone1',
         'phone2',
+        'icq',
+        'skype',
+        'yahoo',
+        'aim',
+        'msn',
         'department',
         'institution',
         'description',
         'picture',
         'city',
+        'url',
         'country',
     ];
 
@@ -64,19 +70,24 @@ class award_criteria_profile extends award_criteria {
      *
      */
     public function get_options(&$mform) {
-        global $CFG, $DB;
-        require_once($CFG->dirroot . '/user/profile/lib.php');
+        global $DB;
 
         $none = true;
         $existing = array();
         $missing = array();
         $dfields = $this->allowed_default_fields;
 
+        $sql = "SELECT uf.id as fieldid, uf.name as name, ic.id as categoryid, ic.name as categoryname, uf.datatype
+                FROM {user_info_field} uf
+                JOIN {user_info_category} ic
+                ON uf.categoryid = ic.id AND uf.visible <> 0
+                ORDER BY ic.sortorder ASC, uf.sortorder ASC";
+
         // Get custom fields.
-        $cfields = array_filter(profile_get_custom_fields(), function($field) {
-            return $field->visible <> 0;
-        });
-        $cfids = array_keys($cfields);
+        $cfields = $DB->get_records_sql($sql);
+        $cfids = array_map(function($o) {
+            return $o->fieldid;
+        }, $cfields);
 
         if ($this->id !== 0) {
             $existing = array_keys($this->params);
@@ -100,8 +111,7 @@ class award_criteria_profile extends award_criteria {
                 if (in_array($field, $existing)) {
                     $checked = true;
                 }
-                $this->config_options($mform, array('id' => $field, 'checked' => $checked,
-                        'name' => \core_user\fields::get_display_name($field), 'error' => false));
+                $this->config_options($mform, array('id' => $field, 'checked' => $checked, 'name' => get_user_field_name($field), 'error' => false));
                 $none = false;
             }
         }
@@ -110,15 +120,13 @@ class award_criteria_profile extends award_criteria {
             foreach ($cfields as $field) {
                 if (!isset($currentcat) || $currentcat != $field->categoryid) {
                     $currentcat = $field->categoryid;
-                    $categoryname = $DB->get_field('user_info_category', 'name', ['id' => $field->categoryid]);
-                    $mform->addElement('header', 'category_' . $currentcat, format_string($categoryname));
+                    $mform->addElement('header', 'category_' . $currentcat, format_string($field->categoryname));
                 }
                 $checked = false;
-                if (in_array($field->id, $existing)) {
+                if (in_array($field->fieldid, $existing)) {
                     $checked = true;
                 }
-                $this->config_options($mform, array('id' => $field->id, 'checked' => $checked,
-                    'name' => format_string($field->name), 'error' => false));
+                $this->config_options($mform, array('id' => $field->fieldid, 'checked' => $checked, 'name' => $field->name, 'error' => false));
                 $none = false;
             }
         }
@@ -147,18 +155,13 @@ class award_criteria_profile extends award_criteria {
      * @return string
      */
     public function get_details($short = '') {
-        global $OUTPUT, $CFG;
-        require_once($CFG->dirroot.'/user/profile/lib.php');
-
+        global $DB, $OUTPUT;
         $output = array();
         foreach ($this->params as $p) {
             if (is_numeric($p['field'])) {
-                $fields = profile_get_custom_fields();
-                // Get formatted field name if such field exists.
-                $str = isset($fields[$p['field']]->name) ?
-                    format_string($fields[$p['field']]->name) : null;
+                $str = $DB->get_field('user_info_field', 'name', array('id' => $p['field']));
             } else {
-                $str = \core_user\fields::get_display_name($p['field']);
+                $str = get_user_field_name($p['field']);
             }
             if (!$str) {
                 $output[] = $OUTPUT->error_text(get_string('error:nosuchfield', 'badges'));

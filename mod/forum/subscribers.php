@@ -34,13 +34,9 @@ $url = new moodle_url('/mod/forum/subscribers.php', array('id'=>$id));
 if ($group !== 0) {
     $url->param('group', $group);
 }
-
-if ($edit === 1) {
-    $url->param('edit', 'on');
-} else {
-    $url->param('edit', 'off');
+if ($edit !== 0) {
+    $url->param('edit', $edit);
 }
-
 $PAGE->set_url($url);
 
 $forum = $DB->get_record('forum', array('id'=>$id), '*', MUST_EXIST);
@@ -53,7 +49,7 @@ require_login($course, false, $cm);
 
 $context = context_module::instance($cm->id);
 if (!has_capability('mod/forum:viewsubscribers', $context)) {
-    throw new \moodle_exception('nopermissiontosubscribe', 'forum');
+    print_error('nopermissiontosubscribe', 'forum');
 }
 
 unset($SESSION->fromdiscussion);
@@ -78,20 +74,20 @@ if (data_submitted()) {
     $unsubscribe = (bool)optional_param('unsubscribe', false, PARAM_RAW);
     /** It has to be one or the other, not both or neither */
     if (!($subscribe xor $unsubscribe)) {
-        throw new \moodle_exception('invalidaction');
+        print_error('invalidaction');
     }
     if ($subscribe) {
         $users = $subscriberselector->get_selected_users();
         foreach ($users as $user) {
             if (!\mod_forum\subscriptions::subscribe_user($user->id, $forum)) {
-                throw new \moodle_exception('cannotaddsubscriber', 'forum', '', $user->id);
+                print_error('cannotaddsubscriber', 'forum', '', $user->id);
             }
         }
     } else if ($unsubscribe) {
         $users = $existingselector->get_selected_users();
         foreach ($users as $user) {
             if (!\mod_forum\subscriptions::unsubscribe_user($user->id, $forum)) {
-                throw new \moodle_exception('cannotremovesubscriber', 'forum', '', $user->id);
+                print_error('cannotremovesubscriber', 'forum', '', $user->id);
             }
         }
     }
@@ -101,33 +97,35 @@ if (data_submitted()) {
 }
 
 $strsubscribers = get_string("subscribers", "forum");
-$PAGE->navbar->add($strsubscribers, $url);
+$PAGE->navbar->add($strsubscribers);
 $PAGE->set_title($strsubscribers);
 $PAGE->set_heading($COURSE->fullname);
-
-// Activate the secondary nav tab.
-$PAGE->set_secondary_active_tab("forumsubscriptions");
-
-// Output starts from here.
-$actionbar = new \mod_forum\output\subscription_actionbar($id, $url, $forum, $edit);
-$PAGE->activityheader->disable();
-echo $OUTPUT->header();
-if (!$PAGE->has_secondary_navigation()) {
-    echo $OUTPUT->heading(get_string('forum', 'forum') . ' ' . $strsubscribers);
-}
-echo $forumoutput->subscription_actionbar($actionbar);
-
-if ($edit === 1 && !\mod_forum\subscriptions::is_forcesubscribed($forum)) {
-    echo $OUTPUT->heading(get_string('managesubscriptionson', 'forum'), 2);
-    echo $forumoutput->subscriber_selection_form($existingselector, $subscriberselector);
+if (has_capability('mod/forum:managesubscriptions', $context) && \mod_forum\subscriptions::is_forcesubscribed($forum) === false) {
+    if ($edit != -1) {
+        $USER->subscriptionsediting = $edit;
+    }
+    $updatesubscriptionsbutton = forum_update_subscriptions_button($course->id, $id);
 } else {
+    $updatesubscriptionsbutton = '';
+    unset($USER->subscriptionsediting);
+}
+echo $OUTPUT->header();
+echo $OUTPUT->heading(get_string('forum', 'forum').' '.$strsubscribers);
+if (!empty($updatesubscriptionsbutton)) {
+    echo \html_writer::div($updatesubscriptionsbutton, 'float-right');
+}
+if (empty($USER->subscriptionsediting)) {
     $subscribers = \mod_forum\subscriptions::fetch_subscribed_users($forum, $currentgroup, $context);
     if (\mod_forum\subscriptions::is_forcesubscribed($forum)) {
         $subscribers = mod_forum_filter_hidden_users($cm, $context, $subscribers);
     }
     echo $forumoutput->subscriber_overview($subscribers, $forum, $course);
+} else {
+    echo $forumoutput->subscriber_selection_form($existingselector, $subscriberselector);
 }
-
+if (!empty($updatesubscriptionsbutton)) {
+    echo $updatesubscriptionsbutton;
+}
 echo $OUTPUT->footer();
 
 /**

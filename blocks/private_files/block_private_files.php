@@ -61,14 +61,8 @@ class block_private_files extends block_base {
             $this->content->text = $renderer->private_files_tree();
             if (has_capability('moodle/user:manageownfiles', $this->context)) {
                 $this->content->footer = html_writer::link(
-                    new moodle_url('/user/files.php'),
-                    get_string('privatefilesmanage') . '...',
-                    ['data-action' => 'manageprivatefiles']);
-                $this->page->requires->js_call_amd(
-                    'core_user/private_files',
-                    'initModal',
-                    ['[data-action=manageprivatefiles]', \core_user\form\private_files::class]
-                );
+                    new moodle_url('/user/files.php', array('returnurl' => $this->page->url->out())),
+                    get_string('privatefilesmanage') . '...');
             }
 
         }

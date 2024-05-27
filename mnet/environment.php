@@ -17,27 +17,6 @@ class mnet_environment {
     var $keypair            = array();
     var $deleted            = 0;
 
-    /** @var string mnet host name. */
-    public $name;
-
-    /** @var int mnet host transport. */
-    public $transport;
-
-    /** @var int mnet host port number. */
-    public $portno;
-
-    /** @var int mnet host force theme. */
-    public $force_theme;
-
-    /** @var string mnet host theme. */
-    public $theme;
-
-    /** @var int mnet host application ID. */
-    public $applicationid;
-
-    /** @var int mnet host SSL verification. */
-    public $sslverification;
-
     function init() {
         global $CFG, $DB;
 
@@ -94,7 +73,10 @@ class mnet_environment {
             list($this->keypair['certificate'], $this->keypair['keypair_PEM']) = explode('@@@@@@@@', $keypair);
         }
 
-        if ($this->public_key_expires <= time()) {
+        if ($this->public_key_expires > time()) {
+            $this->keypair['privatekey'] = openssl_pkey_get_private($this->keypair['keypair_PEM']);
+            $this->keypair['publickey']  = openssl_pkey_get_public($this->keypair['certificate']);
+        } else {
             // Key generation/rotation
 
             // 1. Archive the current key (if there is one).
@@ -168,11 +150,15 @@ class mnet_environment {
 
     function get_private_key() {
         if (empty($this->keypair)) $this->get_keypair();
-        return openssl_pkey_get_private($this->keypair['keypair_PEM']);
+        if (isset($this->keypair['privatekey'])) return $this->keypair['privatekey'];
+        $this->keypair['privatekey'] = openssl_pkey_get_private($this->keypair['keypair_PEM']);
+        return $this->keypair['privatekey'];
     }
 
     function get_public_key() {
         if (!isset($this->keypair)) $this->get_keypair();
-        return openssl_pkey_get_public($this->keypair['certificate']);
+        if (isset($this->keypair['publickey'])) return $this->keypair['publickey'];
+        $this->keypair['publickey'] = openssl_pkey_get_public($this->keypair['certificate']);
+        return $this->keypair['publickey'];
     }
 }

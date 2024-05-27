@@ -26,19 +26,13 @@
 
 defined('MOODLE_INTERNAL') || die;
 
+require_once("$CFG->libdir/externallib.php");
 require_once($CFG->dirroot . "/mod/data/locallib.php");
 
-use core_external\external_api;
-use core_external\external_function_parameters;
-use core_external\external_multiple_structure;
-use core_external\external_single_structure;
-use core_external\external_value;
-use core_external\external_warnings;
-use core_external\util;
 use mod_data\external\database_summary_exporter;
 use mod_data\external\record_exporter;
+use mod_data\external\content_exporter;
 use mod_data\external\field_exporter;
-use mod_data\manager;
 
 /**
  * Database module external functions
@@ -94,7 +88,7 @@ class mod_data_external extends external_api {
         // Ensure there are courseids to loop through.
         if (!empty($params['courseids'])) {
 
-            list($dbcourses, $warnings) = util::validate_courses($params['courseids'], $mycourses);
+            list($dbcourses, $warnings) = external_util::validate_courses($params['courseids'], $mycourses);
 
             // Get the databases in this course, this function checks users visibility permissions.
             // We can avoid then additional validate_context calls.
@@ -132,7 +126,7 @@ class mod_data_external extends external_api {
                 }
                 $exporter = new database_summary_exporter($database, array('context' => $context));
                 $data = $exporter->export($PAGE->get_renderer('core'));
-                $data->name = \core_external\util::format_string($data->name, $context);
+                $data->name = external_format_string($data->name, $context);
                 $arrdatabases[] = $data;
             }
         }
@@ -212,20 +206,18 @@ class mod_data_external extends external_api {
         list($database, $course, $cm, $context) = self::validate_database($params['databaseid']);
 
         // Call the data/lib API.
-        $manager = manager::create_from_coursemodule($cm);
-        $manager->set_module_viewed($course);
+        data_view($database, $course, $cm, $context);
 
-        $result = [
-            'status' => true,
-            'warnings' => $warnings,
-        ];
+        $result = array();
+        $result['status'] = true;
+        $result['warnings'] = $warnings;
         return $result;
     }
 
     /**
      * Returns description of method result value
      *
-     * @return \core_external\external_description
+     * @return external_description
      * @since Moodle 3.3
      */
     public static function view_database_returns() {
@@ -312,7 +304,7 @@ class mod_data_external extends external_api {
     /**
      * Returns description of method result value.
      *
-     * @return \core_external\external_description
+     * @return external_description
      * @since Moodle 3.3
      */
     public static function get_data_access_information_returns() {
@@ -412,8 +404,6 @@ class mod_data_external extends external_api {
             }
         }
 
-        $manager = manager::create_from_instance($database);
-
         list($records, $maxcount, $totalcount, $page, $nowperpage, $sort, $mode) =
             data_search_entries($database, $cm, $context, 'list', $groupid, '', $params['sort'], $params['order'],
                 $params['page'], $params['perpage']);
@@ -456,8 +446,11 @@ class mod_data_external extends external_api {
 
         // Check if we should return the list rendered.
         if ($params['returncontents']) {
-            $parser = $manager->get_template('listtemplate', ['page' => $page]);
-            $result['listviewcontents'] = $parser->parse_entries($records);
+            ob_start();
+            // The return parameter stops the execution after the first record.
+            data_print_template('listtemplate', $records, $database, '', $page, false);
+            $result['listviewcontents'] = ob_get_contents();
+            ob_end_clean();
         }
 
         return $result;
@@ -466,7 +459,7 @@ class mod_data_external extends external_api {
     /**
      * Returns description of method result value
      *
-     * @return \core_external\external_description
+     * @return external_description
      * @since Moodle 3.3
      */
     public static function get_entries_returns() {
@@ -522,8 +515,6 @@ class mod_data_external extends external_api {
         $canmanageentries = has_capability('mod/data:manageentries', $context);
         data_require_time_available($database, $canmanageentries);
 
-        $manager = manager::create_from_instance($database);
-
         if ($record->groupid != 0) {
             if (!groups_group_visible($record->groupid, $course, $cm)) {
                 throw new moodle_exception('notingroup');
@@ -532,7 +523,7 @@ class mod_data_external extends external_api {
 
         // Check correct record entry. Group check was done before.
         if (!data_can_view_record($database, $record, $record->groupid, $canmanageentries)) {
-            throw new moodle_exception('notapprovederror', 'data');
+            throw new moodle_exception('notapproved', 'data');
         }
 
         $related = array('context' => $context, 'database' => $database, 'user' => null);
@@ -552,8 +543,7 @@ class mod_data_external extends external_api {
         // Check if we should return the entry rendered.
         if ($params['returncontents']) {
             $records = [$record];
-            $parser = $manager->get_template('singletemplate');
-            $result['entryviewcontents'] = $parser->parse_entries($records);
+            $result['entryviewcontents'] = data_print_template('singletemplate', $records, $database, '', 0, true);
         }
 
         return $result;
@@ -562,7 +552,7 @@ class mod_data_external extends external_api {
     /**
      * Returns description of method result value
      *
-     * @return \core_external\external_description
+     * @return external_description
      * @since Moodle 3.3
      */
     public static function get_entry_returns() {
@@ -636,7 +626,7 @@ class mod_data_external extends external_api {
     /**
      * Returns description of method result value
      *
-     * @return \core_external\external_description
+     * @return external_description
      * @since Moodle 3.3
      */
     public static function get_fields_returns() {
@@ -724,8 +714,6 @@ class mod_data_external extends external_api {
         // Check database is open in time.
         data_require_time_available($database, null, $context);
 
-        $manager = manager::create_from_instance($database);
-
         if (!empty($params['groupid'])) {
             $groupid = $params['groupid'];
             // Determine is the group is visible to user.
@@ -791,8 +779,11 @@ class mod_data_external extends external_api {
 
         // Check if we should return the list rendered.
         if ($params['returncontents']) {
-            $parser = $manager->get_template('listtemplate', ['page' => $page]);
-            $result['listviewcontents'] = $parser->parse_entries($records);
+            ob_start();
+            // The return parameter stops the execution after the first record.
+            data_print_template('listtemplate', $records, $database, '', $page, false);
+            $result['listviewcontents'] = ob_get_contents();
+            ob_end_clean();
         }
 
         return $result;
@@ -801,7 +792,7 @@ class mod_data_external extends external_api {
     /**
      * Returns description of method result value
      *
-     * @return \core_external\external_description
+     * @return external_description
      * @since Moodle 3.3
      */
     public static function search_entries_returns() {
@@ -871,7 +862,7 @@ class mod_data_external extends external_api {
     /**
      * Returns description of method result value
      *
-     * @return \core_external\external_description
+     * @return external_description
      * @since Moodle 3.3
      */
     public static function approve_entry_returns() {
@@ -931,7 +922,7 @@ class mod_data_external extends external_api {
     /**
      * Returns description of method result value
      *
-     * @return \core_external\external_description
+     * @return external_description
      * @since Moodle 3.3
      */
     public static function delete_entry_returns() {
@@ -987,12 +978,6 @@ class mod_data_external extends external_api {
         $fieldnotifications = array();
 
         list($database, $course, $cm, $context) = self::validate_database($params['databaseid']);
-
-        $fields = $DB->get_records('data_fields', ['dataid' => $database->id]);
-        if (empty($fields)) {
-            throw new moodle_exception('nofieldindatabase', 'data');
-        }
-
         // Check database is open in time.
         data_require_time_available($database, null, $context);
 
@@ -1020,6 +1005,7 @@ class mod_data_external extends external_api {
             $datarecord->{'field_' . $data['fieldid'] . $subfield} = json_decode($data['value']);
         }
         // Validate to ensure that enough data was submitted.
+        $fields = $DB->get_records('data_fields', array('dataid' => $database->id));
         $processeddata = data_process_submission($database, $fields, $datarecord);
 
         // Format notifications.
@@ -1053,7 +1039,7 @@ class mod_data_external extends external_api {
     /**
      * Returns description of method result value
      *
-     * @return \core_external\external_description
+     * @return external_description
      * @since Moodle 3.3
      */
     public static function add_entry_returns() {
@@ -1167,7 +1153,7 @@ class mod_data_external extends external_api {
     /**
      * Returns description of method result value
      *
-     * @return \core_external\external_description
+     * @return external_description
      * @since Moodle 3.3
      */
     public static function update_entry_returns() {

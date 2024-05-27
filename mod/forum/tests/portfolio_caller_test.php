@@ -14,19 +14,23 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace mod_forum;
-
 /**
- * Class mod_forum_portfolio_caller_testcase
- *
- * Tests behaviour of the forum_portfolio_caller class.
+ * The portfolio forum tests.
  *
  * @package    mod_forum
  * @copyright  2018 onwards Totara Learning Solutions LTD {@link http://www.totaralms.com/}
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @author     Brendan Cox <brendan.cox@totaralearning.com>
  */
-class portfolio_caller_test extends \advanced_testcase {
+
+defined('MOODLE_INTERNAL') || die();
+
+/**
+ * Class mod_forum_portfolio_caller_testcase
+ *
+ * Tests behaviour of the forum_portfolio_caller class.
+ */
+class mod_forum_portfolio_caller_testcase extends advanced_testcase {
 
     /**
      * Ensure that a file will be loaded in an instance of the caller when supplied valid and
@@ -40,7 +44,7 @@ class portfolio_caller_test extends \advanced_testcase {
         $user = $this->getDataGenerator()->create_user();
         $course = $this->getDataGenerator()->create_course();
         $forum = $this->getDataGenerator()->create_module('forum', array('course' => $course->id));
-        $context = \context_module::instance($forum->cmid);
+        $context = context_module::instance($forum->cmid);
 
         /* @var mod_forum_generator $forumgenerator */
         $forumgenerator = $this->getDataGenerator()->get_plugin_generator('mod_forum');
@@ -64,7 +68,7 @@ class portfolio_caller_test extends \advanced_testcase {
         );
         $firstpostfile = $fs->create_file_from_string($dummy, 'Content of ' . $dummy->filename);
 
-        $caller = new \forum_portfolio_caller(array(
+        $caller = new forum_portfolio_caller(array(
             'postid' => $discussion->firstpost,
             'attachment' => $firstpostfile->get_id()
         ));
@@ -85,7 +89,7 @@ class portfolio_caller_test extends \advanced_testcase {
         $user = $this->getDataGenerator()->create_user();
         $course = $this->getDataGenerator()->create_course();
         $forum = $this->getDataGenerator()->create_module('forum', array('course' => $course->id));
-        $context = \context_module::instance($forum->cmid);
+        $context = context_module::instance($forum->cmid);
 
         /* @var mod_forum_generator $forumgenerator */
         $forumgenerator = $this->getDataGenerator()->get_plugin_generator('mod_forum');
@@ -127,7 +131,7 @@ class portfolio_caller_test extends \advanced_testcase {
         );
         $secondpostfile = $fs->create_file_from_string($dummytwo, 'Content of ' . $dummytwo->filename);
 
-        $caller = new \forum_portfolio_caller(array(
+        $caller = new forum_portfolio_caller(array(
             'postid' => $discussion->firstpost,
             'attachment' => $secondpostfile->get_id()
         ));

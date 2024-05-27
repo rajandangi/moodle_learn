@@ -23,13 +23,6 @@
  */
 
 /**
- * Visible to anyone who has the moodle/site:viewuseridentity permission.
- * Editable by the profile owner if they have the moodle/user:editownprofile capability
- * or any user with the moodle/user:update capability.
- */
-define('PROFILE_VISIBLE_TEACHERS', '3');
-
-/**
  * Visible to anyone who can view the user.
  * Editable by the profile owner if they have the moodle/user:editownprofile capability
  * or any user with the moodle/user:update capability.
@@ -84,7 +77,7 @@ class profile_field_base {
      * Constructor method.
      * @param int $fieldid id of the profile from the user_info_field table
      * @param int $userid id of the user for whom we are displaying data
-     * @param stdClass $fielddata optional data for the field object plus additional fields 'hasuserdata', 'data' and 'dataformat'
+     * @param object $fielddata optional data for the field object plus additional fields 'hasuserdata', 'data' and 'dataformat'
      *    with user data. (If $fielddata->hasuserdata is empty, user data is not available and we should use default data).
      *    If this parameter is passed, constructor will not call load_data() at all.
      */
@@ -130,10 +123,10 @@ class profile_field_base {
     /**
      * Abstract method: Adds the profile field to the moodle form class
      * @abstract The following methods must be overwritten by child classes
-     * @param MoodleQuickForm $mform instance of the moodleform class
+     * @param moodleform $mform instance of the moodleform class
      */
     public function edit_field_add($mform) {
-        throw new \moodle_exception('mustbeoveride', 'debug', '', 'edit_field_add');
+        print_error('mustbeoveride', 'debug', '', 'edit_field_add');
     }
 
     /**
@@ -147,19 +140,8 @@ class profile_field_base {
     }
 
     /**
-     * Display the name of the profile field.
-     *
-     * @return string
-     */
-    public function display_name(): string {
-        return format_text($this->field->name, FORMAT_MOODLE, [
-            'para' => false,
-        ]);
-    }
-
-    /**
      * Print out the form field in the edit profile page
-     * @param MoodleQuickForm $mform instance of the moodleform class
+     * @param moodleform $mform instance of the moodleform class
      * @return bool
      */
     public function edit_field($mform) {
@@ -175,7 +157,7 @@ class profile_field_base {
 
     /**
      * Tweaks the edit form
-     * @param MoodleQuickForm $mform instance of the moodleform class
+     * @param moodleform $mform instance of the moodleform class
      * @return bool
      */
     public function edit_after_data($mform) {
@@ -190,6 +172,7 @@ class profile_field_base {
     /**
      * Saves the data coming from form
      * @param stdClass $usernew data coming from the form
+     * @return mixed returns data id if success of db insert/update, false on fail, 0 if not permitted
      */
     public function edit_save_data($usernew) {
         global $DB;
@@ -223,7 +206,7 @@ class profile_field_base {
      * Validate the form field from profile page
      *
      * @param stdClass $usernew
-     * @return  array  error messages for the form validation
+     * @return  string  contains error message otherwise null
      */
     public function edit_validate_field($usernew) {
         global $DB;
@@ -266,10 +249,10 @@ class profile_field_base {
 
     /**
      * Sets the default data for the field in the form object
-     * @param MoodleQuickForm $mform instance of the moodleform class
+     * @param  moodleform $mform instance of the moodleform class
      */
     public function edit_field_set_default($mform) {
-        if (isset($this->field->defaultdata)) {
+        if (!empty($this->field->defaultdata)) {
             $mform->setDefault($this->inputname, $this->field->defaultdata);
         }
     }
@@ -277,7 +260,7 @@ class profile_field_base {
     /**
      * Sets the required flag for the field in the form object
      *
-     * @param MoodleQuickForm $mform instance of the moodleform class
+     * @param moodleform $mform instance of the moodleform class
      */
     public function edit_field_set_required($mform) {
         global $USER;
@@ -288,7 +271,7 @@ class profile_field_base {
 
     /**
      * HardFreeze the field if locked.
-     * @param MoodleQuickForm $mform instance of the moodleform class
+     * @param moodleform $mform instance of the moodleform class
      */
     public function edit_field_set_locked($mform) {
         if (!$mform->elementExists($this->inputname)) {
@@ -400,15 +383,6 @@ class profile_field_base {
     }
 
     /**
-     * Return field short name
-     *
-     * @return string
-     */
-    public function get_shortname(): string {
-        return $this->field->shortname;
-    }
-
-    /**
      * Returns the name of the profile category where this field is
      *
      * @return string
@@ -451,29 +425,14 @@ class profile_field_base {
     /**
      * Check if the field data is visible to the current user
      * @internal This method should not generally be overwritten by child classes.
-     *
-     * @param context|null $context
      * @return bool
      */
-    public function is_visible(?context $context = null): bool {
-        global $USER, $COURSE;
+    public function is_visible() {
+        global $USER;
 
-        if ($context === null) {
-            $context = ($this->userid > 0) ? context_user::instance($this->userid) : context_system::instance();
-        }
+        $context = ($this->userid > 0) ? context_user::instance($this->userid) : context_system::instance();
 
         switch ($this->field->visible) {
-            case PROFILE_VISIBLE_TEACHERS:
-                if ($this->is_signup_field() && (empty($this->userid) || isguestuser($this->userid))) {
-                    return true;
-                } else if ($this->userid == $USER->id) {
-                    return true;
-                } else if ($this->userid > 0) {
-                    return has_capability('moodle/user:viewalldetails', $context);
-                } else {
-                    $coursecontext = context_course::instance($COURSE->id);
-                    return has_capability('moodle/site:viewuseridentity', $coursecontext);
-                }
             case PROFILE_VISIBLE_ALL:
                 return true;
             case PROFILE_VISIBLE_PRIVATE:
@@ -485,10 +444,6 @@ class profile_field_base {
                     return has_capability('moodle/user:viewalldetails', $context);
                 }
             default:
-                // PROFILE_VISIBLE_NONE, so let's check capabilities at system level.
-                if ($this->userid > 0) {
-                    $context = context_system::instance();
-                }
                 return has_capability('moodle/user:viewalldetails', $context);
         }
     }
@@ -518,14 +473,6 @@ class profile_field_base {
 
         if (has_capability('moodle/user:update', $systemcontext)) {
             return true;
-        }
-
-        // Checking for mentors have capability to edit user's profile.
-        if ($this->userid > 0) {
-            $usercontext = context_user::instance($this->userid);
-            if ($this->userid != $USER->id && has_capability('moodle/user:editprofile', $usercontext, $USER->id)) {
-                return true;
-            }
         }
 
         return false;
@@ -597,44 +544,6 @@ class profile_field_base {
     public function get_field_properties() {
         return array(PARAM_RAW, NULL_NOT_ALLOWED);
     }
-
-    /**
-     * Whether to display the field and content to the user
-     *
-     * @param context|null $context
-     * @return bool
-     */
-    public function show_field_content(?context $context = null): bool {
-        return $this->is_visible($context) && !$this->is_empty();
-    }
-
-    /**
-     * Check if the field should convert the raw data into user-friendly data when exporting
-     *
-     * @return bool
-     */
-    public function is_transform_supported(): bool {
-        return false;
-    }
-}
-
-/**
- * Return profile field instance for given type
- *
- * @param string $type
- * @param int $fieldid
- * @param int $userid
- * @param stdClass|null $fielddata
- * @return profile_field_base
- */
-function profile_get_user_field(string $type, int $fieldid = 0, int $userid = 0, ?stdClass $fielddata = null): profile_field_base {
-    global $CFG;
-
-    require_once("{$CFG->dirroot}/user/profile/field/{$type}/field.class.php");
-
-    // Return instance of profile field type.
-    $profilefieldtype = "profile_field_{$type}";
-    return new $profilefieldtype($fieldid, $userid, $fielddata);
 }
 
 /**
@@ -642,8 +551,8 @@ function profile_get_user_field(string $type, int $fieldid = 0, int $userid = 0,
  * @param int $userid
  * @return profile_field_base[]
  */
-function profile_get_user_fields_with_data(int $userid): array {
-    global $DB;
+function profile_get_user_fields_with_data($userid) {
+    global $DB, $CFG;
 
     // Join any user info data present with each user info field for the user object.
     $sql = 'SELECT uif.*, uic.name AS categoryname ';
@@ -659,8 +568,11 @@ function profile_get_user_fields_with_data(int $userid): array {
     $fields = $DB->get_records_sql($sql, ['userid' => $userid]);
     $data = [];
     foreach ($fields as $field) {
+        require_once($CFG->dirroot . '/user/profile/field/' . $field->datatype . '/field.class.php');
+        $classname = 'profile_field_' . $field->datatype;
         $field->hasuserdata = !empty($field->hasuserdata);
-        $fieldobject = profile_get_user_field($field->datatype, $field->id, $userid, $field);
+        /** @var profile_field_base $fieldobject */
+        $fieldobject = new $classname($field->id, $userid, $field);
         $fieldobject->set_category_name($field->categoryname);
         unset($field->categoryname);
         $data[] = $fieldobject;
@@ -673,7 +585,7 @@ function profile_get_user_fields_with_data(int $userid): array {
  * @param int $userid
  * @return profile_field_base[][]
  */
-function profile_get_user_fields_with_data_by_category(int $userid): array {
+function profile_get_user_fields_with_data_by_category($userid) {
     $fields = profile_get_user_fields_with_data($userid);
     $data = [];
     foreach ($fields as $field) {
@@ -686,7 +598,9 @@ function profile_get_user_fields_with_data_by_category(int $userid): array {
  * Loads user profile field data into the user object.
  * @param stdClass $user
  */
-function profile_load_data(stdClass $user): void {
+function profile_load_data($user) {
+    global $CFG;
+
     $fields = profile_get_user_fields_with_data($user->id);
     foreach ($fields as $formfield) {
         $formfield->edit_load_user_data($user);
@@ -696,10 +610,10 @@ function profile_load_data(stdClass $user): void {
 /**
  * Print out the customisable categories and fields for a users profile
  *
- * @param MoodleQuickForm $mform instance of the moodleform class
- * @param int $userid id of user whose profile is being edited or 0 for the new user
+ * @param moodleform $mform instance of the moodleform class
+ * @param int $userid id of user whose profile is being edited.
  */
-function profile_definition(MoodleQuickForm $mform, int $userid = 0): void {
+function profile_definition($mform, $userid = 0) {
     $categories = profile_get_user_fields_with_data_by_category($userid);
     foreach ($categories as $categoryid => $fields) {
         // Check first if *any* fields will be displayed.
@@ -725,10 +639,12 @@ function profile_definition(MoodleQuickForm $mform, int $userid = 0): void {
 
 /**
  * Adds profile fields to user edit forms.
- * @param MoodleQuickForm $mform
+ * @param moodleform $mform
  * @param int $userid
  */
-function profile_definition_after_data(MoodleQuickForm $mform, int $userid): void {
+function profile_definition_after_data($mform, $userid) {
+    global $CFG;
+
     $userid = ($userid < 0) ? 0 : (int)$userid;
 
     $fields = profile_get_user_fields_with_data($userid);
@@ -741,9 +657,11 @@ function profile_definition_after_data(MoodleQuickForm $mform, int $userid): voi
  * Validates profile data.
  * @param stdClass $usernew
  * @param array $files
- * @return array array of errors, same as in {@see moodleform::validation()}
+ * @return array
  */
-function profile_validation(stdClass $usernew, array $files): array {
+function profile_validation($usernew, $files) {
+    global $CFG;
+
     $err = array();
     $fields = profile_get_user_fields_with_data($usernew->id);
     foreach ($fields as $formfield) {
@@ -756,7 +674,7 @@ function profile_validation(stdClass $usernew, array $files): array {
  * Saves profile data for a user.
  * @param stdClass $usernew
  */
-function profile_save_data(stdClass $usernew): void {
+function profile_save_data($usernew) {
     global $CFG;
 
     $fields = profile_get_user_fields_with_data($usernew->id);
@@ -766,21 +684,51 @@ function profile_save_data(stdClass $usernew): void {
 }
 
 /**
+ * Display profile fields.
+ * @param int $userid
+ */
+function profile_display_fields($userid) {
+    global $CFG, $USER, $DB;
+
+    $categories = profile_get_user_fields_with_data_by_category($userid);
+    foreach ($categories as $categoryid => $fields) {
+        foreach ($fields as $formfield) {
+            if ($formfield->is_visible() and !$formfield->is_empty()) {
+                echo html_writer::tag('dt', format_string($formfield->field->name));
+                echo html_writer::tag('dd', $formfield->display_data());
+            }
+        }
+    }
+}
+
+/**
  * Retrieves a list of profile fields that must be displayed in the sign-up form.
  *
  * @return array list of profile fields info
  * @since Moodle 3.2
  */
-function profile_get_signup_fields(): array {
+function profile_get_signup_fields() {
+    global $CFG, $DB;
+
     $profilefields = array();
-    $fieldobjects = profile_get_user_fields_with_data(0);
-    foreach ($fieldobjects as $fieldobject) {
-        $field = (object)$fieldobject->get_field_config_for_external();
-        if ($fieldobject->get_category_name() !== null && $fieldobject->is_signup_field() && $field->visible <> 0) {
+    // Only retrieve required custom fields (with category information)
+    // results are sort by categories, then by fields.
+    $sql = "SELECT uf.id as fieldid, ic.id as categoryid, ic.name as categoryname, uf.datatype
+                FROM {user_info_field} uf
+                JOIN {user_info_category} ic
+                ON uf.categoryid = ic.id AND uf.signup = 1 AND uf.visible<>0
+                ORDER BY ic.sortorder ASC, uf.sortorder ASC";
+
+    if ($fields = $DB->get_records_sql($sql)) {
+        foreach ($fields as $field) {
+            require_once($CFG->dirroot.'/user/profile/field/'.$field->datatype.'/field.class.php');
+            $newfield = 'profile_field_'.$field->datatype;
+            $fieldobject = new $newfield($field->fieldid);
+
             $profilefields[] = (object) array(
                 'categoryid' => $field->categoryid,
-                'categoryname' => $fieldobject->get_category_name(),
-                'fieldid' => $field->id,
+                'categoryname' => $field->categoryname,
+                'fieldid' => $field->fieldid,
                 'datatype' => $field->datatype,
                 'object' => $fieldobject
             );
@@ -792,9 +740,9 @@ function profile_get_signup_fields(): array {
 /**
  * Adds code snippet to a moodle form object for custom profile fields that
  * should appear on the signup page
- * @param MoodleQuickForm $mform moodle form object
+ * @param moodleform $mform moodle form object
  */
-function profile_signup_fields(MoodleQuickForm $mform): void {
+function profile_signup_fields($mform) {
 
     if ($fields = profile_get_signup_fields()) {
         foreach ($fields as $field) {
@@ -810,11 +758,13 @@ function profile_signup_fields(MoodleQuickForm $mform): void {
 
 /**
  * Returns an object with the custom profile fields set for the given user
- * @param int $userid
+ * @param integer $userid
  * @param bool $onlyinuserobject True if you only want the ones in $USER.
- * @return stdClass object where properties names are shortnames of custom profile fields
+ * @return stdClass
  */
-function profile_user_record(int $userid, bool $onlyinuserobject = true): stdClass {
+function profile_user_record($userid, $onlyinuserobject = true) {
+    global $CFG;
+
     $usercustomfields = new stdClass();
 
     $fields = profile_get_user_fields_with_data($userid);
@@ -841,15 +791,25 @@ function profile_user_record(int $userid, bool $onlyinuserobject = true): stdCla
  * @return array Array of field objects from database (indexed by id)
  * @since Moodle 2.7.1
  */
-function profile_get_custom_fields(bool $onlyinuserobject = false): array {
-    $fieldobjects = profile_get_user_fields_with_data(0);
-    $fields = [];
-    foreach ($fieldobjects as $fieldobject) {
-        if (!$onlyinuserobject || $fieldobject->is_user_object_data()) {
-            $fields[$fieldobject->fieldid] = (object)$fieldobject->get_field_config_for_external();
+function profile_get_custom_fields($onlyinuserobject = false) {
+    global $DB, $CFG;
+
+    // Get all the fields.
+    $fields = $DB->get_records('user_info_field', null, 'id ASC');
+
+    // If only doing the user object ones, unset the rest.
+    if ($onlyinuserobject) {
+        foreach ($fields as $id => $field) {
+            require_once($CFG->dirroot . '/user/profile/field/' .
+                    $field->datatype . '/field.class.php');
+            $newfield = 'profile_field_' . $field->datatype;
+            $formfield = new $newfield();
+            if (!$formfield->is_user_object_data()) {
+                unset($fields[$id]);
+            }
         }
     }
-    ksort($fields);
+
     return $fields;
 }
 
@@ -871,10 +831,8 @@ function profile_load_custom_fields($user) {
 function profile_save_custom_fields($userid, $profilefields) {
     global $DB;
 
-    $fields = profile_get_user_fields_with_data(0);
-    if ($fields) {
-        foreach ($fields as $fieldobject) {
-            $field = (object)$fieldobject->get_field_config_for_external();
+    if ($fields = $DB->get_records('user_info_field')) {
+        foreach ($fields as $field) {
             if (isset($profilefields[$field->shortname])) {
                 $conditions = array('fieldid' => $field->id, 'userid' => $userid);
                 $id = $DB->get_field('user_info_data', 'id', $conditions);
@@ -888,40 +846,6 @@ function profile_save_custom_fields($userid, $profilefields) {
             }
         }
     }
-}
-
-/**
- * Gets basic data about custom profile fields. This is minimal data that is cached within the
- * current request for all fields so that it can be used quickly.
- *
- * @param string $shortname Shortname of custom profile field
- * @param bool $casesensitive Whether to perform case-sensitive matching of shortname. Note current limitations of custom profile
- *  fields allow the same shortname to exist differing only by it's case
- * @return stdClass|null Object with properties id, shortname, name, visible, datatype, categoryid, etc
- */
-function profile_get_custom_field_data_by_shortname(string $shortname, bool $casesensitive = true): ?stdClass {
-    $cache = \cache::make_from_params(cache_store::MODE_REQUEST, 'core_profile', 'customfields',
-            [], ['simplekeys' => true, 'simpledata' => true]);
-    $data = $cache->get($shortname);
-    if ($data === false) {
-        // If we don't have data, we get and cache it for all fields to avoid multiple DB requests.
-        $fields = profile_get_custom_fields();
-        $data = null;
-        foreach ($fields as $field) {
-            $cache->set($field->shortname, $field);
-
-            // Perform comparison according to case sensitivity parameter.
-            $shortnamematch = $casesensitive
-                ? strcmp($field->shortname, $shortname) === 0
-                : strcasecmp($field->shortname, $shortname) === 0;
-
-            if ($shortnamematch) {
-                $data = $field;
-            }
-        }
-    }
-
-    return $data;
 }
 
 /**
@@ -968,48 +892,16 @@ function profile_view($user, $context, $course = null) {
  * @return bool
  */
 function profile_has_required_custom_fields_set($userid) {
-    $profilefields = profile_get_user_fields_with_data($userid);
-    foreach ($profilefields as $profilefield) {
-        if ($profilefield->is_required() && !$profilefield->is_locked() &&
-            $profilefield->is_empty() && $profilefield->get_field_config_for_external()['visible']) {
-            return false;
-        }
+    global $DB;
+
+    $sql = "SELECT f.id
+              FROM {user_info_field} f
+         LEFT JOIN {user_info_data} d ON (d.fieldid = f.id AND d.userid = ?)
+             WHERE f.required = 1 AND f.visible > 0 AND f.locked = 0 AND d.id IS NULL";
+
+    if ($DB->record_exists_sql($sql, [$userid])) {
+        return false;
     }
 
     return true;
-}
-
-/**
- * Return the list of valid custom profile user fields.
- *
- * @return array array of profile field names
- */
-function get_profile_field_names(): array {
-    $profilefields = profile_get_user_fields_with_data(0);
-    $profilefieldnames = [];
-    foreach ($profilefields as $field) {
-        $profilefieldnames[] = $field->inputname;
-    }
-    return $profilefieldnames;
-}
-
-/**
- * Return the list of profile fields
- * in a format they can be used for choices in a group select menu.
- *
- * @return array array of category name with its profile fields
- */
-function get_profile_field_list(): array {
-    $customfields = profile_get_user_fields_with_data_by_category(0);
-    $data = [];
-    foreach ($customfields as $category) {
-        foreach ($category as $field) {
-            $categoryname = $field->get_category_name();
-            if (!isset($data[$categoryname])) {
-                $data[$categoryname] = [];
-            }
-            $data[$categoryname][$field->inputname] = $field->field->name;
-        }
-    }
-    return $data;
 }

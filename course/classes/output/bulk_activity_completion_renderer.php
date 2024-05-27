@@ -14,7 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-use core_completion\manager;
+/**
+ * Contains renderers for the bulk activity completion stuff.
+ *
+ * @package core_course
+ * @copyright 2017 Adrian Greeve
+ * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
 defined('MOODLE_INTERNAL') || die;
 
@@ -30,10 +36,19 @@ require_once($CFG->dirroot.'/course/renderer.php');
 class core_course_bulk_activity_completion_renderer extends plugin_renderer_base {
 
     /**
-     * @deprecated since Moodle 4.0
+     * Render the navigation tabs for the completion page.
+     *
+     * @param int|stdClass $courseorid the course object or id.
+     * @param String $page the tab to focus.
+     * @return string html
      */
-    public function navigation() {
-        throw new coding_exception(__FUNCTION__ . '() has been removed.');
+    public function navigation($courseorid, $page) {
+        $tabs = core_completion\manager::get_available_completion_tabs($courseorid);
+        if (count($tabs) > 1) {
+            return $this->tabtree($tabs, $page);
+        } else {
+            return '';
+        }
     }
 
     /**
@@ -49,49 +64,10 @@ class core_course_bulk_activity_completion_renderer extends plugin_renderer_base
     /**
      * Render the default completion tab.
      *
-     * @param array|stdClass $data the context data to pass to the template.
-     * @param array $modules The modules that have been sent through the form.
-     * @param moodleform $form The current form that has been sent.
+     * @param Array|stdClass $data the context data to pass to the template.
      * @return bool|string
      */
-    public function defaultcompletion($data, $modules, $form) {
-        $course = get_course($data->courseid);
-        foreach ($data->modules as $module) {
-            // If the user can manage this module, then the activity completion form needs to be returned too, without the
-            // cancel button (so only "Save changes" button is displayed).
-            if ($module->canmanage) {
-                // Only create the form if it's different from the one that has been sent.
-                $modform = $form;
-                if (empty($form) || !in_array($module->id, array_keys($modules))) {
-                    $modform = new \core_completion_defaultedit_form(
-                        null,
-                        [
-                            'course' => $course,
-                            'modules' => [
-                                $module->id => $module,
-                            ],
-                            'displaycancel' => false,
-                            'forceuniqueid' => true,
-                        ],
-                    );
-                    $module->modulecollapsed = true;
-                }
-
-                $moduleform = manager::get_module_form($module->name, $course);
-                if ($moduleform) {
-                    $module->formhtml = $modform->render();
-                } else {
-                    // If the module form is not available, then display a message.
-                    $module->formhtml = $this->output->notification(
-                        get_string('incompatibleplugin', 'completion'),
-                        \core\output\notification::NOTIFY_INFO,
-                        false
-                    );
-                }
-            }
-        }
-        $data->issite = $course->id == SITEID;
-
+    public function defaultcompletion($data) {
         return parent::render_from_template('core_course/defaultactivitycompletion', $data);
     }
 
@@ -122,12 +98,8 @@ class core_course_bulk_activity_completion_renderer extends plugin_renderer_base
      * @param moodleform $form
      * @param array $modules
      * @return string
-     * @deprecated since Moodle 4.3 MDL-78528
-     * @todo MDL-78711 This will be deleted in Moodle 4.7
      */
     public function edit_default_completion($form, $modules) {
-        debugging('edit_default_completion() is deprecated and will be removed.', DEBUG_DEVELOPER);
-
         ob_start();
         $form->display();
         $formhtml = ob_get_contents();
@@ -139,16 +111,5 @@ class core_course_bulk_activity_completion_renderer extends plugin_renderer_base
             'modulescount' => count($modules),
         ];
         return parent::render_from_template('core_course/editdefaultcompletion', $data);
-    }
-
-    /**
-     * Renders the course completion action bar.
-     *
-     * @param \core_course\output\completion_action_bar $actionbar
-     * @return string The HTML output
-     */
-    public function render_course_completion_action_bar(\core_course\output\completion_action_bar $actionbar): string {
-        $data = $actionbar->export_for_template($this->output);
-        return $this->output->render_from_template('core_course/completion_action_bar', $data);
     }
 }

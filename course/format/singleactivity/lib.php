@@ -32,7 +32,7 @@ require_once($CFG->dirroot. '/course/format/lib.php');
  * @copyright  2012 Marina Glancy
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class format_singleactivity extends core_courseformat\base {
+class format_singleactivity extends format_base {
     /** @var cm_info the current activity. Use get_activity() to retrieve it. */
     private $activity = false;
 
@@ -45,12 +45,22 @@ class format_singleactivity extends core_courseformat\base {
      * @param int|stdClass $section Section object from database or just field course_sections.section
      *     if null the course view page is returned
      * @param array $options options for view URL. At the moment core uses:
-     *     'navigation' (bool) ignored by this format
-     *     'sr' (int) ignored by this format
+     *     'navigation' (bool) if true and section has no separate page, the function returns null
+     *     'sr' (int) used by multipage formats to specify to which section to return
      * @return null|moodle_url
      */
     public function get_view_url($section, $options = array()) {
-        return new moodle_url('/course/view.php', ['id' => $this->courseid]);
+        $sectionnum = $section;
+        if (is_object($sectionnum)) {
+            $sectionnum = $section->section;
+        }
+        if ($sectionnum == 1) {
+            return new moodle_url('/course/view.php', array('id' => $this->courseid, 'section' => 1));
+        }
+        if (!empty($options['navigation']) && $section !== null) {
+            return null;
+        }
+        return new moodle_url('/course/view.php', array('id' => $this->courseid));
     }
 
     /**
@@ -103,7 +113,7 @@ class format_singleactivity extends core_courseformat\base {
         if ($cm->icon) {
             $icon = new pix_icon($cm->icon, $cm->modfullname, $cm->iconcomponent);
         } else {
-            $icon = new pix_icon('monologo', $cm->modfullname, $cm->modname);
+            $icon = new pix_icon('icon', $cm->modfullname, $cm->modname);
         }
         $activitynode = $node->add($activityname, $action, navigation_node::TYPE_ACTIVITY, null, $cm->id, $icon);
         if (global_navigation::module_extends_navigation($cm->modname)) {
@@ -368,6 +378,7 @@ class format_singleactivity extends core_courseformat\base {
 
     /**
      * Checks if the activity type has multiple items in the activity chooser.
+     * This may happen as a result of defining callback modulename_get_shortcuts().
      *
      * @return bool|null (null if the check is not possible)
      */

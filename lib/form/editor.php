@@ -35,7 +35,7 @@ require_once('templatable_form_element.php');
 /**
  * Editor element
  *
- * It creates preffered editor (textbox/Tiny) form element for the format (Text/HTML) selected.
+ * It creates preffered editor (textbox/TinyMce) form element for the format (Text/HTML) selected.
  *
  * @package   core_form
  * @category  form
@@ -249,15 +249,6 @@ class MoodleQuickForm_editor extends HTML_QuickForm_element implements templatab
     }
 
     /**
-     * Returns editor text content
-     *
-     * @return string Text content
-     */
-    public function get_text(): string {
-        return $this->_values['text'];
-    }
-
-    /**
      * Returns editor format
      *
      * @return int.
@@ -422,8 +413,7 @@ class MoodleQuickForm_editor extends HTML_QuickForm_element implements templatab
             $fpoptions['subtitle'] = $subtitle_options;
         }
 
-        // TODO Remove this in MDL-77334 for Moodle 4.6.
-        // If editor is required and tinymce, then set required_tinymce option to initalize tinymce validation.
+        //If editor is required and tinymce, then set required_tinymce option to initalize tinymce validation.
         if (($editor instanceof tinymce_texteditor)  && !is_null($this->getAttribute('onchange'))) {
             $this->_options['required'] = true;
         }
@@ -502,12 +492,13 @@ class MoodleQuickForm_editor extends HTML_QuickForm_element implements templatab
     }
 
     /**
-     * Returns the formatted value. The return from parent class is not acceptable.
+     * What to display when element is frozen.
      *
-     * @return string
+     * @return empty string
      */
-    public function getFrozenHtml(): string {
-        return format_text($this->get_text(), $this->getFormat()) . $this->_getPersistantData();
+    function getFrozenHtml() {
+
+        return '';
     }
 
     /**

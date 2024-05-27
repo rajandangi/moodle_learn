@@ -14,7 +14,17 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace mod_page;
+/**
+ * PHPUnit data generator tests
+ *
+ * @package    mod_page
+ * @category   phpunit
+ * @copyright  2012 Petr Skoda {@link http://skodak.org}
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+defined('MOODLE_INTERNAL') || die();
+
 
 /**
  * PHPUnit data generator testcase
@@ -24,7 +34,7 @@ namespace mod_page;
  * @copyright  2012 Petr Skoda {@link http://skodak.org}
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class generator_test extends \advanced_testcase {
+class mod_page_generator_testcase extends advanced_testcase {
     public function test_generator() {
         global $DB, $SITE;
 
@@ -47,7 +57,7 @@ class generator_test extends \advanced_testcase {
         $this->assertEquals('page', $cm->modname);
         $this->assertEquals($SITE->id, $cm->course);
 
-        $context = \context_module::instance($cm->id);
+        $context = context_module::instance($cm->id);
         $this->assertEquals($page->cmid, $context->instanceid);
     }
 }

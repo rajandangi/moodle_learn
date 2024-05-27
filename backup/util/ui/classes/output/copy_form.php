@@ -72,7 +72,7 @@ class copy_form extends \moodleform {
         $mform->setConstant('returnto', $returnto);
 
         // Notifications of current copies.
-        $copies = \copy_helper::get_copies($USER->id, $course->id);
+        $copies = \core_backup\copy\copy::get_copies($USER->id, $course->id);
         if (!empty($copies)) {
             $progresslink = new \moodle_url('/backup/copyprogress.php?', array('id' => $course->id));
             $notificationmsg = get_string('copiesinprogress', 'backup', $progresslink->out());
@@ -86,7 +86,7 @@ class copy_form extends \moodleform {
         $mform->setConstant('returnurl', $returnurl);
 
         // Form heading.
-        $mform->addElement('html', \html_writer::div(get_string('copycoursedesc', 'backup'), 'form-description mb-6'));
+        $mform->addElement('html', \html_writer::div(get_string('copycoursedesc', 'backup'), 'form-description mb-3'));
 
         // Course fullname.
         $mform->addElement('text', 'fullname', get_string('fullnamecourse'), 'maxlength="254" size="50"');
@@ -106,8 +106,7 @@ class copy_form extends \moodleform {
             // Always keep current category.
             $displaylist[$course->category] = \core_course_category::get($course->category, MUST_EXIST, true)->get_formatted_name();
         }
-        $mform->addElement('autocomplete', 'category', get_string('coursecategory'), $displaylist);
-        $mform->addRule('category', null, 'required', null, 'client');
+        $mform->addElement('select', 'category', get_string('coursecategory'), $displaylist);
         $mform->addHelpButton('category', 'coursecategory');
 
         // Course visibility.

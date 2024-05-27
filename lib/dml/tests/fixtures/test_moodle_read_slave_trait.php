@@ -23,9 +23,9 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace core;
+defined('MOODLE_INTERNAL') || die();
 
-use ReflectionProperty;
+require_once(__DIR__.'/../../pgsql_native_moodle_database.php');
 
 /**
  * Read slave helper that exposes selected moodle_read_slave_trait metods
@@ -36,57 +36,22 @@ use ReflectionProperty;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 trait test_moodle_read_slave_trait {
+    // @codingStandardsIgnoreStart
     /**
      * Constructs a mock db driver
      *
      * @param bool $external
      */
     public function __construct($external = false) {
+    // @codingStandardsIgnoreEnd
         parent::__construct($external);
 
-        $rw = fopen("php://memory", 'r+');
-        fputs($rw, 'rw');
-
-        $ro = fopen("php://memory", 'r+');
-        fputs($ro, 'ro');
-
-        $this->prefix = 'test_'; // Default, not to leave empty.
-
-        $rcp = new ReflectionProperty(parent::class, 'wantreadslave');
-        $rcp->setValue($this, true);
-
-        $this->dbhwrite = $rw;
-        $this->dbhreadonly = $ro;
+        $this->wantreadslave = true;
+        $this->dbhwrite = 'test_rw';
+        $this->dbhreadonly = 'test_ro';
         $this->set_db_handle($this->dbhwrite);
 
-        $this->temptables = new \moodle_temptables($this);
-    }
-
-    /**
-     * Check db handle
-     * @param string $id
-     * @return bool
-     */
-    public function db_handle_is($id) {
-        $dbh = $this->get_db_handle();
-        rewind($dbh);
-        return stream_get_contents($dbh) == $id;
-    }
-
-    /**
-     * Check db handle is rw
-     * @return bool
-     */
-    public function db_handle_is_rw() {
-        return $this->db_handle_is('rw');
-    }
-
-    /**
-     * Check db handle is ro
-     * @return bool
-     */
-    public function db_handle_is_ro() {
-        return $this->db_handle_is('ro');
+        $this->temptables = new moodle_temptables($this);
     }
 
     /**
@@ -100,11 +65,11 @@ trait test_moodle_read_slave_trait {
     /**
      * Upgrade to public
      * @param string $sql
-     * @param array|null $params
+     * @param array $params
      * @param int $type
      * @param array $extrainfo
      */
-    public function query_start($sql, ?array $params, $type, $extrainfo = null) {
+    public function query_start($sql, array $params = null, $type, $extrainfo = null) {
         return parent::query_start($sql, $params, $type);
     }
 
@@ -113,7 +78,6 @@ trait test_moodle_read_slave_trait {
      * @param mixed $result
      */
     public function query_end($result) {
-        parent::query_end($result);
         $this->set_db_handle($this->dbhwrite);
     }
 

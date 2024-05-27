@@ -42,7 +42,7 @@ class provider implements
      * @param   collection     $collection The initialised collection to add items to.
      * @return  collection     A listing of user data stored through this system.
      */
-    public static function get_metadata(collection $collection): collection {
+    public static function get_metadata(collection $collection) : collection {
         $collection->add_user_preference('quiz_grading_pagesize', 'privacy:preference:pagesize');
         $collection->add_user_preference('quiz_grading_order', 'privacy:preference:order');
 
@@ -68,10 +68,10 @@ class provider implements
         if ($order !== null) {
             switch ($order) {
                 case 'random':
-                    $order = get_string('random', 'quiz_grading');
+                    $order = get_string('randomly', 'quiz_grading');
                     break;
                 case 'date':
-                    $order = get_string('date');
+                    $order = get_string('bydate', 'quiz_grading');
                     break;
                 case 'studentfirstname':
                     $order = get_string('studentfirstname', 'quiz_grading');
@@ -79,8 +79,9 @@ class provider implements
                 case 'studentlastname':
                     $order = get_string('studentlastname', 'quiz_grading');
                     break;
-                default:
-                    $order = \core_user\fields::get_display_name($order);
+                case 'idnumber':
+                    $order = get_string('bystudentidnumber', 'quiz_grading');
+                    break;
             }
             writer::export_user_preference('quiz_grading', 'order', $order,
                     get_string('privacy:preference:order', 'quiz_grading'));

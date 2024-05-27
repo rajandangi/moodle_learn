@@ -35,7 +35,6 @@ require_once($CFG->dirroot . '/backup/moodle2/restore_final_task.class.php');
 require_once($CFG->dirroot . '/backup/moodle2/restore_block_task.class.php');
 require_once($CFG->dirroot . '/backup/moodle2/restore_default_block_task.class.php');
 require_once($CFG->dirroot . '/backup/moodle2/restore_plugin.class.php');
-require_once($CFG->dirroot . '/backup/moodle2/restore_qbank_plugin.class.php');
 require_once($CFG->dirroot . '/backup/moodle2/restore_qtype_plugin.class.php');
 require_once($CFG->dirroot . '/backup/moodle2/restore_qtype_extrafields_plugin.class.php');
 require_once($CFG->dirroot . '/backup/moodle2/restore_format_plugin.class.php');
@@ -47,7 +46,6 @@ require_once($CFG->dirroot . '/backup/moodle2/restore_plagiarism_plugin.class.ph
 require_once($CFG->dirroot . '/backup/moodle2/restore_gradingform_plugin.class.php');
 require_once($CFG->dirroot . '/backup/moodle2/restore_enrol_plugin.class.php');
 require_once($CFG->dirroot . '/backup/moodle2/backup_plugin.class.php');
-require_once($CFG->dirroot . '/backup/moodle2/backup_qbank_plugin.class.php');
 require_once($CFG->dirroot . '/backup/moodle2/backup_qtype_plugin.class.php');
 require_once($CFG->dirroot . '/backup/moodle2/backup_qtype_extrafields_plugin.class.php');
 require_once($CFG->dirroot . '/backup/moodle2/backup_format_plugin.class.php');
@@ -93,7 +91,7 @@ abstract class restore_plan_builder {
     /**
      * Dispatches, based on type to specialised builders
      */
-    public static function build_plan($controller) {
+    static public function build_plan($controller) {
 
         $plan = $controller->get_plan();
 
@@ -131,7 +129,7 @@ abstract class restore_plan_builder {
     /**
      * Restore one 1-activity backup
      */
-    protected static function build_activity_plan($controller, $activityid) {
+    static protected function build_activity_plan($controller, $activityid) {
 
         $plan = $controller->get_plan();
         $info = $controller->get_info();
@@ -164,7 +162,7 @@ abstract class restore_plan_builder {
     /**
      * Restore one 1-section backup
      */
-    protected static function build_section_plan($controller, $sectionid) {
+    static protected function build_section_plan($controller, $sectionid) {
 
         $plan = $controller->get_plan();
         $info = $controller->get_info();
@@ -190,7 +188,7 @@ abstract class restore_plan_builder {
     /**
      * Restore one 1-course backup
      */
-    protected static function build_course_plan($controller, $courseid) {
+    static protected function build_course_plan($controller, $courseid) {
 
         $plan = $controller->get_plan();
         $info = $controller->get_info();

@@ -52,11 +52,18 @@ Feature: availability_profile
 
   @javascript
   Scenario: Test with custom user profile field
-    Given the following "custom profile fields" exist:
-      | datatype | shortname  | name        |
-      | text     | superfield | Super field |
+    # Add custom field.
+    Given I log in as "admin"
+    And I navigate to "Users > Accounts > User profile fields" in site administration
+    And I set the field "datatype" to "Text input"
+    And I set the following fields to these values:
+      | Short name | superfield  |
+      | Name       | Super field |
+    And I click on "Save changes" "button"
+
     # Set field value for user.
-    And I am on the "s@example.com" "user > editing" page logged in as "admin"
+    And I navigate to "Users > Accounts > Browse list of users" in site administration
+    And I click on ".icon[title=Edit]" "css_element" in the "s@example.com" "table_row"
     And I expand all fieldsets
     And I set the field "Super field" to "Bananaman"
     And I click on "Update profile" "button"
@@ -81,29 +88,3 @@ Feature: availability_profile
     # Log out and back in as student. Should be able to see activity.
     And I am on the "Course 1" "course" page logged in as "student1"
     Then I should see "P1" in the "region-main" "region"
-
-  @javascript
-  Scenario: Condition display with filters
-    # Teacher sets up a restriction on group G1, using multilang filter.
-    Given the following "custom profile fields" exist:
-      | datatype | shortname | name                                                                                        | param2 |
-      | text     | frog      | <span lang="en" class="multilang">F-One</span><span lang="fr" class="multilang">F-Un</span> | 100    |
-    And the "multilang" filter is "on"
-    And the "multilang" filter applies to "content and headings"
-    # The activity names filter is enabled because it triggered a bug in older versions.
-    And the "activitynames" filter is "on"
-    And the "activitynames" filter applies to "content and headings"
-    And I am on the "P1" "page activity editing" page logged in as "teacher1"
-    And I expand all fieldsets
-    And I click on "Add restriction..." "button"
-    And I click on "User profile" "button" in the "Add restriction..." "dialogue"
-    And I set the following fields to these values:
-      | User profile field       | F-One |
-      | Value to compare against | 111   |
-    And I click on "Save and return to course" "button"
-    And I log out
-
-    # Student sees information about no access to group, with group name in correct language.
-    When I am on the "C1" "Course" page logged in as "student1"
-    Then I should see "Not available unless: Your F-One is 111"
-    And I should not see "F-Un"

@@ -28,14 +28,14 @@ class Html2Text
     /**
      * Contains the HTML content to convert.
      *
-     * @var string $html
+     * @type string
      */
     protected $html;
 
     /**
      * Contains the converted, formatted text.
      *
-     * @var string $text
+     * @type string
      */
     protected $text;
 
@@ -43,7 +43,7 @@ class Html2Text
      * List of preg* regular expression patterns to search for,
      * used in conjunction with $replace.
      *
-     * @var array $search
+     * @type array
      * @see $replace
      */
     protected $search = array(
@@ -54,7 +54,6 @@ class Html2Text
         '/<style\b[^>]*>.*?<\/style>/i',                  // <style>s -- which strip_tags supposedly has problems with
         '/<i\b[^>]*>(.*?)<\/i>/i',                        // <i>
         '/<em\b[^>]*>(.*?)<\/em>/i',                      // <em>
-        '/<ins\b[^>]*>(.*?)<\/ins>/i',                    // <ins>
         '/(<ul\b[^>]*>|<\/ul>)/i',                        // <ul> and </ul>
         '/(<ol\b[^>]*>|<\/ol>)/i',                        // <ol> and </ol>
         '/(<dl\b[^>]*>|<\/dl>)/i',                        // <dl> and </dl>
@@ -74,7 +73,7 @@ class Html2Text
     /**
      * List of pattern replacements corresponding to patterns searched.
      *
-     * @var array $replace
+     * @type array
      * @see $search
      */
     protected $replace = array(
@@ -85,7 +84,6 @@ class Html2Text
         '',                              // <style>s -- which strip_tags supposedly has problems with
         '_\\1_',                         // <i>
         '_\\1_',                         // <em>
-        '_\\1_',                         // <ins>
         "\n\n",                          // <ul> and </ul>
         "\n\n",                          // <ol> and </ol>
         "\n\n",                          // <dl> and </dl>
@@ -106,7 +104,7 @@ class Html2Text
      * List of preg* regular expression patterns to search for,
      * used in conjunction with $entReplace.
      *
-     * @var array $entSearch
+     * @type array
      * @see $entReplace
      */
     protected $entSearch = array(
@@ -120,7 +118,7 @@ class Html2Text
     /**
      * List of pattern replacements corresponding to patterns searched.
      *
-     * @var array $entReplace
+     * @type array
      * @see $entSearch
      */
     protected $entReplace = array(
@@ -135,7 +133,7 @@ class Html2Text
      * List of preg* regular expression patterns to search for
      * and replace using callback function.
      *
-     * @var array $callbackSearch
+     * @type array
      */
     protected $callbackSearch = array(
         '/<(h)[123456]( [^>]*)?>(.*?)<\/h[123456]>/i',           // h1 - h6
@@ -143,7 +141,6 @@ class Html2Text
         '/<(br)[^>]*>[ ]*/i',                                    // <br> with leading whitespace after the newline.
         '/<(b)( [^>]*)?>(.*?)<\/b>/i',                           // <b>
         '/<(strong)( [^>]*)?>(.*?)<\/strong>/i',                 // <strong>
-        '/<(del)( [^>]*)?>(.*?)<\/del>/i',                       // <del>
         '/<(th)( [^>]*)?>(.*?)<\/th>/i',                         // <th> and </th>
         '/<(a) [^>]*href=("|\')([^"\']+)\2([^>]*)>(.*?)<\/a>/i'  // <a href="">
     );
@@ -152,7 +149,7 @@ class Html2Text
      * List of preg* regular expression patterns to search for in PRE body,
      * used in conjunction with $preReplace.
      *
-     * @var array $preSearch
+     * @type array
      * @see $preReplace
      */
     protected $preSearch = array(
@@ -166,7 +163,7 @@ class Html2Text
     /**
      * List of pattern replacements corresponding to patterns searched for PRE body.
      *
-     * @var array $preReplace
+     * @type array
      * @see $preSearch
      */
     protected $preReplace = array(
@@ -180,21 +177,21 @@ class Html2Text
     /**
      * Temporary workspace used during PRE processing.
      *
-     * @var string $preContent
+     * @type string
      */
     protected $preContent = '';
 
     /**
      * Contains the base URL that relative links should resolve to.
      *
-     * @var string $baseurl
+     * @type string
      */
     protected $baseurl = '';
 
     /**
      * Indicates whether content in the $html variable has been converted yet.
      *
-     * @var boolean $converted
+     * @type boolean
      * @see $html, $text
      */
     protected $converted = false;
@@ -202,7 +199,7 @@ class Html2Text
     /**
      * Contains URL addresses from links to be rendered in plain text.
      *
-     * @var array $linkList
+     * @type array
      * @see buildlinkList()
      */
     protected $linkList = array();
@@ -210,7 +207,7 @@ class Html2Text
     /**
      * Various configuration options (able to be set in the constructor)
      *
-     * @var array $options
+     * @type array
      */
     protected $options = array(
         'do_links' => 'inline', // 'none'
@@ -284,7 +281,7 @@ class Html2Text
     /**
      * Returns the text, converted from HTML.
      *
-     * @return string Plain text
+     * @return string
      */
     public function getText()
     {
@@ -417,7 +414,7 @@ class Html2Text
         }
 
         // Ignored link types
-        if (preg_match('!^(javascript:|mailto:|#)!i', html_entity_decode($link))) {
+        if (preg_match('!^(javascript:|mailto:|#)!i', $link)) {
             return $display;
         }
 
@@ -453,11 +450,6 @@ class Html2Text
         }
     }
 
-    /**
-     * Helper function for PRE body conversion.
-     *
-     * @param string &$text HTML content
-     */
     protected function convertPre(&$text)
     {
         // get the content of PRE element
@@ -494,7 +486,7 @@ class Html2Text
     /**
      * Helper function for BLOCKQUOTE body conversion.
      *
-     * @param string &$text HTML content
+     * @param string $text HTML content
      */
     protected function convertBlockquotes(&$text)
     {
@@ -571,8 +563,6 @@ class Html2Text
             case 'b':
             case 'strong':
                 return $this->toupper($matches[3]);
-            case 'del':
-                return $this->tostrike($matches[3]);
             case 'th':
                 return $this->toupper("\t\t" . $matches[3] . "\n");
             case 'h':
@@ -637,22 +627,5 @@ class Html2Text
         $str = htmlspecialchars($str, $this->htmlFuncFlags, self::ENCODING);
 
         return $str;
-    }
-
-    /**
-     * Helper function for DEL conversion.
-     *
-     * @param  string $text HTML content
-     * @return string Converted text
-     */
-    protected function tostrike($str)
-    {
-        $rtn = '';
-        for ($i = 0; $i < mb_strlen($str); $i++) {
-            $chr = mb_substr($str, $i, 1);
-            $combiningChr = chr(0xC0 | 0x336 >> 6). chr(0x80 | 0x336 & 0x3F);
-            $rtn .= $chr . $combiningChr;
-        }
-        return $rtn;
     }
 }

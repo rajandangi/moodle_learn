@@ -14,12 +14,15 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace core_comment;
-
-use comment_exception;
-use core_comment_external;
-use core_external\external_api;
-use externallib_advanced_testcase;
+/**
+ * External comment functions unit tests
+ *
+ * @package    core_comment
+ * @category   external
+ * @copyright  2015 Juan Leyva <juan@moodle.com>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @since      Moodle 2.9
+ */
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -36,12 +39,12 @@ require_once($CFG->dirroot . '/webservice/tests/helpers.php');
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @since      Moodle 2.9
  */
-class externallib_test extends externallib_advanced_testcase {
+class core_comment_externallib_testcase extends externallib_advanced_testcase {
 
     /**
      * Tests set up
      */
-    protected function setUp(): void {
+    protected function setUp() {
         $this->resetAfterTest();
     }
 
@@ -68,7 +71,7 @@ class externallib_test extends externallib_advanced_testcase {
         $this->getDataGenerator()->enrol_user($teacher1->id, $course1->id, $teacherrole->id);
 
         // Create a database module instance.
-        $record = new \stdClass();
+        $record = new stdClass();
         $record->course = $course1->id;
         $record->name = "Mod data test";
         $record->intro = "Some intro of some sort";
@@ -77,7 +80,7 @@ class externallib_test extends externallib_advanced_testcase {
         $module1 = $this->getDataGenerator()->create_module('data', $record);
         $field = data_get_field_new('text', $module1);
 
-        $fielddetail = new \stdClass();
+        $fielddetail = new stdClass();
         $fielddetail->name = 'Name';
         $fielddetail->description = 'Some name';
 

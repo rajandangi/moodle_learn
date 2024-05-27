@@ -90,11 +90,7 @@ class file_temp_cleanup_task extends scheduled_task {
             } else {
                 // Return the time modified to the original date only for real files.
                 if ($iter->isDir() && !$iter->isDot()) {
-                    try {
-                        @touch($node, $modifieddateobject[$node]);
-                    } catch (\Throwable $t) {
-                        null;
-                    }
+                    touch($node, $modifieddateobject[$node]);
                 }
             }
         }

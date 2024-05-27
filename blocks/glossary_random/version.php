@@ -24,8 +24,8 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version   = 2024042200;        // The current plugin version (Date: YYYYMMDDXX).
-$plugin->requires  = 2024041600;        // Requires this Moodle version.
+$plugin->version   = 2020061500;        // The current plugin version (Date: YYYYMMDDXX)
+$plugin->requires  = 2020060900;        // Requires this Moodle version
 $plugin->component = 'block_glossary_random'; // Full name of the plugin (used for diagnostics)
 
-$plugin->dependencies = ['mod_glossary' => 2024041600];
+$plugin->dependencies = array('mod_glossary' => 2020060900);

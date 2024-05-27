@@ -11,7 +11,7 @@ Feature: Restrict activity availability through grade conditions
       | Course 1 | C1 | 0 |
     And the following "users" exist:
       | username | firstname | lastname | email |
-      | teacher1 | Teacher | First | teacher1@example.com |
+      | teacher1 | Teacher | Frist | teacher1@example.com |
       | student1 | Student | First | student1@example.com |
     And the following "course enrolments" exist:
       | user | course | role |
@@ -33,10 +33,10 @@ Feature: Restrict activity availability through grade conditions
     And I press "Save and return to course"
 
     When I am on the "Course 1" course page logged in as student1
-    Then I should see "Not available unless: You achieve higher than a certain score in Grade assignment"
-    And I should see "Test page name"
-    And "Test page name" "link" should not exist in the "region-main" "region"
-    And I am on the "Grade assignment" "assign activity" page
+    Then I should see "Not available unless: You achieve a required score in Grade assignment"
+    And "Test page name" activity should be dimmed
+    And "Test page name" "link" should not exist
+    And I follow "Grade assignment"
     And I press "Add submission"
     And I set the following fields to these values:
       | Online text | I'm the student submission |
@@ -44,12 +44,13 @@ Feature: Restrict activity availability through grade conditions
     And I should see "Submitted for grading"
 
     And I am on the "Grade assignment" "assign activity" page logged in as teacher1
-    And I follow "View all submissions"
+    And I navigate to "View all submissions" in current page administration
     And I click on "Grade" "link" in the "Student First" "table_row"
     And I set the following fields to these values:
       | Grade | 21 |
     And I press "Save changes"
+    And I press "OK"
 
     And I am on the "Course 1" course page logged in as student1
     And "Test page name" activity should be visible
-    And I should not see "Not available unless: You achieve higher than a certain score in Grade assignment"
+    And I should not see "Not available unless: You achieve a required score in Grade assignment"

@@ -22,8 +22,6 @@
  * @package    core
  */
 
-use core_user\fields;
-
 define('NO_OUTPUT_BUFFERING', true);
 require_once('../../config.php');
 require_once($CFG->libdir.'/adminlib.php');
@@ -34,15 +32,12 @@ $dataformat = optional_param('dataformat', '', PARAM_ALPHA);
 admin_externalpage_setup('userbulk');
 require_capability('moodle/user:update', context_system::instance());
 
-$returnurl = optional_param('returnurl', '', PARAM_LOCALURL);
-$return = new moodle_url($returnurl ?: '/admin/user/user_bulk.php');
-
 if (empty($SESSION->bulk_users)) {
-    redirect($return);
+    redirect(new moodle_url('/admin/user/user_bulk.php'));
 }
 
 if ($dataformat) {
-    $originfields = array('id'        => 'id',
+    $fields = array('id'        => 'id',
                     'username'  => 'username',
                     'email'     => 'email',
                     'firstname' => 'firstname',
@@ -53,13 +48,19 @@ if ($dataformat) {
                     'phone1'    => 'phone1',
                     'phone2'    => 'phone2',
                     'city'      => 'city',
+                    'url'       => 'url',
+                    'icq'       => 'icq',
+                    'skype'     => 'skype',
+                    'aim'       => 'aim',
+                    'yahoo'     => 'yahoo',
+                    'msn'       => 'msn',
                     'country'   => 'country');
 
-    $extrafields = profile_get_user_fields_with_data(0);
-    $profilefields = [];
-    foreach ($extrafields as $formfield) {
-        $profilefields[fields::PROFILE_FIELD_PREFIX . $formfield->get_shortname()] = fields::PROFILE_FIELD_PREFIX .
-            $formfield->get_shortname();
+    if ($extrafields = $DB->get_records('user_info_field')) {
+        foreach ($extrafields as $n => $field) {
+            $fields['profile_field_'.$field->shortname] = 'profile_field_'.$field->shortname;
+            require_once($CFG->dirroot.'/user/profile/field/'.$field->datatype.'/field.class.php');
+        }
     }
 
     $filename = clean_filename(get_string('users'));
@@ -67,17 +68,21 @@ if ($dataformat) {
     $downloadusers = new ArrayObject($SESSION->bulk_users);
     $iterator = $downloadusers->getIterator();
 
-    \core\dataformat::download_data($filename, $dataformat, array_merge($originfields, $profilefields), $iterator,
-            function($userid, $supportshtml) use ($originfields) {
+    \core\dataformat::download_data($filename, $dataformat, $fields, $iterator, function($userid, $supportshtml)
+            use ($extrafields, $fields) {
 
         global $DB;
 
         if (!$user = $DB->get_record('user', array('id' => $userid))) {
             return null;
         }
-
+        foreach ($extrafields as $field) {
+            $newfield = 'profile_field_'.$field->datatype;
+            $formfield = new $newfield($field->id, $user->id);
+            $formfield->edit_load_user_data($user);
+        }
         $userprofiledata = array();
-        foreach ($originfields as $field) {
+        foreach ($fields as $field => $unused) {
             // Custom user profile textarea fields come in an array
             // The first element is the text and the second is the format.
             // We only take the text.
@@ -89,27 +94,11 @@ if ($dataformat) {
                 $userprofiledata[$field] = $user->$field;
             }
         }
-
-
-        // Formatting extra field if transform is true.
-        $extrafields = profile_get_user_fields_with_data($userid);
-        foreach ($extrafields as $field) {
-            $fieldkey = fields::PROFILE_FIELD_PREFIX . $field->get_shortname();
-            if ($field->is_transform_supported()) {
-                $userprofiledata[$fieldkey] = $field->display_data();
-            } else {
-                $userprofiledata[$fieldkey] = $field->data;
-            }
-        }
-
         return $userprofiledata;
     });
 
     exit;
 }
-
-$PAGE->set_primary_active_tab('siteadminnode');
-$PAGE->set_secondary_active_tab('users');
 
 echo $OUTPUT->header();
 echo $OUTPUT->heading(get_string('download', 'admin'));

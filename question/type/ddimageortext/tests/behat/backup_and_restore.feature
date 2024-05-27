@@ -19,8 +19,6 @@ Feature: Test duplicating a quiz containing a drag and drop onto image question
       | quiz       | Test quiz | C1     | quiz1    |
     And quiz "Test quiz" contains the following questions:
       | Drag onto image | 1 |
-    And the following config values are set as admin:
-      | enableasyncbackup | 0 |
 
   @javascript
   Scenario: Backup and restore a course containing a drag and drop onto image question
@@ -89,7 +87,7 @@ Feature: Test duplicating a quiz containing a drag and drop onto image question
       | For any partially correct response  | Parts, but only parts, of your response are correct. |
       | id_shownumcorrect                   | 1                                                    |
       | For any incorrect response          | That is not right at all.                            |
-      | Penalty for each incorrect try      | 33.33333%                                            |
+      | Penalty for each incorrect try      | 0.3333333                                            |
       | Hint 1                              | Incorrect placements will be removed.                |
       | id_hintclearwrong_0                 | 1                                                    |
       | id_hintshownumcorrect_0             | 1                                                    |

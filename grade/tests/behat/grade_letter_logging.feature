@@ -1,4 +1,4 @@
-@core @core_grades @javascript
+@core @core_grades
 Feature: We can view the logs for any changes to grade letters.
   In order to view changes the letter boundary of a course
   As an administrator
@@ -12,22 +12,22 @@ Feature: We can view the logs for any changes to grade letters.
     And I set the following fields to these values:
       | Grade display type | Letter |
     And I press "Save changes"
-    And I navigate to "More > Grade letters" in the course gradebook
-    And I click on "Edit" "button"
+    And I navigate to "Letters" in the course gradebook
+    And I follow "Edit grade letters"
     And I set the following fields to these values:
-      | Override site defaults   | 1  |
-      | Letter grade boundary 10 | 57 |
+      | id_override | 1 |
+      | id_gradeboundary10 | 57 |
     And I press "Save changes"
-    And I click on "Edit" "button"
+    And I follow "Edit grade letters"
     And I set the following fields to these values:
-      | Override site defaults   | 1  |
-      | Letter grade boundary 10 | 50 |
+      | id_override | 1 |
+      | id_gradeboundary10 | 50 |
     And I press "Save changes"
-    And I click on "Edit" "button"
+    And I follow "Edit grade letters"
     And I set the following fields to these values:
-      | Override site defaults   | 1  |
-      | Grade letter 11          |    |
-      | Letter grade boundary 11 |    |
+      | id_override | 1 |
+      | id_gradeletter11 | |
+      | id_gradeboundary11 | |
     And I press "Save changes"
     When I navigate to "Reports > Live logs" in site administration
     Then I should see "Grade letter created"

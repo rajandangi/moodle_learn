@@ -67,14 +67,14 @@
             "attributes": "",
             "options": [
                 {
-                    "text": "Hidden",
+                    "text": "Hide my email address from non-privileged users",
                     "value": 0,
                     "selected": false,
                     "disabled": false,
                     "optionattributes": ""
                 },
                 {
-                    "text": "Visible to everyone",
+                    "text": "Allow everyone to see my email address",
                     "value": 1,
                     "selected": true,
                     "disabled": false,
@@ -107,9 +107,6 @@
             {{#error}}
                 autofocus aria-describedby="{{element.iderror}}"
             {{/error}}
-            {{#required}}
-                aria-required="true"
-            {{/required}}
             {{{element.attributes}}} >
             {{#element.options}}
             <option value="{{value}}" {{#selected}}selected{{/selected}} {{#disabled}}disabled{{/disabled}}

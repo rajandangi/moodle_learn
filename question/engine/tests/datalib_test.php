@@ -14,19 +14,22 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace core_question;
+/**
+ * Unit tests for parts of {@link question_engine_data_mapper}.
+ *
+ * @package   core_question
+ * @category  test
+ * @copyright 2014 The Open University
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
-use qubaid_join;
-use qubaid_list;
-use question_bank;
-use question_engine;
-use question_engine_data_mapper;
 
 defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
 require_once(__DIR__ . '/../lib.php');
 require_once(__DIR__ . '/helpers.php');
+
 
 /**
  * Unit tests for parts of {@link question_engine_data_mapper}.
@@ -36,13 +39,10 @@ require_once(__DIR__ . '/helpers.php');
  * tested elsewhere, e.g. by {@link question_usage_autosave_test}. We do not
  * re-test them here.
  *
- * @package   core_question
- * @category  test
  * @copyright 2014 The Open University
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers \question_engine_data_mapper
  */
-class datalib_test extends \qbehaviour_walkthrough_test_base {
+class question_engine_data_mapper_testcase extends qbehaviour_walkthrough_test_base {
 
     /**
      * We create two usages, each with two questions, a short-answer marked
@@ -81,7 +81,7 @@ class datalib_test extends \qbehaviour_walkthrough_test_base {
 
         // Create the second usage.
         $this->quba = question_engine::make_questions_usage_by_activity('unit_test',
-                \context_system::instance());
+                context_system::instance());
 
         $q = question_bank::load_question($sa->id);
         $this->start_attempt_at_question($q, 'interactive', 5);
@@ -136,7 +136,7 @@ class datalib_test extends \qbehaviour_walkthrough_test_base {
         $questiondata2 = $generator->create_question('shortanswer', null, array('category' => $cat->id));
         $questiondata3 = $generator->create_question('shortanswer', null, array('category' => $cat->id));
 
-        $quba = question_engine::make_questions_usage_by_activity('test', \context_system::instance());
+        $quba = question_engine::make_questions_usage_by_activity('test', context_system::instance());
         $quba->set_preferred_behaviour('deferredfeedback');
         $question1 = question_bank::load_question($questiondata1->id);
         $question3 = question_bank::load_question($questiondata3->id);
@@ -168,7 +168,7 @@ class datalib_test extends \qbehaviour_walkthrough_test_base {
         $cat = $generator->create_question_category();
         $questiondata1 = $generator->create_question('shortanswer', null, array('category' => $cat->id));
 
-        $quba = question_engine::make_questions_usage_by_activity('test', \context_system::instance());
+        $quba = question_engine::make_questions_usage_by_activity('test', context_system::instance());
         $quba->set_preferred_behaviour('deferredfeedback');
         $quba->add_question(question_bank::load_question($questiondata1->id));
         $quba->start_all_questions();
@@ -201,7 +201,7 @@ class datalib_test extends \qbehaviour_walkthrough_test_base {
         $cat = $generator->create_question_category();
         $questiondata1 = $generator->create_question('shortanswer', null, array('category' => $cat->id));
 
-        $initquba = question_engine::make_questions_usage_by_activity('test', \context_system::instance());
+        $initquba = question_engine::make_questions_usage_by_activity('test', context_system::instance());
         $initquba->set_preferred_behaviour('deferredfeedback');
         $slot = $initquba->add_question(question_bank::load_question($questiondata1->id));
         $initquba->start_all_questions();
@@ -238,7 +238,7 @@ class datalib_test extends \qbehaviour_walkthrough_test_base {
         $this->resetAfterTest();
 
         // Create a new usage.
-        $quba = question_engine::make_questions_usage_by_activity('test', \context_system::instance());
+        $quba = question_engine::make_questions_usage_by_activity('test', context_system::instance());
         $quba->set_preferred_behaviour('deferredfeedback');
 
         // Save it.
@@ -250,59 +250,5 @@ class datalib_test extends \qbehaviour_walkthrough_test_base {
 
         // Delete it.
         question_engine::delete_questions_usage_by_activity($quba->get_id());
-    }
-
-    public function test_cannot_save_a_step_with_a_missing_state(): void {
-        global $DB;
-
-        $this->resetAfterTest();
-
-        // Create a question.
-        $generator = $this->getDataGenerator()->get_plugin_generator('core_question');
-        $cat = $generator->create_question_category();
-        $questiondata = $generator->create_question('shortanswer', null, ['category' => $cat->id]);
-
-        // Create a usage.
-        $quba = question_engine::make_questions_usage_by_activity('test', \context_system::instance());
-        $quba->set_preferred_behaviour('deferredfeedback');
-        $slot = $quba->add_question(question_bank::load_question($questiondata->id));
-        $quba->start_all_questions();
-
-        // Add a step with a bad state.
-        $newstep = new \question_attempt_step();
-        $newstep->set_state(null);
-        $addstepmethod = new \ReflectionMethod('question_attempt', 'add_step');
-        $addstepmethod->invoke($quba->get_question_attempt($slot), $newstep);
-
-        // Verify that trying to save this throws an exception.
-        $this->expectException(\dml_write_exception::class);
-        question_engine::save_questions_usage_by_activity($quba);
-    }
-
-    /**
-     * Test cases for {@see test_get_file_area_name()}.
-     *
-     * @return array test cases
-     */
-    public function get_file_area_name_cases(): array {
-        return [
-            'simple variable' => ['response_attachments', 'response_attachments'],
-            'behaviour variable' => ['response_5:answer', 'response_5answer'],
-            'variable with special character' => ['response_5:answer', 'response_5answer'],
-            'multiple underscores in different places' => ['response_weird____variable__name', 'response_weird_variable_name'],
-        ];
-    }
-
-    /**
-     * Test get_file_area_name.
-     *
-     * @covers \question_file_saver::clean_file_area_name
-     * @dataProvider get_file_area_name_cases
-     *
-     * @param string $uncleanedfilearea
-     * @param string $expectedfilearea
-     */
-    public function test_clean_file_area_name(string $uncleanedfilearea, string $expectedfilearea): void {
-        $this->assertEquals($expectedfilearea, \question_file_saver::clean_file_area_name($uncleanedfilearea));
     }
 }

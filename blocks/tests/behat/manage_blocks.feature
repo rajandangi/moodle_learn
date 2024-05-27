@@ -15,9 +15,9 @@ Feature: Block appearances
       | user | course | role |
       | teacher1 | C1 | editingteacher |
     And the following "activities" exist:
-      | activity | name             | course | idnumber |
-      | assign   | Test assign name | C1     | assign1  |
-      | book     | Test book name   | C1     | book1    |
+      | activity | course | name             | element |
+      | survey   | C1     | Test survey name | 4       |
+      | book     | C1     | Test book name   |         |
     And the following "mod_book > chapter" exists:
       | book    | Test book name         |
       | title   | Book title             |
@@ -33,23 +33,23 @@ Feature: Block appearances
     And I press "Save changes"
 
   Scenario: Block settings can be modified so that a block apprears on any page
-    When I click on "Test assign name" "link" in the "region-main" "region"
+    When I follow "Test survey name"
     Then I should see "Comments" in the "Comments" "block"
     And I am on "Course 1" course homepage
     And I configure the "Comments" block
     And I set the following fields to these values:
       | Display on page types | Any course page |
     And I press "Save changes"
-    And I turn editing mode off
-    And I click on "Test assign name" "link" in the "region-main" "region"
+    And I press "Turn editing off"
+    And I follow "Test survey name"
     And I should not see "Comments"
 
   Scenario: Block settings can be modified so that a block can be hidden
-    When I click on "Test book name" "link" in the "region-main" "region"
+    When I follow "Test book name"
     And I configure the "Comments" block
     And I set the following fields to these values:
       | Visible | No |
     And I press "Save changes"
-    And I am on "Course 1" course homepage with editing mode off
-    And I click on "Test book name" "link" in the "region-main" "region"
+    And I press "Turn editing off"
+    And I follow "Test book name"
     Then I should not see "Comments"

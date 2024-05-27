@@ -25,9 +25,6 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-use mod_assign\output\assign_header;
-use core_external\external_value;
-
 // File areas for file feedback assignment.
 define('ASSIGNFEEDBACK_FILE_FILEAREA', 'feedback_files');
 define('ASSIGNFEEDBACK_FILE_BATCH_FILEAREA', 'feedback_files_batch');
@@ -477,8 +474,7 @@ class assign_feedback_file extends assign_feedback_plugin {
                                                    $this->assignment->get_course_context()),
                                                    $this->assignment->is_blind_marking(),
                                                    $this->assignment->get_uniqueid_for_user($user->id),
-                                                   // TODO Does not support custom user profile fields (MDL-70456).
-                                                   \core_user\fields::get_identity_fields($this->assignment->get_context(), false));
+                                                   get_extra_user_fields($this->assignment->get_context()));
             $usershtml .= $this->assignment->get_renderer()->render($usersummary);
             $usercount += 1;
         }
@@ -694,7 +690,7 @@ class assign_feedback_file extends assign_feedback_plugin {
     /**
      * Return a description of external params suitable for uploading a feedback file from a webservice.
      *
-     * @return \core_external\external_description|null
+     * @return external_description|null
      */
     public function get_external_parameters() {
         return array(

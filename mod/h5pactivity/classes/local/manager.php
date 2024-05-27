@@ -165,21 +165,14 @@ class manager {
     /**
      * Check if tracking is enabled in a particular h5pactivity for a specific user.
      *
+     * @param stdClass|null $user user record (default $USER)
      * @return bool if tracking is enabled in this activity
      */
-    public function is_tracking_enabled(): bool {
-        return $this->instance->enabletracking;
-    }
-
-    /**
-     * Check if the user has permission to submit a particular h5pactivity for a specific user.
-     *
-     * @param stdClass|null $user user record (default $USER)
-     * @return bool if the user has permission to submit in this activity
-     */
-    public function can_submit(stdClass $user = null): bool {
+    public function is_tracking_enabled(stdClass $user = null): bool {
         global $USER;
-
+        if (!$this->instance->enabletracking) {
+            return false;
+        }
         if (empty($user)) {
             $user = $USER;
         }
@@ -337,7 +330,7 @@ class manager {
      * Note that, in general, the active list has the same effect as checking for "mod/h5pactivity:submit"
      * but submit capability cannot be used because is a write capability and does not apply to frozen contexts.
      *
-     * @since Moodle 3.11
+     * @since Moodle 3.9.7
      * @param bool $allpotentialusers if true, the join will return all active users, not only the ones with attempts.
      * @param int|bool $currentgroup False if groups not used, 0 for all groups, group id (int) to filter by specific group
      * @return sql_join the active users attempts join
@@ -364,9 +357,6 @@ class manager {
 
         // But excluding all reviewattempts users converting a capabilities join into left join.
         $reviewersjoin = get_with_capability_join($context, 'mod/h5pactivity:reviewattempts', 'u.id');
-        if ($reviewersjoin->cannotmatchanyrows) {
-            return $capjoin;
-        }
 
         $capjoin = new sql_join(
             $capjoin->joins . "\n LEFT " . str_replace('ra', 'reviewer', $reviewersjoin->joins),
@@ -486,7 +476,7 @@ class manager {
             // Ensure user can view the attempt of specific userid, respecting access checks.
             if ($user && $user->id != $USER->id) {
                 $course = get_course($this->coursemodule->course);
-                if (!groups_user_groups_visible($course, $user->id, $this->coursemodule)) {
+                if ($this->coursemodule->effectivegroupmode == SEPARATEGROUPS && !user_can_view_profile($user, $course)) {
                     return null;
                 }
             }

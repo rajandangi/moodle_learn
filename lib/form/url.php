@@ -51,9 +51,6 @@ class MoodleQuickForm_url extends HTML_QuickForm_text implements templatable {
     /** @var string the unique id of the filepicker, if enabled.*/
     protected $filepickeruniqueid;
 
-    /** @var array data which need to be posted. */
-    protected $_options;
-
     /**
      * Constructor
      *
@@ -217,7 +214,7 @@ EOD;
      *
      * @return string the unique id of the file picker.
      */
-    protected function get_filepicker_unique_id(): string {
+    protected function get_filepicker_unique_id() : string {
         if (empty($this->filepickeruniqueid)) {
             $this->filepickeruniqueid = uniqid();
         }

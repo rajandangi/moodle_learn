@@ -37,7 +37,6 @@ use mod_forum\local\vaults\discussion_list as discussion_list_vault;
 use renderer_base;
 use stdClass;
 use core\output\notification;
-use mod_forum\local\data_mappers\legacy\forum;
 use mod_forum\local\factories\builder as builder_factory;
 
 require_once($CFG->dirroot . '/mod/forum/lib.php');
@@ -146,7 +145,6 @@ class discussion_list {
      * @param   int         $pageno The zero-indexed page number to use
      * @param   int         $pagesize The number of discussions to show on the page
      * @param   int         $displaymode The discussion display mode
-     * @param   bool        $enablediscussioncreation To show the discussion button.
      * @return  string      The rendered content for display
      */
     public function render(
@@ -156,9 +154,8 @@ class discussion_list {
         ?int $sortorder,
         ?int $pageno,
         ?int $pagesize,
-        int $displaymode = null,
-        bool $enablediscussioncreation = true
-    ): string {
+        int $displaymode = null
+    ) : string {
         global $PAGE;
 
         $forum = $this->forum;
@@ -189,7 +186,6 @@ class discussion_list {
             'forum' => (array) $forumexporter->export($this->renderer),
             'contextid' => $forum->get_context()->id,
             'cmid' => $cm->id,
-            'groupid' => $groupid,
             'name' => format_string($forum->get_name()),
             'courseid' => $course->id,
             'coursename' => format_string($course->shortname),
@@ -197,7 +193,6 @@ class discussion_list {
             'gradingcomponent' => $this->forumgradeitem->get_grading_component_name(),
             'gradingcomponentsubtype' => $this->forumgradeitem->get_grading_component_subtype(),
             'sendstudentnotifications' => $forum->should_notify_students_default_when_grade_for_forum(),
-            'gradeonlyactiveusers' => $this->forumgradeitem->should_grade_only_active_users(),
             'hasanyactions' => $hasanyactions,
             'groupchangemenu' => groups_print_activity_menu(
                 $cm,
@@ -213,8 +208,7 @@ class discussion_list {
             ],
             'totaldiscussioncount' => $alldiscussionscount,
             'userid' => $user->id,
-            'visiblediscussioncount' => count($discussions),
-            'enablediscussioncreation' => $enablediscussioncreation,
+            'visiblediscussioncount' => count($discussions)
         ];
 
         if ($forumview['forum']['capabilities']['create']) {
@@ -244,27 +238,6 @@ class discussion_list {
         $forumview['firstgradeduserid'] = $firstdiscussion->get_latest_post_author()->get_id();
 
         return $this->renderer->render_from_template($this->template, $forumview);
-    }
-
-    /**
-     * Add new discussion button to the action bar for tertiary nav.
-     *
-     * @param stdClass $user The user object.
-     * @param int|null $groupid The group id.
-     * @return string rendered HTML string
-     */
-    public function render_new_discussion(stdClass $user, ?int $groupid): string {
-        $forumexporter = $this->exporterfactory->get_forum_exporter(
-            $user,
-            $this->forum,
-            $groupid
-        );
-
-        $forumview = [
-            'forum' => (array) $forumexporter->export($this->renderer),
-        ];
-
-        return $this->renderer->render_from_template('mod_forum/forum_new_discussion_actionbar', $forumview);
     }
 
     /**
@@ -332,7 +305,7 @@ class discussion_list {
      * @param   int         $pagesize The number of discussions to show on the page
      * @return  int         The normalised page size
      */
-    private function get_page_size(?int $pagesize): int {
+    private function get_page_size(?int $pagesize) : int {
         if (null === $pagesize || $pagesize <= 0) {
             $pagesize = discussion_list_vault::PAGESIZE_DEFAULT;
         }
@@ -346,7 +319,7 @@ class discussion_list {
      * @param   int         $pageno The zero-indexed page number to use
      * @return  int         The normalised page number
      */
-    private function get_page_number(?int $pageno): int {
+    private function get_page_number(?int $pageno) : int {
         if (null === $pageno || $pageno < 0) {
             $pageno = 0;
         }
@@ -361,14 +334,25 @@ class discussion_list {
      * @param int|null $groupid The forum's group id
      * @return      array
      */
-    private function get_notifications(stdClass $user, ?int $groupid): array {
+    private function get_notifications(stdClass $user, ?int $groupid) : array {
         $notifications = $this->notifications;
         $forum = $this->forum;
+        $renderer = $this->renderer;
         $capabilitymanager = $this->capabilitymanager;
 
         if ($forum->is_cutoff_date_reached()) {
             $notifications[] = (new notification(
                     get_string('cutoffdatereached', 'forum'),
+                    notification::NOTIFY_INFO
+            ))->set_show_closebutton();
+        } else if ($forum->is_due_date_reached()) {
+            $notifications[] = (new notification(
+                    get_string('thisforumisdue', 'forum', userdate($forum->get_due_date())),
+                    notification::NOTIFY_INFO
+            ))->set_show_closebutton();
+        } else if ($forum->has_due_date()) {
+            $notifications[] = (new notification(
+                    get_string('thisforumhasduedate', 'forum', userdate($forum->get_due_date())),
                     notification::NOTIFY_INFO
             ))->set_show_closebutton();
         }
@@ -378,8 +362,7 @@ class discussion_list {
                 get_string('thisforumisthrottled', 'forum', [
                     'blockafter' => $forum->get_block_after(),
                     'blockperiod' => get_string('secondstotime' . $forum->get_block_period())
-                ]),
-                notification::NOTIFY_INFO
+                ])
             ))->set_show_closebutton();
         }
 
@@ -408,7 +391,7 @@ class discussion_list {
             $notifications[] = (new notification(
                 get_string('qandanotify', 'forum'),
                 notification::NOTIFY_INFO
-            ))->set_show_closebutton()->set_extra_classes(['mt-3']);
+            ))->set_show_closebutton();
         }
 
         if ('eachuser' === $forum->get_type()) {

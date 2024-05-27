@@ -111,9 +111,8 @@ class analysis_for_actual_response {
      * @param int               $variantno  which variant.
      * @param string            $subpartid which sub part is this actual response in?
      * @param string            $responseclassid which response class is this actual response in?
-     * @param int|null          $calculationtime time when the analysis was done. (Defaults to time()).
      */
-    public function cache($qubaids, $whichtries, $questionid, $variantno, $subpartid, $responseclassid, $calculationtime = null) {
+    public function cache($qubaids, $whichtries, $questionid, $variantno, $subpartid, $responseclassid) {
         global $DB;
         $row = new \stdClass();
         $row->hashcode = $qubaids->get_hash_code();
@@ -128,7 +127,7 @@ class analysis_for_actual_response {
         }
         $row->response = $this->response;
         $row->credit = $this->fraction;
-        $row->timemodified = $calculationtime ?? time();
+        $row->timemodified = time();
         $analysisid = $DB->insert_record('question_response_analysis', $row);
         if ($whichtries === \question_attempt::ALL_TRIES) {
             foreach ($this->trycount as $try => $count) {

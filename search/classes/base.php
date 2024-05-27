@@ -67,19 +67,12 @@ abstract class base {
     protected static $levels = [CONTEXT_SYSTEM];
 
     /**
-     * An area id from the componentname and the area name.
-     *
-     * @var string
-     */
-    public $areaid;
-
-    /**
      * Constructor.
      *
      * @throws \coding_exception
      * @return void
      */
-    final public function __construct() {
+    public final function __construct() {
 
         $classname = get_class($this);
 
@@ -459,7 +452,7 @@ abstract class base {
      * @return array Array with SQL and parameters; both null if no need to query
      * @throws \coding_exception If called with invalid params
      */
-    protected function get_course_level_context_restriction_sql(?\context $context,
+    protected function get_course_level_context_restriction_sql(\context $context = null,
             $coursetable, $paramtype = SQL_PARAMS_QM) {
         global $DB;
 
@@ -545,7 +538,7 @@ abstract class base {
      * @param \core_search\document $doc
      * @return \core_search\document_icon
      */
-    public function get_doc_icon(document $doc): document_icon {
+    public function get_doc_icon(document $doc) : document_icon {
         return new document_icon('i/empty');
     }
 

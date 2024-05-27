@@ -69,7 +69,7 @@ Feature: Initials bar
       | activity | course | idnumber | name           | intro                       | assignsubmission_onlinetext_enabled | assignsubmission_file_enabled |
       | assign   | C1     | assign1  | TestAssignment | Test assignment description | 0                                   | 0                             |
     And I am on the "assign1" "Activity" page logged in as "teacher"
-    When I follow "View all submissions"
+    When I navigate to "View all submissions" in current page administration
     And ".initialbarall.page-item.active" "css_element" should exist in the ".initialbar.firstinitial" "css_element"
     And ".initialbarall.page-item.active" "css_element" should exist in the ".initialbar.lastinitial" "css_element"
     And ".page-item.active.B" "css_element" should not exist in the ".initialbar.firstinitial" "css_element"
@@ -77,7 +77,7 @@ Feature: Initials bar
     And I should see "Astudent Astudent"
     And I should see "Bstudent Astudent"
     And I should see "Cstudent Cstudent"
-    And I click on "A" "link" in the ".initialbar.lastinitial .page-item.A" "css_element"
+    And I click on "A" "link" in the ".initialbar.lastinitial" "css_element"
     And ".initialbarall.page-item.active" "css_element" should exist in the ".initialbar.firstinitial" "css_element"
     And ".initialbarall.page-item.active" "css_element" should not exist in the ".initialbar.lastinitial" "css_element"
     And ".page-item.active.B" "css_element" should not exist in the ".initialbar.firstinitial" "css_element"
@@ -85,7 +85,7 @@ Feature: Initials bar
     And I should see "Astudent Astudent"
     And I should see "Bstudent Astudent"
     And I should not see "Cstudent Cstudent"
-    And I click on "B" "link" in the ".initialbar.firstinitial .page-item.B" "css_element"
+    And I click on "B" "link" in the ".initialbar.firstinitial" "css_element"
     And ".initialbarall.page-item.active" "css_element" should not exist in the ".initialbar.firstinitial" "css_element"
     And ".initialbarall.page-item.active" "css_element" should not exist in the ".initialbar.lastinitial" "css_element"
     And ".page-item.active.B" "css_element" should exist in the ".initialbar.firstinitial" "css_element"
@@ -94,7 +94,7 @@ Feature: Initials bar
     And I should see "Bstudent Astudent"
     And I should not see "Cstudent Cstudent"
     And I am on the "assign1" "Activity" page
-    When I follow "View all submissions"
+    When I navigate to "View all submissions" in current page administration
     And ".initialbarall.page-item.active" "css_element" should not exist in the ".initialbar.firstinitial" "css_element"
     And ".initialbarall.page-item.active" "css_element" should not exist in the ".initialbar.lastinitial" "css_element"
     And ".page-item.active.B" "css_element" should exist in the ".initialbar.firstinitial" "css_element"
@@ -119,15 +119,13 @@ Feature: Initials bar
     And I should see "Bstudent Astudent"
     And I should see "Cstudent Cstudent"
 
-  @javascript
   Scenario: Filter users on view gradebook page
     Given the following "activities" exist:
       | activity | course | idnumber | name           | intro                       | assignsubmission_onlinetext_enabled | assignsubmission_file_enabled |
       | assign   | C1     | assign1  | TestAssignment | Test assignment description | 0                                   | 0                             |
     And I am on the "assign1" "Activity" page logged in as "teacher"
-    When I follow "View all submissions"
+    When I navigate to "View all submissions" in current page administration
     And I select "View gradebook" from the "jump" singleselect
-    And I click on "Filter by name" "combobox"
     And ".initialbarall.page-item.active" "css_element" should exist in the ".initialbar.firstinitial" "css_element"
     And ".initialbarall.page-item.active" "css_element" should exist in the ".initialbar.lastinitial" "css_element"
     And ".page-item.active.B" "css_element" should not exist in the ".initialbar.firstinitial" "css_element"
@@ -135,19 +133,15 @@ Feature: Initials bar
     And I should see "Astudent Astudent"
     And I should see "Bstudent Astudent"
     And I should see "Cstudent Cstudent"
-    And I select "A" in the "Last name" "core_grades > initials bar"
+    And I click on "A" "link" in the ".initialbar.lastinitial" "css_element"
     And ".initialbarall.page-item.active" "css_element" should exist in the ".initialbar.firstinitial" "css_element"
     And ".initialbarall.page-item.active" "css_element" should not exist in the ".initialbar.lastinitial" "css_element"
     And ".page-item.active.B" "css_element" should not exist in the ".initialbar.firstinitial" "css_element"
     And ".page-item.active.A" "css_element" should exist in the ".initialbar.lastinitial" "css_element"
-    And I press "Apply"
     And I should see "Astudent Astudent"
     And I should see "Bstudent Astudent"
     And I should not see "Cstudent Cstudent"
-    And I click on "Last (A)" "combobox"
-    And I select "B" in the "First name" "core_grades > initials bar"
-    And I press "Apply"
-    And I wait until the page is ready
+    And I click on "B" "link" in the ".initialbar.firstinitial" "css_element"
     And ".initialbarall.page-item.active" "css_element" should not exist in the ".initialbar.firstinitial" "css_element"
     And ".initialbarall.page-item.active" "css_element" should not exist in the ".initialbar.lastinitial" "css_element"
     And ".page-item.active.B" "css_element" should exist in the ".initialbar.firstinitial" "css_element"
@@ -156,7 +150,7 @@ Feature: Initials bar
     And I should see "Bstudent Astudent"
     And I should not see "Cstudent Cstudent"
     And I am on the "assign1" "Activity" page
-    When I follow "View all submissions"
+    When I navigate to "View all submissions" in current page administration
     And I select "View gradebook" from the "jump" singleselect
     And ".initialbarall.page-item.active" "css_element" should not exist in the ".initialbar.firstinitial" "css_element"
     And ".initialbarall.page-item.active" "css_element" should not exist in the ".initialbar.lastinitial" "css_element"
@@ -165,25 +159,19 @@ Feature: Initials bar
     And I should not see "Astudent Astudent"
     And I should see "Bstudent Astudent"
     And I should not see "Cstudent Cstudent"
-    And I click on "First (B) Last (A)" "combobox"
-    And I select "All" in the "First name" "core_grades > initials bar"
+    And I click on "All" "link" in the ".initialbar.firstinitial" "css_element"
     And ".initialbarall.page-item.active" "css_element" should exist in the ".initialbar.firstinitial" "css_element"
     And ".initialbarall.page-item.active" "css_element" should not exist in the ".initialbar.lastinitial" "css_element"
     And ".page-item.active.B" "css_element" should not exist in the ".initialbar.firstinitial" "css_element"
     And ".page-item.active.A" "css_element" should exist in the ".initialbar.lastinitial" "css_element"
-    And I press "Apply"
-    And I wait until the page is ready
     And I should see "Astudent Astudent"
     And I should see "Bstudent Astudent"
     And I should not see "Cstudent Cstudent"
-    And I click on "Last (A)" "combobox"
-    And I select "All" in the "Last name" "core_grades > initials bar"
+    And I click on "All" "link" in the ".initialbar.lastinitial" "css_element"
     And ".initialbarall.page-item.active" "css_element" should exist in the ".initialbar.firstinitial" "css_element"
     And ".initialbarall.page-item.active" "css_element" should exist in the ".initialbar.lastinitial" "css_element"
     And ".page-item.active.B" "css_element" should not exist in the ".initialbar.firstinitial" "css_element"
     And ".page-item.active.A" "css_element" should not exist in the ".initialbar.lastinitial" "css_element"
-    And I press "Apply"
-    And I wait until the page is ready
     And I should see "Astudent Astudent"
     And I should see "Bstudent Astudent"
     And I should see "Cstudent Cstudent"
@@ -205,7 +193,7 @@ Feature: Initials bar
     And I should see "Astudent Astudent"
     And I should see "Bstudent Astudent"
     And I should see "Cstudent Cstudent"
-    And I click on "A" "link" in the ".initialbar.lastinitial .page-item.A" "css_element"
+    And I click on "A" "link" in the ".initialbar.lastinitial" "css_element"
     And ".initialbarall.page-item.active" "css_element" should exist in the ".initialbar.firstinitial" "css_element"
     And ".initialbarall.page-item.active" "css_element" should not exist in the ".initialbar.lastinitial" "css_element"
     And ".page-item.active.B" "css_element" should not exist in the ".initialbar.firstinitial" "css_element"
@@ -213,7 +201,7 @@ Feature: Initials bar
     And I should see "Astudent Astudent"
     And I should see "Bstudent Astudent"
     And I should not see "Cstudent Cstudent"
-    And I click on "B" "link" in the ".initialbar.firstinitial .page-item.B" "css_element"
+    And I click on "B" "link" in the ".initialbar.firstinitial" "css_element"
     And ".initialbarall.page-item.active" "css_element" should not exist in the ".initialbar.firstinitial" "css_element"
     And ".initialbarall.page-item.active" "css_element" should not exist in the ".initialbar.lastinitial" "css_element"
     And ".page-item.active.B" "css_element" should exist in the ".initialbar.firstinitial" "css_element"
@@ -254,7 +242,7 @@ Feature: Initials bar
       | assign   | C1     | assign1  | TestAssignment | Test assignment description | 0                                   | 0                             |
     And I am on the "assign1" "assign Activity editing" page logged in as "admin"
     And I expand all fieldsets
-    And I set the field "Students must manually mark the activity as done" to "1"
+    And I set the field "Completion tracking" to "1"
     And I click on "Save and return to course" "button"
     And I navigate to "Course completion" in current page administration
     And I expand all fieldsets
@@ -262,8 +250,7 @@ Feature: Initials bar
     And I click on "Save changes" "button"
     And I log out
     And I am on the "C1" "Course" page logged in as "teacher"
-    And I navigate to "Reports" in current page administration
-    And I click on "Activity completion" "link"
+    And I navigate to "Reports > Activity completion" in current page administration
     And ".initialbarall.page-item.active" "css_element" should exist in the ".initialbar.firstinitial" "css_element"
     And ".initialbarall.page-item.active" "css_element" should exist in the ".initialbar.lastinitial" "css_element"
     And ".page-item.active.B" "css_element" should not exist in the ".initialbar.firstinitial" "css_element"
@@ -271,7 +258,7 @@ Feature: Initials bar
     And I should see "Astudent Astudent"
     And I should see "Bstudent Astudent"
     And I should see "Cstudent Cstudent"
-    And I click on "A" "link" in the ".initialbar.lastinitial .page-item.A" "css_element"
+    And I click on "A" "link" in the ".initialbar.lastinitial" "css_element"
     And ".initialbarall.page-item.active" "css_element" should exist in the ".initialbar.firstinitial" "css_element"
     And ".initialbarall.page-item.active" "css_element" should not exist in the ".initialbar.lastinitial" "css_element"
     And ".page-item.active.B" "css_element" should not exist in the ".initialbar.firstinitial" "css_element"
@@ -279,7 +266,7 @@ Feature: Initials bar
     And I should see "Astudent Astudent"
     And I should see "Bstudent Astudent"
     And I should not see "Cstudent Cstudent"
-    And I click on "B" "link" in the ".initialbar.firstinitial .page-item.B" "css_element"
+    And I click on "B" "link" in the ".initialbar.firstinitial" "css_element"
     And ".initialbarall.page-item.active" "css_element" should not exist in the ".initialbar.firstinitial" "css_element"
     And ".initialbarall.page-item.active" "css_element" should not exist in the ".initialbar.lastinitial" "css_element"
     And ".page-item.active.B" "css_element" should exist in the ".initialbar.firstinitial" "css_element"
@@ -288,8 +275,7 @@ Feature: Initials bar
     And I should see "Bstudent Astudent"
     And I should not see "Cstudent Cstudent"
     And I am on "Course 1" course homepage
-    And I navigate to "Reports" in current page administration
-    And I click on "Activity completion" "link"
+    And I navigate to "Reports > Activity completion" in current page administration
     And ".initialbarall.page-item.active" "css_element" should not exist in the ".initialbar.firstinitial" "css_element"
     And ".initialbarall.page-item.active" "css_element" should not exist in the ".initialbar.lastinitial" "css_element"
     And ".page-item.active.B" "css_element" should exist in the ".initialbar.firstinitial" "css_element"

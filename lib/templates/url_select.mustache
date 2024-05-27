@@ -38,7 +38,7 @@
     }
 }}
 <div class="{{classes}}">
-    <form method="post" action="{{action}}" class="d-flex flex-wrap align-items-center" id="{{formid}}">
+    <form method="post" action="{{action}}" class="form-inline" id="{{formid}}">
         <input type="hidden" name="sesskey" value="{{sesskey}}">
         {{#label}}
             <label for="{{id}}"{{#labelattributes}} {{name}}="{{value}}"{{/labelattributes}}>
@@ -78,9 +78,10 @@
         require(['jquery', 'core/custom_interaction_events'], function($, CustomEvents) {
             CustomEvents.define('#{{id}}', [CustomEvents.events.accessibleChange]);
             $('#{{id}}').on(CustomEvents.events.accessibleChange, function() {
-                if ($(this).val()) {
-                    $('#{{formid}}').submit();
+                if (!$(this).val()) {
+                    return false;
                 }
+                $('#{{formid}}').submit();
             });
         });
     {{/js}}

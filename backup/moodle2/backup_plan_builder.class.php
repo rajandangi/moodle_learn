@@ -36,7 +36,6 @@ require_once($CFG->dirroot . '/backup/moodle2/backup_block_task.class.php');
 require_once($CFG->dirroot . '/backup/moodle2/backup_default_block_task.class.php');
 require_once($CFG->dirroot . '/backup/moodle2/backup_xml_transformer.class.php');
 require_once($CFG->dirroot . '/backup/moodle2/backup_plugin.class.php');
-require_once($CFG->dirroot . '/backup/moodle2/backup_qbank_plugin.class.php');
 require_once($CFG->dirroot . '/backup/moodle2/backup_qtype_plugin.class.php');
 require_once($CFG->dirroot . '/backup/moodle2/backup_qtype_extrafields_plugin.class.php');
 require_once($CFG->dirroot . '/backup/moodle2/backup_gradingform_plugin.class.php');
@@ -83,7 +82,7 @@ abstract class backup_plan_builder {
     /**
      * Dispatches, based on type to specialised builders
      */
-    public static function build_plan($controller) {
+    static public function build_plan($controller) {
 
         $plan = $controller->get_plan();
 
@@ -115,7 +114,7 @@ abstract class backup_plan_builder {
     /**
      * Return one array of supported backup types
      */
-    public static function supported_backup_types() {
+    static public function supported_backup_types() {
         return array(backup::TYPE_1COURSE, backup::TYPE_1SECTION, backup::TYPE_1ACTIVITY);
     }
 
@@ -124,7 +123,7 @@ abstract class backup_plan_builder {
     /**
      * Build one 1-activity backup
      */
-    protected static function build_activity_plan($controller, $id) {
+    static protected function build_activity_plan($controller, $id) {
 
         $plan = $controller->get_plan();
 
@@ -153,7 +152,7 @@ abstract class backup_plan_builder {
     /**
      * Build one 1-section backup
      */
-    protected static function build_section_plan($controller, $id) {
+    static protected function build_section_plan($controller, $id) {
 
         $plan = $controller->get_plan();
 
@@ -175,7 +174,7 @@ abstract class backup_plan_builder {
     /**
      * Build one 1-course backup
      */
-    protected static function build_course_plan($controller, $id) {
+    static protected function build_course_plan($controller, $id) {
 
         $plan = $controller->get_plan();
 

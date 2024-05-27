@@ -149,31 +149,27 @@ class gradeimport_csv_load_data {
     /**
      * Inserts a record into the grade_import_values table. This also adds common record information.
      *
-     * @param stdClass $record The grade record being inserted into the database.
+     * @param object $record The grade record being inserted into the database.
      * @param int $studentid The student ID.
-     * @param grade_item $gradeitem Grade item.
-     * @return mixed true or insert id on success. Null if the grade value is too high or too low or grade item not exist.
+     * @return bool|int true or insert id on success. Null if the grade value is too high.
      */
-    protected function insert_grade_record(stdClass $record, int $studentid, grade_item $gradeitem): mixed {
+    protected function insert_grade_record($record, $studentid) {
         global $DB, $USER, $CFG;
         $record->importcode = $this->importcode;
         $record->userid     = $studentid;
         $record->importer   = $USER->id;
+        // By default the maximum grade is 100.
+        $gradepointmaximum = 100;
+        // If the grade limit has been increased then use the gradepointmax setting.
+        if ($CFG->unlimitedgrades) {
+            $gradepointmaximum = $CFG->gradepointmax;
+        }
         // If the record final grade is set then check that the grade value isn't too high.
         // Final grade will not be set if we are inserting feedback.
-        $gradepointmaximum = $gradeitem->grademax;
-        $gradepointminimum = $gradeitem->grademin;
-
-        $finalgradeinrange =
-            isset($record->finalgrade) && $record->finalgrade <= $gradepointmaximum && $record->finalgrade >= $gradepointminimum;
-        if (!isset($record->finalgrade) || $finalgradeinrange || $CFG->unlimitedgrades) {
+        if (!isset($record->finalgrade) || $record->finalgrade <= $gradepointmaximum) {
             return $DB->insert_record('grade_import_values', $record);
         } else {
-            if ($record->finalgrade > $gradepointmaximum) {
-                $this->cleanup_import(get_string('gradevaluetoobig', 'grades', format_float($gradepointmaximum)));
-            } else {
-                $this->cleanup_import(get_string('gradevaluetoosmall', 'grades', format_float($gradepointminimum)));
-            }
+            $this->cleanup_import(get_string('gradevaluetoobig', 'grades', $gradepointmaximum));
             return null;
         }
     }
@@ -484,7 +480,7 @@ class gradeimport_csv_load_data {
                     $maperrors[$j] = true;
                 } else {
                     // Collision.
-                    throw new \moodle_exception('cannotmapfield', '', '', $j);
+                    print_error('cannotmapfield', '', '', $j);
                 }
             }
         }
@@ -579,12 +575,7 @@ class gradeimport_csv_load_data {
                             }
                         }
                     }
-                    if (isset($newgrade->itemid)) {
-                        $gradeitem = new grade_item(['id' => $newgrade->itemid]);
-                    } else if (isset($newgrade->newgradeitem)) {
-                        $gradeitem = new grade_item(['id' => $newgrade->newgradeitem]);
-                    }
-                    $insertid = isset($gradeitem) ? self::insert_grade_record($newgrade, $this->studentid, $gradeitem) : null;
+                    $insertid = self::insert_grade_record($newgrade, $this->studentid);
                     // Check to see if the insert was successful.
                     if (empty($insertid)) {
                         return null;
@@ -606,7 +597,7 @@ class gradeimport_csv_load_data {
                     } else {
                         // The grade item for this is not updated.
                         $newfeedback->importonlyfeedback = true;
-                        $insertid = self::insert_grade_record($newfeedback, $this->studentid, new grade_item(['id' => $newfeedback->itemid]));
+                        $insertid = self::insert_grade_record($newfeedback, $this->studentid);
                         // Check to see if the insert was successful.
                         if (empty($insertid)) {
                             return null;

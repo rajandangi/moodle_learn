@@ -14,9 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace core;
-
-use media_test_native_plugin;
+/**
+ * Test for core_media_player_native.
+ *
+ * @package   core
+ * @category  test
+ * @copyright 2019 Ruslan Kabalin
+ * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
 defined('MOODLE_INTERNAL') || die();
 require_once(__DIR__ . '/fixtures/testable_core_media_player_native.php');
@@ -30,12 +35,12 @@ require_once(__DIR__ . '/fixtures/testable_core_media_player_native.php');
  * @copyright 2019 Ruslan Kabalin
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class core_media_player_native_test extends \advanced_testcase {
+class core_media_player_native_testcase extends advanced_testcase {
 
     /**
      * Pre-test setup.
      */
-    public function setUp(): void {
+    public function setUp() {
         parent::setUp();
         $this->resetAfterTest();
     }
@@ -65,7 +70,7 @@ class core_media_player_native_test extends \advanced_testcase {
 
         // Create list of URLs for each extension.
         $urls = array_map(function($ext){
-            return new \moodle_url('http://example.org/video.' . $ext);
+            return new moodle_url('http://example.org/video.' . $ext);
         }, $nativeextensions);
 
         // Make sure that the list of supported URLs is not filtering permitted extensions.
@@ -78,8 +83,8 @@ class core_media_player_native_test extends \advanced_testcase {
      */
     public function test_get_attribute() {
         $urls = [
-            new \moodle_url('http://example.org/some_filename.mp4'),
-            new \moodle_url('http://example.org/some_filename_hires.mp4'),
+            new moodle_url('http://example.org/some_filename.mp4'),
+            new moodle_url('http://example.org/some_filename_hires.mp4'),
         ];
 
         $player = new media_test_native_plugin();
@@ -87,7 +92,7 @@ class core_media_player_native_test extends \advanced_testcase {
         $title = 'Some Filename Video';
         $content = $player->embed($urls, $title, 0, 0, []);
 
-        $this->assertMatchesRegularExpression('~title="' . $title . '"~', $content);
+        $this->assertRegExp('~title="' . $title . '"~', $content);
         $this->assertEquals($title, media_test_native_plugin::get_attribute($content, 'title'));
     }
 
@@ -96,8 +101,8 @@ class core_media_player_native_test extends \advanced_testcase {
      */
     public function test_add_remove_attributes() {
         $urls = [
-            new \moodle_url('http://example.org/some_filename.mp4'),
-            new \moodle_url('http://example.org/some_filename_hires.mp4'),
+            new moodle_url('http://example.org/some_filename.mp4'),
+            new moodle_url('http://example.org/some_filename_hires.mp4'),
         ];
 
         $player = new media_test_native_plugin();
@@ -107,27 +112,27 @@ class core_media_player_native_test extends \advanced_testcase {
 
         // Add attributes.
         $content = media_test_native_plugin::add_attributes($content, ['preload' => 'none', 'controls' => 'true']);
-        $this->assertMatchesRegularExpression('~title="' . $title . '"~', $content);
-        $this->assertMatchesRegularExpression('~preload="none"~', $content);
-        $this->assertMatchesRegularExpression('~controls="true"~', $content);
+        $this->assertRegExp('~title="' . $title . '"~', $content);
+        $this->assertRegExp('~preload="none"~', $content);
+        $this->assertRegExp('~controls="true"~', $content);
 
         // Change existing attribute.
         $content = media_test_native_plugin::add_attributes($content, ['controls' => 'false']);
-        $this->assertMatchesRegularExpression('~title="' . $title . '"~', $content);
-        $this->assertMatchesRegularExpression('~preload="none"~', $content);
-        $this->assertMatchesRegularExpression('~controls="false"~', $content);
+        $this->assertRegExp('~title="' . $title . '"~', $content);
+        $this->assertRegExp('~preload="none"~', $content);
+        $this->assertRegExp('~controls="false"~', $content);
 
         // Remove attributes.
         $content = media_test_native_plugin::remove_attributes($content, ['title']);
-        $this->assertDoesNotMatchRegularExpression('~title="' . $title . '"~', $content);
-        $this->assertMatchesRegularExpression('~preload="none"~', $content);
-        $this->assertMatchesRegularExpression('~controls="false"~', $content);
+        $this->assertNotRegExp('~title="' . $title . '"~', $content);
+        $this->assertRegExp('~preload="none"~', $content);
+        $this->assertRegExp('~controls="false"~', $content);
 
         // Remove another one.
         $content = media_test_native_plugin::remove_attributes($content, ['preload']);
-        $this->assertDoesNotMatchRegularExpression('~title="' . $title . '"~', $content);
-        $this->assertDoesNotMatchRegularExpression('~preload="none"~', $content);
-        $this->assertMatchesRegularExpression('~controls="false"~', $content);
+        $this->assertNotRegExp('~title="' . $title . '"~', $content);
+        $this->assertNotRegExp('~preload="none"~', $content);
+        $this->assertRegExp('~controls="false"~', $content);
     }
 
     /**
@@ -135,8 +140,8 @@ class core_media_player_native_test extends \advanced_testcase {
      */
     public function test_replace_sources() {
         $urls = [
-            new \moodle_url('http://example.org/some_filename.mp4'),
-            new \moodle_url('http://example.org/some_filename_hires.mp4'),
+            new moodle_url('http://example.org/some_filename.mp4'),
+            new moodle_url('http://example.org/some_filename_hires.mp4'),
         ];
 
         $player = new media_test_native_plugin();
@@ -145,14 +150,14 @@ class core_media_player_native_test extends \advanced_testcase {
         $content = $player->embed($urls, $title, 0, 0, []);
 
         // Test sources present.
-        $this->assertStringContainsString('<source src="http://example.org/some_filename.mp4" />', $content);
-        $this->assertStringContainsString('<source src="http://example.org/some_filename_hires.mp4" />', $content);
+        $this->assertContains('<source src="http://example.org/some_filename.mp4" />', $content);
+        $this->assertContains('<source src="http://example.org/some_filename_hires.mp4" />', $content);
 
         // Change sources.
         $newsource = '<source src="http://example.org/new_filename.mp4" />';
         $content = media_test_native_plugin::replace_sources($content, $newsource);
-        $this->assertStringContainsString($newsource, $content);
-        $this->assertStringNotContainsString('<source src="http://example.org/some_filename.mp4" />', $content);
-        $this->assertStringNotContainsString('<source src="http://example.org/some_filename_hires.mp4" />', $content);
+        $this->assertContains($newsource, $content);
+        $this->assertNotContains('<source src="http://example.org/some_filename.mp4" />', $content);
+        $this->assertNotContains('<source src="http://example.org/some_filename_hires.mp4" />', $content);
     }
 }

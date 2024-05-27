@@ -21,7 +21,6 @@
  * @copyright  2015 onwards Ankit agarwal <ankit.agrr@gmail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later.
  */
-namespace core_notes;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -34,7 +33,7 @@ require_once($CFG->dirroot . '/notes/lib.php');
  * @copyright  2015 onwards Ankit agarwal <ankit.agrr@gmail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later.
  */
-class lib_test extends \advanced_testcase {
+class core_notes_lib_testcase extends advanced_testcase {
 
     /**
      * @var stdClass The user.
@@ -51,7 +50,7 @@ class lib_test extends \advanced_testcase {
      */
     private $tree;
 
-    public function setUp(): void {
+    public function setUp() {
         $this->user = $this->getDataGenerator()->create_user();
         $this->course = $this->getDataGenerator()->create_course();
         $this->tree = new \core_user\output\myprofile\tree();
@@ -73,8 +72,9 @@ class lib_test extends \advanced_testcase {
 
         // Check the node tree is correct.
         core_notes_myprofile_navigation($this->tree, $USER, $iscurrentuser, $this->course);
-        $reflector = new \ReflectionObject($this->tree);
+        $reflector = new ReflectionObject($this->tree);
         $nodes = $reflector->getProperty('nodes');
+        $nodes->setAccessible(true);
         $this->assertArrayHasKey('notes', $nodes->getValue($this->tree));
     }
 
@@ -89,8 +89,9 @@ class lib_test extends \advanced_testcase {
 
         // Check the node tree is correct.
         core_notes_myprofile_navigation($this->tree, $USER, $iscurrentuser, $this->course);
-        $reflector = new \ReflectionObject($this->tree);
+        $reflector = new ReflectionObject($this->tree);
         $nodes = $reflector->getProperty('nodes');
+        $nodes->setAccessible(true);
         $this->assertArrayNotHasKey('notes', $nodes->getValue($this->tree));
     }
 
@@ -108,8 +109,9 @@ class lib_test extends \advanced_testcase {
 
         // Check the node tree is correct.
         core_notes_myprofile_navigation($this->tree, $USER, $iscurrentuser, $this->course);
-        $reflector = new \ReflectionObject($this->tree);
+        $reflector = new ReflectionObject($this->tree);
         $nodes = $reflector->getProperty('nodes');
+        $nodes->setAccessible(true);
         $this->assertArrayNotHasKey('notes', $nodes->getValue($this->tree));
     }
 }

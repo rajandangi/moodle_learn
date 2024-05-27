@@ -14,9 +14,16 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace core;
+/**
+ * Test QR code functionality.
+ *
+ * @package    core
+ * @copyright  Moodle Pty Ltd
+ * @author     <juan@moodle.com>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
-use core_qrcode;
+defined('MOODLE_INTERNAL') || die();
 
 /**
  * A set of tests for some of the QR code functionality within Moodle.
@@ -26,7 +33,7 @@ use core_qrcode;
  * @author     <juan@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class qrcode_test extends \basic_testcase {
+class core_qrcode_testcase extends basic_testcase {
 
     /**
      * Basic test to generate a QR code and check that the library is not broken.
@@ -41,7 +48,7 @@ class qrcode_test extends \basic_testcase {
         $svgdata = $qrcode->getBarcodeSVGcode(1, 1);
 
         // Just check the SVG was generated.
-        $this->assertStringContainsString('<desc>' . $text . '</desc>', $svgdata);
-        $this->assertStringContainsString('fill="' . $color . '"', $svgdata);
+        $this->assertContains('<desc>' . $text . '</desc>', $svgdata);
+        $this->assertContains('fill="' . $color . '"', $svgdata);
     }
 }

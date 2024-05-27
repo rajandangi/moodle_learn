@@ -14,9 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace mod_forum;
-
-use mod_forum_tests_generator_trait;
+/**
+ * Tests for private reply functionality.
+ *
+ * @package    mod_forum
+ * @copyright  2019 Andrew Nicols <andrew@nicols.co.uk>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -28,18 +32,17 @@ require_once(__DIR__ . '/generator_trait.php');
 /**
  * Tests for private reply functionality.
  *
- * @package    mod_forum
  * @copyright  2019 Andrew Nicols <andrew@nicols.co.uk>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class private_replies_test extends \advanced_testcase {
+class private_replies extends advanced_testcase {
 
     use mod_forum_tests_generator_trait;
 
     /**
      * Setup before tests.
      */
-    public function setUp(): void {
+    public function setUp() {
         // We must clear the subscription caches. This has to be done both before each test, and after in case of other
         // tests using these functions.
         \mod_forum\subscriptions::reset_forum_cache();
@@ -48,7 +51,7 @@ class private_replies_test extends \advanced_testcase {
     /**
      * Tear down after tests.
      */
-    public function tearDown(): void {
+    public function tearDown() {
         // We must clear the subscription caches. This has to be done both before each test, and after in case of other
         // tests using these functions.
         \mod_forum\subscriptions::reset_forum_cache();

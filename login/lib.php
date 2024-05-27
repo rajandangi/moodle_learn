@@ -85,7 +85,7 @@ function core_login_process_password_reset($username, $email) {
     global $CFG, $DB;
 
     if (empty($username) && empty($email)) {
-        throw new \moodle_exception('cannotmailconfirm');
+        print_error('cannotmailconfirm');
     }
 
     // Next find the user account in the database which the requesting user claims to own.
@@ -135,7 +135,7 @@ function core_login_process_password_reset($username, $email) {
             if (send_password_change_info($user)) {
                 $pwresetstatus = PWRESET_STATUS_OTHEREMAILSENT;
             } else {
-                throw new \moodle_exception('cannotmailconfirm');
+                print_error('cannotmailconfirm');
             }
         } else {
             // The account the requesting user claims to be is entitled to change their password.
@@ -170,7 +170,7 @@ function core_login_process_password_reset($username, $email) {
                 if ($sendresult) {
                     $pwresetstatus = PWRESET_STATUS_TOKENSENT;
                 } else {
-                    throw new \moodle_exception('cannotmailconfirm');
+                    print_error('cannotmailconfirm');
                 }
             }
         }
@@ -253,13 +253,13 @@ function core_login_process_password_set($token) {
     if ($user->auth === 'nologin' or !is_enabled_auth($user->auth)) {
         // Bad luck - user is not able to login, do not let them set password.
         echo $OUTPUT->header();
-        throw new \moodle_exception('forgotteninvalidurl');
+        print_error('forgotteninvalidurl');
         die; // Never reached.
     }
 
     // Check this isn't guest user.
     if (isguestuser($user)) {
-        throw new \moodle_exception('cannotresetguestpwd');
+        print_error('cannotresetguestpwd');
     }
 
     // Token is correct, and unexpired.
@@ -284,7 +284,7 @@ function core_login_process_password_set($token) {
         $DB->delete_records('user_password_resets', array('id' => $user->tokenid));
         $userauth = get_auth_plugin($user->auth);
         if (!$userauth->user_update_password($user, $data->password)) {
-            throw new \moodle_exception('errorpasswordupdate', 'auth');
+            print_error('errorpasswordupdate', 'auth');
         }
         user_add_password_history($user->id, $data->password);
         if (!empty($CFG->passwordchangelogout)) {
@@ -352,14 +352,9 @@ function core_login_get_return_url() {
     if ($urltogo == ($CFG->wwwroot . '/')) {
         $homepage = get_home_page();
         // Go to my-moodle page instead of site homepage if defaulthomepage set to homepage_my.
-        if ($homepage === HOMEPAGE_MY && !isguestuser()) {
+        if ($homepage == HOMEPAGE_MY && !is_siteadmin() && !isguestuser()) {
             if ($urltogo == $CFG->wwwroot or $urltogo == $CFG->wwwroot.'/' or $urltogo == $CFG->wwwroot.'/index.php') {
                 $urltogo = $CFG->wwwroot.'/my/';
-            }
-        }
-        if ($homepage === HOMEPAGE_MYCOURSES && !isguestuser()) {
-            if ($urltogo == $CFG->wwwroot or $urltogo == $CFG->wwwroot.'/' or $urltogo == $CFG->wwwroot.'/index.php') {
-                $urltogo = $CFG->wwwroot.'/my/courses.php';
             }
         }
     }

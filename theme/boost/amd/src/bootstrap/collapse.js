@@ -1,7 +1,7 @@
 /**
  * --------------------------------------------------------------------------
- * Bootstrap (v4.6.2): collapse.js
- * Licensed under MIT (https://github.com/twbs/bootstrap/blob/main/LICENSE)
+ * Bootstrap (v4.5.0): collapse.js
+ * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)
  * --------------------------------------------------------------------------
  */
 
@@ -9,53 +9,57 @@ import $ from 'jquery'
 import Util from './util'
 
 /**
+ * ------------------------------------------------------------------------
  * Constants
+ * ------------------------------------------------------------------------
  */
 
-const NAME = 'collapse'
-const VERSION = '4.6.2'
-const DATA_KEY = 'bs.collapse'
-const EVENT_KEY = `.${DATA_KEY}`
-const DATA_API_KEY = '.data-api'
-const JQUERY_NO_CONFLICT = $.fn[NAME]
-
-const CLASS_NAME_SHOW = 'show'
-const CLASS_NAME_COLLAPSE = 'collapse'
-const CLASS_NAME_COLLAPSING = 'collapsing'
-const CLASS_NAME_COLLAPSED = 'collapsed'
-
-const DIMENSION_WIDTH = 'width'
-const DIMENSION_HEIGHT = 'height'
-
-const EVENT_SHOW = `show${EVENT_KEY}`
-const EVENT_SHOWN = `shown${EVENT_KEY}`
-const EVENT_HIDE = `hide${EVENT_KEY}`
-const EVENT_HIDDEN = `hidden${EVENT_KEY}`
-const EVENT_CLICK_DATA_API = `click${EVENT_KEY}${DATA_API_KEY}`
-
-const SELECTOR_ACTIVES = '.show, .collapsing'
-const SELECTOR_DATA_TOGGLE = '[data-toggle="collapse"]'
+const NAME                = 'collapse'
+const VERSION             = '4.5.0'
+const DATA_KEY            = 'bs.collapse'
+const EVENT_KEY           = `.${DATA_KEY}`
+const DATA_API_KEY        = '.data-api'
+const JQUERY_NO_CONFLICT  = $.fn[NAME]
 
 const Default = {
-  toggle: true,
-  parent: ''
+  toggle : true,
+  parent : ''
 }
 
 const DefaultType = {
-  toggle: 'boolean',
-  parent: '(string|element)'
+  toggle : 'boolean',
+  parent : '(string|element)'
 }
 
+const EVENT_SHOW           = `show${EVENT_KEY}`
+const EVENT_SHOWN          = `shown${EVENT_KEY}`
+const EVENT_HIDE           = `hide${EVENT_KEY}`
+const EVENT_HIDDEN         = `hidden${EVENT_KEY}`
+const EVENT_CLICK_DATA_API = `click${EVENT_KEY}${DATA_API_KEY}`
+
+const CLASS_NAME_SHOW       = 'show'
+const CLASS_NAME_COLLAPSE   = 'collapse'
+const CLASS_NAME_COLLAPSING = 'collapsing'
+const CLASS_NAME_COLLAPSED  = 'collapsed'
+
+const DIMENSION_WIDTH  = 'width'
+const DIMENSION_HEIGHT = 'height'
+
+const SELECTOR_ACTIVES     = '.show, .collapsing'
+const SELECTOR_DATA_TOGGLE = '[data-toggle="collapse"]'
+
 /**
- * Class definition
+ * ------------------------------------------------------------------------
+ * Class Definition
+ * ------------------------------------------------------------------------
  */
 
 class Collapse {
   constructor(element, config) {
     this._isTransitioning = false
-    this._element = element
-    this._config = this._getConfig(config)
-    this._triggerArray = [].slice.call(document.querySelectorAll(
+    this._element         = element
+    this._config          = this._getConfig(config)
+    this._triggerArray    = [].slice.call(document.querySelectorAll(
       `[data-toggle="collapse"][href="#${element.id}"],` +
       `[data-toggle="collapse"][data-target="#${element.id}"]`
     ))
@@ -65,7 +69,7 @@ class Collapse {
       const elem = toggleList[i]
       const selector = Util.getSelectorFromElement(elem)
       const filterElement = [].slice.call(document.querySelectorAll(selector))
-        .filter(foundElem => foundElem === element)
+        .filter((foundElem) => foundElem === element)
 
       if (selector !== null && filterElement.length > 0) {
         this._selector = selector
@@ -85,6 +89,7 @@ class Collapse {
   }
 
   // Getters
+
   static get VERSION() {
     return VERSION
   }
@@ -94,6 +99,7 @@ class Collapse {
   }
 
   // Public
+
   toggle() {
     if ($(this._element).hasClass(CLASS_NAME_SHOW)) {
       this.hide()
@@ -113,7 +119,7 @@ class Collapse {
 
     if (this._parent) {
       actives = [].slice.call(this._parent.querySelectorAll(SELECTOR_ACTIVES))
-        .filter(elem => {
+        .filter((elem) => {
           if (typeof this._config.parent === 'string') {
             return elem.getAttribute('data-parent') === this._config.parent
           }
@@ -248,14 +254,15 @@ class Collapse {
   dispose() {
     $.removeData(this._element, DATA_KEY)
 
-    this._config = null
-    this._parent = null
-    this._element = null
-    this._triggerArray = null
+    this._config          = null
+    this._parent          = null
+    this._element         = null
+    this._triggerArray    = null
     this._isTransitioning = null
   }
 
   // Private
+
   _getConfig(config) {
     config = {
       ...Default,
@@ -309,6 +316,7 @@ class Collapse {
   }
 
   // Static
+
   static _getTargetFromElement(element) {
     const selector = Util.getSelectorFromElement(element)
     return selector ? document.querySelector(selector) : null
@@ -316,12 +324,12 @@ class Collapse {
 
   static _jQueryInterface(config) {
     return this.each(function () {
-      const $element = $(this)
-      let data = $element.data(DATA_KEY)
+      const $this   = $(this)
+      let data      = $this.data(DATA_KEY)
       const _config = {
         ...Default,
-        ...$element.data(),
-        ...(typeof config === 'object' && config ? config : {})
+        ...$this.data(),
+        ...typeof config === 'object' && config ? config : {}
       }
 
       if (!data && _config.toggle && typeof config === 'string' && /show|hide/.test(config)) {
@@ -330,14 +338,13 @@ class Collapse {
 
       if (!data) {
         data = new Collapse(this, _config)
-        $element.data(DATA_KEY, data)
+        $this.data(DATA_KEY, data)
       }
 
       if (typeof config === 'string') {
         if (typeof data[config] === 'undefined') {
           throw new TypeError(`No method named "${config}"`)
         }
-
         data[config]()
       }
     })
@@ -345,7 +352,9 @@ class Collapse {
 }
 
 /**
- * Data API implementation
+ * ------------------------------------------------------------------------
+ * Data Api implementation
+ * ------------------------------------------------------------------------
  */
 
 $(document).on(EVENT_CLICK_DATA_API, SELECTOR_DATA_TOGGLE, function (event) {
@@ -360,14 +369,16 @@ $(document).on(EVENT_CLICK_DATA_API, SELECTOR_DATA_TOGGLE, function (event) {
 
   $(selectors).each(function () {
     const $target = $(this)
-    const data = $target.data(DATA_KEY)
-    const config = data ? 'toggle' : $trigger.data()
+    const data    = $target.data(DATA_KEY)
+    const config  = data ? 'toggle' : $trigger.data()
     Collapse._jQueryInterface.call($target, config)
   })
 })
 
 /**
+ * ------------------------------------------------------------------------
  * jQuery
+ * ------------------------------------------------------------------------
  */
 
 $.fn[NAME] = Collapse._jQueryInterface

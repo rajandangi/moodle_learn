@@ -14,7 +14,17 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace mod_resource;
+/**
+ * PHPUnit data generator tests.
+ *
+ * @package mod_resource
+ * @category phpunit
+ * @copyright 2013 The Open University
+ * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+defined('MOODLE_INTERNAL') || die();
+
 
 /**
  * PHPUnit data generator testcase.
@@ -25,7 +35,7 @@ namespace mod_resource;
  * @copyright 2013 The Open University
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class generator_test extends \advanced_testcase {
+class mod_resource_generator_testcase extends advanced_testcase {
 
     public function test_generator() {
         global $DB, $SITE;
@@ -56,7 +66,7 @@ class generator_test extends \advanced_testcase {
         $this->assertEquals($SITE->id, $cm->course);
 
         // Check the context is correct.
-        $context = \context_module::instance($cm->id);
+        $context = context_module::instance($cm->id);
         $this->assertEquals($resource->cmid, $context->instanceid);
 
         // Check that generated resource module contains a file.

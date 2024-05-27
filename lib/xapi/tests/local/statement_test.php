@@ -49,7 +49,7 @@ defined('MOODLE_INTERNAL') || die();
  * @copyright  2020 Ferran Recio
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class statement_test extends advanced_testcase {
+class statement_testcase extends advanced_testcase {
 
     /**
      * Returns a valid item for a specific attribute.
@@ -171,10 +171,10 @@ class statement_test extends advanced_testcase {
         $alldefined = array_merge($extras, $extravalues);
         foreach ($allextras as $extra) {
             if (in_array($extra, $alldefined)) {
-                $this->assertObjectHasProperty($extra, $data);
+                $this->assertObjectHasAttribute($extra, $data);
                 $this->assertNotEmpty($data->$extra);
             } else {
-                $this->assertObjectNotHasProperty($extra, $data);
+                $this->assertObjectNotHasAttribute($extra, $data);
             }
         }
     }
@@ -184,7 +184,7 @@ class statement_test extends advanced_testcase {
      *
      * @return  array
      */
-    public function create_provider(): array {
+    public function create_provider() : array {
         return [
             'Agent statement with no extras' => [
                 true, [], []
@@ -305,10 +305,10 @@ class statement_test extends advanced_testcase {
         $alldefined = array_merge($extras, $extravalues);
         foreach ($allextras as $extra) {
             if (in_array($extra, $alldefined)) {
-                $this->assertObjectHasProperty($extra, $data);
+                $this->assertObjectHasAttribute($extra, $data);
                 $this->assertNotEmpty($data->object);
             } else {
-                $this->assertObjectNotHasProperty($extra, $data);
+                $this->assertObjectNotHasAttribute($extra, $data);
             }
         }
     }
@@ -340,7 +340,7 @@ class statement_test extends advanced_testcase {
 
         // Check resulting json.
         $statementdata = json_decode(json_encode($statement));
-        $this->assertObjectHasProperty('attachments', $statementdata);
+        $this->assertObjectHasAttribute('attachments', $statementdata);
         $this->assertNotEmpty($statementdata->attachments);
         $this->assertCount(1, $statementdata->attachments);
     }
@@ -382,7 +382,7 @@ class statement_test extends advanced_testcase {
         $this->assertEquals($itemdata->length, $attachmentdata->length);
 
         $statementdata = json_decode(json_encode($statement));
-        $this->assertObjectHasProperty('attachments', $statementdata);
+        $this->assertObjectHasAttribute('attachments', $statementdata);
         $this->assertNotEmpty($statementdata->attachments);
         $this->assertCount(1, $statementdata->attachments);
 
@@ -413,7 +413,7 @@ class statement_test extends advanced_testcase {
      *
      * @return  array
      */
-    public function invalid_gets_provider(): array {
+    public function invalid_gets_provider() : array {
         return [
             'Method get_user on empty statement' => ['get_user', true],
             'Method get_all_users on empty statement' => ['get_all_users', true],
@@ -532,7 +532,7 @@ class statement_test extends advanced_testcase {
      *
      * @return  array
      */
-    public function invalid_data_provider(): array {
+    public function invalid_data_provider() : array {
         return [
             'No actor, no verb, no object'  => [false, false, false],
             'No actor, verb, no object'     => [false, true, false],

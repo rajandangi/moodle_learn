@@ -39,7 +39,7 @@ require_once($CFG->dirroot.'/cache/locallib.php');
  * @copyright  2012 Sam Hemelryk
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class cache_disabled extends cache implements cache_loader_with_locking {
+class cache_disabled extends cache {
 
     /**
      * Constructs the cache.
@@ -61,27 +61,14 @@ class cache_disabled extends cache implements cache_loader_with_locking {
      * Gets a key from the cache.
      *
      * @param int|string $key
-     * @param int $requiredversion Minimum required version of the data or cache::VERSION_NONE
      * @param int $strictness Unused.
-     * @param mixed &$actualversion If specified, will be set to the actual version number retrieved
      * @return bool
      */
-    protected function get_implementation($key, int $requiredversion, int $strictness, &$actualversion = null) {
-        $datasource = $this->get_datasource();
-        if ($datasource !== false) {
-            if ($requiredversion === cache::VERSION_NONE) {
-                return $datasource->load_for_cache($key);
-            } else {
-                if (!$datasource instanceof cache_data_source_versionable) {
-                    throw new \coding_exception('Data source is not versionable');
-                }
-                $result = $datasource->load_for_cache_versioned($key, $requiredversion, $actualversion);
-                if ($result && $actualversion < $requiredversion) {
-                    throw new \coding_exception('Data source returned outdated version');
-                }
-                return $result;
-            }
+    public function get($key, $strictness = IGNORE_MISSING) {
+        if ($this->get_datasource() !== false) {
+            return $this->get_datasource()->load_for_cache($key);
         }
+
         return false;
     }
 
@@ -104,12 +91,10 @@ class cache_disabled extends cache implements cache_loader_with_locking {
      * Sets a key value pair in the cache.
      *
      * @param int|string $key Unused.
-     * @param int $version Unused.
      * @param mixed $data Unused.
-     * @param bool $setparents Unused.
      * @return bool
      */
-    protected function set_implementation($key, int $version, $data, bool $setparents = true): bool {
+    public function set($key, $data) {
         return false;
     }
 
@@ -200,36 +185,6 @@ class cache_disabled extends cache implements cache_loader_with_locking {
     public function purge() {
         return true;
     }
-
-    /**
-     * Pretend that we got a lock to avoid errors.
-     *
-     * @param int|string $key
-     * @return bool
-     */
-    public function acquire_lock($key): bool {
-        return true;
-    }
-
-    /**
-     * Pretend that we released a lock to avoid errors.
-     *
-     * @param int|string $key
-     * @return bool
-     */
-    public function release_lock($key): bool {
-        return true;
-    }
-
-    /**
-     * Pretend that we have a lock to avoid errors.
-     *
-     * @param int|string $key
-     * @return bool
-     */
-    public function check_lock_state($key): bool {
-        return true;
-    }
 }
 
 /**
@@ -239,8 +194,6 @@ class cache_disabled extends cache implements cache_loader_with_locking {
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class cache_factory_disabled extends cache_factory {
-    /** @var array Array of temporary caches in use. */
-    protected static $tempcaches = [];
 
     /**
      * Returns an instance of the cache_factor method.
@@ -295,27 +248,6 @@ class cache_factory_disabled extends cache_factory {
      * @return cache_application|cache_session|cache_request
      */
     public function create_cache_from_definition($component, $area, array $identifiers = array(), $unused = null) {
-        // Temporary in-memory caches are sometimes allowed when caching is disabled.
-        if (\core_cache\allow_temporary_caches::is_allowed() && !$identifiers) {
-            $key = $component . '/' . $area;
-            if (array_key_exists($key, self::$tempcaches)) {
-                $cache = self::$tempcaches[$key];
-            } else {
-                $definition = $this->create_definition($component, $area);
-                // The cachestore_static class returns true to all three 'SUPPORTS_' checks so it
-                // can be used with all definitions.
-                $store = new cachestore_static('TEMP:' . $component . '/' . $area);
-                $store->initialise($definition);
-                // We need to use a cache loader wrapper rather than directly returning the store,
-                // or it wouldn't have support for versioning. The cache_application class is used
-                // (rather than cache_request which might make more sense logically) because it
-                // includes support for locking, which might be necessary for some caches.
-                $cache = new cache_application($definition, $store);
-                self::$tempcaches[$key] = $cache;
-            }
-            return $cache;
-        }
-
         // Regular cache definitions are cached inside create_definition().  This is not the case for disabledlib.php
         // definitions as they use load_adhoc().  They are built as a new object on each call.
         // We do not need to clone the definition because we know it's new.
@@ -323,15 +255,6 @@ class cache_factory_disabled extends cache_factory {
         $definition->set_identifiers($identifiers);
         $cache = $this->create_cache($definition);
         return $cache;
-    }
-
-    /**
-     * Removes all temporary caches.
-     *
-     * Don't call this directly - used by {@see \core_cache\allow_temporary_caches}.
-     */
-    public static function clear_temporary_caches(): void {
-        self::$tempcaches = [];
     }
 
     /**
@@ -390,13 +313,13 @@ class cache_factory_disabled extends cache_factory {
             self::set_state(self::STATE_INITIALISING);
             if ($class === 'cache_config_disabled') {
                 $configuration = $class::create_default_configuration();
-                $this->configs[$class] = new $class;
             } else {
                 $configuration = false;
-                // If we need a writer, we should get the classname from the generic factory.
-                // This is so alternative classes can be used if a different writer is required.
-                $this->configs[$class] = parent::get_disabled_writer();
+                if (!cache_config::config_file_exists()) {
+                    cache_config_writer::create_default_configuration(true);
+                }
             }
+            $this->configs[$class] = new $class;
             $this->configs[$class]->load($configuration);
         }
         self::set_state(self::STATE_READY);

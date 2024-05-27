@@ -14,11 +14,21 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace tool_dataprivacy;
+/**
+ * Expired data requests tests.
+ *
+ * @package    tool_dataprivacy
+ * @copyright  2018 Michael Hawkins
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
-use data_privacy_testcase;
+use tool_dataprivacy\api;
+use tool_dataprivacy\category;
+use tool_dataprivacy\data_request;
+use tool_dataprivacy\purpose;
 
 defined('MOODLE_INTERNAL') || die();
+global $CFG;
 
 require_once('data_privacy_testcase.php');
 
@@ -29,12 +39,12 @@ require_once('data_privacy_testcase.php');
  * @copyright  2018 Michael Hawkins
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class expired_data_requests_test extends data_privacy_testcase {
+class tool_dataprivacy_expired_data_requests_testcase extends data_privacy_testcase {
 
     /**
      * Test tearDown.
      */
-    public function tearDown(): void {
+    public function tearDown() {
         \core_privacy\local\request\writer::reset();
     }
 
@@ -49,7 +59,7 @@ class expired_data_requests_test extends data_privacy_testcase {
         // Set up test users.
         $this->setAdminUser();
         $studentuser = $this->getDataGenerator()->create_user();
-        $studentusercontext = \context_user::instance($studentuser->id);
+        $studentusercontext = context_user::instance($studentuser->id);
 
         $dpouser = $this->getDataGenerator()->create_user();
         $this->assign_site_dpo($dpouser);

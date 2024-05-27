@@ -27,26 +27,26 @@ $preventskip = optional_param('preventskip', '', PARAM_INT); // Prevent Skip vie
 
 if (!empty($id)) {
     if (! $cm = get_coursemodule_from_id('scorm', $id, 0, true)) {
-        throw new \moodle_exception('invalidcoursemodule');
+        print_error('invalidcoursemodule');
     }
     if (! $course = $DB->get_record("course", array("id" => $cm->course))) {
-        throw new \moodle_exception('coursemisconf');
+        print_error('coursemisconf');
     }
     if (! $scorm = $DB->get_record("scorm", array("id" => $cm->instance))) {
-        throw new \moodle_exception('invalidcoursemodule');
+        print_error('invalidcoursemodule');
     }
 } else if (!empty($a)) {
     if (! $scorm = $DB->get_record("scorm", array("id" => $a))) {
-        throw new \moodle_exception('invalidcoursemodule');
+        print_error('invalidcoursemodule');
     }
     if (! $course = $DB->get_record("course", array("id" => $scorm->course))) {
-        throw new \moodle_exception('coursemisconf');
+        print_error('coursemisconf');
     }
     if (! $cm = get_coursemodule_from_instance("scorm", $scorm->id, $course->id, true)) {
-        throw new \moodle_exception('invalidcoursemodule');
+        print_error('invalidcoursemodule');
     }
 } else {
-    throw new \moodle_exception('missingparameter');
+    print_error('missingparameter');
 }
 
 $url = new moodle_url('/mod/scorm/view.php', array('id' => $cm->id));
@@ -136,14 +136,9 @@ if (empty($preventskip) && empty($launch) && (has_capability('mod/scorm:skipview
 
 $PAGE->set_title($pagetitle);
 $PAGE->set_heading($course->fullname);
-// Let the module handle the display.
-if (!empty($action) && $action == 'delete' && confirm_sesskey() && has_capability('mod/scorm:deleteownresponses', $contextmodule)) {
-    $PAGE->activityheader->disable();
-} else {
-    $PAGE->activityheader->set_description('');
-}
-
 echo $OUTPUT->header();
+echo $OUTPUT->heading(format_string($scorm->name));
+
 if (!empty($action) && confirm_sesskey() && has_capability('mod/scorm:deleteownresponses', $contextmodule)) {
     if ($action == 'delete') {
         $confirmurl = new moodle_url($PAGE->url, array('action' => 'deleteconfirm'));
@@ -152,11 +147,14 @@ if (!empty($action) && confirm_sesskey() && has_capability('mod/scorm:deleteownr
         exit;
     } else if ($action == 'deleteconfirm') {
         // Delete this users attempts.
-        scorm_delete_tracks($scorm->id, null, $USER->id);
+        $DB->delete_records('scorm_scoes_track', array('userid' => $USER->id, 'scormid' => $scorm->id));
         scorm_update_grades($scorm, $USER->id, true);
         echo $OUTPUT->notification(get_string('scormresponsedeleted', 'scorm'), 'notifysuccess');
     }
 }
+
+$currenttab = 'info';
+require($CFG->dirroot . '/mod/scorm/tabs.php');
 
 // Print the main part of the page.
 $attemptstatus = '';
@@ -164,19 +162,20 @@ if (empty($launch) && ($scorm->displayattemptstatus == SCORM_DISPLAY_ATTEMPTSTAT
          $scorm->displayattemptstatus == SCORM_DISPLAY_ATTEMPTSTATUS_ENTRY)) {
     $attemptstatus = scorm_get_attempt_status($USER, $scorm, $cm);
 }
-echo $OUTPUT->box(format_module_intro('scorm', $scorm, $cm->id), '', 'intro');
+echo $OUTPUT->box(format_module_intro('scorm', $scorm, $cm->id).$attemptstatus, 'container', 'intro');
 
-// Check if SCORM available. No need to display warnings because activity dates are displayed at the top of the page.
+// Check if SCORM available.
 list($available, $warnings) = scorm_get_availability_status($scorm);
+if (!$available) {
+    $reason = current(array_keys($warnings));
+    echo $OUTPUT->box(get_string($reason, "scorm", $warnings[$reason]), "container");
+}
 
 if ($available && empty($launch)) {
     scorm_print_launch($USER, $scorm, 'view.php?id='.$cm->id, $cm);
 }
-
-echo $OUTPUT->box($attemptstatus);
-
 if (!empty($forcejs)) {
-    $message = $OUTPUT->box(get_string("forcejavascriptmessage", "scorm"), "forcejavascriptmessage");
+    $message = $OUTPUT->box(get_string("forcejavascriptmessage", "scorm"), "container forcejavascriptmessage");
     echo html_writer::tag('noscript', $message);
 }
 

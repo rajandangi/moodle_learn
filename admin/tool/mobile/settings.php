@@ -26,9 +26,11 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-use core_admin\local\settings\autocomplete;
-
 if ($hassiteconfig) {
+
+    $ADMIN->add('root', new admin_category('mobileapp', new lang_string('mobileapp', 'tool_mobile')), 'development');
+
+    $temp = new admin_settingpage('mobilesettings', new lang_string('mobilesettings', 'tool_mobile'), 'moodle/site:config', false);
 
     // We should wait to the installation to finish since we depend on some configuration values that are set once
     // the admin user profile is configured.
@@ -36,23 +38,10 @@ if ($hassiteconfig) {
         $enablemobiledocurl = new moodle_url(get_docs_url('Enable_mobile_web_services'));
         $enablemobiledoclink = html_writer::link($enablemobiledocurl, new lang_string('documentation'));
         $default = is_https() ? 1 : 0;
-        $optionalsubsystems = $ADMIN->locate('optionalsubsystems');
-        $optionalsubsystems->add(new admin_setting_enablemobileservice('enablemobilewebservice',
+        $temp->add(new admin_setting_enablemobileservice('enablemobilewebservice',
                 new lang_string('enablemobilewebservice', 'admin'),
                 new lang_string('configenablemobilewebservice', 'admin', $enablemobiledoclink), $default));
     }
-
-    $ismobilewsdisabled = empty($CFG->enablemobilewebservice);
-    $ADMIN->add('root',
-        new admin_category('mobileapp', new lang_string('mobileapp', 'tool_mobile'), $ismobilewsdisabled),
-        'development'
-    );
-
-    $temp = new admin_settingpage('mobilesettings',
-        new lang_string('mobilesettings', 'tool_mobile'),
-        'moodle/site:config',
-        $ismobilewsdisabled
-    );
 
     $temp->add(new admin_setting_configtext('tool_mobile/apppolicy', new lang_string('apppolicy', 'tool_mobile'),
         new lang_string('apppolicy_help', 'tool_mobile'), '', PARAM_URL));
@@ -69,8 +58,8 @@ if ($hassiteconfig) {
         $featuresnotice = $OUTPUT->render($notify);
     }
 
-    $hideappsubscription = (isset($CFG->disablemobileappsubscription) && !empty($CFG->disablemobileappsubscription));
-    $hideappsubscription = $ismobilewsdisabled || $hideappsubscription;
+    $hideappsubscription = empty($CFG->enablemobilewebservice);
+    $hideappsubscription = $hideappsubscription || (isset($CFG->disablemobileappsubscription) && !empty($CFG->disablemobileappsubscription));
 
     $ADMIN->add(
         'mobileapp',
@@ -88,7 +77,7 @@ if ($hassiteconfig) {
         'mobileauthentication',
         new lang_string('mobileauthentication', 'tool_mobile'),
         'moodle/site:config',
-        $ismobilewsdisabled
+        empty($CFG->enablemobilewebservice)
     );
 
     $temp->add(new admin_setting_heading('tool_mobile/moodleappsportalfeaturesauth', '', $featuresnotice));
@@ -101,19 +90,6 @@ if ($hassiteconfig) {
     $temp->add(new admin_setting_configselect('tool_mobile/typeoflogin',
                 new lang_string('typeoflogin', 'tool_mobile'),
                 new lang_string('typeoflogin_desc', 'tool_mobile'), 1, $options));
-
-    $options = [
-        tool_mobile\api::AUTOLOGOUT_DISABLED => new lang_string('never'),
-        tool_mobile\api::AUTOLOGOUT_INMEDIATE => new lang_string('autologoutinmediate', 'tool_mobile'),
-        tool_mobile\api::AUTOLOGOUT_CUSTOM => new lang_string('autologoutcustom', 'tool_mobile'),
-    ];
-    $temp->add(new admin_setting_configselect('tool_mobile/autologout',
-        new lang_string('autologout', 'tool_mobile'),
-        new lang_string('autologout_desc', 'tool_mobile'), 0, $options));
-
-    $temp->add(new admin_setting_configduration('tool_mobile/autologouttime',
-        new lang_string('autologouttime', 'tool_mobile'), '', DAYSECS));
-    $temp->hide_if('tool_mobile/autologouttime', 'tool_mobile/autologout', 'neq', tool_mobile\api::AUTOLOGOUT_CUSTOM);
 
     $options = [
         tool_mobile\api::QR_CODE_DISABLED => new lang_string('qrcodedisabled', 'tool_mobile'),
@@ -130,16 +106,6 @@ if ($hassiteconfig) {
                 new lang_string('qrcodetype', 'tool_mobile'),
                 new lang_string('qrcodetype_desc', 'tool_mobile'), $qrcodetypedefault, $options));
 
-    $temp->add(new admin_setting_configduration('tool_mobile/qrkeyttl',
-        new lang_string('qrkeyttl', 'tool_mobile'),
-        new lang_string('qrkeyttl_desc', 'tool_mobile'), tool_mobile\api::LOGIN_QR_KEY_TTL, MINSECS));
-    $temp->hide_if('tool_mobile/qrkeyttl', 'tool_mobile/qrcodetype', 'neq', tool_mobile\api::QR_CODE_LOGIN);
-
-    $temp->add(new admin_setting_configcheckbox('tool_mobile/qrsameipcheck',
-                new lang_string('qrsameipcheck', 'tool_mobile'),
-                new lang_string('qrsameipcheck_desc', 'tool_mobile'), 1));
-    $temp->hide_if('tool_mobile/qrsameipcheck', 'tool_mobile/qrcodetype', 'neq', tool_mobile\api::QR_CODE_LOGIN);
-
     $temp->add(new admin_setting_configtext('tool_mobile/forcedurlscheme',
                 new lang_string('forcedurlscheme_key', 'tool_mobile'),
                 new lang_string('forcedurlscheme', 'tool_mobile'), 'moodlemobile', PARAM_NOTAGS));
@@ -148,18 +114,6 @@ if ($hassiteconfig) {
                 new lang_string('minimumversion_key', 'tool_mobile'),
                 new lang_string('minimumversion', 'tool_mobile'), '', PARAM_NOTAGS));
 
-    $options = [
-        60 => new lang_string('numminutes', '', 1),
-        180 => new lang_string('numminutes', '', 3),
-        360 => new lang_string('numminutes', '', 6),
-        900 => new lang_string('numminutes', '', 15),
-        1800 => new lang_string('numminutes', '', 30),
-        3600 => new lang_string('numminutes', '', 60)
-    ];
-    $temp->add(new admin_setting_configselect('tool_mobile/autologinmintimebetweenreq',
-        new lang_string('autologinmintimebetweenreq', 'tool_mobile'),
-        new lang_string('autologinmintimebetweenreq_desc', 'tool_mobile'), 360, $options));
-
     $ADMIN->add('mobileapp', $temp);
 
     // Appearance related settings.
@@ -167,7 +121,7 @@ if ($hassiteconfig) {
         'mobileappearance',
         new lang_string('mobileappearance', 'tool_mobile'),
         'moodle/site:config',
-        $ismobilewsdisabled
+        empty($CFG->enablemobilewebservice)
     );
 
     if (!empty($featuresnotice)) {
@@ -208,7 +162,7 @@ if ($hassiteconfig) {
         'mobilefeatures',
         new lang_string('mobilefeatures', 'tool_mobile'),
         'moodle/site:config',
-        $ismobilewsdisabled
+        empty($CFG->enablemobilewebservice)
     );
 
     if (!empty($featuresnotice)) {
@@ -233,27 +187,6 @@ if ($hassiteconfig) {
     $temp->add(new admin_setting_configtextarea('tool_mobile/custommenuitems',
                 new lang_string('custommenuitems', 'tool_mobile'),
                 new lang_string('custommenuitems_desc', 'tool_mobile'), '', PARAM_RAW, '50', '10'));
-
-    // File type exclusionlist.
-    $choices = [];
-    foreach (core_filetypes::get_types() as $key => $info) {
-        $text = '.' . $key;
-        if (!empty($info['type'])) {
-            $text .= ' (' . $info['type'] . ')';
-        }
-        $choices[$key] = $text;
-    }
-
-    $attributes = [
-        'manageurl' => new \moodle_url('/admin/tool/filetypes/index.php'),
-        'managetext' => get_string('managefiletypes', 'tool_mobile'),
-        'multiple' => true,
-        'delimiter' => ',',
-        'placeholder' => get_string('filetypeexclusionlistplaceholder', 'tool_mobile')
-    ];
-    $temp->add(new autocomplete('tool_mobile/filetypeexclusionlist',
-        new lang_string('filetypeexclusionlist', 'tool_mobile'),
-        new lang_string('filetypeexclusionlist_desc', 'tool_mobile'), array(), $choices, $attributes));
 
     $temp->add(new admin_setting_heading('tool_mobile/language',
                 new lang_string('language'), ''));

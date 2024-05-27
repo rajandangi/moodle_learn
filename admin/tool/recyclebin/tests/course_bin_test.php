@@ -14,10 +14,15 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace tool_recyclebin;
+/**
+ * Recycle bin tests.
+ *
+ * @package    tool_recyclebin
+ * @copyright  2015 University of Kent
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
-use mod_quiz\quiz_attempt;
-use stdClass;
+defined('MOODLE_INTERNAL') || die();
 
 /**
  * Recycle bin course tests.
@@ -26,10 +31,10 @@ use stdClass;
  * @copyright  2015 University of Kent
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class course_bin_test extends \advanced_testcase {
+class tool_recyclebin_course_bin_tests extends advanced_testcase {
 
     /**
-     * @var \stdClass $course
+     * @var stdClass $course
      */
     protected $course;
 
@@ -41,7 +46,7 @@ class course_bin_test extends \advanced_testcase {
     /**
      * Setup for each test.
      */
-    protected function setUp(): void {
+    protected function setUp() {
         $this->resetAfterTest(true);
         $this->setAdminUser();
 
@@ -67,7 +72,7 @@ class course_bin_test extends \advanced_testcase {
         course_delete_module($this->quiz->cmid);
 
         // Now, run the course module deletion adhoc task.
-        \phpunit_util::run_all_adhoc_tasks();
+        phpunit_util::run_all_adhoc_tasks();
 
         // Check the course module is now in the recycle bin.
         $this->assertEquals(1, $DB->count_records('tool_recyclebin_course'));
@@ -111,7 +116,7 @@ class course_bin_test extends \advanced_testcase {
         course_delete_module($this->quiz->cmid);
 
         // Now, run the course module deletion adhoc task.
-        \phpunit_util::run_all_adhoc_tasks();
+        phpunit_util::run_all_adhoc_tasks();
 
         // Try purging.
         $recyclebin = new \tool_recyclebin\course_bin($this->course->id);
@@ -136,7 +141,7 @@ class course_bin_test extends \advanced_testcase {
         course_delete_module($this->quiz->cmid);
 
         // Now, run the course module deletion adhoc task.
-        \phpunit_util::run_all_adhoc_tasks();
+        phpunit_util::run_all_adhoc_tasks();
 
         // Set deleted date to the distant past.
         $recyclebin = new \tool_recyclebin\course_bin($this->course->id);
@@ -152,7 +157,7 @@ class course_bin_test extends \advanced_testcase {
         course_delete_module($book->cmid);
 
         // Now, run the course module deletion adhoc task.
-        \phpunit_util::run_all_adhoc_tasks();
+        phpunit_util::run_all_adhoc_tasks();
 
         // Should have 2 items now.
         $this->assertEquals(2, count($recyclebin->get_items()));
@@ -190,11 +195,6 @@ class course_bin_test extends \advanced_testcase {
                 (object)['plugin' => 'backup', 'name' => 'backup_auto_storage', 'value' => 2],
                 (object)['plugin' => 'backup', 'name' => 'backup_auto_destination', 'value' => true],
             ]],
-
-            'restore/restore_general_users moodle' => [[
-                (object)['plugin' => 'restore', 'name' => 'restore_general_users', 'value' => 0],
-                (object)['plugin' => 'restore', 'name' => 'restore_general_groups', 'value' => 0],
-            ]],
         ];
     }
 
@@ -223,7 +223,7 @@ class course_bin_test extends \advanced_testcase {
         // Delete quiz.
         $cm = get_coursemodule_from_instance('quiz', $this->quiz->id);
         course_delete_module($cm->id);
-        \phpunit_util::run_all_adhoc_tasks();
+        phpunit_util::run_all_adhoc_tasks();
         $quizzes = get_coursemodules_in_course('quiz', $this->course->id);
         $this->assertEquals(0, count($quizzes));
 
@@ -243,29 +243,6 @@ class course_bin_test extends \advanced_testcase {
         $attemptobj = quiz_attempt::create($attempt->id);
         $this->assertEquals($student->id, $attemptobj->get_userid());
         $this->assertEquals(true, $attemptobj->is_finished());
-    }
-
-    /**
-     * Test that the activity is NOT stored in bin when
-     * in Automated backup setup settings "backup_auto_activities" is disabled.
-     *
-     * @dataProvider recycle_bin_settings_provider
-     * @covers ::store_item
-     */
-    public function test_coursemodule_restore_with_activity_setting_disabled() {
-
-        // Set the configuration to not include activities in the automated backup.
-        set_config('backup_auto_activities', false, 'backup');
-
-        // Delete the course module.
-        course_delete_module($this->quiz->cmid);
-
-        // Now, run the course module deletion adhoc task.
-        \phpunit_util::run_all_adhoc_tasks();
-
-        // Check there is no items in the recycle bin.
-        $recyclebin = new \tool_recyclebin\course_bin($this->course->id);
-        $this->assertEquals(0, count($recyclebin->get_items()));
     }
 
     /**
@@ -293,7 +270,7 @@ class course_bin_test extends \advanced_testcase {
         // Delete quiz.
         $cm = get_coursemodule_from_instance('quiz', $this->quiz->id);
         course_delete_module($cm->id);
-        \phpunit_util::run_all_adhoc_tasks();
+        phpunit_util::run_all_adhoc_tasks();
         $quizzes = get_coursemodules_in_course('quiz', $this->course->id);
         $this->assertEquals(0, count($quizzes));
 
@@ -326,8 +303,8 @@ class course_bin_test extends \advanced_testcase {
         quiz_add_quiz_question($numq->id, $quiz);
 
         // Create quiz attempt.
-        $quizobj = \mod_quiz\quiz_settings::create($quiz->id, $student->id);
-        $quba = \question_engine::make_questions_usage_by_activity('mod_quiz', $quizobj->get_context());
+        $quizobj = quiz::create($quiz->id, $student->id);
+        $quba = question_engine::make_questions_usage_by_activity('mod_quiz', $quizobj->get_context());
         $quba->set_preferred_behaviour($quizobj->get_quiz()->preferredbehaviour);
         $timenow = time();
         $attempt = quiz_create_attempt($quizobj, 1, false, $timenow, false, $student->id);

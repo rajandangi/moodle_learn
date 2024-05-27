@@ -22,7 +22,7 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace core_calendar;
+defined('MOODLE_INTERNAL') || die();
 
 use core_calendar\local\event\entities\action_event;
 use core_calendar\local\event\value_objects\action;
@@ -31,17 +31,13 @@ use core_calendar\local\event\value_objects\event_times;
 use core_calendar\local\event\entities\event_collection_interface;
 use core_calendar\local\event\entities\event_interface;
 
-defined('MOODLE_INTERNAL') || die;
-
 /**
  * Action event testcase.
  *
- * @package core_calendar
- * @category test
  * @copyright 2017 Cameron Ball <cameron@cameron1729.xyz>
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class action_event_test extends \advanced_testcase {
+class core_calendar_action_event_testcase extends advanced_testcase {
     /**
      * Test event class getters.
      *
@@ -71,7 +67,7 @@ class action_event_test extends \advanced_testcase {
                     'event' => new core_calendar_action_event_test_event(),
                     'action' => new action(
                         'action 1',
-                        new \moodle_url('http://example.com'),
+                        new moodle_url('http://example.com'),
                         2,
                         true
                     )
@@ -82,7 +78,7 @@ class action_event_test extends \advanced_testcase {
                     'event' => new core_calendar_action_event_test_event(),
                     'action' => new action(
                         'action 2',
-                        new \moodle_url('http://example.com'),
+                        new moodle_url('http://example.com'),
                         5,
                         false
                     )
@@ -200,7 +196,7 @@ class core_calendar_action_event_test_event_collection implements event_collecti
         return 2;
     }
 
-    public function getIterator(): \Traversable {
+    public function getIterator() {
         foreach ($this->events as $event) {
             yield $event;
         }

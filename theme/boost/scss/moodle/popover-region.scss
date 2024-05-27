@@ -1,12 +1,13 @@
-$standard-border: 1px solid $popover-standard-border-color;
+$toggle-width: 25px;
+$standard-border: 1px solid #ddd;
 $region-container-height: 500px;
 $region-container-width: 380px;
 $region-container-z-index: 1;
 $region-header-height: 25px;
 $region-footer-height: 30px;
-$content-item-hover-colour-bg: $primary;
-$content-item-hover-colour-text: $white;
-$content-item-selected-colour-bg: #3279b3;
+$content-item-hover-colour-bg: #79b5e6;
+$content-item-hover-colour-text: #fff;
+$content-item-selected-colour-bg: #4f94cd;
 $content-item-unread-colour: #f4f4f4;
 $content-header-footer-height: $region-header-height + $region-footer-height;
 
@@ -49,7 +50,7 @@ $content-header-footer-height: $region-header-height + $region-footer-height;
         display: inline-block;
         border-left: 10px solid transparent;
         border-right: 10px solid transparent;
-        border-bottom: 10px solid $popover-standard-border-color;
+        border-bottom: 10px solid #ddd;
         position: absolute;
         bottom: 0;
         right: 7px;
@@ -60,7 +61,7 @@ $content-header-footer-height: $region-header-height + $region-footer-height;
         display: inline-block;
         border-left: 9px solid transparent;
         border-right: 9px solid transparent;
-        border-bottom: 9px solid $popover-region-toggle-border-bottom-color;
+        border-bottom: 9px solid #fff;
         position: absolute;
         bottom: -1px;
         right: 8px;
@@ -71,8 +72,8 @@ $content-header-footer-height: $region-header-height + $region-footer-height;
 .count-container {
     padding: 2px;
     border-radius: 2px;
-    background-color: $danger;
-    color: $popover-count-color;
+    background-color: red;
+    color: white;
     font-size: 11px;
     line-height: 11px;
     position: absolute;
@@ -90,7 +91,7 @@ $content-header-footer-height: $region-header-height + $region-footer-height;
     width: $region-container-width;
     border: $standard-border;
     transition: height 0.25s;
-    background-color: $popover-region-container-bg;
+    background-color: #fff;
     z-index: $region-container-z-index;
 }
 
@@ -173,21 +174,11 @@ $content-header-footer-height: $region-header-height + $region-footer-height;
     }
 }
 
-.navbar-nav {
-    .popover-region {
-        .icon {
-            font-weight: bolder;
-        }
-        .notification-image {
-            .icon {
-                font-weight: 400;
-            }
-        }
-    }
-}
-
 .navbar {
     .popover-region {
+        float: left;
+        margin-right: 10px;
+
         &.collapsed {
             .popover-region-container {
                 @include invisible();
@@ -199,20 +190,24 @@ $content-header-footer-height: $region-header-height + $region-footer-height;
         }
     }
 
+    .popover-region-toggle {
+        width: $toggle-width;
+    }
+
     .count-container {
         padding: 2px;
         border-radius: 2px;
-        background-color: $danger;
-        color: $popover-count-color;
+        background-color: red;
+        color: white;
         font-size: 11px;
         line-height: 11px;
         position: absolute;
-        top: $navbar-height * 0.25;
+        top: 5px;
         right: 0;
     }
 
     .popover-region-container {
-        top: $navbar-height;
+        top: $line-height-base * 1.4 * $font-size-base;
     }
 
 }
@@ -236,10 +231,6 @@ $content-header-footer-height: $region-header-height + $region-footer-height;
             .timestamp {
                 color: $content-item-hover-colour-text;
             }
-        }
-
-        .view-more {
-            color: inherit;
         }
     }
 
@@ -277,16 +268,12 @@ $content-header-footer-height: $region-header-height + $region-footer-height;
             font-size: 10px;
             line-height: 10px;
             margin: 0;
-            color: inherit;
+            color: #666;
             margin-left: 24px;
         }
     }
 
     .view-more {
-        &:hover {
-            color: inherit;
-        }
-
         position: absolute;
         bottom: 5px;
         right: 5px;

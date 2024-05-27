@@ -29,14 +29,11 @@
 
 require('../config.php');
 require_once('reset_form.php');
-require_once($CFG->dirroot . '/backup/util/interfaces/checksumable.class.php');
-require_once($CFG->dirroot . '/backup/backup.class.php');
-require_once($CFG->dirroot . '/backup/util/helper/backup_helper.class.php');
 
 $id = required_param('id', PARAM_INT);
 
 if (!$course = $DB->get_record('course', array('id'=>$id))) {
-    throw new \moodle_exception("invalidcourseid");
+    print_error("invalidcourseid");
 }
 
 $PAGE->set_url('/course/reset.php', array('id'=>$id));
@@ -49,9 +46,9 @@ $strreset       = get_string('reset');
 $strresetcourse = get_string('resetcourse');
 $strremove      = get_string('remove');
 
+$PAGE->navbar->add($strresetcourse);
 $PAGE->set_title($course->fullname.': '.$strresetcourse);
-$PAGE->set_heading($course->fullname);
-$PAGE->set_secondary_active_tab('coursereuse');
+$PAGE->set_heading($course->fullname.': '.$strresetcourse);
 
 $mform = new course_reset_form();
 
@@ -71,7 +68,7 @@ if ($mform->is_cancelled()) {
 
     } else {
         echo $OUTPUT->header();
-        \backup_helper::print_coursereuse_selector('reset');
+        echo $OUTPUT->heading($strresetcourse);
 
         $data->reset_start_date_old = $course->startdate;
         $data->reset_end_date_old = $course->enddate;
@@ -82,7 +79,7 @@ if ($mform->is_cancelled()) {
             $line = array();
             $line[] = $item['component'];
             $line[] = $item['item'];
-            $line[] = ($item['error'] === false) ? get_string('statusok') : '<div class="notifyproblem">'.$item['error'].'</div>';
+            $line[] = ($item['error']===false) ? get_string('ok') : '<div class="notifyproblem">'.$item['error'].'</div>';
             $data[] = $line;
         }
 
@@ -101,9 +98,11 @@ if ($mform->is_cancelled()) {
 }
 
 echo $OUTPUT->header();
-\backup_helper::print_coursereuse_selector('reset');
+echo $OUTPUT->heading($strresetcourse);
 
 echo $OUTPUT->box(get_string('resetinfo'));
 
 $mform->display();
 echo $OUTPUT->footer();
+
+

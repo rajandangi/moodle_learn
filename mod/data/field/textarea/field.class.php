@@ -21,10 +21,6 @@
 //                                                                       //
 ///////////////////////////////////////////////////////////////////////////
 
-defined('MOODLE_INTERNAL') || die();
-
-global $CFG;
-
 require_once($CFG->dirroot.'/lib/filelib.php');
 require_once($CFG->dirroot.'/repository/lib.php');
 
@@ -37,23 +33,6 @@ class data_field_textarea extends data_field_base {
      * @var int
      */
     protected static $priority = self::LOW_PRIORITY;
-
-    public function supports_preview(): bool {
-        return true;
-    }
-
-    public function get_data_content_preview(int $recordid): stdClass {
-        return (object)[
-            'id' => 0,
-            'fieldid' => $this->field->id,
-            'recordid' => $recordid,
-            'content' => get_string('sample', 'datafield_textarea'),
-            'content1' => 1,
-            'content2' => null,
-            'content3' => null,
-            'content4' => null,
-        ];
-    }
 
     /**
      * Returns options for embedded files
@@ -120,7 +99,7 @@ class data_field_textarea extends data_field_base {
             $text = file_prepare_draft_area($draftitemid, $this->context->id, 'mod_data', 'content', $content->id, $options, $text);
         } else {
             $draftitemid = file_get_unused_draft_itemid();
-            $format = editors_get_preferred_format();
+            $format = FORMAT_HTML;
         }
 
         // get filepicker info
@@ -185,7 +164,6 @@ class data_field_textarea extends data_field_base {
         $str .= '<input type="hidden" name="'.$field.'_itemid" value="'.s($draftitemid).'" />';
         $str .= '<div class="mod-data-input">';
         $str .= '<div><textarea id="'.$field.'" name="'.$field.'" rows="'.$this->field->param3.'" class="form-control" ' .
-            'data-fieldtype="editor" ' .
             'cols="'.$this->field->param2.'" spellcheck="true">'.s($text).'</textarea></div>';
         $str .= '<div><label class="accesshide" for="' . $field . '_content1">' . get_string('format') . '</label>';
         $str .= '<select id="' . $field . '_content1" name="'.$field.'_content1">';
@@ -203,7 +181,7 @@ class data_field_textarea extends data_field_base {
 
 
     function display_search_field($value = '') {
-        return '<label class="accesshide" for="f_' . $this->field->id . '">' . s($this->field->name) . '</label>' .
+        return '<label class="accesshide" for="f_' . $this->field->id . '">' . $this->field->name . '</label>' .
                '<input type="text" size="16" id="f_' . $this->field->id . '" name="f_' . $this->field->id . '" ' .
                'value="' . s($value) . '" class="form-control"/>';
     }
@@ -273,26 +251,23 @@ class data_field_textarea extends data_field_base {
      * @return bool|string
      */
     function display_browse_field($recordid, $template) {
-        $content = $this->get_data_content($recordid);
-        if (!$content || !isset($content->content)) {
-            return '';
+        global $DB;
+
+        if ($content = $DB->get_record('data_content', array('fieldid' => $this->field->id, 'recordid' => $recordid))) {
+            if (isset($content->content)) {
+                $options = new stdClass();
+                if ($this->field->param1 == '1') {  // We are autolinking this field, so disable linking within us
+                    $options->filter = false;
+                }
+                $options->para = false;
+                $str = file_rewrite_pluginfile_urls($content->content, 'pluginfile.php', $this->context->id, 'mod_data', 'content', $content->id, $this->get_options());
+                $str = format_text($str, $content->content1, $options);
+            } else {
+                $str = '';
+            }
+            return $str;
         }
-        $options = new stdClass();
-        if ($this->field->param1 == '1') {  // We are autolinking this field, so disable linking within us.
-            $options->filter = false;
-        }
-        $options->para = false;
-        $str = file_rewrite_pluginfile_urls(
-            $content->content,
-            'pluginfile.php',
-            $this->context->id,
-            'mod_data',
-            'content',
-            $content->id,
-            $this->get_options()
-        );
-        $str = format_text($str, $content->content1, $options);
-        return '<div class="data-field-html">' . $str . '</div>';
+        return false;
     }
 
     /**

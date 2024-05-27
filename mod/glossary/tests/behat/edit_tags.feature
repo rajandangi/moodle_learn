@@ -24,7 +24,7 @@ Feature: Edited glossary entries handle tags correctly
 
   Scenario: Glossary entry edition of custom tags works as expected
     Given I am on the "Test glossary" "glossary activity" page logged in as teacher1
-    And I press "Add entry"
+    And I press "Add a new entry"
     And I set the following fields to these values:
       | Concept | Dummy first entry |
       | Definition | Dream is the start of a journey |
@@ -40,13 +40,15 @@ Feature: Edited glossary entries handle tags correctly
     Then I should see "Cool" in the ".form-autocomplete-selection" "css_element"
 
   Scenario: Glossary entry edition of standard tags works as expected
-    Given the following "tags" exist:
-      | name | isstandard |
-      | OT1  | 1          |
-      | OT2  | 1          |
-      | OT3  | 1          |
-    And I am on the "Test glossary" "glossary activity" page logged in as teacher1
-    And I press "Add entry"
+    Given I log in as "admin"
+    And I navigate to "Appearance > Manage tags" in site administration
+    And I follow "Default collection"
+    And I follow "Add standard tags"
+    And I set the field "Enter comma-separated list of new tags" to "OT1, OT2, OT3"
+    And I press "Continue"
+    And I log out
+    Given I am on the "Test glossary" "glossary activity" page logged in as teacher1
+    And I press "Add a new entry"
     And I expand all fieldsets
     And I open the autocomplete suggestions list
     And I should see "OT1" in the ".form-autocomplete-suggestions" "css_element"

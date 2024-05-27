@@ -26,6 +26,7 @@
  */
 
 require_once(__DIR__ . '/../../../config.php');
+require_once($CFG->libdir . '/externallib.php');
 
 $serviceshortname  = required_param('service',  PARAM_ALPHANUMEXT);
 $passport          = required_param('passport',  PARAM_RAW);    // Passport send from the app to validate the response URL.
@@ -44,18 +45,6 @@ if (!$CFG->enablewebservices) {
     throw new moodle_exception('enablewsdescription', 'webservice');
 }
 
-// Check if the service exists and is enabled.
-$service = $DB->get_record('external_services', ['shortname' => $serviceshortname, 'enabled' => 1]);
-if (empty($service)) {
-    throw new moodle_exception('servicenotavailable', 'webservice');
-}
-
-// Set a cookie indicating that there was a launch to authenticate via the site from the app.
-$ldata = json_encode(['service' => $serviceshortname, 'passport' => $passport,
-    'urlscheme' => $urlscheme, 'confirmed' => (int) $confirmed, 'oauthsso' => $oauthsso]);
-$expires = time() + (15 * MINSECS); // 15 minutes for authentication should be enough.
-setcookie('tool_mobile_launch', $ldata, $expires, $CFG->sessioncookiepath, $CFG->sessioncookiedomain);
-
 // We have been requested to start a SSO process via OpenID.
 if (!empty($oauthsso) && is_enabled_auth('oauth2')) {
     $wantsurl = new moodle_url('/admin/tool/mobile/launch.php',
@@ -68,11 +57,16 @@ if (!empty($oauthsso) && is_enabled_auth('oauth2')) {
 
 // Check if the plugin is properly configured.
 $typeoflogin = get_config('tool_mobile', 'typeoflogin');
-if (empty($SESSION->justloggedin) &&
-        !is_enabled_auth('oauth2') &&
-        $typeoflogin != tool_mobile\api::LOGIN_VIA_BROWSER &&
+if (empty($SESSION->justloggedin) and
+        $typeoflogin != tool_mobile\api::LOGIN_VIA_BROWSER and
         $typeoflogin != tool_mobile\api::LOGIN_VIA_EMBEDDED_BROWSER) {
     throw new moodle_exception('pluginnotenabledorconfigured', 'tool_mobile');
+}
+
+// Check if the service exists and is enabled.
+$service = $DB->get_record('external_services', array('shortname' => $serviceshortname, 'enabled' => 1));
+if (empty($service)) {
+    throw new moodle_exception('servicenotavailable', 'webservice');
 }
 
 require_login(0, false);
@@ -80,15 +74,11 @@ require_login(0, false);
 // Require an active user: not guest, not suspended.
 core_user::require_active_user($USER);
 
-// Remove cookie.
-unset($_COOKIE['tool_mobile_launch']);
-setcookie('tool_mobile_launch', '', -1, $CFG->sessioncookiepath);
-
 // Get an existing token or create a new one.
 $timenow = time();
-$token = \core_external\util::generate_token_for_current_user($service);
+$token = external_generate_token_for_current_user($service);
 $privatetoken = $token->privatetoken;
-\core_external\util::log_token_request($token);
+external_log_token_request($token);
 
 // Don't return the private token if the user didn't just log in and a new token wasn't created.
 if (empty($SESSION->justloggedin) and $token->timecreated < $timenow) {
@@ -136,7 +126,7 @@ if ($confirmed or $isios) {
     }
 
     $notice = get_string('clickheretolaunchtheapp', 'tool_mobile');
-    echo $OUTPUT->box(html_writer::link($location, $notice, ['id' => 'launchapp']), 'generalbox warning centerpara');
+    echo html_writer::link($location, $notice, array('id' => 'launchapp'));
     echo html_writer::script(
         "window.onload = function() {
             document.getElementById('launchapp').click();

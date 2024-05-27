@@ -145,23 +145,15 @@ class condition extends \core_availability\condition {
         } else {
             // The completion system caches its own data so no caching needed here.
             $completiondata = $completion->get_data((object)['id' => $cmid],
-                    $grabthelot, $userid);
+                    $grabthelot, $userid, $modinfo);
 
             $allow = true;
             if ($this->expectedcompletion == COMPLETION_COMPLETE) {
-                // Complete also allows the pass state.
+                // Complete also allows the pass, fail states.
                 switch ($completiondata->completionstate) {
                     case COMPLETION_COMPLETE:
-                    case COMPLETION_COMPLETE_PASS:
-                        break;
-                    default:
-                        $allow = false;
-                }
-            } else if ($this->expectedcompletion == COMPLETION_INCOMPLETE) {
-                // Incomplete also allows the fail state.
-                switch ($completiondata->completionstate) {
-                    case COMPLETION_INCOMPLETE:
                     case COMPLETION_COMPLETE_FAIL:
+                    case COMPLETION_COMPLETE_PASS:
                         break;
                     default:
                         $allow = false;
@@ -285,12 +277,12 @@ class condition extends \core_availability\condition {
                 if (!isset($sectionprevious[$othercm->section])) {
                     $sectionprevious[$othercm->section] = $lastcmid;
                 }
-                if ($lastcmid) {
-                    $this->modfastprevious[$othercm->id] = $lastcmid;
-                }
                 // Load previous to all cms with completion.
                 if ($othercm->completion == COMPLETION_TRACKING_NONE) {
                     continue;
+                }
+                if ($lastcmid) {
+                    $this->modfastprevious[$othercm->id] = $lastcmid;
                 }
                 $lastcmid = $othercm->id;
             }
@@ -362,7 +354,7 @@ class condition extends \core_availability\condition {
             if (!array_key_exists($cmid, $modinfo->cms) || $modinfo->cms[$cmid]->deletioninprogress) {
                 $modname = get_string('missing', 'availability_completion');
             } else {
-                $modname = self::description_cm_name($modinfo->cms[$cmid]->id);
+                $modname = '<AVAILABILITY_CMNAME_' . $modinfo->cms[$cmid]->id . '/>';
             }
         }
 

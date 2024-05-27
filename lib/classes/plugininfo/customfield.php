@@ -23,8 +23,10 @@
  */
 namespace core\plugininfo;
 
-use admin_settingpage;
 use moodle_url;
+use admin_settingpage;
+
+defined('MOODLE_INTERNAL') || die();
 
 /**
  * Class for admin tool plugins
@@ -34,10 +36,6 @@ use moodle_url;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class customfield extends base {
-
-    public static function plugintype_supports_disabling(): bool {
-        return true;
-    }
 
     /**
      * Allow uninstall
@@ -80,29 +78,6 @@ class customfield extends base {
         return $enabled;
     }
 
-    public static function enable_plugin(string $pluginname, int $enabled): bool {
-        $haschanged = false;
-
-        $plugin = 'customfield_' . $pluginname;
-        $oldvalue = get_config($plugin, 'disabled');
-        $disabled = !$enabled;
-        // Only set value if there is no config setting or if the value is different from the previous one.
-        if ($oldvalue == false && $disabled) {
-            set_config('disabled', $disabled, $plugin);
-            $haschanged = true;
-        } else if ($oldvalue != false && !$disabled) {
-            unset_config('disabled', $plugin);
-            $haschanged = true;
-        }
-
-        if ($haschanged) {
-            add_to_config_log('disabled', $oldvalue, $disabled, $plugin);
-            \core_plugin_manager::reset_caches();
-        }
-
-        return $haschanged;
-    }
-
     /**
      * Pre-uninstall hook.
      *
@@ -136,7 +111,6 @@ class customfield extends base {
      */
     public function load_settings(\part_of_admin_tree $adminroot, $parentnodename, $hassiteconfig) {
         global $CFG, $USER, $DB, $OUTPUT, $PAGE; // In case settings.php wants to refer to them.
-        /** @var \admin_root $ADMIN */
         $ADMIN = $adminroot; // May be used in settings.php.
         $plugininfo = $this; // Also can be used inside settings.php
         $availability = $this; // Also to be used inside settings.php.

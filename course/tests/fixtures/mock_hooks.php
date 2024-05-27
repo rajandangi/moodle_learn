@@ -23,7 +23,7 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace core_course\test {
+namespace tests\core_course {
 
     /**
      * Class mock_hooks
@@ -76,7 +76,7 @@ namespace core_course\test {
          *
          * @return bool
          */
-        public static function get_can_course_category_delete_return(): bool {
+        public static function get_can_course_category_delete_return() : bool {
             return self::$cancoursecategorydelete;
         }
 
@@ -94,7 +94,7 @@ namespace core_course\test {
          *
          * @return bool
          */
-        public static function get_can_course_category_delete_move_return(): bool {
+        public static function get_can_course_category_delete_move_return() : bool {
             return self::$cancoursecategorydeletemove;
         }
 
@@ -112,7 +112,7 @@ namespace core_course\test {
          *
          * @return string
          */
-        public static function get_get_course_category_contents_return(): string {
+        public static function get_get_course_category_contents_return() : string {
             return self::$getcoursecategorycontents;
         }
 
@@ -129,15 +129,13 @@ namespace core_course\test {
 
 namespace {
 
-    use core_course\test\mock_hooks;
-
     /**
      * Test pre_course_category_delete callback.
      *
      * @param object $category
      */
     function tool_unittest_pre_course_category_delete(object $category) {
-        mock_hooks::set_calling_arguments(func_get_args());
+        \tests\core_course\mock_hooks::set_calling_arguments(func_get_args());
     }
 
     /**
@@ -147,7 +145,7 @@ namespace {
      * @param core_course_category $newcategory
      */
     function tool_unittest_pre_course_category_delete_move(core_course_category $category, core_course_category $newcategory) {
-        mock_hooks::set_calling_arguments(func_get_args());
+        \tests\core_course\mock_hooks::set_calling_arguments(func_get_args());
     }
 
     /**
@@ -157,8 +155,8 @@ namespace {
      * @return bool
      */
     function tool_unittest_can_course_category_delete(core_course_category $category) {
-        mock_hooks::set_calling_arguments(func_get_args());
-        return mock_hooks::get_can_course_category_delete_return();
+        \tests\core_course\mock_hooks::set_calling_arguments(func_get_args());
+        return \tests\core_course\mock_hooks::get_can_course_category_delete_return();
     }
 
     /**
@@ -169,8 +167,8 @@ namespace {
      * @return bool
      */
     function tool_unittest_can_course_category_delete_move(core_course_category $category, core_course_category $newcategory) {
-        mock_hooks::set_calling_arguments(func_get_args());
-        return mock_hooks::get_can_course_category_delete_move_return();
+        \tests\core_course\mock_hooks::set_calling_arguments(func_get_args());
+        return \tests\core_course\mock_hooks::get_can_course_category_delete_move_return();
     }
 
     /**
@@ -180,7 +178,7 @@ namespace {
      * @return string
      */
     function tool_unittest_get_course_category_contents(core_course_category $category) {
-        mock_hooks::set_calling_arguments(func_get_args());
-        return mock_hooks::get_get_course_category_contents_return();
+        \tests\core_course\mock_hooks::set_calling_arguments(func_get_args());
+        return \tests\core_course\mock_hooks::get_get_course_category_contents_return();
     }
 }

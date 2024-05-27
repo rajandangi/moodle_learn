@@ -26,10 +26,10 @@
                 "name": "Assignment due 1",
                 "viewurl": "https://moodlesite/course/view.php?id=2",
                 "courseimage": "https://moodlesite/pluginfile/123/course/overviewfiles/123.jpg",
-                "fullname": "Course 3 for \"Statistical and Computational Tools\" ",
+                "fullname": "course 3",
                 "hasprogress": true,
                 "progress": 10,
-                "coursecategory": "Category 1",
+                "coursecategory": "Miscellaneous",
                 "visible": true
             }
         ]
@@ -38,23 +38,18 @@
 
 {{< core_course/coursecards }}
     {{$menu}}
-        <div class="card-footer menu border-0 bg-white ml-auto">
-            {{> block_myoverview/course-action-menu }}
-        </div>
+        {{> block_myoverview/course-action-menu }}
     {{/menu}}
     {{$progress}}
         {{#hasprogress}}
-            <div class="card-footer border-0 bg-white w-100">
+            <div class="card-footer dashboard-card-footer border-0 bg-white">
                 {{> block_myoverview/progress-bar}}
             </div>
         {{/hasprogress}}
     {{/progress}}
     {{$coursename}}
-        <span class="multiline" title="{{fullname}}">
-            <span class="sr-only">{{{fullname}}}</span>
-            <span aria-hidden="true">
-                {{#shortentext}}55, {{{fullname}}} {{/shortentext}}
-            </span>
+        <span class="multiline">
+            {{#shortentext}}50, {{{fullname}}} {{/shortentext}}
         </span>
     {{/coursename}}
     {{$coursecategory}}

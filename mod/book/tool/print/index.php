@@ -54,7 +54,6 @@ if ($chapterid) {
 
 $PAGE->set_url('/mod/book/print.php', array('id' => $id, 'chapterid' => $chapterid));
 
-$PAGE->activityheader->disable();
 $PAGE->set_pagelayout("embedded");
 
 unset($id);

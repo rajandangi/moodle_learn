@@ -1,8 +1,8 @@
 @core @core_user
-Feature: Edit a users password
+Feature: Enable/disable password field based on authentication selected.
   In order edit a user password properly
   As an admin
-  I need to be able to edit their profile and change their password
+  I need to be able to notice if the change in password is allowed by athuentication plugin or not
 
   @javascript
   Scenario: Verify the password field is enabled/disabled based on authentication selected, in user edit advanced page.
@@ -15,28 +15,3 @@ Feature: Edit a users password
     And the "New password" "field" should be enabled
     # We need to cancel/submit a form that has been modified.
     And I press "Create user"
-
-  Scenario: Sign out everywhere field is not present if user doesn't have active token
-    Given the following "users" exist:
-      | username | firstname | lastname | email              |
-      | user01   | User      | One      | user01@example.com |
-    When I am on the "user01" "user > editing" page logged in as "admin"
-    Then "Sign out everywhere" "field" should not exist
-
-  Scenario Outline: Sign out everywhere field is present based on expiry of active token
-    Given the following "users" exist:
-      | username | firstname | lastname | email              |
-      | user01   | User      | One      | user01@example.com |
-    And the following "core_webservice > Service" exist:
-      | shortname     | name            |
-      | mytestservice | My test service |
-    And the following "core_webservice > Tokens" exist:
-      | user   | service       | validuntil   |
-      | user01 | mytestservice | <validuntil> |
-    When I am on the "user01" "user > editing" page logged in as "admin"
-    Then "Sign out everywhere" "field" <shouldornot> exist
-    Examples:
-      | validuntil     | shouldornot |
-      | ## -1 month ## | should not  |
-      | 0              | should      |
-      | ## +1 month ## | should      |

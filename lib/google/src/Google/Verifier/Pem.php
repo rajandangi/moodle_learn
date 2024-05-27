@@ -24,7 +24,6 @@ if (!class_exists('Google_Client')) {
  *
  * @author Brian Eaton <beaton@google.com>
  */
-#[AllowDynamicProperties]
 class Google_Verifier_Pem extends Google_Verifier_Abstract
 {
   private $publicKey;
@@ -51,10 +50,7 @@ class Google_Verifier_Pem extends Google_Verifier_Abstract
   public function __destruct()
   {
     if ($this->publicKey) {
-      // TODO: Remove this block once PHP 8.0 becomes required.
-      if (PHP_MAJOR_VERSION < 8) {
-          openssl_x509_free($this->publicKey);
-      }
+      openssl_x509_free($this->publicKey);
     }
   }
 

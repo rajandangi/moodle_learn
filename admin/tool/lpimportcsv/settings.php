@@ -25,24 +25,22 @@
  */
 defined('MOODLE_INTERNAL') || die;
 
-if (get_config('core_competency', 'enabled')) {
-    // Manage competency frameworks page.
-    $temp = new admin_externalpage(
-        'toollpimportcsv',
-        get_string('pluginname', 'tool_lpimportcsv'),
-        new moodle_url('/admin/tool/lpimportcsv/index.php'),
-        'moodle/competency:competencymanage'
-    );
-    $ADMIN->add('competencies', $temp);
-    // Export competency framework page.
-    $temp = new admin_externalpage(
-        'toollpexportcsv',
-        get_string('exportnavlink', 'tool_lpimportcsv'),
-        new moodle_url('/admin/tool/lpimportcsv/export.php'),
-        'moodle/competency:competencymanage'
-    );
-    $ADMIN->add('competencies', $temp);
-}
+// Manage competency frameworks page.
+$temp = new admin_externalpage(
+    'toollpimportcsv',
+    get_string('pluginname', 'tool_lpimportcsv'),
+    new moodle_url('/admin/tool/lpimportcsv/index.php'),
+    'moodle/competency:competencymanage'
+);
+$ADMIN->add('competencies', $temp);
+// Export competency framework page.
+$temp = new admin_externalpage(
+    'toollpexportcsv',
+    get_string('exportnavlink', 'tool_lpimportcsv'),
+    new moodle_url('/admin/tool/lpimportcsv/export.php'),
+    'moodle/competency:competencymanage'
+);
+$ADMIN->add('competencies', $temp);
 
 // No report settings.
 $settings = null;

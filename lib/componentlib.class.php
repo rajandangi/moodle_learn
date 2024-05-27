@@ -76,9 +76,9 @@
  *                     $a = new stdClass();
  *                     $a->url = 'https://download.moodle.org/langpack/2.0/es.zip';
  *                     $a->dest= $CFG->dataroot.'/lang';
- *                     throw new \moodle_exception($cd->get_error(), 'error', '', $a);
+ *                     print_error($cd->get_error(), 'error', '', $a);
  *                 } else {
- *                     throw new \moodle_exception($cd->get_error(), 'error');
+ *                     print_error($cd->get_error(), 'error');
  *                 }
  *                 break;
  *             case COMPONENT_UPTODATE:
@@ -302,10 +302,9 @@ class component_installer {
 
         $zipfile= $CFG->tempdir.'/'.$this->zipfilename;
 
-        $contents = download_file_content($source, null, null, true);
-        if ($contents->results && (int) $contents->status === 200) {
+        if($contents = download_file_content($source)) {
             if ($file = fopen($zipfile, 'w')) {
-                if (!fwrite($file, $contents->results)) {
+                if (!fwrite($file, $contents)) {
                     fclose($file);
                     $this->errorstring='cannotsavezipfile';
                     return COMPONENT_ERROR;
@@ -320,7 +319,7 @@ class component_installer {
             return COMPONENT_ERROR;
         }
     /// Calculate its md5
-        $new_md5 = md5($contents->results);
+        $new_md5 = md5($contents);
     /// Compare it with the remote md5 to check if we have the correct zip file
         if (!$remote_md5 = $this->get_component_md5()) {
             return COMPONENT_ERROR;
@@ -509,10 +508,9 @@ class component_installer {
         /// Not downloaded, let's do it now
             $availablecomponents = array();
 
-            $contents = download_file_content($source, null, null, true);
-            if ($contents->results && (int) $contents->status === 200) {
+            if ($contents = download_file_content($source)) {
             /// Split text into lines
-                $lines = preg_split('/\r?\n/', $contents->results);
+                $lines=preg_split('/\r?\n/',$contents);
             /// Each line will be one component
                 foreach($lines as $line) {
                     $availablecomponents[] = explode(',', $line);
@@ -707,9 +705,8 @@ class lang_installer {
         $source = 'https://download.moodle.org/langpack/' . $this->version . '/languages.md5';
         $availablelangs = array();
 
-        $contents = download_file_content($source, null, null, true);
-        if ($contents->results && (int) $contents->status === 200) {
-            $alllines = explode("\n", $contents->results);
+        if ($content = download_file_content($source)) {
+            $alllines = explode("\n", $content);
             foreach($alllines as $line) {
                 if (!empty($line)){
                     $availablelangs[] = explode(',', $line);
@@ -792,7 +789,7 @@ class lang_installer {
      *
      * @uses component_installer
      * @param string $langcode
-     * @return string return status
+     * @return int return status
      */
     protected function install_language_pack($langcode) {
 

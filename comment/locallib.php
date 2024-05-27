@@ -16,9 +16,18 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
+ * Functions and classes for comments management
+ *
+ * @package   core
+ * @copyright 2010 Dongsheng Cai {@link http://dongsheng.org}
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+defined('MOODLE_INTERNAL') || die();
+
+/**
  * comment_manager is helper class to manage moodle comments in admin page (Reports->Comments)
  *
- * @package   core_comment
+ * @package   core
  * @copyright 2010 Dongsheng Cai {@link http://dongsheng.org}
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -26,24 +35,6 @@ class comment_manager {
 
     /** @var int The number of comments to display per page */
     private $perpage;
-
-    /** @var stdClass Course data. */
-    protected $course;
-
-    /** @var context|bool To store the context object or false if not found. */
-    protected $context;
-
-    /** @var stdClass Course module. */
-    protected $cm;
-
-    /** @var course_modinfo Module information for course, or null if resetting. */
-    protected $modinfo;
-
-    /** @var string plugin type. */
-    protected $plugintype;
-
-    /** @var string plugin name. */
-    protected $pluginname;
 
     /**
      * Constructs the comment_manage object
@@ -70,8 +61,7 @@ class comment_manager {
         }
         $comments = array();
 
-        $userfieldsapi = \core_user\fields::for_name();
-        $usernamefields = $userfieldsapi->get_sql('u', false, '', '', false)->selects;
+        $usernamefields = get_all_user_name_fields(true, 'u');
         $sql = "SELECT c.id, c.contextid, c.itemid, c.component, c.commentarea, c.userid, c.content, $usernamefields, c.timecreated
                   FROM {comments} c
                   JOIN {user} u
@@ -85,7 +75,7 @@ class comment_manager {
             $item->time = userdate($item->timecreated);
             $item->content = format_text($item->content, FORMAT_MOODLE, $formatoptions);
             // Unset fields not related to the comment
-            foreach (\core_user\fields::get_name_fields() as $namefield) {
+            foreach (get_all_user_name_fields() as $namefield) {
                 unset($item->$namefield);
             }
             unset($item->timecreated);
@@ -154,14 +144,9 @@ class comment_manager {
      * Print comments
      * @param int $page
      * @return bool return false if no comments available
-     *
-     * @deprecated since Moodle 4.2 - please do not use this function any more
      */
     public function print_comments($page = 0) {
         global $OUTPUT, $CFG, $OUTPUT, $DB;
-
-        debugging('The function ' . __FUNCTION__ . '() is deprecated, please do not use it any more. ' .
-            'See \'comments\' system report class for replacement', DEBUG_DEVELOPER);
 
         $count = $DB->count_records('comments');
         $comments = $this->get_comments($page);
@@ -242,7 +227,7 @@ class comment_manager {
      * @param  stdClass $context   context object
      * @param  string $component   component name
      * @param  int $since          the time to check
-     * @param  stdClass|\cm_info|null $cm course module object
+     * @param  stdClass $cm        course module object
      * @return array list of comments db records since the given timelimit
      * @since Moodle 3.2
      */

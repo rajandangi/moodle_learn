@@ -25,7 +25,7 @@ Feature: Tagging courses
       | teacher2 | c2     | teacher        |
     And I log in as "teacher1"
     And I am on "Course 1" course homepage
-    And I navigate to "Settings" in current page administration
+    And I navigate to "Edit settings" in current page administration
     And I set the following fields to these values:
       | Tags | Mathematics |
     And I press "Save and display"
@@ -34,22 +34,20 @@ Feature: Tagging courses
   Scenario: Set course tags using the course edit form
     When I log in as "teacher1"
     And I am on "Course 1" course homepage
-    And I navigate to "Settings" in current page administration
+    And I navigate to "Edit settings" in current page administration
     And I expand all fieldsets
-    Then "Mathematics" "autocomplete_suggestions" should exist
+    Then I should see "Mathematics" in the ".form-autocomplete-selection" "css_element"
     And I set the following fields to these values:
       | Tags | Mathematics, Algebra |
     And I press "Save and display"
     And I am on "Course 2" course homepage
-    And I navigate to "Settings" in current page administration
+    And I navigate to "Edit settings" in current page administration
     And I set the following fields to these values:
       | Tags | Mathematics, Geometry |
     And I press "Save and display"
     And I log out
     And I log in as "user1"
-    And I turn editing mode on
-    And the following config values are set as admin:
-      | unaddableblocks | | theme_boost|
+    And I press "Customise this page"
     # TODO MDL-57120 "Tags" link not accessible without navigation block.
     And I add the "Navigation" block if not present
     And I click on "Site pages" "list_item" in the "Navigation" "block"
@@ -85,9 +83,7 @@ Feature: Tagging courses
     And I press "Save changes"
     And I log out
     And I log in as "user1"
-    And I turn editing mode on
-    And the following config values are set as admin:
-      | unaddableblocks | | theme_boost|
+    And I press "Customise this page"
     # TODO MDL-57120 "Tags" link not accessible without navigation block.
     And I add the "Navigation" block if not present
     And I click on "Site pages" "list_item" in the "Navigation" "block"

@@ -78,8 +78,11 @@ trait eventtype {
         if (!empty($eventtypes['user']) && count($options) == 1) {
             $mform->addElement('hidden', 'eventtype');
             $mform->setType('eventtype', PARAM_TEXT);
-            $mform->hardFreeze('eventtype');
-            $mform->setConstant('eventtype', 'user');
+            $mform->setDefault('eventtype', 'user');
+
+            // Render a static element to tell the user what type of event will
+            // be created.
+            $mform->addElement('static', 'staticeventtype', get_string('eventkind', 'calendar'), $options['user']);
             return;
         } else {
             $mform->addElement('select', 'eventtype', get_string('eventkind', 'calendar'), $options);
@@ -91,7 +94,7 @@ trait eventtype {
                 $categoryoptions[$id] = $category;
             }
 
-            $mform->addElement('autocomplete', 'categoryid', get_string('category'), $categoryoptions);
+            $mform->addElement('select', 'categoryid', get_string('category'), $categoryoptions);
             $mform->hideIf('categoryid', 'eventtype', 'noteq', 'category');
         }
 

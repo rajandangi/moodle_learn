@@ -28,9 +28,6 @@ Feature: In a essay question, limit submittable file types
     And quiz "Quiz 1" contains the following questions:
       | question | page |
       | TF1      | 1    |
-    And the following "blocks" exist:
-      | blockname     | contextlevel | reference | pagetypepattern | defaultregion |
-      | private_files | System       | 1         | my-index        | side-post     |
     Given I am on the "Quiz 1" "mod_quiz > edit" page logged in as teacher
     And I click on "Edit question TF1" "link"
     And I set the field "Allow attachments" to "1"
@@ -39,7 +36,6 @@ Feature: In a essay question, limit submittable file types
     And I set the field "filetypeslist[filetypes]" to ".txt"
     And I press "Save changes"
     And I am on the "Quiz 1" "mod_quiz > edit" page
-    And I set the field "version" to "Always latest"
     Then I log out
 
   @javascript @_file_upload
@@ -49,7 +45,7 @@ Feature: In a essay question, limit submittable file types
     And I upload "lib/tests/fixtures/empty.txt" file to "Files" filemanager
     And I press "Save changes"
     And I am on the "Quiz 1" "quiz activity" page
-    And I press "Attempt quiz"
+    And I press "Attempt quiz now"
     And I should see "First question"
     And I should see "You can drag and drop files here to add them."
     And I click on "Add..." "button"
@@ -67,7 +63,7 @@ Feature: In a essay question, limit submittable file types
     And I upload "lib/tests/fixtures/upload_users.csv" file to "Files" filemanager
     And I press "Save changes"
     And I am on the "Quiz 1" "quiz activity" page
-    And I press "Attempt quiz"
+    And I press "Attempt quiz now"
     And I should see "First question"
     And I should see "You can drag and drop files here to add them."
     And I click on "Add..." "button"

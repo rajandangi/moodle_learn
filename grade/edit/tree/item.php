@@ -23,8 +23,6 @@
  */
 
 
-use core_grades\form\add_item;
-
 require_once '../../../config.php';
 require_once $CFG->dirroot.'/grade/lib.php';
 require_once $CFG->dirroot.'/grade/report/lib.php';
@@ -43,7 +41,7 @@ navigation_node::override_active_url(new moodle_url('/grade/edit/tree/index.php'
     array('id'=>$courseid)));
 
 if (!$course = $DB->get_record('course', array('id' => $courseid))) {
-    throw new \moodle_exception('invalidcourseid');
+    print_error('invalidcourseid');
 }
 
 require_login($course);
@@ -59,12 +57,12 @@ $heading = get_string('itemsedit', 'grades');
 if ($grade_item = grade_item::fetch(array('id'=>$id, 'courseid'=>$courseid))) {
     // redirect if outcomeid present
     if (!empty($grade_item->outcomeid) && !empty($CFG->enableoutcomes)) {
-        $url = new moodle_url('/grade/edit/tree/outcomeitem.php', ['id' => $id, 'courseid' => $courseid]);
+        $url = $CFG->wwwroot.'/grade/edit/tree/outcomeitem.php?id='.$id.'&amp;courseid='.$courseid;
         redirect($gpr->add_url_params($url));
     }
     if ($grade_item->is_course_item() or $grade_item->is_category_item()) {
         $grade_category = $grade_item->get_item_category();
-        $url = new moodle_url('/grade/edit/tree/category.php', ['id' => $grade_category->id, 'courseid' => $courseid]);
+        $url = $CFG->wwwroot.'/grade/edit/tree/category.php?id='.$grade_category->id.'&amp;courseid='.$courseid;
         redirect($gpr->add_url_params($url));
     }
 
@@ -108,16 +106,10 @@ $item->cancontrolvisibility = $grade_item->can_control_visibility();
 
 $mform = new edit_item_form(null, array('current'=>$item, 'gpr'=>$gpr));
 
-$simpleform = new add_item(null, ['itemid' => $grade_item->id, 'courseid' => $courseid, 'gpr' => $gpr]);
-// Data has been carried over from the dynamic form.
-if ($simpledata = $simpleform->get_submitted_data()) {
-    $mform->set_data($simpledata);
-}
-
 if ($mform->is_cancelled()) {
     redirect($returnurl);
 
-} else if ($data = $mform->get_data()) {
+} else if ($data = $mform->get_data(false)) {
 
     // This is a new item, and the category chosen is different than the default category.
     if (empty($grade_item->id) && isset($data->parentcategory) && $parent_category->id != $data->parentcategory) {
@@ -198,7 +190,7 @@ if ($mform->is_cancelled()) {
 
     if ($item->cancontrolvisibility) {
         // Update hiding flag.
-        $gradeitem->set_hidden($hide, true);
+        $gradeitem->set_hidden($hide, false);
     }
 
     $gradeitem->set_locktime($locktime); // Locktime first - it might be removed when unlocking.

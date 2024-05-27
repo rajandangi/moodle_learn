@@ -14,7 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace core_user;
+/**
+ * Unit tests for core_user\output\myprofile
+ *
+ * @package   core_user
+ * @category  test
+ * @copyright 2015 onwards Ankit Agarwal
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later (5)
+ */
 
 defined('MOODLE_INTERNAL') || die();
 global $CFG;
@@ -28,20 +35,20 @@ require_once($CFG->dirroot . "/user/tests/fixtures/myprofile_fixtures.php");
  * @copyright 2015 onwards Ankit Agarwal
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later (5)
  */
-class myprofile_test extends \advanced_testcase {
+class core_user_myprofile_testcase extends advanced_testcase {
     /**
      * Test node::__construct().
      */
     public function test_node__construct() {
         $node = new \core_user\output\myprofile\node('parentcat', 'nodename',
-                'nodetitle', 'after', 'www.google.com', 'description', new \pix_icon('i/course', ''), 'class1 class2');
+                'nodetitle', 'after', 'www.google.com', 'description', new pix_icon('i/course', ''), 'class1 class2');
         $this->assertSame('parentcat', $node->parentcat);
         $this->assertSame('nodename', $node->name);
         $this->assertSame('nodetitle', $node->title);
         $this->assertSame('after', $node->after);
-        $url = new \moodle_url('www.google.com');
+        $url = new moodle_url('www.google.com');
         $this->assertEquals($url, $node->url);
-        $this->assertEquals(new \pix_icon('i/course', ''), $node->icon);
+        $this->assertEquals(new pix_icon('i/course', ''), $node->icon);
         $this->assertSame('class1 class2', $node->classes);
     }
 
@@ -81,6 +88,9 @@ class myprofile_test extends \advanced_testcase {
         $this->assertSame('class1 class2', $category->classes);
     }
 
+    /**
+     * @expectedException coding_exception
+     */
     public function test_validate_after_order1() {
         $category = new \phpunit_fixture_myprofile_category('category', 'title', null);
 
@@ -93,11 +103,13 @@ class myprofile_test extends \advanced_testcase {
         $category->add_node($node2);
         $category->add_node($node1);
 
-        $this->expectException(\coding_exception::class);
         $category->validate_after_order();
 
     }
 
+    /**
+     * @expectedException coding_exception
+     */
     public function test_validate_after_order2() {
         $category = new \phpunit_fixture_myprofile_category('category', 'title', null);
 
@@ -110,7 +122,6 @@ class myprofile_test extends \advanced_testcase {
         $category->add_node($node2);
         $category->add_node($node1);
 
-        $this->expectException(\coding_exception::class);
         $category->validate_after_order();
 
     }
@@ -160,6 +171,8 @@ class myprofile_test extends \advanced_testcase {
 
     /**
      * Test category::sort_nodes().
+     *
+     * @expectedException coding_exception
      */
     public function test_sort_nodes1() {
         $category = new \phpunit_fixture_myprofile_category('category', 'title', null);
@@ -206,7 +219,6 @@ class myprofile_test extends \advanced_testcase {
         // Add a node with invalid 'after' and make sure an exception is thrown.
         $node7 = new \core_user\output\myprofile\node('category', 'node7', 'nodetitle', 'noderandom');
         $category->add_node($node7);
-        $this->expectException(\coding_exception::class);
         $category->sort_nodes();
     }
 
@@ -252,6 +264,8 @@ class myprofile_test extends \advanced_testcase {
 
     /**
      * Test tree::add_node().
+     *
+     * @expectedException coding_exception
      */
     public function test_tree_add_node() {
         $tree = new \phpunit_fixture_myprofile_tree();
@@ -262,12 +276,13 @@ class myprofile_test extends \advanced_testcase {
         $this->assertEquals($node1, $node);
 
         // Can't add node with same name.
-        $this->expectException(\coding_exception::class);
         $tree->add_node($node1);
     }
 
     /**
      * Test tree::add_category().
+     *
+     * @expectedException coding_exception
      */
     public function test_tree_add_category() {
         $tree = new \phpunit_fixture_myprofile_tree();
@@ -278,7 +293,6 @@ class myprofile_test extends \advanced_testcase {
         $this->assertEquals($category1, $category);
 
         // Can't add node with same name.
-        $this->expectException(\coding_exception::class);
         $tree->add_category($category1);
     }
 
@@ -327,6 +341,8 @@ class myprofile_test extends \advanced_testcase {
 
     /**
      * Test tree::sort_categories().
+     *
+     * @expectedException coding_exception
      */
     public function test_sort_categories() {
         $tree = new \phpunit_fixture_myprofile_tree('category', 'title', null);
@@ -365,7 +381,6 @@ class myprofile_test extends \advanced_testcase {
         $this->assertEquals($category6, $category);
 
         // Can't add category with same name.
-        $this->expectException(\coding_exception::class);
         $tree->add_category($category1);
     }
 }

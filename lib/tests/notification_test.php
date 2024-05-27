@@ -14,29 +14,39 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace core;
+/**
+ * Unit tests for core\notification.
+ *
+ * @package   core
+ * @category  phpunit
+ * @copyright 2016 Andrew Nicols <andrew@nicols.co.uk>
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+defined('MOODLE_INTERNAL') || die();
 
 /**
  * Unit tests for core\notification.
  *
  * @package   core
- * @category  test
+ * @category  phpunit
+ * @category  phpunit
  * @copyright 2016 Andrew Nicols <andrew@nicols.co.uk>
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class notification_test extends \advanced_testcase {
+class core_notification_testcase extends advanced_testcase {
 
     /**
      * Setup required for all notification tests.
      *
      * This includes emptying the list of notifications on the session, resetting any session which exists, and setting
-     * up a new \moodle_page object.
+     * up a new moodle_page object.
      */
-    public function setUp(): void {
+    public function setUp() {
         global $PAGE, $SESSION;
 
         parent::setUp();
-        $PAGE = new \moodle_page();
+        $PAGE = new moodle_page();
         \core\session\manager::init_empty_session();
         $SESSION->notifications = [];
     }
@@ -45,9 +55,9 @@ class notification_test extends \advanced_testcase {
      * Tear down required for all notification tests.
      *
      * This includes emptying the list of notifications on the session, resetting any session which exists, and setting
-     * up a new \moodle_page object.
+     * up a new moodle_page object.
      */
-    public function tearDown(): void {
+    public function tearDown() {
         global $PAGE, $SESSION;
 
         $PAGE = null;
@@ -76,16 +86,7 @@ class notification_test extends \advanced_testcase {
 
         $PAGE->set_state(\moodle_page::STATE_DONE);
         \core\notification::add('Example after page', \core\notification::INFO);
-        $this->assertCount(2, $SESSION->notifications);
-        $this->expectOutputRegex('/Example after page/');
-
-        \core\session\manager::write_close();
-        \core\notification::add('Example after write_close', \core\notification::INFO);
-        $this->assertCount(2, $SESSION->notifications);
-        $this->expectOutputRegex('/Example after write_close/');
-
-        // Simulate shutdown handler which calls fetch.
-        $this->assertCount(2, \core\notification::fetch());
+        $this->assertCount(3, $SESSION->notifications);
     }
 
     /**

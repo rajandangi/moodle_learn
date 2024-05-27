@@ -17,10 +17,11 @@
  * A javascript module to enhance the event form.
  *
  * @module     core_calendar/event_form
+ * @package    core_calendar
  * @copyright  2017 Ryan Wyllie <ryan@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-define(['jquery', 'core_calendar/repository', 'core/notification'], function($, CalendarRepository, Notification) {
+define(['jquery', 'core_calendar/repository'], function($, CalendarRepository) {
 
     var SELECTORS = {
         EVENT_GROUP_COURSE_ID: '[name="groupcourseid"]',

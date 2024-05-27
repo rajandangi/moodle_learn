@@ -20,17 +20,18 @@ Feature: Include responses from inactive users
       | student1 | C1 | student |
       | student2 | C1 | student |
       | student3 | C1 | student |
+    And I log in as "teacher1"
+    And I am on "Course 1" course homepage with editing mode on
 
   Scenario: Enable the choice include inactive option and check that responses from inactive students are visible
-    Given the following "activity" exists:
-      | activity        | choice                       |
-      | course          | C1                           |
-      | idnumber        | choice1                      |
-      | name            | Choice name                  |
-      | intro           | Choice Description           |
-      | section         | 1                            |
-      | option          | Option 1, Option 2, Option 3 |
-      | includeinactive | 1                            |
+    Given I add a "Choice" to section "1" and I fill the form with:
+      | Choice name | Choice name |
+      | Description | Choice Description |
+      | option[0] | Option 1 |
+      | option[1] | Option 2 |
+      | option[2] | Option 3 |
+      | Include responses from inactive/suspended users | Yes |
+    And I log out
     And I log in as "student1"
     And I am on "Course 1" course homepage
     And I choose "Option 1" from "Choice name" choice activity
@@ -48,9 +49,10 @@ Feature: Include responses from inactive users
       | student1 | C1 | student | 1 |
     When I log in as "teacher1"
     And I am on "Course 1" course homepage
-    And I click on "Choice name" "link" in the "region-main" "region"
-    And I navigate to "Responses" in current page administration
-    Then I should see "Student 1"
+    And I follow "Choice name"
+    Then I should see "View 3 responses"
+    And I follow "View 3 responses"
+    And I should see "Student 1"
     And I should see "Student 2"
     And I should see "Student 3"
     And I log out
@@ -59,8 +61,9 @@ Feature: Include responses from inactive users
       | student2 | C1 | student | 2145830400 |
     When I log in as "teacher1"
     And I am on "Course 1" course homepage
-    And I click on "Choice name" "link" in the "region-main" "region"
-    Then I navigate to "Responses" in current page administration
+    And I follow "Choice name"
+    Then I should see "View 3 responses"
+    And I follow "View 3 responses"
     And I should see "Student 1"
     And I should see "Student 2"
     And I should see "Student 3"
@@ -70,23 +73,23 @@ Feature: Include responses from inactive users
       | student3 | C1 | student | 1425168000 |
     When I log in as "teacher1"
     And I am on "Course 1" course homepage
-    And I click on "Choice name" "link" in the "region-main" "region"
-    Then I navigate to "Responses" in current page administration
+    And I follow "Choice name"
+    Then I should see "View 3 responses"
+    And I follow "View 3 responses"
     And I should see "Student 1"
     And I should see "Student 2"
     And I should see "Student 3"
     And I log out
 
   Scenario: Disable the choice include inactive option and check that responses from inactive students are not visible
-    Given the following "activity" exists:
-      | activity        | choice                       |
-      | course          | C1                           |
-      | idnumber        | choice1                      |
-      | name            | Choice name                  |
-      | intro           | Choice Description           |
-      | section         | 1                            |
-      | option          | Option 1, Option 2, Option 3 |
-      | includeinactive | 0                            |
+    Given I add a "Choice" to section "1" and I fill the form with:
+      | Choice name | Choice name |
+      | Description | Choice Description |
+      | option[0] | Option 1 |
+      | option[1] | Option 2 |
+      | option[2] | Option 3 |
+      | Include responses from inactive/suspended users | No |
+    And I log out
     And I log in as "student1"
     And I am on "Course 1" course homepage
     And I choose "Option 1" from "Choice name" choice activity
@@ -104,8 +107,9 @@ Feature: Include responses from inactive users
       | student1 | C1 | student | 1 |
     When I log in as "teacher1"
     And I am on "Course 1" course homepage
-    And I click on "Choice name" "link" in the "region-main" "region"
-    Then I navigate to "Responses" in current page administration
+    And I follow "Choice name"
+    Then I should see "View 2 responses"
+    And I follow "View 2 responses"
     And I should not see "Student 1"
     And I should see "Student 2"
     And I should see "Student 3"
@@ -115,8 +119,9 @@ Feature: Include responses from inactive users
       | student2 | C1 | student | 2145830400 |
     When I log in as "teacher1"
     And I am on "Course 1" course homepage
-    And I click on "Choice name" "link" in the "region-main" "region"
-    Then I navigate to "Responses" in current page administration
+    And I follow "Choice name"
+    Then I should see "View 1 responses"
+    And I follow "View 1 responses"
     And I should not see "Student 1"
     And I should not see "Student 2"
     And I should see "Student 3"
@@ -126,8 +131,9 @@ Feature: Include responses from inactive users
       | student3 | C1 | student | 1425168000 |
     When I log in as "teacher1"
     And I am on "Course 1" course homepage
-    And I click on "Choice name" "link" in the "region-main" "region"
-    Then I navigate to "Responses" in current page administration
+    And I follow "Choice name"
+    Then I should see "View 0 responses"
+    And I follow "View 0 responses"
     And I should not see "Student 1"
     And I should not see "Student 2"
     And I should not see "Student 3"

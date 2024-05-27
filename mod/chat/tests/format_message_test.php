@@ -14,7 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace mod_chat;
+/**
+ * Tests for format_message.
+ *
+ * @package    mod_chat
+ * @copyright  2016 Andrew NIcols
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -28,7 +34,7 @@ require_once($CFG->dirroot . '/mod/chat/lib.php');
  * @copyright  2016 Andrew NIcols
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class format_message_test extends \advanced_testcase {
+class mod_chat_format_message_testcase extends advanced_testcase {
 
     const USER_CURRENT = 1;
     const USER_OTHER = 2;
@@ -153,7 +159,7 @@ class format_message_test extends \advanced_testcase {
             if (!empty($expecttext)) {
                 $expecttext = str_replace('__CURRENTUSER__', fullname($currentuser), $expecttext);
                 $expecttext = str_replace('__CURRENTUSER_FIRST__', $currentuser->firstname, $expecttext);
-                $this->assertMatchesRegularExpression($expecttext, $result->text);
+                $this->assertRegexp($expecttext, $result->text);
             }
 
             $this->assertEquals($refreshusers, $result->refreshusers);

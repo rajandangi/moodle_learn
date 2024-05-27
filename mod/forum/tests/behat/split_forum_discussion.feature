@@ -34,7 +34,7 @@ Feature: Forum discussions can be split
     And I follow "Photosynthesis discussion"
     When I follow "Split"
     And  I set the following fields to these values:
-        | Discussion name | Mass number in periodic table |
+      | Discussion name | Mass number in periodic table |
     And I press "Split"
     Then I should see "Mass number in periodic table"
     And I follow "Study discussions"

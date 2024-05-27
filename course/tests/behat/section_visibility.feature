@@ -4,19 +4,15 @@ Feature: Show/hide course sections
   As a teacher
   I need to show or hide sections
 
-  Background:
+  @javascript
+  Scenario: Show / hide section icon functions correctly
     Given the following "users" exist:
       | username | firstname | lastname | email |
       | teacher1 | Teacher | 1 | teacher1@example.com |
       | student1 | Student | 1 | student1@example.com |
-    And the following "course" exists:
-      | fullname         | Course 1 |
-      | shortname        | C1       |
-      | format           | topics   |
-      | hiddensections   | 0        |
-      | enablecompletion | 1        |
-      | coursedisplay    | 1        |
-      | initsections     | 1        |
+    And the following "courses" exist:
+      | fullname | shortname | format |
+      | Course 1 | C1 | topics |
     And the following "course enrolments" exist:
       | user | course | role |
       | teacher1 | C1 | editingteacher |
@@ -31,9 +27,6 @@ Feature: Show/hide course sections
       | forum    | C1     | 3       | Test hidden forum 32 name | 1       |
     And I log in as "teacher1"
     And I am on "Course 1" course homepage with editing mode on
-
-  @javascript
-  Scenario: Show / hide section icon functions correctly
     When I hide section "1"
     Then section "1" should be hidden
     And section "2" should be visible
@@ -58,49 +51,3 @@ Feature: Show/hide course sections
     And section "2" should be visible
     And section "3" should be hidden
     And all activities in section "1" should be hidden
-
-  @javascript
-  Scenario: Students can not navigate to hidden sections
-    Given I hide section "2"
-    And I navigate to "Settings" in current page administration
-    And I set the following fields to these values:
-      | Course layout | Show one section per page |
-    And I press "Save and display"
-    When I click on "Section 1" "link" in the "region-main" "region"
-    Then I should see "Section 2" in the "region-main" "region"
-    And I click on "Section 2" "link" in the "region-main" "region"
-    And I should see "Section 1" in the "region-main" "region"
-    And I should see "Section 3" in the "region-main" "region"
-    And I am on the "Course 1" course page logged in as student1
-    And I click on "Section 1" "link" in the "region-main" "region"
-    And I should not see "Section 2" in the "region-main" "region"
-    And I should see "Section 3" in the "region-main" "region"
-    And I click on "Section 3" "link" in the "region-main" "region"
-    And I should not see "Section 2" in the "region-main" "region"
-    And I should see "Section 1" in the "region-main" "region"
-
-  @javascript
-  Scenario: Students can not navigate to restricted sections
-    Given the following "activities" exist:
-      | activity | course | section | name       | completion |
-      | label    | C1     | 1       | Test label | 1          |
-    And I edit the section "2"
-    And I expand all fieldsets
-    And I click on "Add restriction..." "button"
-    And I click on "Activity completion" "button" in the "Add restriction..." "dialogue"
-    And I set the following fields to these values:
-      | cm | Test label |
-      | Required completion status | must be marked complete |
-    And I press "Save changes"
-    When I click on "Section 1" "link" in the "region-main" "region"
-    Then I should see "Section 2" in the "region-main" "region"
-    And I click on "Section 2" "link" in the "region-main" "region"
-    And I should see "Section 1" in the "region-main" "region"
-    And I should see "Section 3" in the "region-main" "region"
-    And I am on the "Course 1" course page logged in as student1
-    And I click on "Section 1" "link" in the "region-main" "region"
-    And I should not see "Section 2" in the "region-main" "region"
-    And I should see "Section 3" in the "region-main" "region"
-    And I click on "Section 3" "link" in the "region-main" "region"
-    And I should not see "Section 2" in the "region-main" "region"
-    And I should see "Section 1" in the "region-main" "region"

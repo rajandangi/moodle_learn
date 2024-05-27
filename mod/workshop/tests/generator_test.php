@@ -14,7 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace mod_workshop;
+/**
+ * mod_workshop generator tests
+ *
+ * @package    mod_workshop
+ * @category   test
+ * @copyright  2013 Marina Glancy
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
 /**
  * Genarator tests class for mod_workshop.
@@ -24,7 +31,7 @@ namespace mod_workshop;
  * @copyright  2013 Marina Glancy
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class generator_test extends \advanced_testcase {
+class mod_workshop_generator_testcase extends advanced_testcase {
 
     public function test_create_instance() {
         global $DB;

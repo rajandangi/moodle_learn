@@ -24,10 +24,7 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-use \core_message\tests\helper as testhelper;
-
 trait message_popup_test_helper {
-
     /**
      * Send a fake unread popup notification.
      *
@@ -41,11 +38,20 @@ trait message_popup_test_helper {
      * @param int $timecreated time the message was created.
      * @return int the id of the message
      */
-    protected function send_fake_unread_popup_notification(\stdClass $userfrom, \stdClass $userto,
-                                                           string $message = 'Hello world!', int $timecreated = 0): int {
+    protected function send_fake_unread_popup_notification($userfrom, $userto, $message = 'Hello world!', $timecreated = 0) {
         global $DB;
 
-        $id = testhelper::send_fake_unread_notification($userfrom, $userto, $message, $timecreated);
+        $record = new stdClass();
+        $record->useridfrom = $userfrom->id;
+        $record->useridto = $userto->id;
+        $record->notification = 1;
+        $record->subject = 'No subject';
+        $record->fullmessage = $message;
+        $record->smallmessage = $message;
+        $record->timecreated = $timecreated ? $timecreated : time();
+        $record->customdata  = json_encode(['datakey' => 'data']);
+
+        $id = $DB->insert_record('notifications', $record);
 
         $popup = new stdClass();
         $popup->notificationid = $id;
@@ -69,16 +75,29 @@ trait message_popup_test_helper {
      * @param int $timeread the the message was read
      * @return int the id of the message
      */
-    protected function send_fake_read_popup_notification(\stdClass $userfrom, \stdClass $userto, string $message = 'Hello world!',
-                                                         int $timecreated = 0, int $timeread = 0): int {
+    protected function send_fake_read_popup_notification($userfrom, $userto, $message = 'Hello world!',
+                                                         $timecreated = 0, $timeread = 0) {
         global $DB;
 
-        $id = testhelper::send_fake_read_notification($userfrom, $userto, $message, $timecreated, $timeread);
+        $record = new stdClass();
+        $record->useridfrom = $userfrom->id;
+        $record->useridto = $userto->id;
+        $record->notification = 1;
+        $record->subject = 'No subject';
+        $record->fullmessage = $message;
+        $record->smallmessage = $message;
+        $record->timecreated = $timecreated ? $timecreated : time();
+        $record->timeread = $timeread ? $timeread : time();
+
+        $record->id = $DB->insert_record('notifications', $record);
+
+        // Mark it as read.
+        \core_message\api::mark_notification_as_read($record);
 
         $popup = new stdClass();
-        $popup->notificationid = $id;
+        $popup->notificationid = $record->id;
         $DB->insert_record('message_popup_notifications', $popup);
 
-        return $id;
+        return $record->id;
     }
 }

@@ -18,7 +18,7 @@
  * This file is executed right after the install.xml
  *
  * For more information, take a look to the documentation available:
- *     - Upgrade API: {@link https://moodledev.io/docs/guides/upgrade}
+ *     - Upgrade API: {@link http://docs.moodle.org/dev/Upgrade_API}
  *
  * @package   core_install
  * @category  upgrade
@@ -42,7 +42,7 @@ defined('MOODLE_INTERNAL') || die();
  *
  * All plugins within Moodle (modules, blocks, reports...) support the existence of
  * their own install.php file, using the "Frankenstyle" component name as
- * defined at {@link https://moodledev.io/general/development/policies/codingstyle/frankenstyle}, for example:
+ * defined at {@link http://docs.moodle.org/dev/Frankenstyle}, for example:
  *     - {@link xmldb_page_install()}. (modules don't require the plugintype ("mod_") to be used.
  *     - {@link xmldb_enrol_meta_install()}.
  *     - {@link xmldb_workshopform_accumulative_install()}.
@@ -105,10 +105,9 @@ function xmldb_main_install() {
         throw new moodle_exception('generalexceptionmessage', 'error', '', 'Can not create default course category, categories already exist.');
     }
     $cat = new stdClass();
-    $cat->name         = get_string('defaultcategoryname');
-    $cat->descriptionformat = FORMAT_HTML;
+    $cat->name         = get_string('miscellaneous');
     $cat->depth        = 1;
-    $cat->sortorder    = get_max_courses_in_category();
+    $cat->sortorder    = MAX_COURSES_IN_CATEGORY;
     $cat->timemodified = time();
     $catid = $DB->insert_record('course_categories', $cat);
     $DB->set_field('course_categories', 'path', '/'.$catid, array('id'=>$catid));
@@ -129,13 +128,12 @@ function xmldb_main_install() {
         'sessiontimeout'        => 8 * 60 * 60, // Must be present during roles installation.
         'stringfilters'         => '', // These two are managed in a strange way by the filters.
         'filterall'             => 0, // setting page, so have to be initialised here.
-        'texteditors'           => 'tiny,atto,tinymce,textarea',
+        'texteditors'           => 'atto,tinymce,textarea',
         'antiviruses'           => '',
-        'media_plugins_sortorder' => 'videojs,youtube',
+        'media_plugins_sortorder' => 'videojs,youtube,swf',
         'upgrade_extracreditweightsstepignored' => 1, // New installs should not run this upgrade step.
         'upgrade_calculatedgradeitemsignored' => 1, // New installs should not run this upgrade step.
         'upgrade_letterboundarycourses' => 1, // New installs should not run this upgrade step.
-        'format_plugins_sortorder' => 'topics,weeks,singleactivity,social', // Default order for course format plugins.
     );
     foreach($defaults as $key => $value) {
         set_config($key, $value);
@@ -311,13 +309,6 @@ function xmldb_main_install() {
     $mypage->private = 1;
     $DB->insert_record('my_pages', $mypage);
 
-    $mycoursespage = new stdClass();
-    $mycoursespage->userid = null;
-    $mycoursespage->name = '__courses';
-    $mycoursespage->private = 0;
-    $mycoursespage->sortorder  = 0;
-    $DB->insert_record('my_pages', $mycoursespage);
-
     // Set a sensible default sort order for the most-used question types.
     set_config('multichoice_sortorder', 1, 'question');
     set_config('truefalse_sortorder', 2, 'question');
@@ -332,8 +323,4 @@ function xmldb_main_install() {
 
     require_once($CFG->dirroot . '/badges/upgradelib.php'); // Core install and upgrade related functions only for badges.
     badges_install_default_backpacks();
-
-    // Create default core site admin presets.
-    require_once($CFG->dirroot . '/admin/presets/classes/helper.php');
-    \core_adminpresets\helper::create_default_presets();
 }

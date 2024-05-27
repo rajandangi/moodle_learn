@@ -115,29 +115,6 @@ class lesson_page_type_endofbranch extends lesson_page {
     public function valid_page_and_view(&$validpages, &$pageviews) {
         return $this->properties->nextpageid;
     }
-
-    /**
-     * Creates answers within the database for this end of cluster page. Usually only ever
-     * called when creating a new page instance.
-     * @param object $properties
-     * @return array
-     */
-    public function create_answers($properties) {
-        global $DB;
-
-        $newanswer = new stdClass;
-        $newanswer->lessonid = $this->lesson->id;
-        $newanswer->pageid = $this->properties->id;
-        $newanswer->timecreated = $this->properties->timecreated;
-
-        if (isset($properties->jumpto[0])) {
-            $newanswer->jumpto = $properties->jumpto[0];
-        }
-        $newanswer->id = $DB->insert_record('lesson_answers', $newanswer);
-        $answers = [$newanswer->id => new lesson_page_answer($newanswer)];
-        $this->answers = $answers;
-        return $answers;
-    }
 }
 
 class lesson_add_page_form_endofbranch extends lesson_add_page_form_base {
@@ -159,8 +136,7 @@ class lesson_add_page_form_endofbranch extends lesson_add_page_form_base {
         $mform->addElement('hidden', 'qtype');
         $mform->setType('qtype', PARAM_TEXT);
 
-        $mform->addElement('text', 'title', get_string("pagetitle", "lesson"), ['size' => 70, 'maxlength' => 255]);
-        $mform->addRule('title', get_string('maximumchars', '', 255), 'maxlength', 255, 'client');
+        $mform->addElement('text', 'title', get_string("pagetitle", "lesson"), array('size'=>70));
         if (!empty($CFG->formatstringstriptags)) {
             $mform->setType('title', PARAM_TEXT);
         } else {
@@ -184,7 +160,7 @@ class lesson_add_page_form_endofbranch extends lesson_add_page_form_base {
 
         // the new page is not the first page (end of branch always comes after an existing page)
         if (!$page = $DB->get_record("lesson_pages", array("id" => $pageid))) {
-            throw new \moodle_exception('cannotfindpagerecord', 'lesson');
+            print_error('cannotfindpagerecord', 'lesson');
         }
         // chain back up to find the (nearest branch table)
         $btpage = clone($page);
@@ -192,7 +168,7 @@ class lesson_add_page_form_endofbranch extends lesson_add_page_form_base {
         while (($btpage->qtype != LESSON_PAGE_BRANCHTABLE) && ($btpage->prevpageid > 0)) {
             $btpageid = $btpage->prevpageid;
             if (!$btpage = $DB->get_record("lesson_pages", array("id" => $btpageid))) {
-                throw new \moodle_exception('cannotfindpagerecord', 'lesson');
+                print_error('cannotfindpagerecord', 'lesson');
             }
         }
 

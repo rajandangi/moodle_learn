@@ -23,16 +23,16 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-use core\report_helper;
-
 require('../../config.php');
 require_once($CFG->dirroot.'/lib/tablelib.php');
 require_once($CFG->dirroot.'/notes/lib.php');
 require_once($CFG->dirroot.'/report/participation/locallib.php');
 
-$participantsperpage = intval(get_config('moodlecourse', 'participantsperpage'));
-define('DEFAULT_PAGE_SIZE', (!empty($participantsperpage) ? $participantsperpage : 20));
+define('DEFAULT_PAGE_SIZE', 20);
 define('SHOW_ALL_PAGE_SIZE', 5000);
+
+// Release session lock.
+\core\session\manager::write_close();
 
 $id         = required_param('id', PARAM_INT); // course id.
 $roleid     = optional_param('roleid', 0, PARAM_INT); // which role to show
@@ -58,11 +58,11 @@ if ($action != 'view' and $action != 'post') {
 }
 
 if (!$course = $DB->get_record('course', array('id'=>$id))) {
-    throw new \moodle_exception('invalidcourse');
+    print_error('invalidcourse');
 }
 
 if ($roleid != 0 and !$role = $DB->get_record('role', array('id'=>$roleid))) {
-    throw new \moodle_exception('invalidrole');
+    print_error('invalidrole');
 }
 
 require_login($course);
@@ -82,10 +82,6 @@ if (!array_key_exists($action, $actionoptions)) {
 $PAGE->set_title(format_string($course->shortname, true, array('context' => $context)) .': '. $strparticipation);
 $PAGE->set_heading(format_string($course->fullname, true, array('context' => $context)));
 echo $OUTPUT->header();
-
-// Print the selector dropdown.
-$pluginname = get_string('pluginname', 'report_participation');
-report_helper::print_report_selector($pluginname);
 
 // Logs will not have been recorded before the course timecreated time.
 $minlog = $course->timecreated;
@@ -147,6 +143,7 @@ if (!empty($instanceid) && !empty($roleid)) {
     }
 
     $table = new flexible_table('course-participation-'.$course->id.'-'.$cm->id.'-'.$roleid);
+    $table->course = $course;
 
     $actionheader = !empty($action) ? get_string($action) : get_string('allactions');
 
@@ -181,9 +178,6 @@ if (!empty($instanceid) && !empty($roleid)) {
                                         TABLE_VAR_PAGE    => 'spage'
                                         ));
     $table->setup();
-
-    // Unlock the session only after outputting the table, since the table writes to the session.
-    \core\session\manager::write_close();
 
     // We want to query both the current context and parent contexts.
     list($relatedctxsql, $params) = $DB->get_in_or_equal($context->get_parent_context_ids(true), SQL_PARAMS_NAMED, 'relatedctx');
@@ -231,8 +225,7 @@ if (!empty($instanceid) && !empty($roleid)) {
         $params = array_merge($params, $crudparams);
     }
 
-    $userfieldsapi = \core_user\fields::for_name();
-    $usernamefields = $userfieldsapi->get_sql('u', false, '', '', false)->selects;
+    $usernamefields = get_all_user_name_fields(true, 'u');
     $users = array();
     // If using legacy log then get users from old table.
     if ($uselegacyreader || $onlyuselegacyreader) {
@@ -373,7 +366,7 @@ if (!empty($instanceid) && !empty($roleid)) {
             echo $OUTPUT->render($checknos);
         }
         echo '</div>';
-        echo '<div class="py-3">';
+        echo '<div class="p-y-1">';
         echo html_writer::label(get_string('withselectedusers'), 'formactionid');
         $displaylist['#messageselect'] = get_string('messageselectadd');
         $withselectedparams = array(

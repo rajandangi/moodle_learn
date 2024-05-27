@@ -37,15 +37,12 @@ class core_enrol_renderer extends plugin_renderer_base {
      * @return string XHTML
      */
     protected function render_enrol_user_button(enrol_user_button $button) {
-        $buttoninfo = $button->export_for_template($this->output);
+        $attributes = array('type'     => 'submit',
+                            'value'    => $button->label,
+                            'disabled' => $button->disabled ? 'disabled' : null,
+                            'title'    => $button->tooltip,
+                            'class'    => 'btn btn-secondary my-1');
 
-        $attributes = [
-            'type' => 'submit',
-            'value' => $buttoninfo->label,
-            'disabled' => $buttoninfo->disabled ? 'disabled' : null,
-            'title' => $buttoninfo->tooltip,
-            'class' => 'btn ' . "btn-{$buttoninfo->type}",
-        ];
         if ($button->actions) {
             $id = html_writer::random_id('single_button');
             $attributes['id'] = $id;
@@ -99,10 +96,18 @@ class core_enrol_renderer extends plugin_renderer_base {
         $table->initialise_javascript();
 
         $content = '';
+        $searchbutton = $table->get_user_search_button();
+        if ($searchbutton) {
+            $content .= $this->output->render($searchbutton);
+        }
         $content .= html_writer::tag('div', get_string('otheruserdesc', 'enrol'), array('class'=>'otherusersdesc'));
         $content .= $this->output->render($table->get_paging_bar());
         $content .= html_writer::table($table);
         $content .= $this->output->render($table->get_paging_bar());
+        $searchbutton = $table->get_user_search_button();
+        if ($searchbutton) {
+            $content .= $this->output->render($searchbutton);
+        }
         return $content;
     }
 
@@ -350,9 +355,6 @@ class course_enrolment_table extends html_table implements renderable {
     protected static $sortablefields = array('firstname', 'lastname', 'firstnamephonetic', 'lastnamephonetic', 'middlename',
             'alternatename', 'username', 'idnumber', 'email', 'phone1', 'phone2',
             'institution', 'department', 'lastaccess', 'lastcourseaccess');
-
-    /** @var bool To store status of Other users page. */
-    public $otherusers;
 
     /**
      * Constructs the table
@@ -646,6 +648,8 @@ class course_enrolment_users_table extends course_enrolment_table {
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class course_enrolment_other_users_table extends course_enrolment_table {
+
+    public $otherusers = true;
 
     /**
      * Constructs the table

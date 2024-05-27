@@ -44,7 +44,7 @@ abstract class crud_element {
      *
      * @return \action_link[]
      */
-    final protected function get_navigation() {
+    protected final function get_navigation() {
         $back = new \action_link(
             new \moodle_url('/admin/tool/dataprivacy/dataregistry.php'),
             get_string('back'),
@@ -62,7 +62,7 @@ abstract class crud_element {
      * @param \core\persistent $persistent
      * @return \action_menu
      */
-    final protected function action_menu($elementname, $exported, $persistent) {
+    protected final function action_menu($elementname, $exported, $persistent) {
 
         // Just in case, we are doing funny stuff below.
         $elementname = clean_param($elementname, PARAM_ALPHA);
@@ -71,6 +71,7 @@ abstract class crud_element {
         $actionmenu = new \action_menu();
         $actionmenu->set_menu_trigger(get_string('actions'));
         $actionmenu->set_owner_selector($elementname . '-' . $exported->id . '-actions');
+        $actionmenu->set_alignment(\action_menu::TL, \action_menu::BL);
 
         $url = new \moodle_url('/admin/tool/dataprivacy/edit' . $elementname . '.php',
             ['id' => $exported->id]);

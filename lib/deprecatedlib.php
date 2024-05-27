@@ -33,10 +33,28 @@ defined('MOODLE_INTERNAL') || die();
 /* === Functions that needs to be kept longer in deprecated lib than normal time period === */
 
 /**
+ * Add an entry to the legacy log table.
+ *
  * @deprecated since 2.7 use new events instead
+ *
+ * @param    int     $courseid  The course id
+ * @param    string  $module  The module name  e.g. forum, journal, resource, course, user etc
+ * @param    string  $action  'view', 'update', 'add' or 'delete', possibly followed by another word to clarify.
+ * @param    string  $url     The file and parameters used to see the results of the action
+ * @param    string  $info    Additional description information
+ * @param    int     $cm      The course_module->id if there is one
+ * @param    int|stdClass $user If log regards $user other than $USER
+ * @return void
  */
-function add_to_log() {
-    throw new coding_exception('add_to_log() has been removed, please rewrite your code to the new events API');
+function add_to_log($courseid, $module, $action, $url='', $info='', $cm=0, $user=0) {
+    debugging('add_to_log() has been deprecated, please rewrite your code to the new events API', DEBUG_DEVELOPER);
+
+    // This is a nasty hack that allows us to put all the legacy stuff into legacy storage,
+    // this way we may move all the legacy settings there too.
+    $manager = get_log_manager();
+    if (method_exists($manager, 'legacy_add_to_log')) {
+        $manager->legacy_add_to_log($courseid, $module, $action, $url, $info, $cm, $user);
+    }
 }
 
 /**
@@ -49,7 +67,7 @@ function events_trigger() {
 /**
  * List all core subsystems and their location
  *
- * This is a list of components that are part of the core and their
+ * This is a whitelist of components that are part of the core and their
  * language strings are defined in /lang/en/<<subsystem>>.php. If a given
  * plugin is not listed here and it does not have proper plugintype prefix,
  * then it is considered as course activity module.
@@ -414,7 +432,7 @@ function update_log_display_entry() {
 }
 
 /**
- * @deprecated use the text formatting in a standard way instead (https://moodledev.io/docs/apis/subsystems/output#output-functions)
+ * @deprecated use the text formatting in a standard way instead (http://docs.moodle.org/dev/Output_functions)
  *             this was abused mostly for embedding of attachments
  */
 function filter_text() {
@@ -468,19 +486,149 @@ function detect_munged_arguments() {
 
 
 /**
+ * Unzip one zip file to a destination dir
+ * Both parameters must be FULL paths
+ * If destination isn't specified, it will be the
+ * SAME directory where the zip file resides.
+ *
+ * @global object
+ * @param string $zipfile The zip file to unzip
+ * @param string $destination The location to unzip to
+ * @param bool $showstatus_ignored Unused
  * @deprecated since 2.0 MDL-15919
  */
-function unzip_file() {
-    throw new coding_exception(__FUNCTION__ . '() is deprecated. '
-        . 'Please use the application/zip file_packer implementation instead.');
+function unzip_file($zipfile, $destination = '', $showstatus_ignored = true) {
+    debugging(__FUNCTION__ . '() is deprecated. '
+            . 'Please use the application/zip file_packer implementation instead.', DEBUG_DEVELOPER);
+
+    // Extract everything from zipfile.
+    $path_parts = pathinfo(cleardoubleslashes($zipfile));
+    $zippath = $path_parts["dirname"];       //The path of the zip file
+    $zipfilename = $path_parts["basename"];  //The name of the zip file
+    $extension = $path_parts["extension"];    //The extension of the file
+
+    //If no file, error
+    if (empty($zipfilename)) {
+        return false;
+    }
+
+    //If no extension, error
+    if (empty($extension)) {
+        return false;
+    }
+
+    //Clear $zipfile
+    $zipfile = cleardoubleslashes($zipfile);
+
+    //Check zipfile exists
+    if (!file_exists($zipfile)) {
+        return false;
+    }
+
+    //If no destination, passed let's go with the same directory
+    if (empty($destination)) {
+        $destination = $zippath;
+    }
+
+    //Clear $destination
+    $destpath = rtrim(cleardoubleslashes($destination), "/");
+
+    //Check destination path exists
+    if (!is_dir($destpath)) {
+        return false;
+    }
+
+    $packer = get_file_packer('application/zip');
+
+    $result = $packer->extract_to_pathname($zipfile, $destpath);
+
+    if ($result === false) {
+        return false;
+    }
+
+    foreach ($result as $status) {
+        if ($status !== true) {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 /**
+ * Zip an array of files/dirs to a destination zip file
+ * Both parameters must be FULL paths to the files/dirs
+ *
+ * @global object
+ * @param array $originalfiles Files to zip
+ * @param string $destination The destination path
+ * @return bool Outcome
+ *
  * @deprecated since 2.0 MDL-15919
  */
-function zip_files() {
-    throw new coding_exception(__FUNCTION__ . '() is deprecated. '
-        . 'Please use the application/zip file_packer implementation instead.');
+function zip_files($originalfiles, $destination) {
+    debugging(__FUNCTION__ . '() is deprecated. '
+            . 'Please use the application/zip file_packer implementation instead.', DEBUG_DEVELOPER);
+
+    // Extract everything from destination.
+    $path_parts = pathinfo(cleardoubleslashes($destination));
+    $destpath = $path_parts["dirname"];       //The path of the zip file
+    $destfilename = $path_parts["basename"];  //The name of the zip file
+    $extension = $path_parts["extension"];    //The extension of the file
+
+    //If no file, error
+    if (empty($destfilename)) {
+        return false;
+    }
+
+    //If no extension, add it
+    if (empty($extension)) {
+        $extension = 'zip';
+        $destfilename = $destfilename.'.'.$extension;
+    }
+
+    //Check destination path exists
+    if (!is_dir($destpath)) {
+        return false;
+    }
+
+    //Check destination path is writable. TODO!!
+
+    //Clean destination filename
+    $destfilename = clean_filename($destfilename);
+
+    //Now check and prepare every file
+    $files = array();
+    $origpath = NULL;
+
+    foreach ($originalfiles as $file) {  //Iterate over each file
+        //Check for every file
+        $tempfile = cleardoubleslashes($file); // no doubleslashes!
+        //Calculate the base path for all files if it isn't set
+        if ($origpath === NULL) {
+            $origpath = rtrim(cleardoubleslashes(dirname($tempfile)), "/");
+        }
+        //See if the file is readable
+        if (!is_readable($tempfile)) {  //Is readable
+            continue;
+        }
+        //See if the file/dir is in the same directory than the rest
+        if (rtrim(cleardoubleslashes(dirname($tempfile)), "/") != $origpath) {
+            continue;
+        }
+        //Add the file to the array
+        $files[] = $tempfile;
+    }
+
+    $zipfiles = array();
+    $start = strlen($origpath)+1;
+    foreach($files as $file) {
+        $zipfiles[substr($file, $start)] = $file;
+    }
+
+    $packer = get_file_packer('application/zip');
+
+    return $packer->archive_to_pathname($zipfiles, $destpath . '/' . $destfilename);
 }
 
 /**
@@ -534,7 +682,7 @@ function groups_course_module_visible() {
  */
 function error() {
     throw new coding_exception('notlocalisederrormessage', 'error', $link, $message, 'error() is a removed, please call
-            throw new \moodle_exception() instead of error()');
+            print_error() instead of error()');
 }
 
 
@@ -618,12 +766,57 @@ function print_side_block() {
 }
 
 /**
+ * Prints a basic textarea field.
+ *
+ * This was 'deprecated' in 2.0, but not properly (there was no alternative) so the
+ * debugging message was commented out.
+ *
  * @deprecated since Moodle 3.6
+ *
+ * When using this function, you should
+ *
+ * @global object
+ * @param bool $unused No longer used.
+ * @param int $rows Number of rows to display  (minimum of 10 when $height is non-null)
+ * @param int $cols Number of columns to display (minimum of 65 when $width is non-null)
+ * @param null $width (Deprecated) Width of the element; if a value is passed, the minimum value for $cols will be 65. Value is otherwise ignored.
+ * @param null $height (Deprecated) Height of the element; if a value is passe, the minimum value for $rows will be 10. Value is otherwise ignored.
+ * @param string $name Name to use for the textarea element.
+ * @param string $value Initial content to display in the textarea.
+ * @param int $obsolete deprecated
+ * @param bool $return If false, will output string. If true, will return string value.
+ * @param string $id CSS ID to add to the textarea element.
+ * @return string|void depending on the value of $return
  */
-function print_textarea() {
-    throw new coding_exception(
-        'print_textarea() has been removed. Please use $OUTPUT->print_textarea() instead.'
-    );
+function print_textarea($unused, $rows, $cols, $width, $height, $name, $value='', $obsolete=0, $return=false, $id='') {
+    /// $width and height are legacy fields and no longer used as pixels like they used to be.
+    /// However, you can set them to zero to override the mincols and minrows values below.
+
+    // Disabling because there is not yet a viable $OUTPUT option for cases when mforms can't be used
+    debugging('print_textarea() is deprecated. Please use $OUTPUT->print_textarea() instead.', DEBUG_DEVELOPER);
+
+    global $OUTPUT;
+
+    $mincols = 65;
+    $minrows = 10;
+
+    if ($id === '') {
+        $id = 'edit-'.$name;
+    }
+
+    if ($height && ($rows < $minrows)) {
+        $rows = $minrows;
+    }
+    if ($width && ($cols < $mincols)) {
+        $cols = $mincols;
+    }
+
+    $textarea = $OUTPUT->print_textarea($name, $id, $value, $rows, $cols);
+    if ($return) {
+        return $textarea;
+    }
+
+    echo $textarea;
 }
 
 /**
@@ -788,8 +981,7 @@ function textlib_get_instance() {
  * @deprecated since 2.4
  */
 function get_generic_section_name() {
-    throw new coding_exception('get_generic_section_name() is deprecated. Please use appropriate functionality '
-            .'from class core_courseformat\\base');
+    throw new coding_exception('get_generic_section_name() is deprecated. Please use appropriate functionality from class format_base');
 }
 
 /**
@@ -846,6 +1038,9 @@ function print_section_add_menus() {
 
 /**
  * @deprecated since 2.5. Please use:
+ * $courserenderer = $PAGE->get_renderer('core', 'course');
+ * $actions = course_get_cm_edit_actions($mod, $indent, $section);
+ * return ' ' . $courserenderer->course_section_cm_edit_actions($actions);
  */
 function make_editing_buttons() {
     throw new coding_exception('Function make_editing_buttons() is removed, please see PHPdocs in '.
@@ -856,11 +1051,8 @@ function make_editing_buttons() {
  * @deprecated since 2.5
  */
 function print_section() {
-    throw new coding_exception(
-        'Function print_section() is removed.' .
-        ' Please use core_courseformat\\output\\local\\content\\section' .
-        ' to render a course section instead.'
-    );
+    throw new coding_exception('Function print_section() is removed. Please use course renderer function '.
+            'course_section_cm_list() instead.');
 }
 
 /**
@@ -2080,9 +2272,11 @@ function get_records_csv() {
 
 /**
  * @deprecated since Moodle 3.2
+ * @see download_as_dataformat (lib/dataformatlib.php)
  */
 function put_records_csv() {
-    throw new coding_exception(__FUNCTION__ . '() has been removed, please use \core\dataformat::download_data() instead');
+    throw new coding_exception('put_records_csv() can not be used anymore. Please use ' .
+        'lib/dataformatlib.php download_as_dataformat() instead.');
 }
 
 /**
@@ -2204,6 +2398,13 @@ function message_get_contact_block_link() {
 function message_mark_messages_read() {
     throw new coding_exception('message_mark_messages_read() can not be used anymore. Please use ' .
         '\core_message\api::mark_all_messages_as_read() instead.');
+}
+
+/**
+ * @deprecated since Moodle 3.2
+ */
+function message_page_type_list() {
+    throw new coding_exception('message_page_type_list() can not be used anymore.');
 }
 
 /**
@@ -2485,734 +2686,1140 @@ function message_delete_message() {
 }
 
 /**
+ * Get all of the allowed types for all of the courses and groups
+ * the logged in user belongs to.
+ *
+ * The returned array will optionally have 5 keys:
+ *      'user' : true if the logged in user can create user events
+ *      'site' : true if the logged in user can create site events
+ *      'category' : array of course categories that the user can create events for
+ *      'course' : array of courses that the user can create events for
+ *      'group': array of groups that the user can create events for
+ *      'groupcourses' : array of courses that the groups belong to (can
+ *                       be different from the list in 'course'.
  * @deprecated since 3.6
+ * @return array The array of allowed types.
  */
 function calendar_get_all_allowed_types() {
-    throw new coding_exception(
-        'calendar_get_all_allowed_types() has been removed. Please use calendar_get_allowed_types() instead.'
-    );
+    debugging('calendar_get_all_allowed_types() is deprecated. Please use calendar_get_allowed_types() instead.',
+        DEBUG_DEVELOPER);
 
+    global $CFG, $USER, $DB;
+
+    require_once($CFG->libdir . '/enrollib.php');
+
+    $types = [];
+
+    $allowed = new stdClass();
+
+    calendar_get_allowed_types($allowed);
+
+    if ($allowed->user) {
+        $types['user'] = true;
+    }
+
+    if ($allowed->site) {
+        $types['site'] = true;
+    }
+
+    if (core_course_category::has_manage_capability_on_any()) {
+        $types['category'] = core_course_category::make_categories_list('moodle/category:manage');
+    }
+
+    // This function warms the context cache for the course so the calls
+    // to load the course context in calendar_get_allowed_types don't result
+    // in additional DB queries.
+    $courses = calendar_get_default_courses(null, 'id, groupmode, groupmodeforce', true);
+
+    // We want to pre-fetch all of the groups for each course in a single
+    // query to avoid calendar_get_allowed_types from hitting the DB for
+    // each separate course.
+    $groups = groups_get_all_groups_for_courses($courses);
+
+    foreach ($courses as $course) {
+        $coursegroups = isset($groups[$course->id]) ? $groups[$course->id] : null;
+        calendar_get_allowed_types($allowed, $course, $coursegroups);
+
+        if (!empty($allowed->courses)) {
+            $types['course'][$course->id] = $course;
+        }
+
+        if (!empty($allowed->groups)) {
+            $types['groupcourses'][$course->id] = $course;
+
+            if (!isset($types['group'])) {
+                $types['group'] = array_values($allowed->groups);
+            } else {
+                $types['group'] = array_merge($types['group'], array_values($allowed->groups));
+            }
+        }
+    }
+
+    return $types;
 }
 
 /**
- * @deprecated since Moodle 3.6.
+ * Gets array of all groups in a set of course.
+ *
+ * @category group
+ * @param array $courses Array of course objects or course ids.
+ * @return array Array of groups indexed by course id.
  */
-function groups_get_all_groups_for_courses() {
-    throw new coding_exception(
-        'groups_get_all_groups_for_courses() has been removed and can not be used anymore.'
-    );
+function groups_get_all_groups_for_courses($courses) {
+    global $DB;
+
+    if (empty($courses)) {
+        return [];
+    }
+
+    $groups = [];
+    $courseids = [];
+
+    foreach ($courses as $course) {
+        $courseid = is_object($course) ? $course->id : $course;
+        $groups[$courseid] = [];
+        $courseids[] = $courseid;
+    }
+
+    $groupfields = [
+        'g.id as gid',
+        'g.courseid',
+        'g.idnumber',
+        'g.name',
+        'g.description',
+        'g.descriptionformat',
+        'g.enrolmentkey',
+        'g.picture',
+        'g.hidepicture',
+        'g.timecreated',
+        'g.timemodified'
+    ];
+
+    $groupsmembersfields = [
+        'gm.id as gmid',
+        'gm.groupid',
+        'gm.userid',
+        'gm.timeadded',
+        'gm.component',
+        'gm.itemid'
+    ];
+
+    $concatidsql = $DB->sql_concat_join("'-'", ['g.id', 'COALESCE(gm.id, 0)']) . ' AS uniqid';
+    list($courseidsql, $params) = $DB->get_in_or_equal($courseids);
+    $groupfieldssql = implode(',', $groupfields);
+    $groupmembersfieldssql = implode(',', $groupsmembersfields);
+    $sql = "SELECT {$concatidsql}, {$groupfieldssql}, {$groupmembersfieldssql}
+              FROM {groups} g
+         LEFT JOIN {groups_members} gm
+                ON gm.groupid = g.id
+             WHERE g.courseid {$courseidsql}";
+
+    $results = $DB->get_records_sql($sql, $params);
+
+    // The results will come back as a flat dataset thanks to the left
+    // join so we will need to do some post processing to blow it out
+    // into a more usable data structure.
+    //
+    // This loop will extract the distinct groups from the result set
+    // and add it's list of members to the object as a property called
+    // 'members'. Then each group will be added to the result set indexed
+    // by it's course id.
+    //
+    // The resulting data structure for $groups should be:
+    // $groups = [
+    //      '1' = [
+    //          '1' => (object) [
+    //              'id' => 1,
+    //              <rest of group properties>
+    //              'members' => [
+    //                  '1' => (object) [
+    //                      <group member properties>
+    //                  ],
+    //                  '2' => (object) [
+    //                      <group member properties>
+    //                  ]
+    //              ]
+    //          ],
+    //          '2' => (object) [
+    //              'id' => 2,
+    //              <rest of group properties>
+    //              'members' => [
+    //                  '1' => (object) [
+    //                      <group member properties>
+    //                  ],
+    //                  '3' => (object) [
+    //                      <group member properties>
+    //                  ]
+    //              ]
+    //          ]
+    //      ]
+    // ]
+    //
+    foreach ($results as $key => $result) {
+        $groupid = $result->gid;
+        $courseid = $result->courseid;
+        $coursegroups = $groups[$courseid];
+        $groupsmembersid = $result->gmid;
+        $reducefunc = function($carry, $field) use ($result) {
+            // Iterate over the groups properties and pull
+            // them out into a separate object.
+            list($prefix, $field) = explode('.', $field);
+
+            if (property_exists($result, $field)) {
+                $carry[$field] = $result->{$field};
+            }
+
+            return $carry;
+        };
+
+        if (isset($coursegroups[$groupid])) {
+            $group = $coursegroups[$groupid];
+        } else {
+            $initial = [
+                'id' => $groupid,
+                'members' => []
+            ];
+            $group = (object) array_reduce(
+                $groupfields,
+                $reducefunc,
+                $initial
+            );
+        }
+
+        if (!empty($groupsmembersid)) {
+            $initial = ['id' => $groupsmembersid];
+            $groupsmembers = (object) array_reduce(
+                $groupsmembersfields,
+                $reducefunc,
+                $initial
+            );
+
+            $group->members[$groupsmembers->userid] = $groupsmembers;
+        }
+
+        $coursegroups[$groupid] = $group;
+        $groups[$courseid] = $coursegroups;
+    }
+
+    return $groups;
 }
 
 /**
+ * Gets the capabilities that have been cached in the database for this
+ * component.
  * @deprecated since Moodle 3.6. Please use the Events 2 API.
+ * @todo final deprecation. To be removed in Moodle 4.0
+ *
+ * @access protected To be used from eventslib only
+ *
+ * @param string $component examples: 'moodle', 'mod_forum', 'block_quiz_results'
+ * @return array of events
  */
-function events_get_cached() {
-    throw new coding_exception(
-        'Events API using $handlers array has been removed in favour of Events 2 API, please use it instead.'
-    );
+function events_get_cached($component) {
+    global $DB;
+
+    debugging('Events API using $handlers array has been deprecated in favour of Events 2 API, please use it instead.',
+            DEBUG_DEVELOPER);
+
+    $cachedhandlers = array();
+
+    if ($storedhandlers = $DB->get_records('events_handlers', array('component'=>$component))) {
+        foreach ($storedhandlers as $handler) {
+            $cachedhandlers[$handler->eventname] = array (
+                'id'              => $handler->id,
+                'handlerfile'     => $handler->handlerfile,
+                'handlerfunction' => $handler->handlerfunction,
+                'schedule'        => $handler->schedule,
+                'internal'        => $handler->internal);
+        }
+    }
+
+    return $cachedhandlers;
 }
 
 /**
+ * Remove all event handlers and queued events
  * @deprecated since Moodle 3.6. Please use the Events 2 API.
+ * @todo final deprecation. To be removed in Moodle 4.0
+ *
+ * @category event
+ * @param string $component examples: 'moodle', 'mod_forum', 'block_quiz_results'
  */
-function events_uninstall() {
-    throw new coding_exception(
-        'Events API using $handlers array has been removed in favour of Events 2 API, please use it instead.'
-    );
+function events_uninstall($component) {
+    debugging('Events API using $handlers array has been deprecated in favour of Events 2 API, please use it instead.',
+            DEBUG_DEVELOPER);
+    $cachedhandlers = events_get_cached($component);
+    events_cleanup($component, $cachedhandlers);
+
+    events_get_handlers('reset');
 }
 
 /**
+ * Deletes cached events that are no longer needed by the component.
  * @deprecated since Moodle 3.6. Please use the Events 2 API.
+ * @todo final deprecation. To be removed in Moodle 4.0
+ *
+ * @access protected To be used from eventslib only
+ *
+ * @param string $component examples: 'moodle', 'mod_forum', 'block_quiz_results'
+ * @param array $cachedhandlers array of the cached events definitions that will be
+ * @return int number of unused handlers that have been removed
  */
-function events_cleanup() {
-    throw new coding_exception(
-        'Events API using $handlers array has been removed in favour of Events 2 API, please use it instead.'
-    );
+function events_cleanup($component, $cachedhandlers) {
+    global $DB;
+    debugging('Events API using $handlers array has been deprecated in favour of Events 2 API, please use it instead.',
+            DEBUG_DEVELOPER);
+    $deletecount = 0;
+    foreach ($cachedhandlers as $eventname => $cachedhandler) {
+        if ($qhandlers = $DB->get_records('events_queue_handlers', array('handlerid'=>$cachedhandler['id']))) {
+            //debugging("Removing pending events from queue before deleting of event handler: $component - $eventname");
+            foreach ($qhandlers as $qhandler) {
+                events_dequeue($qhandler);
+            }
+        }
+        $DB->delete_records('events_handlers', array('eventname'=>$eventname, 'component'=>$component));
+        $deletecount++;
+    }
+
+    return $deletecount;
 }
 
 /**
+ * Removes this queued handler from the events_queued_handler table
+ *
+ * Removes events_queue record from events_queue if no more references to this event object exists
  * @deprecated since Moodle 3.6. Please use the Events 2 API.
+ * @todo final deprecation. To be removed in Moodle 4.0
+ *
+ * @access protected To be used from eventslib only
+ *
+ * @param stdClass $qhandler A row from the events_queued_handler table
  */
-function events_dequeue() {
-    throw new coding_exception(
-        'Events API using $handlers array has been removed in favour of Events 2 API, please use it instead.'
-    );
+function events_dequeue($qhandler) {
+    global $DB;
+    debugging('Events API using $handlers array has been deprecated in favour of Events 2 API, please use it instead.',
+            DEBUG_DEVELOPER);
+    // first delete the queue handler
+    $DB->delete_records('events_queue_handlers', array('id'=>$qhandler->id));
+
+    // if no more queued handler is pointing to the same event - delete the event too
+    if (!$DB->record_exists('events_queue_handlers', array('queuedeventid'=>$qhandler->queuedeventid))) {
+        $DB->delete_records('events_queue', array('id'=>$qhandler->queuedeventid));
+    }
 }
 
 /**
+ * Returns handlers for given event. Uses caching for better perf.
  * @deprecated since Moodle 3.6. Please use the Events 2 API.
+ * @todo final deprecation. To be removed in Moodle 4.0
+ *
+ * @access protected To be used from eventslib only
+ *
+ * @staticvar array $handlers
+ * @param string $eventname name of event or 'reset'
+ * @return array|false array of handlers or false otherwise
  */
-function events_get_handlers() {
-    throw new coding_exception(
-        'Events API using $handlers array has been removed in favour of Events 2 API, please use it instead.'
-    );
+function events_get_handlers($eventname) {
+    global $DB;
+    static $handlers = array();
+    debugging('Events API using $handlers array has been deprecated in favour of Events 2 API, please use it instead.',
+            DEBUG_DEVELOPER);
+
+    if ($eventname === 'reset') {
+        $handlers = array();
+        return false;
+    }
+
+    if (!array_key_exists($eventname, $handlers)) {
+        $handlers[$eventname] = $DB->get_records('events_handlers', array('eventname'=>$eventname));
+    }
+
+    return $handlers[$eventname];
 }
 
 /**
+ * This function finds the roles assigned directly to this context only
+ * i.e. no roles in parent contexts
+ *
  * @deprecated since Moodle 3.6. Please use the get_roles_used_in_context().
+ * @todo final deprecation. To be removed in Moodle 4.0
+ * @param context $context
+ * @return array
  */
-function get_roles_on_exact_context() {
-    throw new coding_exception(
-        'get_roles_on_exact_context() has been removed, please use get_roles_used_in_context() instead.'
-    );
+function get_roles_on_exact_context(context $context) {
+    debugging('get_roles_on_exact_context() is deprecated, please use get_roles_used_in_context() instead.',
+        DEBUG_DEVELOPER);
+
+    return get_roles_used_in_context($context, false);
 }
 
 /**
+ * Find out which roles has assignment on this context
+ *
  * @deprecated since Moodle 3.6. Please use the get_roles_used_in_context().
+ * @todo final deprecation. To be removed in Moodle 4.0
+ * @param context $context
+ * @return array
  */
-function get_roles_with_assignment_on_context() {
-    throw new coding_exception(
-        'get_roles_with_assignment_on_context() has been removed, please use get_roles_used_in_context() instead.'
-    );
+function get_roles_with_assignment_on_context(context $context) {
+    debugging('get_roles_with_assignment_on_context() is deprecated, please use get_roles_used_in_context() instead.',
+        DEBUG_DEVELOPER);
+
+    return get_roles_used_in_context($context, false);
 }
 
 /**
+ * Add the selected user as a contact for the current user
+ *
  * @deprecated since Moodle 3.6
+ * @param int $contactid the ID of the user to add as a contact
+ * @param int $blocked 1 if you wish to block the contact
+ * @param int $userid the user ID of the user we want to add the contact for, defaults to current user if not specified.
+ * @return bool/int false if the $contactid isnt a valid user id. True if no changes made.
+ *                  Otherwise returns the result of update_record() or insert_record()
  */
-function message_add_contact() {
-    throw new coding_exception(
-        'message_add_contact() has been removed. Please use \core_message\api::create_contact_request() instead. ' .
+function message_add_contact($contactid, $blocked = 0, $userid = 0) {
+    debugging('message_add_contact() is deprecated. Please use \core_message\api::create_contact_request() instead. ' .
         'If you wish to block or unblock a user please use \core_message\api::is_blocked() and ' .
-        '\core_message\api::block_user() or \core_message\api::unblock_user() respectively.'
-    );
+        '\core_message\api::block_user() or \core_message\api::unblock_user() respectively.', DEBUG_DEVELOPER);
+
+    global $USER, $DB;
+
+    if (!$DB->record_exists('user', array('id' => $contactid))) {
+        return false;
+    }
+
+    if (empty($userid)) {
+        $userid = $USER->id;
+    }
+
+    // Check if a record already exists as we may be changing blocking status.
+    if (\core_message\api::is_contact($userid, $contactid)) {
+        $isblocked = \core_message\api::is_blocked($userid, $contactid);
+        // Check if blocking status has been changed.
+        if ($isblocked != $blocked) {
+            if ($blocked == 1) {
+                if (!$isblocked) {
+                    \core_message\api::block_user($userid, $contactid);
+                }
+            } else {
+                \core_message\api::unblock_user($userid, $contactid);
+            }
+
+            return true;
+        } else {
+            // No change to blocking status.
+            return true;
+        }
+    } else {
+        if ($blocked == 1) {
+            if (!\core_message\api::is_blocked($userid, $contactid)) {
+                \core_message\api::block_user($userid, $contactid);
+            }
+        } else {
+            \core_message\api::unblock_user($userid, $contactid);
+            if (!\core_message\api::does_contact_request_exist($userid, $contactid)) {
+                \core_message\api::create_contact_request($userid, $contactid);
+            }
+        }
+
+        return true;
+    }
 }
 
 /**
+ * Remove a contact.
+ *
  * @deprecated since Moodle 3.6
+ * @param int $contactid the user ID of the contact to remove
+ * @param int $userid the user ID of the user we want to remove the contacts for, defaults to current user if not specified.
+ * @return bool returns the result of delete_records()
  */
-function message_remove_contact() {
-    throw new coding_exception(
-        'message_remove_contact() has been removed. Please use \core_message\api::remove_contact() instead.'
-    );
+function message_remove_contact($contactid, $userid = 0) {
+    debugging('message_remove_contact() is deprecated. Please use \core_message\api::remove_contact() instead.',
+        DEBUG_DEVELOPER);
+
+    global $USER;
+
+    if (empty($userid)) {
+        $userid = $USER->id;
+    }
+
+    \core_message\api::remove_contact($userid, $contactid);
+
+    return true;
 }
 
 /**
+ * Unblock a contact.
+ *
  * @deprecated since Moodle 3.6
+ * @param int $contactid the user ID of the contact to unblock
+ * @param int $userid the user ID of the user we want to unblock the contact for, defaults to current user
+ *  if not specified.
+ * @return bool returns the result of delete_records()
  */
-function message_unblock_contact() {
-    throw new coding_exception(
-        'message_unblock_contact() has been removed. Please use \core_message\api::unblock_user() instead.'
-    );
+function message_unblock_contact($contactid, $userid = 0) {
+    debugging('message_unblock_contact() is deprecated. Please use \core_message\api::unblock_user() instead.',
+        DEBUG_DEVELOPER);
+
+    global $DB, $USER;
+
+    if (!$DB->record_exists('user', array('id' => $contactid))) {
+        return false;
+    }
+
+    if (empty($userid)) {
+        $userid = $USER->id;
+    }
+
+    \core_message\api::unblock_user($userid, $contactid);
+
+    return true;
 }
 
 /**
+ * Block a user.
+ *
  * @deprecated since Moodle 3.6
+ * @param int $contactid the user ID of the user to block
+ * @param int $userid the user ID of the user we want to unblock the contact for, defaults to current user
+ *  if not specified.
+ * @return bool
  */
-function message_block_contact() {
-    throw new coding_exception(
-        'message_block_contact() has been removed. Please use \core_message\api::is_blocked() and ' .
-        '\core_message\api::block_user() instead.'
-    );
+function message_block_contact($contactid, $userid = 0) {
+    debugging('message_block_contact() is deprecated. Please use \core_message\api::is_blocked() and ' .
+        '\core_message\api::block_user() instead.', DEBUG_DEVELOPER);
+
+    global $DB, $USER;
+
+    if (!$DB->record_exists('user', array('id' => $contactid))) {
+        return false;
+    }
+
+    if (empty($userid)) {
+        $userid = $USER->id;
+    }
+
+    if (!\core_message\api::is_blocked($userid, $contactid)) {
+        \core_message\api::block_user($userid, $contactid);
+    }
+
+    return true;
 }
 
 /**
+ * Load a user's contact record
+ *
  * @deprecated since Moodle 3.6
+ * @param int $contactid the user ID of the user whose contact record you want
+ * @return array message contacts
  */
-function message_get_contact() {
-    throw new coding_exception(
-        'message_get_contact() has been removed. Please use \core_message\api::get_contact() instead.'
-    );
+function message_get_contact($contactid) {
+    debugging('message_get_contact() is deprecated. Please use \core_message\api::get_contact() instead.',
+        DEBUG_DEVELOPER);
+
+    global $USER;
+
+    return \core_message\api::get_contact($USER->id, $contactid);
 }
 
 /**
+ * Returns list of courses, for whole site, or category
+ *
+ * Similar to get_courses, but allows paging
+ * Important: Using c.* for fields is extremely expensive because
+ *            we are using distinct. You almost _NEVER_ need all the fields
+ *            in such a large SELECT
+ *
  * @deprecated since Moodle 3.7
+ * @todo The final deprecation of this function will take place in Moodle 41 - see MDL-65319.
+ *
+ * @param string|int $categoryid Either a category id or 'all' for everything
+ * @param string $sort A field and direction to sort by
+ * @param string $fields The additional fields to return
+ * @param int $totalcount Reference for the number of courses
+ * @param string $limitfrom The course to start from
+ * @param string $limitnum The number of courses to limit to
+ * @return array Array of courses
  */
-function get_courses_page() {
-    throw new coding_exception(
-        'Function get_courses_page() has been removed. Please use core_course_category::get_courses() ' .
-        'or core_course_category::search_courses()'
-    );
+function get_courses_page($categoryid="all", $sort="c.sortorder ASC", $fields="c.*",
+                          &$totalcount, $limitfrom="", $limitnum="") {
+    debugging('Function get_courses_page() is deprecated. Please use core_course_category::get_courses() ' .
+        'or core_course_category::search_courses()', DEBUG_DEVELOPER);
+    global $USER, $CFG, $DB;
+
+    $params = array();
+
+    $categoryselect = "";
+    if ($categoryid !== "all" && is_numeric($categoryid)) {
+        $categoryselect = "WHERE c.category = :catid";
+        $params['catid'] = $categoryid;
+    } else {
+        $categoryselect = "";
+    }
+
+    $ccselect = ', ' . context_helper::get_preload_record_columns_sql('ctx');
+    $ccjoin = "LEFT JOIN {context} ctx ON (ctx.instanceid = c.id AND ctx.contextlevel = :contextlevel)";
+    $params['contextlevel'] = CONTEXT_COURSE;
+
+    $totalcount = 0;
+    if (!$limitfrom) {
+        $limitfrom = 0;
+    }
+    $visiblecourses = array();
+
+    $sql = "SELECT $fields $ccselect
+              FROM {course} c
+              $ccjoin
+           $categoryselect
+          ORDER BY $sort";
+
+    // Pull out all course matching the cat.
+    $rs = $DB->get_recordset_sql($sql, $params);
+    // Iteration will have to be done inside loop to keep track of the limitfrom and limitnum.
+    foreach ($rs as $course) {
+        context_helper::preload_from_record($course);
+        if (core_course_category::can_view_course_info($course)) {
+            $totalcount++;
+            if ($totalcount > $limitfrom && (!$limitnum or count($visiblecourses) < $limitnum)) {
+                $visiblecourses [$course->id] = $course;
+            }
+        }
+    }
+    $rs->close();
+    return $visiblecourses;
 }
 
 /**
- * @deprecated since Moodle 3.8
+ * Returns the models that generated insights in the provided context.
+ *
+ * @deprecated since Moodle 3.8 MDL-66091 - please do not use this function any more.
+ * @todo MDL-65799 This will be deleted in Moodle 4.2
+ * @see \core_analytics\manager::cached_models_with_insights
+ * @param  \context $context
+ * @return int[]
  */
 function report_insights_context_insights(\context $context) {
-    throw new coding_exception(
-        'Function report_insights_context_insights() ' .
-        'has been removed. Please use \core_analytics\manager::cached_models_with_insights instead'
-    );
+
+    debugging('report_insights_context_insights is deprecated. Please use ' .
+        '\core_analytics\manager::cached_models_with_insights instead', DEBUG_DEVELOPER);
+
+    return \core_analytics\manager::cached_models_with_insights($context);
 }
 
 /**
- * @deprecated since 3.9
+ * Retrieve all metadata for the requested modules
+ *
+ * @deprecated since 3.9.
+ * @param object $course The Course
+ * @param array $modnames An array containing the list of modules and their
+ * names
+ * @param int $sectionreturn The section to return to
+ * @return array A list of stdClass objects containing metadata about each
+ * module
  */
-function get_module_metadata() {
-    throw new coding_exception(
-        'get_module_metadata() has been removed. Please use \core_course\local\service\content_item_service instead.');
+function get_module_metadata($course, $modnames, $sectionreturn = null) {
+    global $OUTPUT;
+
+    debugging('get_module_metadata is deprecated. Please use \core_course\local\service\content_item_service instead.');
+
+    // get_module_metadata will be called once per section on the page and courses may show
+    // different modules to one another
+    static $modlist = array();
+    if (!isset($modlist[$course->id])) {
+        $modlist[$course->id] = array();
+    }
+
+    $return = array();
+    $urlbase = new moodle_url('/course/mod.php', array('id' => $course->id, 'sesskey' => sesskey()));
+    if ($sectionreturn !== null) {
+        $urlbase->param('sr', $sectionreturn);
+    }
+    foreach($modnames as $modname => $modnamestr) {
+        if (!course_allowed_module($course, $modname)) {
+            continue;
+        }
+        if (isset($modlist[$course->id][$modname])) {
+            // This module is already cached
+            $return += $modlist[$course->id][$modname];
+            continue;
+        }
+        $modlist[$course->id][$modname] = array();
+
+        // Create an object for a default representation of this module type in the activity chooser. It will be used
+        // if module does not implement callback get_shortcuts() and it will also be passed to the callback if it exists.
+        $defaultmodule = new stdClass();
+        $defaultmodule->title = $modnamestr;
+        $defaultmodule->name = $modname;
+        $defaultmodule->link = new moodle_url($urlbase, array('add' => $modname));
+        $defaultmodule->icon = $OUTPUT->pix_icon('icon', '', $defaultmodule->name, array('class' => 'icon'));
+        $sm = get_string_manager();
+        if ($sm->string_exists('modulename_help', $modname)) {
+            $defaultmodule->help = get_string('modulename_help', $modname);
+            if ($sm->string_exists('modulename_link', $modname)) {  // Link to further info in Moodle docs.
+                $link = get_string('modulename_link', $modname);
+                $linktext = get_string('morehelp');
+                $defaultmodule->help .= html_writer::tag('div',
+                    $OUTPUT->doc_link($link, $linktext, true), array('class' => 'helpdoclink'));
+            }
+        }
+        $defaultmodule->archetype = plugin_supports('mod', $modname, FEATURE_MOD_ARCHETYPE, MOD_ARCHETYPE_OTHER);
+
+        // Each module can implement callback modulename_get_shortcuts() in its lib.php and return the list
+        // of elements to be added to activity chooser.
+        $items = component_callback($modname, 'get_shortcuts', array($defaultmodule), null);
+        if ($items !== null) {
+            foreach ($items as $item) {
+                // Add all items to the return array. All items must have different links, use them as a key in the return array.
+                if (!isset($item->archetype)) {
+                    $item->archetype = $defaultmodule->archetype;
+                }
+                if (!isset($item->icon)) {
+                    $item->icon = $defaultmodule->icon;
+                }
+                // If plugin returned the only one item with the same link as default item - cache it as $modname,
+                // otherwise append the link url to the module name.
+                $item->name = (count($items) == 1 &&
+                    $item->link->out() === $defaultmodule->link->out()) ? $modname : $modname . ':' . $item->link;
+
+                // If the module provides the helptext property, append it to the help text to match the look and feel
+                // of the default course modules.
+                if (isset($item->help) && isset($item->helplink)) {
+                    $linktext = get_string('morehelp');
+                    $item->help .= html_writer::tag('div',
+                        $OUTPUT->doc_link($item->helplink, $linktext, true), array('class' => 'helpdoclink'));
+                }
+                $modlist[$course->id][$modname][$item->name] = $item;
+            }
+            $return += $modlist[$course->id][$modname];
+            // If get_shortcuts() callback is defined, the default module action is not added.
+            // It is a responsibility of the callback to add it to the return value unless it is not needed.
+            continue;
+        }
+
+        // The callback get_shortcuts() was not found, use the default item for the activity chooser.
+        $modlist[$course->id][$modname][$modname] = $defaultmodule;
+        $return[$modname] = $defaultmodule;
+    }
+
+    core_collator::asort_objects_by_property($return, 'title');
+    return $return;
 }
 
 /**
+ * Runs a single cron task. This function assumes it is displaying output in pseudo-CLI mode.
+ *
+ * The function will fail if the task is disabled.
+ *
+ * Warning: Because this function closes the browser session, it may not be safe to continue
+ * with other processing (other than displaying the rest of the page) after using this function!
+ *
  * @deprecated since Moodle 3.9 MDL-63580. Please use the \core\task\manager::run_from_cli($task).
+ * @todo final deprecation. To be removed in Moodle 4.3 MDL-63594.
+ * @param \core\task\scheduled_task $task Task to run
+ * @return bool True if cron run successful
  */
-function cron_run_single_task() {
-    throw new coding_exception(
-        'cron_run_single_task() has been removed. Please use \\core\task\manager::run_from_cli() instead.'
-    );
+function cron_run_single_task(\core\task\scheduled_task $task) {
+    debugging('cron_run_single_task() is deprecated. Please use \\core\task\manager::run_from_cli() instead.',
+        DEBUG_DEVELOPER);
+    return \core\task\manager::run_from_cli($task);
 }
 
 /**
+ * Executes cron functions for a specific type of plugin.
+ *
+ * @param string $plugintype Plugin type (e.g. 'report')
+ * @param string $description If specified, will display 'Starting (whatever)'
+ *   and 'Finished (whatever)' lines, otherwise does not display
+ *
  * @deprecated since Moodle 3.9 MDL-52846. Please use new task API.
+ * @todo MDL-61165 This will be deleted in Moodle 4.3.
  */
-function cron_execute_plugin_type() {
-    throw new coding_exception(
-        'cron_execute_plugin_type() has been removed. Please, use the Task API instead: ' .
-        'https://moodledev.io/docs/apis/subsystems/task.'
-    );
-}
+function cron_execute_plugin_type($plugintype, $description = null) {
+    global $DB;
 
-/**
- * @deprecated since Moodle 3.9 MDL-52846. Please use new task API.
- */
-function cron_bc_hack_plugin_functions() {
-    throw new coding_exception(
-        'cron_bc_hack_plugin_functions() has been removed. Please, use the Task API instead: ' .
-        'https://moodledev.io/docs/apis/subsystems/task.'
-    );
-}
+    // Get list from plugin => function for all plugins.
+    $plugins = get_plugin_list_with_function($plugintype, 'cron');
 
-/**
- * @deprecated since Moodle 3.9 MDL-68612 - See \core_user\table\participants_search for an improved way to fetch participants.
- */
-function user_get_participants_sql() {
-    $deprecatedtext = __FUNCTION__ . '() has been removed. ' .
-                 'Please use \core\table\participants_search::class with table filtersets instead.';
-    throw new coding_exception($deprecatedtext);
-}
+    // Modify list for backward compatibility (different files/names).
+    $plugins = cron_bc_hack_plugin_functions($plugintype, $plugins);
 
-/**
- * @deprecated since Moodle 3.9 MDL-68612 - See \core_user\table\participants_search for an improved way to fetch participants.
- */
-function user_get_total_participants() {
-    $deprecatedtext = __FUNCTION__ . '() has been removed. ' .
-                      'Please use \core\table\participants_search::class with table filtersets instead.';
-    throw new coding_exception($deprecatedtext);
-}
-
-/**
- * @deprecated since Moodle 3.9 MDL-68612 - See \core_user\table\participants_search for an improved way to fetch participants.
- */
-function user_get_participants() {
-    $deprecatedtext = __FUNCTION__ . '() has been removed. ' .
-                      'Please use \core\table\participants_search::class with table filtersets instead.';
-    throw new coding_exception($deprecatedtext);
-}
-
-/**
- * @deprecated Since Moodle 3.9. MDL-65835
- */
-function plagiarism_save_form_elements() {
-    throw new coding_exception(
-        'Function plagiarism_save_form_elements() has been removed. ' .
-        'Please use {plugin name}_coursemodule_edit_post_actions() instead.'
-    );
-}
-
-/**
- * @deprecated Since Moodle 3.9. MDL-65835
- */
-function plagiarism_get_form_elements_module() {
-    throw new coding_exception(
-        'Function plagiarism_get_form_elements_module() has been removed. ' .
-        'Please use {plugin name}_coursemodule_standard_elements() instead.'
-    );
-}
-
-/**
- * @deprecated Since Moodle 3.9 - MDL-68500 please use {@see \core\dataformat::download_data}
- */
-function download_as_dataformat() {
-    throw new coding_exception(__FUNCTION__ . '() has been removed, please use \core\dataformat::download_data() instead');
-}
-
-/**
- * @deprecated since Moodle 3.10
- */
-function make_categories_options() {
-    throw new coding_exception(__FUNCTION__ . '() has been removed. ' .
-        'Please use \core_course_category::make_categories_list() instead.');
-}
-
-/**
- * @deprecated since 3.10
- */
-function message_count_unread_messages() {
-    throw new coding_exception('message_count_unread_messages has been removed.');
-}
-
-/**
- * @deprecated since 3.10
- */
-function serialise_tool_proxy() {
-    throw new coding_exception('serialise_tool_proxy has been removed.');
-}
-
-/**
- * @deprecated Since Moodle 3.11.
- */
-function badges_check_backpack_accessibility() {
-    throw new coding_exception('badges_check_backpack_accessibility() can not be used any more, it was only used for OBv1.0');
-}
-
-/**
- * @deprecated Since Moodle 3.11.
- */
-function badges_setup_backpack_js() {
-    throw new coding_exception('badges_setup_backpack_js() can not be used any more, it was only used for OBv1.0');
-}
-
-/**
- * @deprecated Since Moodle 3.11.
- */
-function badges_local_backpack_js() {
-    throw new coding_exception('badges_local_backpack_js() can not be used any more, it was only used for OBv1.0');
-}
-
-/**
- * @deprecated since Moodle 3.11 MDL-45242
- */
-function get_extra_user_fields() {
-    throw new coding_exception('get_extra_user_fields() has been removed. Please use the \core_user\fields API instead.');
-}
-
-/**
- * @deprecated since Moodle 3.11 MDL-45242
- */
-function get_extra_user_fields_sql() {
-    throw new coding_exception('get_extra_user_fields_sql() has been removed. Please use the \core_user\fields API instead.');
-}
-
-/**
- * @deprecated since Moodle 3.11 MDL-45242
- */
-function get_user_field_name() {
-    throw new coding_exception('get_user_field_name() has been removed. Please use \core_user\fields::get_display_name() instead');
-}
-
-/**
- * @deprecated since Moodle 3.11 MDL-45242
- */
-function get_all_user_name_fields() {
-    throw new coding_exception('get_all_user_name_fields() is deprecated. Please use the \core_user\fields API instead');
-}
-
-/**
- * @deprecated since Moodle 3.11 MDL-71051
- */
-function profile_display_fields() {
-    throw new coding_exception(__FUNCTION__ . '() has been removed.');
-}
-
-/**
- * @deprecated since Moodle 3.11 MDL-71051
- */
-function profile_edit_category() {
-    throw new coding_exception(__FUNCTION__ . '() has been removed.');
-}
-
-/**
- * @deprecated since Moodle 3.11 MDL-71051
- */
-function profile_edit_field() {
-    throw new coding_exception(__FUNCTION__ . '() has been removed.');
-}
-
-/**
- * @deprecated since Moodle 4.0 MDL-71953
- */
-function calendar_process_subscription_row() {
-    throw new coding_exception(__FUNCTION__ . '() has been removed.');
-}
-
-/**
- * @deprecated since Moodle 4.0 MDL-71953
- */
-function calendar_import_icalendar_events() {
-    throw new coding_exception(__FUNCTION__ . '() has been removed. Please use calendar_import_events_from_ical() instead.');
-}
-
-/**
- * @deprecated since Moodle 4.0. Tabs navigation has been replaced with tertiary navigation.
- */
-function grade_print_tabs() {
-    throw new coding_exception(__FUNCTION__ . '() has been removed.');
-}
-
-/**
- * @deprecated since Moodle 4.0. Dropdown box navigation has been replaced with tertiary navigation.
- */
-function print_grade_plugin_selector() {
-    throw new coding_exception(__FUNCTION__ . '() has been removed.');
-}
-
-/**
- * @deprecated since Moodle 4.0. Please use {@link course_modinfo::purge_course_section_cache_by_id()}
- *             or {@link course_modinfo::purge_course_section_cache_by_number()} instead.
- */
-function course_purge_section_cache() {
-    throw new coding_exception(__FUNCTION__ . '() has been removed. ' .
-        'Please use course_modinfo::purge_course_section_cache_by_id() ' .
-        'or course_modinfo::purge_course_section_cache_by_number() instead.');
-}
-
-/**
- * @deprecated since Moodle 4.0. Please use {@link course_modinfo::purge_course_module_cache()} instead.
- */
-function course_purge_module_cache() {
-    throw new coding_exception(__FUNCTION__ . '() has been removed. ' .
-        'Please use course_modinfo::purge_course_module_cache() instead.');
-}
-
-/**
- * @deprecated since Moodle 4.0. Please use {@link course_modinfo::get_array_of_activities()} instead.
- */
-function get_array_of_activities() {
-    throw new coding_exception(__FUNCTION__ . '() has been removed. ' .
-        'Please use course_modinfo::get_array_of_activities() instead.');
-}
-
-/**
- * Abort execution by throwing of a general exception,
- * default exception handler displays the error message in most cases.
- *
- * @deprecated since Moodle 4.1
- * @todo MDL-74484 Final deprecation in Moodle 4.5.
- * @param string $errorcode The name of the language string containing the error message.
- *      Normally this should be in the error.php lang file.
- * @param string $module The language file to get the error message from.
- * @param string $link The url where the user will be prompted to continue.
- *      If no url is provided the user will be directed to the site index page.
- * @param object $a Extra words and phrases that might be required in the error string
- * @param string $debuginfo optional debugging information
- * @return void, always throws exception!
- */
-function print_error($errorcode, $module = 'error', $link = '', $a = null, $debuginfo = null) {
-    debugging("The function print_error() is deprecated. " .
-            "Please throw a new moodle_exception instance instead.", DEBUG_DEVELOPER);
-    throw new \moodle_exception($errorcode, $module, $link, $a, $debuginfo);
-}
-
-/**
- * Execute cron tasks
- *
- * @param int|null $keepalive The keepalive time for this cron run.
- * @deprecated since 4.2 Use \core\cron::run_main_process() instead.
- */
-function cron_run(?int $keepalive = null): void {
-    debugging(
-        'The cron_run() function is deprecated. Please use \core\cron::run_main_process() instead.',
-        DEBUG_DEVELOPER
-    );
-    \core\cron::run_main_process($keepalive);
-}
-
-/**
- * Execute all queued scheduled tasks, applying necessary concurrency limits and time limits.
- *
- * @param   int     $timenow The time this process started.
- * @deprecated since 4.2 Use \core\cron::run_scheduled_tasks() instead.
- */
-function cron_run_scheduled_tasks(int $timenow) {
-    debugging(
-        'The cron_run_scheduled_tasks() function is deprecated. Please use \core\cron::run_scheduled_tasks() instead.',
-        DEBUG_DEVELOPER
-    );
-    \core\cron::run_scheduled_tasks($timenow);
-}
-
-/**
- * Execute all queued adhoc tasks, applying necessary concurrency limits and time limits.
- *
- * @param   int     $timenow The time this process started.
- * @param   int     $keepalive Keep this function alive for N seconds and poll for new adhoc tasks.
- * @param   bool    $checklimits Should we check limits?
- * @deprecated since 4.2 Use \core\cron::run_adhoc_tasks() instead.
- */
-function cron_run_adhoc_tasks(int $timenow, $keepalive = 0, $checklimits = true) {
-    debugging(
-        'The cron_run_adhoc_tasks() function is deprecated. Please use \core\cron::run_adhoc_tasks() instead.',
-        DEBUG_DEVELOPER
-    );
-    \core\cron::run_adhoc_tasks($timenow, $keepalive, $checklimits);
-}
-
-/**
- * Shared code that handles running of a single scheduled task within the cron.
- *
- * Not intended for calling directly outside of this library!
- *
- * @param \core\task\task_base $task
- * @deprecated since 4.2 Use \core\cron::run_inner_scheduled_task() instead.
- */
-function cron_run_inner_scheduled_task(\core\task\task_base $task) {
-    debugging(
-        'The cron_run_inner_scheduled_task() function is deprecated. Please use \core\cron::run_inner_scheduled_task() instead.',
-        DEBUG_DEVELOPER
-    );
-    \core\cron::run_inner_scheduled_task($task);
-}
-
-/**
- * Shared code that handles running of a single adhoc task within the cron.
- *
- * @param \core\task\adhoc_task $task
- * @deprecated since 4.2 Use \core\cron::run_inner_adhoc_task() instead.
- */
-function cron_run_inner_adhoc_task(\core\task\adhoc_task $task) {
-    debugging(
-        'The cron_run_inner_adhoc_task() function is deprecated. Please use \core\cron::run_inner_adhoc_task() instead.',
-        DEBUG_DEVELOPER
-    );
-    \core\cron::run_inner_adhoc_task($task);
-}
-
-/**
- * Sets the process title
- *
- * This makes it very easy for a sysadmin to immediately see what task
- * a cron process is running at any given moment.
- *
- * @param string $title process status title
- * @deprecated since 4.2 Use \core\cron::set_process_title() instead.
- */
-function cron_set_process_title(string $title) {
-    debugging(
-        'The cron_set_process_title() function is deprecated. Please use \core\cron::set_process_title() instead.',
-        DEBUG_DEVELOPER
-    );
-    \core\cron::set_process_title($title);
-}
-
-/**
- * Output some standard information during cron runs. Specifically current time
- * and memory usage. This method also does gc_collect_cycles() (before displaying
- * memory usage) to try to help PHP manage memory better.
- *
- * @deprecated since 4.2 Use \core\cron::trace_time_and_memory() instead.
- */
-function cron_trace_time_and_memory() {
-    debugging(
-        'The cron_trace_time_and_memory() function is deprecated. Please use \core\cron::trace_time_and_memory() instead.',
-        DEBUG_DEVELOPER
-    );
-    \core\cron::trace_time_and_memory();
-}
-
-/**
- * Prepare the output renderer for the cron run.
- *
- * This involves creating a new $PAGE, and $OUTPUT fresh for each task and prevents any one task from influencing
- * any other.
- *
- * @param   bool    $restore Whether to restore the original PAGE and OUTPUT
- * @deprecated since 4.2 Use \core\cron::prepare_core_renderer() instead.
- */
-function cron_prepare_core_renderer($restore = false) {
-    debugging(
-        'The cron_prepare_core_renderer() function is deprecated. Please use \core\cron::prepare_core_renderer() instead.',
-        DEBUG_DEVELOPER
-    );
-    \core\cron::prepare_core_renderer($restore);
-}
-
-/**
- * Sets up current user and course environment (lang, etc.) in cron.
- * Do not use outside of cron script!
- *
- * @param stdClass $user full user object, null means default cron user (admin),
- *                 value 'reset' means reset internal static caches.
- * @param stdClass $course full course record, null means $SITE
- * @param bool $leavepagealone If specified, stops it messing with global page object
- * @deprecated since 4.2. Use \core\core::setup_user() instead.
- * @return void
- */
-function cron_setup_user($user = null, $course = null, $leavepagealone = false) {
-    debugging(
-        'The cron_setup_user() function is deprecated. ' .
-            'Please use \core\cron::setup_user() and reset_user_cache() as appropriate instead.',
-        DEBUG_DEVELOPER
-    );
-
-    if ($user === 'reset') {
-        \core\cron::reset_user_cache();
+    // Return if no plugins with cron function to process.
+    if (!$plugins) {
         return;
     }
 
-    \core\cron::setup_user($user, $course, $leavepagealone);
+    if ($description) {
+        mtrace('Starting '.$description);
+    }
+
+    foreach ($plugins as $component => $cronfunction) {
+        $dir = core_component::get_component_directory($component);
+
+        // Get cron period if specified in version.php, otherwise assume every cron.
+        $cronperiod = 0;
+        if (file_exists("$dir/version.php")) {
+            $plugin = new stdClass();
+            include("$dir/version.php");
+            if (isset($plugin->cron)) {
+                $cronperiod = $plugin->cron;
+            }
+        }
+
+        // Using last cron and cron period, don't run if it already ran recently.
+        $lastcron = get_config($component, 'lastcron');
+        if ($cronperiod && $lastcron) {
+            if ($lastcron + $cronperiod > time()) {
+                // Do not execute cron yet.
+                continue;
+            }
+        }
+
+        mtrace('Processing cron function for ' . $component . '...');
+        debugging("Use of legacy cron is deprecated ($cronfunction). Please use scheduled tasks.", DEBUG_DEVELOPER);
+        cron_trace_time_and_memory();
+        $pre_dbqueries = $DB->perf_get_queries();
+        $pre_time = microtime(true);
+
+        $cronfunction();
+
+        mtrace("done. (" . ($DB->perf_get_queries() - $pre_dbqueries) . " dbqueries, " .
+                round(microtime(true) - $pre_time, 2) . " seconds)");
+
+        set_config('lastcron', time(), $component);
+        core_php_time_limit::raise();
+    }
+
+    if ($description) {
+        mtrace('Finished ' . $description);
+    }
 }
 
 /**
- * Get OAuth2 services for the external backpack.
+ * Used to add in old-style cron functions within plugins that have not been converted to the
+ * new standard API. (The standard API is frankenstyle_name_cron() in lib.php; some types used
+ * cron.php and some used a different name.)
  *
- * @return array
- * @throws coding_exception
- * @deprecated since 4.3.
+ * @param string $plugintype Plugin type e.g. 'report'
+ * @param array $plugins Array from plugin name (e.g. 'report_frog') to function name (e.g.
+ *   'report_frog_cron') for plugin cron functions that were already found using the new API
+ * @return array Revised version of $plugins that adds in any extra plugin functions found by
+ *   looking in the older location
+ *
+ * @deprecated since Moodle 3.9 MDL-52846. Please use new task API.
+ * @todo MDL-61165 This will be deleted in Moodle 4.3.
  */
-function badges_get_oauth2_service_options() {
-    debugging(
-        'badges_get_oauth2_service_options() is deprecated. Don\'t use it.',
-        DEBUG_DEVELOPER
-    );
+function cron_bc_hack_plugin_functions($plugintype, $plugins) {
+    global $CFG; // Mandatory in case it is referenced by include()d PHP script.
+
+    if ($plugintype === 'report') {
+        // Admin reports only - not course report because course report was
+        // never implemented before, so doesn't need BC.
+        foreach (core_component::get_plugin_list($plugintype) as $pluginname => $dir) {
+            $component = $plugintype . '_' . $pluginname;
+            if (isset($plugins[$component])) {
+                // We already have detected the function using the new API.
+                continue;
+            }
+            if (!file_exists("$dir/cron.php")) {
+                // No old style cron file present.
+                continue;
+            }
+            include_once("$dir/cron.php");
+            $cronfunction = $component . '_cron';
+            if (function_exists($cronfunction)) {
+                $plugins[$component] = $cronfunction;
+            } else {
+                debugging("Invalid legacy cron.php detected in $component, " .
+                        "please use lib.php instead");
+            }
+        }
+    } else if (strpos($plugintype, 'grade') === 0) {
+        // Detect old style cron function names.
+        // Plugin gradeexport_frog used to use grade_export_frog_cron() instead of
+        // new standard API gradeexport_frog_cron(). Also applies to gradeimport, gradereport.
+        foreach (core_component::get_plugin_list($plugintype) as $pluginname => $dir) {
+            $component = $plugintype.'_'.$pluginname;
+            if (isset($plugins[$component])) {
+                // We already have detected the function using the new API.
+                continue;
+            }
+            if (!file_exists("$dir/lib.php")) {
+                continue;
+            }
+            include_once("$dir/lib.php");
+            $cronfunction = str_replace('grade', 'grade_', $plugintype) . '_' .
+                    $pluginname . '_cron';
+            if (function_exists($cronfunction)) {
+                $plugins[$component] = $cronfunction;
+            }
+        }
+    }
+
+    return $plugins;
+}
+
+/**
+ * Returns the SQL used by the participants table.
+ *
+ * @deprecated since Moodle 3.9 MDL-68612 - See \core_user\table\participants_search for an improved way to fetch participants.
+ * @param int $courseid The course id
+ * @param int $groupid The groupid, 0 means all groups and USERSWITHOUTGROUP no group
+ * @param int $accesssince The time since last access, 0 means any time
+ * @param int $roleid The role id, 0 means all roles and -1 no roles
+ * @param int $enrolid The enrolment id, 0 means all enrolment methods will be returned.
+ * @param int $statusid The user enrolment status, -1 means all enrolments regardless of the status will be returned, if allowed.
+ * @param string|array $search The search that was performed, empty means perform no search
+ * @param string $additionalwhere Any additional SQL to add to where
+ * @param array $additionalparams The additional params
+ * @return array
+ */
+function user_get_participants_sql($courseid, $groupid = 0, $accesssince = 0, $roleid = 0, $enrolid = 0, $statusid = -1,
+                                   $search = '', $additionalwhere = '', $additionalparams = array()) {
+    global $DB, $USER, $CFG;
+
+    $deprecatedtext = __FUNCTION__ . '() is deprecated. ' .
+                 'Please use \core\table\participants_search::class with table filtersets instead.';
+    debugging($deprecatedtext, DEBUG_DEVELOPER);
+
+    // Get the context.
+    $context = \context_course::instance($courseid, MUST_EXIST);
+
+    $isfrontpage = ($courseid == SITEID);
+
+    // Default filter settings. We only show active by default, especially if the user has no capability to review enrolments.
+    $onlyactive = true;
+    $onlysuspended = false;
+    if (has_capability('moodle/course:enrolreview', $context) && (has_capability('moodle/course:viewsuspendedusers', $context))) {
+        switch ($statusid) {
+            case ENROL_USER_ACTIVE:
+                // Nothing to do here.
+                break;
+            case ENROL_USER_SUSPENDED:
+                $onlyactive = false;
+                $onlysuspended = true;
+                break;
+            default:
+                // If the user has capability to review user enrolments, but statusid is set to -1, set $onlyactive to false.
+                $onlyactive = false;
+                break;
+        }
+    }
+
+    list($esql, $params) = get_enrolled_sql($context, null, $groupid, $onlyactive, $onlysuspended, $enrolid);
+
+    $joins = array('FROM {user} u');
+    $wheres = array();
+
+    $userfields = get_extra_user_fields($context);
+    $userfieldssql = user_picture::fields('u', $userfields);
+
+    if ($isfrontpage) {
+        $select = "SELECT $userfieldssql, u.lastaccess";
+        $joins[] = "JOIN ($esql) e ON e.id = u.id"; // Everybody on the frontpage usually.
+        if ($accesssince) {
+            $wheres[] = user_get_user_lastaccess_sql($accesssince);
+        }
+    } else {
+        $select = "SELECT $userfieldssql, COALESCE(ul.timeaccess, 0) AS lastaccess";
+        $joins[] = "JOIN ($esql) e ON e.id = u.id"; // Course enrolled users only.
+        // Not everybody has accessed the course yet.
+        $joins[] = 'LEFT JOIN {user_lastaccess} ul ON (ul.userid = u.id AND ul.courseid = :courseid)';
+        $params['courseid'] = $courseid;
+        if ($accesssince) {
+            $wheres[] = user_get_course_lastaccess_sql($accesssince);
+        }
+    }
+
+    // Performance hacks - we preload user contexts together with accounts.
+    $ccselect = ', ' . context_helper::get_preload_record_columns_sql('ctx');
+    $ccjoin = 'LEFT JOIN {context} ctx ON (ctx.instanceid = u.id AND ctx.contextlevel = :contextlevel)';
+    $params['contextlevel'] = CONTEXT_USER;
+    $select .= $ccselect;
+    $joins[] = $ccjoin;
+
+    // Limit list to users with some role only.
+    if ($roleid) {
+        // We want to query both the current context and parent contexts.
+        list($relatedctxsql, $relatedctxparams) = $DB->get_in_or_equal($context->get_parent_context_ids(true),
+            SQL_PARAMS_NAMED, 'relatedctx');
+
+        // Get users without any role.
+        if ($roleid == -1) {
+            $wheres[] = "u.id NOT IN (SELECT userid FROM {role_assignments} WHERE contextid $relatedctxsql)";
+            $params = array_merge($params, $relatedctxparams);
+        } else {
+            $wheres[] = "u.id IN (SELECT userid FROM {role_assignments} WHERE roleid = :roleid AND contextid $relatedctxsql)";
+            $params = array_merge($params, array('roleid' => $roleid), $relatedctxparams);
+        }
+    }
+
+    if (!empty($search)) {
+        if (!is_array($search)) {
+            $search = [$search];
+        }
+        foreach ($search as $index => $keyword) {
+            $searchkey1 = 'search' . $index . '1';
+            $searchkey2 = 'search' . $index . '2';
+            $searchkey3 = 'search' . $index . '3';
+            $searchkey4 = 'search' . $index . '4';
+            $searchkey5 = 'search' . $index . '5';
+            $searchkey6 = 'search' . $index . '6';
+            $searchkey7 = 'search' . $index . '7';
+
+            $conditions = array();
+            // Search by fullname.
+            $fullname = $DB->sql_fullname('u.firstname', 'u.lastname');
+            $conditions[] = $DB->sql_like($fullname, ':' . $searchkey1, false, false);
+
+            // Search by email.
+            $email = $DB->sql_like('email', ':' . $searchkey2, false, false);
+            if (!in_array('email', $userfields)) {
+                $maildisplay = 'maildisplay' . $index;
+                $userid1 = 'userid' . $index . '1';
+                // Prevent users who hide their email address from being found by others
+                // who aren't allowed to see hidden email addresses.
+                $email = "(". $email ." AND (" .
+                        "u.maildisplay <> :$maildisplay " .
+                        "OR u.id = :$userid1". // User can always find himself.
+                        "))";
+                $params[$maildisplay] = core_user::MAILDISPLAY_HIDE;
+                $params[$userid1] = $USER->id;
+            }
+            $conditions[] = $email;
+
+            // Search by idnumber.
+            $idnumber = $DB->sql_like('idnumber', ':' . $searchkey3, false, false);
+            if (!in_array('idnumber', $userfields)) {
+                $userid2 = 'userid' . $index . '2';
+                // Users who aren't allowed to see idnumbers should at most find themselves
+                // when searching for an idnumber.
+                $idnumber = "(". $idnumber . " AND u.id = :$userid2)";
+                $params[$userid2] = $USER->id;
+            }
+            $conditions[] = $idnumber;
+
+            if (!empty($CFG->showuseridentity)) {
+                // Search all user identify fields.
+                $extrasearchfields = explode(',', $CFG->showuseridentity);
+                foreach ($extrasearchfields as $extrasearchfield) {
+                    if (in_array($extrasearchfield, ['email', 'idnumber', 'country'])) {
+                        // Already covered above. Search by country not supported.
+                        continue;
+                    }
+                    $param = $searchkey3 . $extrasearchfield;
+                    $condition = $DB->sql_like($extrasearchfield, ':' . $param, false, false);
+                    $params[$param] = "%$keyword%";
+                    if (!in_array($extrasearchfield, $userfields)) {
+                        // User cannot see this field, but allow match if their own account.
+                        $userid3 = 'userid' . $index . '3' . $extrasearchfield;
+                        $condition = "(". $condition . " AND u.id = :$userid3)";
+                        $params[$userid3] = $USER->id;
+                    }
+                    $conditions[] = $condition;
+                }
+            }
+
+            // Search by middlename.
+            $middlename = $DB->sql_like('middlename', ':' . $searchkey4, false, false);
+            $conditions[] = $middlename;
+
+            // Search by alternatename.
+            $alternatename = $DB->sql_like('alternatename', ':' . $searchkey5, false, false);
+            $conditions[] = $alternatename;
+
+            // Search by firstnamephonetic.
+            $firstnamephonetic = $DB->sql_like('firstnamephonetic', ':' . $searchkey6, false, false);
+            $conditions[] = $firstnamephonetic;
+
+            // Search by lastnamephonetic.
+            $lastnamephonetic = $DB->sql_like('lastnamephonetic', ':' . $searchkey7, false, false);
+            $conditions[] = $lastnamephonetic;
+
+            $wheres[] = "(". implode(" OR ", $conditions) .") ";
+            $params[$searchkey1] = "%$keyword%";
+            $params[$searchkey2] = "%$keyword%";
+            $params[$searchkey3] = "%$keyword%";
+            $params[$searchkey4] = "%$keyword%";
+            $params[$searchkey5] = "%$keyword%";
+            $params[$searchkey6] = "%$keyword%";
+            $params[$searchkey7] = "%$keyword%";
+        }
+    }
+
+    if (!empty($additionalwhere)) {
+        $wheres[] = $additionalwhere;
+        $params = array_merge($params, $additionalparams);
+    }
+
+    $from = implode("\n", $joins);
+    if ($wheres) {
+        $where = 'WHERE ' . implode(' AND ', $wheres);
+    } else {
+        $where = '';
+    }
+
+    return array($select, $from, $where, $params);
+}
+
+/**
+ * Returns the total number of participants for a given course.
+ *
+ * @deprecated since Moodle 3.9 MDL-68612 - See \core_user\table\participants_search for an improved way to fetch participants.
+ * @param int $courseid The course id
+ * @param int $groupid The groupid, 0 means all groups and USERSWITHOUTGROUP no group
+ * @param int $accesssince The time since last access, 0 means any time
+ * @param int $roleid The role id, 0 means all roles
+ * @param int $enrolid The applied filter for the user enrolment ID.
+ * @param int $status The applied filter for the user's enrolment status.
+ * @param string|array $search The search that was performed, empty means perform no search
+ * @param string $additionalwhere Any additional SQL to add to where
+ * @param array $additionalparams The additional params
+ * @return int
+ */
+function user_get_total_participants($courseid, $groupid = 0, $accesssince = 0, $roleid = 0, $enrolid = 0, $statusid = -1,
+                                     $search = '', $additionalwhere = '', $additionalparams = array()) {
     global $DB;
 
-    $issuers = core\oauth2\api::get_all_issuers();
-    $options = ['' => 'None'];
-    foreach ($issuers as $issuer) {
-        $options[$issuer->get('id')] = $issuer->get('name');
-    }
+    $deprecatedtext = __FUNCTION__ . '() is deprecated. ' .
+                      'Please use \core\table\participants_search::class with table filtersets instead.';
+    debugging($deprecatedtext, DEBUG_DEVELOPER);
 
-    return $options;
+    list($select, $from, $where, $params) = user_get_participants_sql($courseid, $groupid, $accesssince, $roleid, $enrolid,
+        $statusid, $search, $additionalwhere, $additionalparams);
+
+    return $DB->count_records_sql("SELECT COUNT(u.id) $from $where", $params);
 }
 
 /**
- * Checks if the given device has a theme defined in config.php.
+ * Returns the participants for a given course.
  *
- * @param string $device The device
- * @deprecated since 4.3.
- * @return bool
+ * @deprecated since Moodle 3.9 MDL-68612 - See \core_user\table\participants_search for an improved way to fetch participants.
+ * @param int $courseid The course id
+ * @param int $groupid The groupid, 0 means all groups and USERSWITHOUTGROUP no group
+ * @param int $accesssince The time since last access
+ * @param int $roleid The role id
+ * @param int $enrolid The applied filter for the user enrolment ID.
+ * @param int $status The applied filter for the user's enrolment status.
+ * @param string $search The search that was performed
+ * @param string $additionalwhere Any additional SQL to add to where
+ * @param array $additionalparams The additional params
+ * @param string $sort The SQL sort
+ * @param int $limitfrom return a subset of records, starting at this point (optional).
+ * @param int $limitnum return a subset comprising this many records (optional, required if $limitfrom is set).
+ * @return moodle_recordset
  */
-function theme_is_device_locked($device) {
-    debugging(
-        __FUNCTION__ . '() is deprecated.' .
-            'All functions associated with device specific themes are being removed.',
-        DEBUG_DEVELOPER
-    );
-    global $CFG;
-    $themeconfigname = core_useragent::get_device_type_cfg_var_name($device);
-    return isset($CFG->config_php_settings[$themeconfigname]);
-}
+function user_get_participants($courseid, $groupid = 0, $accesssince, $roleid, $enrolid = 0, $statusid, $search,
+                               $additionalwhere = '', $additionalparams = array(), $sort = '', $limitfrom = 0, $limitnum = 0) {
+    global $DB;
 
-/**
- * Returns the theme named defined in config.php for the given device.
- *
- * @param string $device The device
- * @deprecated since 4.3.
- * @return string or null
- */
-function theme_get_locked_theme_for_device($device) {
-    debugging(
-        __FUNCTION__ . '() is deprecated.' .
-            'All functions associated with device specific themes are being removed.',
-        DEBUG_DEVELOPER
-    );
-    global $CFG;
+    $deprecatedtext = __FUNCTION__ . '() is deprecated. ' .
+                      'Please use \core\table\participants_search::class with table filtersets instead.';
+    debugging($deprecatedtext, DEBUG_DEVELOPER);
 
-    if (!theme_is_device_locked($device)) {
-        return null;
-    }
+    list($select, $from, $where, $params) = user_get_participants_sql($courseid, $groupid, $accesssince, $roleid, $enrolid,
+        $statusid, $search, $additionalwhere, $additionalparams);
 
-    $themeconfigname = core_useragent::get_device_type_cfg_var_name($device);
-    return $CFG->config_php_settings[$themeconfigname];
-}
-
-/**
- * Try to generate cryptographically secure pseudo-random bytes.
- *
- * Note this is achieved by fallbacking between:
- *  - PHP 7 random_bytes().
- *  - OpenSSL openssl_random_pseudo_bytes().
- *  - In house random generator getting its entropy from various, hard to guess, pseudo-random sources.
- *
- * @param int $length requested length in bytes
- * @deprecated since 4.3.
- * @return string binary data
- */
-function random_bytes_emulate($length) {
-    debugging(
-            __FUNCTION__ . '() is deprecated.' .
-            'Please use random_bytes instead.',
-            DEBUG_DEVELOPER
-    );
-    return random_bytes($length);
-}
-
-/**
- * @deprecated since Moodle 4.0
- */
-function question_preview_url() {
-    throw new coding_exception(__FUNCTION__ . '() has been removed.');
-}
-
-/**
- * @deprecated since Moodle 4.0
- */
-function question_preview_popup_params() {
-    throw new coding_exception(__FUNCTION__ . '() has been removed.');
-}
-
-/**
- * @deprecated since Moodle 4.0
- */
-function question_hash() {
-    throw new coding_exception(__FUNCTION__ . '() has been removed.');
-}
-
-/**
- * @deprecated since Moodle 4.0 MDL-71573
- */
-function question_make_export_url() {
-    throw new coding_exception(__FUNCTION__ . '() has been removed.');
-}
-
-/**
- * @deprecated since Moodle 4.0
- */
-function question_get_export_single_question_url() {
-    throw new coding_exception(__FUNCTION__ . '() has been removed.');
-}
-
-/**
- * @deprecated since Moodle 4.0 MDL-71585
- */
-function question_remove_stale_questions_from_category() {
-    throw new coding_exception(__FUNCTION__ . '() has been removed.');
-}
-
-/**
- * @deprecated since Moodle 4.0 MDL-71585
- */
-function flatten_category_tree() {
-    throw new coding_exception(__FUNCTION__ . '() has been removed.');
-}
-
-/**
- * @deprecated since Moodle 4.0 MDL-71585
- */
-function add_indented_names() {
-    throw new coding_exception(__FUNCTION__ . '() has been removed.');
-}
-
-/**
- * @deprecated since Moodle 4.0 MDL-71585
- */
-function question_category_select_menu() {
-    throw new coding_exception(__FUNCTION__ . '() has been removed.');
-}
-
-/**
- * @deprecated since Moodle 4.0 MDL-71585
- */
-function get_categories_for_contexts() {
-    throw new coding_exception(__FUNCTION__ . '() has been removed.');
-}
-
-/**
- * @deprecated since Moodle 4.0 MDL-71585
- */
-function question_category_options() {
-    throw new coding_exception(__FUNCTION__ . '() has been removed.');
-}
-
-/**
- * @deprecated since Moodle 4.0 MDL-71585
- */
-function question_add_context_in_key() {
-    throw new coding_exception(__FUNCTION__ . '() has been removed.');
-}
-
-/**
- * @deprecated since Moodle 4.0 MDL-71585
- */
-function question_fix_top_names() {
-    throw new coding_exception(__FUNCTION__ . '() has been removed.');
+    return $DB->get_recordset_sql("$select $from $where $sort", $params, $limitfrom, $limitnum);
 }

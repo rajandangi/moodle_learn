@@ -35,17 +35,17 @@ if ($id) {
 
     if ($id == SITEID) {
         // Don't allow editing of 'site course' using this form.
-        throw new \moodle_exception('cannoteditsiteform');
+        print_error('cannoteditsiteform');
     }
 
     if (!$course = $DB->get_record('course', array('id' => $id))) {
-        throw new \moodle_exception('invalidcourseid');
+        print_error('invalidcourseid');
     }
     require_login($course);
 
 } else {
     require_login();
-    throw new \moodle_exception('needcourseid');
+    print_error('needcourseid');
 }
 
 // Set up the page.
@@ -69,11 +69,18 @@ $renderer = $PAGE->get_renderer('core_course', 'bulk_activity_completion');
 
 // Print the form.
 echo $OUTPUT->header();
+echo $OUTPUT->heading(get_string('bulkactivitycompletion', 'completion'));
 
-$actionbar = new \core_course\output\completion_action_bar($course->id, $PAGE->url);
-echo $renderer->render_course_completion_action_bar($actionbar);
+echo $renderer->navigation($course, 'bulkcompletion');
 
-$PAGE->requires->js_call_amd('core_form/changechecker', 'watchFormById', ['theform']);
+$PAGE->requires->yui_module('moodle-core-formchangechecker',
+        'M.core_formchangechecker.init',
+        array(array(
+            'formid' => 'theform'
+        ))
+);
+$PAGE->requires->string_for_js('changesmadereallygoaway', 'moodle');
+
 
 echo $renderer->bulkcompletion($bulkcompletiondata);
 

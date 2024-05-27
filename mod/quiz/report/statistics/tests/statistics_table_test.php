@@ -14,9 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace quiz_statistics;
-
-use quiz_statistics_table;
+/**
+ * Unit tests for the quiz_statistics_table class.
+ *
+ * @package    quiz_statistics
+ * @category   test
+ * @copyright  2018 Shamim Rezaie <shamim@moodle.com>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -26,19 +31,18 @@ require_once($CFG->dirroot . '/mod/quiz/report/statistics/statistics_table.php')
 /**
  * Class quiz_statistics_statistics_table_testcase
  *
- * @package    quiz_statistics
- * @category   test
  * @copyright  2018 Shamim Rezaie <shamim@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class statistics_table_test extends \advanced_testcase {
+class quiz_statistics_statistics_table_testcase extends advanced_testcase {
 
     public function test_format_percentage() {
         $table = new quiz_statistics_table();
 
         // The format_percentage method is protected. Use Reflection to call the method.
-        $reflector = new \ReflectionClass('quiz_statistics_table');
+        $reflector = new ReflectionClass('quiz_statistics_table');
         $method = $reflector->getMethod('format_percentage');
+        $method->setAccessible(true);
 
         $this->assertEquals(
                 '84.758%',
@@ -55,8 +59,9 @@ class statistics_table_test extends \advanced_testcase {
         $table = new quiz_statistics_table();
 
         // The format_percentage_range method is protected. Use Reflection to call the method.
-        $reflector = new \ReflectionClass('quiz_statistics_table');
+        $reflector = new ReflectionClass('quiz_statistics_table');
         $method = $reflector->getMethod('format_percentage_range');
+        $method->setAccessible(true);
 
         $this->assertEquals(
                 '54.400% − 84.758%',
@@ -73,8 +78,9 @@ class statistics_table_test extends \advanced_testcase {
         $table = new quiz_statistics_table();
 
         // The format_range method is protected. Use Reflection to call the method.
-        $reflector = new \ReflectionClass('quiz_statistics_table');
+        $reflector = new ReflectionClass('quiz_statistics_table');
         $method = $reflector->getMethod('format_range');
+        $method->setAccessible(true);
 
         $this->assertEquals(
                 '5 − 10',

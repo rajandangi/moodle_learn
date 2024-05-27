@@ -34,7 +34,7 @@ defined('MOODLE_INTERNAL') || die();
  */
 abstract class file_info {
 
-    /** @var context File context */
+    /** @var stdClass File context */
     protected $context;
 
     /** @var file_browser File browser instance */
@@ -72,21 +72,21 @@ abstract class file_info {
      *
      * @return string
      */
-    abstract public function get_visible_name();
+    public abstract function get_visible_name();
 
     /**
      * Whether or not this is a directory
      *
      * @return bool
      */
-    abstract public function is_directory();
+    public abstract function is_directory();
 
     /**
      * Returns list of children.
      *
      * @return array of file_info instances
      */
-    abstract public function get_children();
+    public abstract function get_children();
 
     /**
      * Builds SQL sub query (WHERE clause) for selecting files with the specified extensions
@@ -100,8 +100,8 @@ abstract class file_info {
      */
     protected function build_search_files_sql($extensions, $prefix = null) {
         global $DB;
-        if ($prefix && strlen($prefix)) {
-            $prefix = $prefix . '.';
+        if (strlen($prefix)) {
+            $prefix = $prefix.'.';
         } else {
             $prefix = '';
         }
@@ -203,7 +203,7 @@ abstract class file_info {
      *
      * @return file_info or null for root
      */
-    abstract public function get_parent();
+    public abstract function get_parent();
 
     /**
      * Returns array of url encoded params.

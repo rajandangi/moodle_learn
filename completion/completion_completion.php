@@ -66,8 +66,6 @@ class completion_completion extends data_object {
     /* @var int Flag to trigger cron aggregation (timestamp) */
     public $reaggregate;
 
-    /** @var float user's course grade. */
-    public $gradefinal;
 
     /**
      * Finds and returns a data_object instance based on params.
@@ -103,7 +101,6 @@ class completion_completion extends data_object {
      * If the user is already marked as started, no change will occur
      *
      * @param integer $timeenrolled Time enrolled (optional)
-     * @return  int|null id of completion record on successful update.
      */
     public function mark_enrolled($timeenrolled = null) {
 
@@ -125,7 +122,6 @@ class completion_completion extends data_object {
      * If the user is already marked as inprogress, the time will not be changed
      *
      * @param integer $timestarted Time started (optional)
-     * @return  int|null id of completion record on successful update.
      */
     public function mark_inprogress($timestarted = null) {
 
@@ -153,14 +149,14 @@ class completion_completion extends data_object {
      * in the course are complete.
      *
      * @param integer $timecomplete Time completed (optional)
-     * @return  int|null id of completion record on successful update.
+     * @return void
      */
     public function mark_complete($timecomplete = null) {
         global $USER;
 
         // Never change a completion time.
         if ($this->timecompleted) {
-            return null;
+            return;
         }
 
         // Use current time if nothing supplied.
@@ -170,43 +166,12 @@ class completion_completion extends data_object {
 
         // Set time complete.
         $this->timecompleted = $timecomplete;
+
         // Save record.
         if ($result = $this->_save()) {
             $data = $this->get_record_data();
             \core\event\course_completed::create_from_completion($data)->trigger();
         }
-
-        // Notify user.
-        $course = get_course($data->course);
-        $messagesubject = get_string('coursecompleted', 'completion');
-        $options = new stdClass();
-        $options->context = context_course::instance($course->id);
-        $a = [
-            'coursename' => format_string(get_course_display_name_for_list($course), true, $options),
-            'courselink' => (string) new moodle_url('/course/view.php', array('id' => $course->id)),
-        ];
-        $messagebody = get_string('coursecompletedmessage', 'completion', $a);
-        $messageplaintext = html_to_text($messagebody);
-
-        $eventdata = new \core\message\message();
-        $eventdata->courseid          = $course->id;
-        $eventdata->component         = 'moodle';
-        $eventdata->name              = 'coursecompleted';
-        $eventdata->userfrom          = core_user::get_noreply_user();
-        $eventdata->userto            = $data->userid;
-        $eventdata->notification      = 1;
-        $eventdata->subject           = $messagesubject;
-        $eventdata->fullmessage       = $messageplaintext;
-        $eventdata->fullmessageformat = FORMAT_HTML;
-        $eventdata->fullmessagehtml   = $messagebody;
-        $eventdata->smallmessage      = $messageplaintext;
-
-        if ($courseimage = \core_course\external\course_summary_exporter::get_course_image($course)) {
-            $eventdata->customdata  = [
-                'notificationpictureurl' => $courseimage,
-            ];
-        }
-        message_send($eventdata);
 
         return $result;
     }
@@ -216,16 +181,17 @@ class completion_completion extends data_object {
      *
      * This method creates a course_completions record if none exists
      * @access  private
-     * @return  int|null id of completion record on successful update.
+     * @return  bool
      */
     private function _save() {
         if ($this->timeenrolled === null) {
             $this->timeenrolled = 0;
         }
 
+        $result = false;
         // Save record
-        if (isset($this->id)) {
-            $success = $this->update();
+        if ($this->id) {
+            $result = $this->update();
         } else {
             // Make sure reaggregate field is not null
             if (!$this->reaggregate) {
@@ -237,18 +203,17 @@ class completion_completion extends data_object {
                 $this->timestarted = 0;
             }
 
-            $success = $this->insert();
+            $result = $this->insert();
         }
 
-        if ($success) {
+        if ($result) {
             // Update the cached record.
             $cache = cache::make('core', 'coursecompletion');
             $data = $this->get_record_data();
             $key = $data->userid . '_' . $data->course;
             $cache->set($key, ['value' => $data]);
-            return $this->id;
         }
 
-        return null;
+        return $result;
     }
 }

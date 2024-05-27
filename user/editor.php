@@ -52,7 +52,7 @@ if ($editorform->is_cancelled()) {
     // Trigger event.
     \core\event\user_updated::create_from_userid($user->id)->trigger();
 
-    redirect($redirect, get_string('changessaved'), null, \core\output\notification::NOTIFY_SUCCESS);
+    redirect($redirect);
 }
 
 // Display page header.
@@ -61,7 +61,6 @@ $userfullname     = fullname($user, true);
 
 $PAGE->navbar->includesettingsbase = true;
 
-$PAGE->add_body_class('limitedwidth');
 $PAGE->set_title("$course->shortname: $streditmyeditor");
 $PAGE->set_heading($userfullname);
 
@@ -73,3 +72,4 @@ $editorform->display();
 
 // And proper footer.
 echo $OUTPUT->footer();
+

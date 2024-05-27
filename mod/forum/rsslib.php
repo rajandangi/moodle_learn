@@ -182,8 +182,7 @@ function forum_rss_feed_discussions_sql($forum, $cm, $newsince=0) {
 
     $forumsort = "d.timemodified DESC";
     $postdata = "p.id AS postid, p.subject, p.created as postcreated, p.modified, p.discussion, p.userid, p.message as postmessage, p.messageformat AS postformat, p.messagetrust AS posttrust";
-    $userfieldsapi = \core_user\fields::for_userpic();
-    $userpicturefields = $userfieldsapi->get_sql('u', false, '', 'userid', false)->selects;
+    $userpicturefields = user_picture::fields('u', null, 'userid');
 
     $sql = "SELECT $postdata, d.id as discussionid, d.name as discussionname, d.timemodified, d.usermodified, d.groupid,
                    d.timestart, d.timeend, $userpicturefields
@@ -236,8 +235,7 @@ function forum_rss_feed_posts_sql($forum, $cm, $newsince=0) {
         $privatewhere = '';
     }
 
-    $userfieldsapi = \core_user\fields::for_name();
-    $usernamefields = $userfieldsapi->get_sql('u', false, '', '', false)->selects;
+    $usernamefields = get_all_user_name_fields(true, 'u');
     $sql = "SELECT p.id AS postid,
                  d.id AS discussionid,
                  d.name AS discussionname,
@@ -325,7 +323,7 @@ function forum_rss_feed_contents($forum, $sql, $params, $context) {
     }
 
     if (!$cm = get_coursemodule_from_instance('forum', $forum->id, $forum->course)) {
-        throw new \moodle_exception('invalidcoursemodule');
+        print_error('invalidcoursemodule');
     }
 
     $formatoptions = new stdClass();

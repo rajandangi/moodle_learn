@@ -24,9 +24,12 @@
 namespace tool_dataprivacy\external;
 defined('MOODLE_INTERNAL') || die();
 
+use coding_exception;
 use core\external\persistent_exporter;
 use core_user;
 use core_user\external\user_summary_exporter;
+use dml_exception;
+use moodle_exception;
 use renderer_base;
 use tool_dataprivacy\api;
 use tool_dataprivacy\data_request;
@@ -104,19 +107,10 @@ class data_request_exporter extends persistent_exporter {
                 'optional' => true,
                 'default' => false
             ],
-            'allowfiltering' => [
-                'type' => PARAM_BOOL,
-                'optional' => true,
-                'default' => false,
-            ],
             'canmarkcomplete' => [
                 'type' => PARAM_BOOL,
                 'optional' => true,
                 'default' => false
-            ],
-            'downloadlink' => [
-                'type' => PARAM_URL,
-                'optional' => true,
             ],
         ];
     }
@@ -162,18 +156,16 @@ class data_request_exporter extends persistent_exporter {
 
         $values['canreview'] = false;
         $values['approvedeny'] = false;
-        $values['allowfiltering'] = get_config('tool_dataprivacy', 'allowfiltering');
         $values['statuslabel'] = helper::get_request_status_string($this->persistent->get('status'));
 
         switch ($this->persistent->get('status')) {
             case api::DATAREQUEST_STATUS_PENDING:
-            case api::DATAREQUEST_STATUS_PREPROCESSING:
-                $values['statuslabelclass'] = 'bg-info text-white';
+                $values['statuslabelclass'] = 'badge-info';
                 // Request can be manually completed for general enquiry requests.
                 $values['canmarkcomplete'] = $requesttype == api::DATAREQUEST_TYPE_OTHERS;
                 break;
             case api::DATAREQUEST_STATUS_AWAITING_APPROVAL:
-                $values['statuslabelclass'] = 'bg-info text-white';
+                $values['statuslabelclass'] = 'badge-info';
                 // DPO can review the request once it's ready.
                 $values['canreview'] = true;
                 // Whether the DPO can approve or deny the request.
@@ -184,34 +176,25 @@ class data_request_exporter extends persistent_exporter {
                 }
                 break;
             case api::DATAREQUEST_STATUS_APPROVED:
-                $values['statuslabelclass'] = 'bg-info text-white';
+                $values['statuslabelclass'] = 'badge-info';
                 break;
             case api::DATAREQUEST_STATUS_PROCESSING:
-                $values['statuslabelclass'] = 'bg-info text-white';
+                $values['statuslabelclass'] = 'badge-info';
                 break;
             case api::DATAREQUEST_STATUS_COMPLETE:
             case api::DATAREQUEST_STATUS_DOWNLOAD_READY:
             case api::DATAREQUEST_STATUS_DELETED:
-                $values['statuslabelclass'] = 'bg-success text-white';
+                $values['statuslabelclass'] = 'badge-success';
                 break;
             case api::DATAREQUEST_STATUS_CANCELLED:
-                $values['statuslabelclass'] = 'bg-warning text-dark';
+                $values['statuslabelclass'] = 'badge-warning';
                 break;
             case api::DATAREQUEST_STATUS_REJECTED:
-                $values['statuslabelclass'] = 'bg-danger text-white';
+                $values['statuslabelclass'] = 'badge-danger';
                 break;
             case api::DATAREQUEST_STATUS_EXPIRED:
-                $values['statuslabelclass'] = 'bg-secondary text-dark';
+                $values['statuslabelclass'] = 'badge-secondary';
                 break;
-        }
-
-        if ($this->persistent->get('status') == api::DATAREQUEST_STATUS_DOWNLOAD_READY) {
-            $usercontext = \context_user::instance($foruserid, IGNORE_MISSING);
-            // If user has permission to view download link, show relevant action item.
-            if ($usercontext && api::can_download_data_request_for_user($foruserid, $requestedbyid)) {
-                $downloadlink = api::get_download_link($usercontext, $this->persistent->get('id'))->url;
-                $values['downloadlink'] = $downloadlink->out(false);
-            }
         }
 
         return $values;
