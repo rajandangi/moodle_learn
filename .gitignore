@@ -20,13 +20,12 @@
 *~
 #
 /config.php
+/lib/editor/tinymce/extra/tools/temp/
 /tags
 /TAGS
 /cscope.*
 /.patches/
 /.idea/
-.phpstorm.*
-!.phpstorm.meta.php
 /nbproject/
 CVS
 .DS_Store
@@ -34,7 +33,6 @@ CVS
 /.project
 /.buildpath
 /.cache
-.phpunit.result.cache
 phpunit.xml
 # Composer support. Do not ignore composer.json, or composer.lock. These should be shipped by us.
 composer.phar
@@ -46,13 +44,4 @@ composer.phar
 /lib/yuilib/*/*/*-coverage.js
 atlassian-ide-plugin.xml
 /node_modules/
-/.vscode/
 moodle-plugin-ci.phar
-.eslintignore
-.stylelintignore
-/jsdoc
-/admin/tool/componentlibrary/docs
-/admin/tool/componentlibrary/hugo/site/data/my-index.json
-.hugo_build.lock
-phpcs.xml
-jsconfig.json
