@@ -14,10 +14,35 @@
     You should have received a copy of the GNU General Public License
     along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 }}
+{{!
+    @template block_myoverview/nav-grouping-selector
+
+    This template renders grouping dropdown.
+
+    Example context (json):
+    {
+        "allincludinghidden": false,
+        "all": true,
+        "inprogress": false,
+        "future": false,
+        "past": false,
+        "favourites": false,
+        "hidden": false,
+        "displaygroupingallincludinghidden": false,
+        "displaygroupingall": true,
+        "displaygroupinginprogress": true,
+        "displaygroupingfuture": true,
+        "displaygroupingpast": true,
+        "displaygroupingfavourites": true,
+        "displaygroupinghidden": true,
+        "displaygroupingselector": true
+    }
+}}
 {{#displaygroupingselector}}
-<div class="dropdown mb-1 mr-3">
+<div class="dropdown mb-1 ml-auto">
     <button id="groupingdropdown" type="button" class="btn btn-outline-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" aria-label="{{#str}} aria:groupingdropdown, block_myoverview {{/str}}">
-        <span data-active-item-text>
+        {{#pix}} i/filter {{/pix}}
+        <span class="d-sm-inline-block" data-active-item-text>
             {{#allincludinghidden}}{{#str}} allincludinghidden, block_myoverview {{/str}}{{/allincludinghidden}}
             {{#all}}{{#str}} all, block_myoverview {{/str}}{{/all}}
             {{#inprogress}}{{#str}} inprogress, block_myoverview {{/str}}{{/inprogress}}
