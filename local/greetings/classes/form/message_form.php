@@ -23,15 +23,30 @@
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+// Define namespace for this class/file.
+namespace local_greetings\form;
+
+// Exits if accessed directly.
 defined('MOODLE_INTERNAL') || die();
 
-$string['greetingloggedinuser'] = 'Greetings, {$a}';
-$string['greetinguser'] = 'Greeting, user';
-$string['greetinguserau'] = 'Hello, $a';
-$string['greetinguseres'] = 'Hola, {$a}.';
-$string['greetinguserfj'] = 'Bula, {$a}.';
-$string['greetingusernp'] = 'नमस्ते, {$a}.';
-$string['greetingusernz'] = 'Kia Ora, {$a}.';
+// Load forms lib.
+require_once($CFG->libdir . '/formslib.php');
 
-$string['pluginname'] = 'Greetings';
-$string['yourmessage'] = 'Your Message';
+/**
+ * Message form class.
+ */
+class message_form extends \moodleform {
+
+    /**
+     * Define the form
+     */
+    public function definition() {
+        $mform = $this->_form;
+
+        $mform->addElement('textarea', 'message', get_string('yourmessage', 'local_greetings'));
+        $mform->setType('message', PARAM_TEXT);
+
+        $submitlabel = get_string('submit'); // Resuing moodle core string.
+        $mform->addElement('submit', 'submitmessage', $submitlabel);
+    }
+}
