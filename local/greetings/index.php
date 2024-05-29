@@ -22,6 +22,8 @@
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+use core_reportbuilder\local\helpers\format_test;
+
 require_once('../../config.php');
 require_once($CFG->dirroot . '/local/greetings/lib.php');
 
@@ -36,6 +38,14 @@ $PAGE->set_url(new moodle_url('/local/greetings/index.php'));
 $PAGE->set_pagelayout('standard');
 $PAGE->set_title(get_string('pluginname', 'local_greetings'));
 $PAGE->set_heading(get_string('pluginname', 'local_greetings'));
+
+// Check if the user is logged in.
+require_login();
+
+// Prevent guest users from accessing the page.
+if (isguestuser()) {
+    throw new moodle_exception('noguest');
+}
 
 // Create Instance of message form.
 $messageform = new local_greetings\form\message_form();
@@ -84,7 +94,7 @@ foreach ($messages as $m) {
     echo html_writer::start_tag('div', ['class' => 'card']);
     echo html_writer::start_tag('div', ['class' => 'card-body']);
 
-    echo html_writer::tag('p', $m->message, ['class' => 'card-text']);
+    echo html_writer::tag('p', format_text($m->message, FORMAT_PLAIN), ['class' => 'card-text']);
 
     echo html_writer::start_tag('p', ['class' => 'card-text']);
     echo html_writer::tag('p', get_string('postedby', 'local_greetings', $m->firstname), ['class' => 'card-text']);
