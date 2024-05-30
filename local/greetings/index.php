@@ -61,7 +61,7 @@ if ($action == 'del') {
             $params += ['userid' => $USER->id];
         }
 
-        // TODO: Add a confirmation dialog.
+        // TODO MDL-1 Add a confirmation dialog.
         $DB->delete_records('local_greetings_messages', $params);
         redirect($PAGE->url, get_string('messagedeleted', 'local_greetings'), null, \core\output\notification::NOTIFY_SUCCESS);
     }
@@ -116,9 +116,10 @@ if (has_capability('local/greetings:viewmessages', $context)) {
 
     // Display the Messages.
     echo $OUTPUT->box_start('card-columns');
+    $cardbgcolor = get_config('local_greetings', 'messagecardbgcolor');
 
     foreach ($messages as $m) {
-        echo html_writer::start_tag('div', ['class' => 'card']);
+        echo html_writer::start_tag('div', ['class' => 'card', 'style' => "background: $cardbgcolor"]);
         echo html_writer::start_tag('div', ['class' => 'card-body']);
 
         echo html_writer::tag('p', format_text($m->message, FORMAT_PLAIN), ['class' => 'card-text']);
