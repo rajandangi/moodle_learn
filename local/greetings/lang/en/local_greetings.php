@@ -36,7 +36,8 @@ $string['greetinguseres'] = 'Hola, {$a}.';
 $string['greetinguserfj'] = 'Bula, {$a}.';
 $string['greetingusernp'] = 'नमस्ते, {$a}.';
 $string['greetingusernz'] = 'Kia Ora, {$a}.';
-
+$string['messagedeleted'] = 'Message deleted successfully';
+$string['messageposted'] = 'Message posted successfully';
 $string['pluginname'] = 'Greetings';
 $string['postedby'] = 'Posted by {$a}';
 $string['yourmessage'] = 'Your Message';

@@ -62,6 +62,7 @@ if ($action == 'del') {
 
         // TODO: Add a confirmation dialog.
         $DB->delete_records('local_greetings_messages', $params);
+        redirect($PAGE->url, get_string('messagedeleted', 'local_greetings'), null, \core\output\notification::NOTIFY_SUCCESS);
     }
 }
 
@@ -80,6 +81,7 @@ if ($data = $messageform->get_data()) {
         $record->userid = $USER->id;
 
         $DB->insert_record('local_greetings_messages', $record);
+        redirect($PAGE->url, get_string('messageposted', 'local_greetings'), null, \core\output\notification::NOTIFY_SUCCESS);
     }
 }
 
