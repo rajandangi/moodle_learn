@@ -25,17 +25,30 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$string['greetingloggedinuser'] = 'Greetings, {$a}';
-$string['greetings:deleteanymessages'] = 'Delete any messages on the Greetings wall';
-$string['greetings:postmessages'] = 'Post messages on the Greetings wall';
-$string['greetings:viewmessages'] = 'View messages on the Greetings wall';
-$string['greetinguser'] = 'Greeting, user';
-$string['greetinguserau'] = 'Hello, $a';
-$string['greetinguseres'] = 'Hola, {$a}.';
-$string['greetinguserfj'] = 'Bula, {$a}.';
-$string['greetingusernp'] = 'नमस्ते, {$a}.';
-$string['greetingusernz'] = 'Kia Ora, {$a}.';
-
-$string['pluginname'] = 'Greetings';
-$string['postedby'] = 'Posted by {$a}';
-$string['yourmessage'] = 'Your Message';
+// Define two capabilities for posting and viewing messages.
+$capabilities = [
+    'local/greetings:postmessages' => [
+        'riskbitmask' => RISK_SPAM,
+        'captype' => 'write',
+        'contextlevel' => CONTEXT_SYSTEM,
+        'archetypes' => [
+            'user' => CAP_ALLOW,
+        ],
+    ],
+    'local/greetings:viewmessages' => [
+        'riskbitmask' => RISK_SPAM,
+        'captype' => 'read',
+        'contextlevel' => CONTEXT_SYSTEM,
+        'archetypes' => [
+            'user' => CAP_ALLOW,
+        ],
+    ],
+    'local/greetings:deleteanymessages' => [
+        'riskbitmask' => RISK_DATALOSS,
+        'captype' => 'write',
+        'contextlevel' => CONTEXT_SYSTEM,
+        'archetypes' => [
+            'manager' => CAP_ALLOW,
+        ],
+    ],
+];
