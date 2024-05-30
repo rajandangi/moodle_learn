@@ -46,13 +46,22 @@ if (isguestuser()) {
 }
 
 $allowpost = has_capability('local/greetings:postmessages', $context);
+$deletepost = has_capability('local/greetings:deleteownmessage', $context);
 $deleteanypost = has_capability('local/greetings:deleteanymessages', $context);
 
 $action = optional_param('action', '', PARAM_TEXT);
 if ($action == 'del') {
     $id = required_param('id', PARAM_INT);
-    if ($deleteanypost) {
-        $DB->delete_records('local_greetings_messages', ['id' => $id]);
+
+    if ($deleteanypost || $deletepost) {
+        $params = ['id' => $id];
+
+        if ($deletepost) {
+            $params += ['userid' => $USER->id];
+        }
+
+        // TODO: Add a confirmation dialog.
+        $DB->delete_records('local_greetings_messages', $params);
     }
 }
 
@@ -115,7 +124,7 @@ if (has_capability('local/greetings:viewmessages', $context)) {
         echo html_writer::tag('small', userdate($m->timecreated), ['class' => 'text-muted']);
         echo html_writer::end_tag('p');
 
-        if ($deleteanypost) {
+        if ($deleteanypost || ($deletepost && $m->userid == $USER->id)) {
             echo html_writer::start_tag('p', ['class' => 'card-footer text-center']);
             echo html_writer::link(
                 new moodle_url(
