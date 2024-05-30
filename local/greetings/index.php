@@ -54,6 +54,7 @@ if ($action == 'del') {
     $id = required_param('id', PARAM_INT);
 
     if ($deleteanypost || $deletepost) {
+        require_sesskey();
         $params = ['id' => $id];
 
         if ($deletepost) {
@@ -81,6 +82,7 @@ if ($data = $messageform->get_data()) {
         $record->userid = $USER->id;
 
         $DB->insert_record('local_greetings_messages', $record);
+
         redirect($PAGE->url, get_string('messageposted', 'local_greetings'), null, \core\output\notification::NOTIFY_SUCCESS);
     }
 }
@@ -131,7 +133,7 @@ if (has_capability('local/greetings:viewmessages', $context)) {
             echo html_writer::link(
                 new moodle_url(
                     '/local/greetings/index.php',
-                    ['action' => 'del', 'id' => $m->id]
+                    ['action' => 'del', 'id' => $m->id, 'sesskey' => sesskey()]
                 ),
                 $OUTPUT->pix_icon('t/delete', '') . get_string('delete')
             );
