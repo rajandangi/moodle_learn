@@ -90,6 +90,12 @@ if ($data = $messageform->get_data()) {
 // Display the Page Output.
 echo $OUTPUT->header();
 
+if (isloggedin()) {
+    echo local_greetings_get_greeting($USER);
+} else {
+    echo get_string('greetinguser', 'local_greetings');
+}
+
 // Display the Message Form.
 if ($allowpost) {
     $messageform->display();
