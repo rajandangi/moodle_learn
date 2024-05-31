@@ -90,12 +90,6 @@ if ($data = $messageform->get_data()) {
 // Display the Page Output.
 echo $OUTPUT->header();
 
-if (isloggedin()) {
-    echo local_greetings_get_greeting($USER);
-} else {
-    echo get_string('greetinguser', 'local_greetings');
-}
-
 // Display the Message Form.
 if ($allowpost) {
     $messageform->display();
@@ -131,13 +125,24 @@ if (has_capability('local/greetings:viewmessages', $context)) {
 
         if ($deleteanypost || ($deletepost && $m->userid == $USER->id)) {
             echo html_writer::start_tag('p', ['class' => 'card-footer text-center']);
+
+            echo html_writer::link(
+                new moodle_url(
+                    '/local/greetings/edit.php',
+                    ['id' => $m->id]
+                ),
+                $OUTPUT->pix_icon('i/edit', get_string('edit')),
+                ['role' => 'button', 'class' => 'mr-4']
+            );
             echo html_writer::link(
                 new moodle_url(
                     '/local/greetings/index.php',
                     ['action' => 'del', 'id' => $m->id, 'sesskey' => sesskey()]
                 ),
-                $OUTPUT->pix_icon('t/delete', '') . get_string('delete')
+                $OUTPUT->pix_icon('t/delete', get_string('delete')),
+                ['role' => 'button']
             );
+
             echo html_writer::end_tag('p');
         }
 
