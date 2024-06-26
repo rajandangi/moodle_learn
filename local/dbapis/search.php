@@ -73,13 +73,15 @@ if ($data = $searchform->get_data()) {
             $user = $DB->get_record('user', ['id' => $record->userid]);
 
             echo html_writer::start_tag('p', ['class' => '']);
-            echo $OUTPUT->single_button(
-                new moodle_url(
-                    '/local/dbapis/deletepost.php',
-                    ['returnurl' => $PAGE->url, 'id' => $record->id, 'sesskey' => sesskey()]
-                ),
-                get_string('delete')
-            );
+            if (has_capability('local/dbapis:deleteanymessage', $context)) {
+                echo $OUTPUT->single_button(
+                    new moodle_url(
+                        '/local/dbapis/deletepost.php',
+                        ['id' => $record->id, 'returnurl' => $PAGE->url, 'sesskey' => sesskey()]
+                    ),
+                    get_string('delete')
+                );
+            }
             echo $record->id . ', ' . $record->message . ', '
                 . $user->firstname . ' ' . $user->lastname;
             echo html_writer::end_tag('p');
