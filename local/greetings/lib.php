@@ -72,3 +72,19 @@ function local_greetings_extend_navigation_frontpage(navigation_node $frontpage)
         );
     }
 }
+
+
+/**
+ * Insert a link to index.php on the site course page navigation menu.
+ *
+ * @param navigation_node $node Node representing the course page in the navigation tree.
+ */
+function local_greetings_extend_navigation_course(navigation_node $node) {
+    if (isloggedin() && !isguestuser()) {
+        $node->add(
+            get_string('pluginname', 'local_greetings'),
+            new moodle_url('/local/greetings/index.php'),
+            navigation_node::TYPE_CUSTOM,
+        );
+    }
+}
