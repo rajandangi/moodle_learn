@@ -57,7 +57,7 @@ if ($action == 'del') {
         require_sesskey();
         $params = ['id' => $id];
 
-        if ($deletepost) {
+        if ($deletepost & !$deleteanypost) {
             $params += ['userid' => $USER->id];
         }
 
@@ -88,7 +88,8 @@ if ($data = $messageform->get_data()) {
 }
 
 // Display the Page Output.
-echo $OUTPUT->header();
+$output = $PAGE->get_renderer('local_greetings');
+echo $output->header();
 
 if (isloggedin()) {
     echo local_greetings_get_greeting($USER);
@@ -115,7 +116,7 @@ if (has_capability('local/greetings:viewmessages', $context)) {
     $messages = $DB->get_records_sql($sql);
 
     // Display the Messages.
-    echo $OUTPUT->box_start('card-columns');
+    echo $output->box_start('card-columns');
     $cardbgcolor = get_config('local_greetings', 'messagecardbgcolor');
 
     foreach ($messages as $m) {
@@ -130,33 +131,25 @@ if (has_capability('local/greetings:viewmessages', $context)) {
         echo html_writer::end_tag('p');
 
         if ($deleteanypost || ($deletepost && $m->userid == $USER->id)) {
-            echo html_writer::start_tag('p', ['class' => 'card-footer text-center']);
-
-            echo html_writer::link(
-                new moodle_url(
+            $data = [
+                'editurl' => new moodle_url(
                     '/local/greetings/edit.php',
                     ['id' => $m->id]
                 ),
-                $OUTPUT->pix_icon('i/edit', get_string('edit')),
-                ['role' => 'button', 'class' => 'mr-4']
-            );
-            echo html_writer::link(
-                new moodle_url(
+                'deleteurl' => new moodle_url(
                     '/local/greetings/index.php',
                     ['action' => 'del', 'id' => $m->id, 'sesskey' => sesskey()]
                 ),
-                $OUTPUT->pix_icon('t/delete', get_string('delete')),
-                ['role' => 'button']
-            );
-
-            echo html_writer::end_tag('p');
+            ];
+            $renderable = new \local_greetings\output\greetings_index_page($data);
+            echo $output->render_greetings_index_page($renderable);
         }
 
         echo html_writer::end_tag('div');
         echo html_writer::end_tag('div');
     }
 
-    echo $OUTPUT->box_end();
+    echo $output->box_end();
 }
 
-echo $OUTPUT->footer();
+echo $output->footer();
