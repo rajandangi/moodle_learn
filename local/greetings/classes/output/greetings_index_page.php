@@ -29,7 +29,20 @@ use renderer_base;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class greetings_index_page implements renderable, templatable {
-    public function __construct(private array $receiveddata) {
+    /**
+     * An array of data to be used in the template
+     *
+     * @var array
+     */
+    private array $receiveddata;
+
+    /**
+     * Construct the class
+     *
+     * @param array $receiveddata An array of data received to be used in the template.
+     */
+    public function __construct(array $receiveddata) {
+        $this->receiveddata = $receiveddata;
     }
     /**
      * Export data to be used in Mustache template

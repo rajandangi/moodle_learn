@@ -26,11 +26,23 @@ use plugin_renderer_base;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class renderer extends plugin_renderer_base {
+    /**
+     * Render the layout test page
+     *
+     * @param mixed $page
+     * @return string
+     */
     public function render_layout_test_page($page): string {
         $data = $page->export_for_template($this);
         return parent::render_from_template('local_greetings/layout-test', $data);
     }
 
+    /**
+     * Render the greetings index page
+     *
+     * @param mixed $page
+     * @return string
+     */
     public function render_greetings_index_page($page): string {
         $data = $page->export_for_template($this);
         return parent::render_from_template('local_greetings/index', $data);

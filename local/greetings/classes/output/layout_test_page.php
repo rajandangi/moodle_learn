@@ -32,6 +32,11 @@ class layout_test_page implements renderable, templatable {
     /** @var string $sometext Some Text to pass to the template */
     private $sometext = null;
 
+    /**
+     * Construct the class
+     *
+     * @param mixed $sometext
+     */
     public function __construct($sometext) {
         $this->sometext = $sometext;
     }
